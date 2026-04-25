@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Time Machine Clock</title>
+    <style>
+        body { font-family: 'Arial Rounded MT Bold', sans-serif; text-align: center; background: #f0f4f8; padding: 20px; }
+        .clock-container { max-width: 450px; margin: auto; background: white; padding: 30px; border-radius: 30px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+        
+        /* The Clock Face */
+        .clock {
+            width: 300px; height: 300px; border: 10px solid #2c3e50; border-radius: 50%;
+            margin: 20px auto; position: relative; background: #fff;
+        }
+        .dot { 
+            position: absolute; top: 50%; left: 50%; width: 16px; height: 16px; 
+            background: #333; border-radius: 50%; transform: translate(-50%, -50%); z-index: 10;
+        }
+        
+        /* The Hands */
+        .hand { position: absolute; bottom: 50%; left: 50%; transform-origin: bottom center; border-radius: 10px; }
+        #hour { width: 8px; height: 70px; background: #e74c3c; z-index: 5; }
+        #minute { width: 5px; height: 110px; background: #3498db; z-index: 4; }
+
+        /* Numbers */
+        .number {
+            position: absolute; width: 30px; height: 30px; text-align: center;
+            font-size: 20px; font-weight: bold; color: #2c3e50;
+        }
+
+        .controls { margin-top: 20px; background: #ecf0f1; padding: 15px; border-radius: 15px; }
+        #digital-time { font-size: 36px; color: #2c3e50; margin: 10px 0; font-family: 'Courier New', monospace; }
+        input[type=range] { width: 80%; }
+    </style>
+</head>
+<body>
+
+<div class="clock-container">
+    <h1>⏰ Time Traveler</h1>
+    <p>Move the slider to see how the hands move together!</p>
+
+    <div class="clock" id="clock-face">
+        <div class="dot"></div>
+        <div class="hand" id="hour"></div>
+        <div class="hand" id="minute"></div>
+    </div>
+
+    <div class="controls">
+        <div id="digital-time">12:00</div>
+        <input type="range" id="time-slider" min="0" max="719" value="0">
+        <p id="word-time">Twelve O'Clock</p>
+    </div>
+</div>
+
+<script>
+    const slider = document.getElementById('time-slider');
+    const hourHand = document.getElementById('hour');
+    const minuteHand = document.getElementById('minute');
+    const digitalTime = document.getElementById('digital-time');
+    const wordTime = document.getElementById('word-time');
+    const clockFace = document.getElementById('clock-face');
+
+    // Create Clock Numbers
+    for (let i = 1; i <= 12; i++) {
+        const num = document.createElement('div');
+        num.className = 'number';
+        num.innerText = i;
+        const angle = (i * 30) * (Math.PI / 180);
+        const x = 150 + 120 * Math.sin(angle) - 15;
+        const y = 150 - 120 * Math.cos(angle) - 15;
+        num.style.left = x + 'px';
+        num.style.top = y + 'px';
+        clockFace.appendChild(num);
+    }
+
+    function updateTime() {
+        const totalMinutes = parseInt(slider.value);
+        let hours = Math.floor(totalMinutes / 60);
+        let minutes = totalMinutes % 60;
+
+        // Display logic
+        let displayHours = hours === 0 ? 12 : hours;
+        let displayMinutes = minutes < 10 ? '0' + minutes : minutes;
+        digitalTime.innerText = `${displayHours}:${displayMinutes}`;
+
+        // Hand Rotation logic
+        // Minute hand: 6 degrees per minute
+        const mRotate = minutes * 6;
+        // Hour hand: 30 degrees per hour + 0.5 degrees per minute
+        const hRotate = (hours * 30) + (minutes * 0.5);
+
+        minuteHand.style.transform = `translateX(-50%) rotate(${mRotate}deg)`;
+        hourHand.style.transform = `translateX(-50%) rotate(${hRotate}deg)`;
+
+        // Word Logic
+        if (minutes === 0) wordTime.innerText = `${displayHours} O'Clock`;
+        else if (minutes === 15) wordTime.innerText = `Quarter past ${displayHours}`;
+        else if (minutes === 30) wordTime.innerText = `Half past ${displayHours}`;
+        else if (minutes === 45) wordTime.innerText = `Quarter to ${(displayHours % 12) + 1}`;
+        else wordTime.innerText = `${displayMinutes} minutes past ${displayHours}`;
+    }
+
+    slider.oninput = updateTime;
+    updateTime();
+</script>
+
+</body>
+</html>

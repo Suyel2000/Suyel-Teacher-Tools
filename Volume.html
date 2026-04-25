@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>3D Volume & Capacity Lab</title>
+    <style>
+        :root {
+            --water-color: rgba(52, 152, 219, 0.6);
+            --glass-color: rgba(200, 230, 255, 0.2);
+            --border-color: #2c3e50;
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f4f7; text-align: center; padding: 20px; }
+        .container { max-width: 850px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        
+        .scene {
+            width: 100%; height: 400px; perspective: 1000px;
+            display: flex; align-items: center; justify-content: center;
+            background: radial-gradient(circle, #ffffff, #d7e1e9);
+            border-radius: 15px; margin-bottom: 20px; overflow: hidden;
+        }
+
+        .tank {
+            position: relative; transform-style: preserve-3d;
+            transform: rotateX(-25deg) rotateY(45deg);
+        }
+
+        .face {
+            position: absolute; border: 2px solid var(--border-color);
+            background: var(--glass-color); backface-visibility: visible;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        /* 3D Water Block */
+        .water-container {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            transform-style: preserve-3d; transition: height 0.5s ease;
+        }
+        .water-face {
+            position: absolute; background: var(--water-color);
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .front  { transform: translateZ(var(--depth-half)); }
+        .back   { transform: rotateY(180deg) translateZ(var(--depth-half)); }
+        .right  { transform: rotateY(90deg) translateZ(var(--width-half)); }
+        .left   { transform: rotateY(-90deg) translateZ(var(--width-half)); }
+        .top    { transform: rotateX(90deg) translateZ(var(--height-half)); background: rgba(255,255,255,0.1); }
+        .bottom { transform: rotateX(-90deg) translateZ(var(--height-half)); background: #bdc3c7; }
+
+        .controls { 
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; 
+            background: #f9f9f9; padding: 20px; border-radius: 12px; 
+        }
+        .control-item { display: flex; flex-direction: column; align-items: center; font-weight: bold; }
+        input[type=range] { width: 100%; cursor: pointer; margin-top: 8px; }
+        
+        .result-panel { margin-top: 20px; display: flex; justify-content: space-around; align-items: center; border-top: 2px solid #eee; padding-top: 20px;}
+        .stat-box { text-align: center; }
+        .vol-text { font-size: 28px; font-weight: bold; color: #2980b9; }
+        .cap-text { font-size: 28px; font-weight: bold; color: #e67e22; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🌊 Volume & Capacity Lab</h1>
+    <p>Adjust dimensions to change <b>Capacity</b>, then fill it with <b>Water</b>!</p>
+
+    <div class="scene">
+        <div id="tank" class="tank">
+            <div id="water-body" class="water-container">
+                <div class="water-face front" id="w-front"></div>
+                <div class="water-face back" id="w-back"></div>
+                <div class="water-face right" id="w-right"></div>
+                <div class="water-face left" id="w-left"></div>
+                <div class="water-face top" id="w-top"></div>
+            </div>
+            <div class="face front" id="f-front"></div>
+            <div class="face back" id="f-back"></div>
+            <div class="face right" id="f-right"></div>
+            <div class="face left" id="f-left"></div>
+            <div class="face top" id="f-top"></div>
+            <div class="face bottom" id="f-bottom"></div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <div class="control-item">
+            <label>Length: <span id="l-val">10</span>cm</label>
+            <input type="range" id="len" min="5" max="15" value="10">
+        </div>
+        <div class="control-item">
+            <label>Width: <span id="w-val">10</span>cm</label>
+            <input type="range" id="wid" min="5" max="15" value="10">
+        </div>
+        <div class="control-item">
+            <label>Height: <span id="h-val">10</span>cm</label>
+            <input type="range" id="hei" min="5" max="15" value="10">
+        </div>
+        <div class="control-item" style="background: #d5e8f7; border-radius: 8px; padding: 5px;">
+            <label>💧 Fill Level: <span id="f-val">50</span>%</label>
+            <input type="range" id="fill" min="0" max="100" value="50">
+        </div>
+    </div>
+
+    <div class="result-panel">
+        <div class="stat-box">
+            <div class="cap-text"><span id="cap-res">1000</span> cm³</div>
+            <small>Total Capacity</small>
+        </div>
+        <div style="font-size: 30px;">➡️</div>
+        <div class="stat-box">
+            <div class="vol-text"><span id="vol-res">500</span> ml</div>
+            <small>Water Volume</small>
+        </div>
+    </div>
+</div>
+
+<script>
+    const scale = 20;
+    const tank = document.getElementById('tank');
+    const water = document.getElementById('water-body');
+    
+    function update() {
+        const l = parseInt(document.getElementById('len').value);
+        const w = parseInt(document.getElementById('wid').value);
+        const h = parseInt(document.getElementById('hei').value);
+        const f = parseInt(document.getElementById('fill').value);
+        
+        document.getElementById('l-val').innerText = l;
+        document.getElementById('w-val').innerText = w;
+        document.getElementById('h-val').innerText = h;
+        document.getElementById('f-val').innerText = f;
+
+        const pL = l * scale; const pW = w * scale; const pH = h * scale;
+        const waterH = (f / 100) * pH;
+
+        // Set 3D spacing
+        tank.style.setProperty('--depth-half', (pW / 2) + 'px');
+        tank.style.setProperty('--width-half', (pL / 2) + 'px');
+        tank.style.setProperty('--height-half', (pH / 2) + 'px');
+
+        function setSize(prefix, width, height, topWidth, topHeight) {
+            const sides = ['front', 'back', 'right', 'left', 'top', 'bottom'];
+            sides.forEach(s => {
+                const el = document.getElementById(prefix + s);
+                if (!el) return;
+                let currentW = (s === 'right' || s === 'left') ? pW : pL;
+                let currentH = (s === 'top' || s === 'bottom') ? pW : height;
+                el.style.width = currentW + 'px';
+                el.style.height = currentH + 'px';
+                el.style.marginLeft = -(currentW / 2) + 'px';
+                el.style.marginTop = -(currentH / 2) + 'px';
+                
+                // Adjust water top position
+                if (prefix === 'w-' && s === 'top') {
+                    el.style.transform = `rotateX(90deg) translateZ(${(height - (pH/2))}px)`;
+                }
+            });
+        }
+
+        setSize('f-', pL, pH);
+        setSize('w-', pL, waterH);
+
+        // Calculations
+        const capacity = l * w * h;
+        const waterVol = Math.round(capacity * (f / 100));
+        document.getElementById('cap-res').innerText = capacity;
+        document.getElementById('vol-res').innerText = waterVol;
+    }
+
+    document.querySelectorAll('input').forEach(i => i.addEventListener('input', update));
+    update();
+</script>
+
+</body>
+</html>

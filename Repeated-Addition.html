@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cookie Factory</title>
+    <style>
+        :root {
+            --tray: #bdc3c7;
+            --cookie: #d35400;
+            --text: #2c3e50;
+            --accent: #e67e22;
+        }
+        body { font-family: 'Comic Sans MS', cursive, sans-serif; background: #fdf2e9; text-align: center; padding: 20px; color: var(--text); }
+        .factory-card { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 25px; border: 6px solid var(--accent); box-shadow: 0 12px 0 #d35400; }
+        
+        .setup-zone { display: flex; justify-content: center; align-items: center; gap: 20px; background: #fff5e6; padding: 20px; border-radius: 15px; border: 2px dashed var(--accent); margin-bottom: 20px; }
+        
+        .belt {
+            display: flex; justify-content: center; gap: 15px; margin: 25px 0;
+            padding: 25px; background: #ecf0f1; border-radius: 12px; border-bottom: 8px solid #95a5a6;
+            flex-wrap: wrap; min-height: 140px;
+        }
+
+        .tray {
+            padding: 10px; background: var(--tray); border: 3px solid #7f8c8d;
+            border-radius: 8px; display: grid; gap: 5px; box-shadow: 0 4px 0 #7f8c8d;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .cookie {
+            width: 25px; height: 25px; background: #6f4e37; border-radius: 50%;
+            border: 2px solid #3e2723; position: relative;
+        }
+        .cookie::after { content: '..'; position: absolute; top: 1px; left: 5px; color: #3e2723; font-weight: bold; font-size: 10px; }
+
+        .math-bubble { background: #fdfefe; border: 3px solid #3498db; padding: 20px; border-radius: 15px; margin-top: 20px; }
+        .eq-large { font-size: 32px; font-weight: bold; color: #2980b9; margin: 10px 0; min-height: 45px; word-wrap: break-word; }
+        
+        input[type=number] { width: 70px; padding: 10px; font-size: 20px; border-radius: 8px; border: 2px solid #ccc; text-align: center; }
+        input:disabled { background: #eee; color: #999; cursor: not-allowed; }
+
+        button { padding: 15px 25px; font-size: 18px; border: none; border-radius: 12px; cursor: pointer; font-family: inherit; font-weight: bold; transition: 0.2s; }
+        .add-btn { background: #27ae60; color: white; box-shadow: 0 5px 0 #1e8449; }
+        .add-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #1e8449; }
+        .clear-btn { background: #e74c3c; color: white; box-shadow: 0 5px 0 #c0392b; }
+        .clear-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #c0392b; }
+    </style>
+</head>
+<body>
+
+<div class="factory-card">
+    <h1>🍪 Cookie Factory</h1>
+    <p>1. Pick a number. 2. Add Trays! 3. See the Multiplication.</p>
+
+    <div class="setup-zone">
+        <div>
+            <label>Cookies per Tray:</label>
+            <input type="number" id="numInput" value="3" min="1" max="10">
+        </div>
+        <button class="add-btn" onclick="handleTrayAdd()">+ Add Tray</button>
+        <button class="clear-btn" onclick="handleClear()">Clear</button>
+    </div>
+
+    <div class="belt" id="belt"></div>
+
+    <div class="math-bubble">
+        <div id="count-text" style="font-size: 18px; color: #7f8c8d;">The factory is ready!</div>
+        <div class="eq-large" id="add-sentence">---</div>
+        <div class="eq-large" style="color: var(--accent);" id="multi-sentence">0 × 0 = 0</div>
+    </div>
+</div>
+
+<script>
+    let currentTrayList = [];
+    const beltEl = document.getElementById('belt');
+    const inputEl = document.getElementById('numInput');
+    const addText = document.getElementById('add-sentence');
+    const multiText = document.getElementById('multi-sentence');
+    const statusText = document.getElementById('count-text');
+
+    function handleTrayAdd() {
+        const val = parseInt(inputEl.value);
+        
+        if (isNaN(val) || val < 1) {
+            alert("Please enter a number (1-10)");
+            return;
+        }
+
+        // Lock the input once we start so the "groups" stay equal
+        inputEl.disabled = true;
+
+        if (currentTrayList.length < 10) {
+            currentTrayList.push(val);
+            updateUI();
+        } else {
+            alert("The belt is full! Press Clear to start a new batch.");
+        }
+    }
+
+    function handleClear() {
+        currentTrayList = [];
+        inputEl.disabled = false;
+        updateUI();
+    }
+
+    function updateUI() {
+        // 1. Clear the belt visually
+        beltEl.innerHTML = '';
+        
+        // 2. Redraw all trays
+        currentTrayList.forEach(cookieCount => {
+            const tray = document.createElement('div');
+            tray.className = 'tray';
+            
+            // Layout logic
+            const cols = cookieCount > 6 ? 4 : (cookieCount > 3 ? 3 : cookieCount);
+            tray.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+            for(let i=0; i < cookieCount; i++) {
+                const cookie = document.createElement('div');
+                cookie.className = 'cookie';
+                tray.appendChild(cookie);
+            }
+            beltEl.appendChild(tray);
+        });
+
+        // 3. Calculate and update math
+        const trayCount = currentTrayList.length;
+        const perTray = parseInt(inputEl.value);
+        const total = trayCount * perTray;
+
+        if (trayCount > 0) {
+            statusText.innerText = `${trayCount} Trays of ${perTray}`;
+            addText.innerText = currentTrayList.join(' + ') + ' = ' + total;
+            multiText.innerText = `${trayCount} × ${perTray} = ${total}`;
+        } else {
+            statusText.innerText = "The factory is ready!";
+            addText.innerText = "---";
+            multiText.innerText = "0 × 0 = 0";
+        }
+    }
+</script>
+
+</body>
+</html>

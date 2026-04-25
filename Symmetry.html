@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Symmetry Studio Pro</title>
+    <style>
+        :root {
+            --canvas-bg: #ffffff;
+            --panel-bg: #2c3e50;
+        }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: #ecf0f1; 
+            margin: 0; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+        }
+        .header { padding: 10px; color: var(--panel-bg); }
+        
+        .canvas-container { 
+            position: relative; 
+            background: var(--canvas-bg); 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border-radius: 8px;
+            cursor: crosshair;
+            touch-action: none; /* Prevents scrolling while drawing */
+        }
+        
+        canvas { display: block; border-radius: 8px; }
+
+        .mirror-line {
+            position: absolute;
+            left: 50%; top: 0; bottom: 0;
+            width: 2px;
+            background: repeating-linear-gradient(to bottom, #e74c3c, #e74c3c 10px, transparent 10px, transparent 20px);
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        .toolbar {
+            margin-top: 20px;
+            background: var(--panel-bg);
+            padding: 15px 25px;
+            border-radius: 50px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            color: white;
+        }
+
+        button {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button:hover { background: #c0392b; }
+
+        input[type=color] {
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            background: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>🖋️ The Symmetry Studio</h1>
+        <p>Draw on the <b>Left Side</b> to mirror on the <b>Right Side</b></p>
+    </div>
+
+    <div class="canvas-container">
+        <div class="mirror-line"></div>
+        <canvas id="paintCanvas" width="800" height="500"></canvas>
+    </div>
+
+    <div class="toolbar">
+        <input type="color" id="brushColor" value="#3498db">
+        <label>Size: <input type="range" id="brushSize" min="1" max="15" value="3"></label>
+        <button onclick="clearCanvas()">Clear Canvas</button>
+    </div>
+
+<script>
+    const canvas = document.getElementById('paintCanvas');
+    const ctx = canvas.getContext('2d');
+    const colorInput = document.getElementById('brushColor');
+    const sizeInput = document.getElementById('brushSize');
+
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    function startDrawing(e) {
+        isDrawing = true;
+        const coords = getCoords(e);
+        [lastX, lastY] = [coords.x, coords.y];
+    }
+
+    function stopDrawing() {
+        isDrawing = false;
+        ctx.beginPath();
+    }
+
+    function getCoords(e) {
+        const rect = canvas.getBoundingClientRect();
+        // Support for both Mouse and Touch
+        const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+        const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+        return {
+            x: clientX - rect.left,
+            y: clientY - rect.top
+        };
+    }
+
+    function draw(e) {
+        if (!isDrawing) return;
+
+        const coords = getCoords(e);
+        const currentX = coords.x;
+        const currentY = coords.y;
+
+        // ONLY draw if the mouse is on the left half
+        if (currentX < canvas.width / 2) {
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = colorInput.value;
+            ctx.lineWidth = sizeInput.value;
+
+            // 1. Draw Original Path (Left)
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(currentX, currentY);
+            ctx.stroke();
+
+            // 2. Draw Mirrored Path (Right)
+            // Calculate mirror positions
+            const mirrorLastX = canvas.width - lastX;
+            const mirrorCurrentX = canvas.width - currentX;
+
+            ctx.beginPath();
+            ctx.moveTo(mirrorLastX, lastY);
+            ctx.lineTo(mirrorCurrentX, currentY);
+            ctx.stroke();
+
+            [lastX, lastY] = [currentX, currentY];
+        }
+    }
+
+    function clearCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // Event Listeners for Mouse
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    window.addEventListener('mouseup', stopDrawing);
+
+    // Event Listeners for Touch (Tablets/Smartboards)
+    canvas.addEventListener('touchstart', (e) => {
+        startDrawing(e);
+        e.preventDefault();
+    }, {passive: false});
+    canvas.addEventListener('touchmove', (e) => {
+        draw(e);
+        e.preventDefault();
+    }, {passive: false});
+    canvas.addEventListener('touchend', stopDrawing);
+
+</script>
+</body>
+</html>

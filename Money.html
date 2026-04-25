@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Apni Dukaan - Indian Money Master</title>
+    <style>
+        :root {
+            --dukaan-red: #c0392b;
+            --money-green: #27ae60;
+            --note-10: #795548; --note-20: #9ccc65; --note-50: #81d4fa;
+            --note-100: #b39ddb; --note-200: #ffcc80; --note-500: #cfd8dc;
+            --coin: #bdc3c7;
+        }
+        body { font-family: 'Comic Sans MS', cursive, sans-serif; background: #f4f7f6; padding: 20px; text-align: center; }
+        .shop-card { max-width: 900px; margin: auto; background: white; padding: 25px; border-radius: 20px; border: 6px solid var(--dukaan-red); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        
+        /* Shelf Styles */
+        .shelf { background: #5d4037; padding: 20px; border-radius: 10px; display: flex; justify-content: center; gap: 40px; border-bottom: 12px solid #3e2723; color: white; margin-bottom: 20px; }
+        .item-display { font-size: 60px; background: white; border-radius: 50%; width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; border: 4px solid var(--dukaan-red); }
+        .price-sticker { background: #f1c40f; color: black; padding: 5px 15px; border-radius: 5px; font-weight: bold; font-size: 28px; margin-top: 10px; box-shadow: 2px 2px 0 rgba(0,0,0,0.2); }
+
+        /* Counter Styles */
+        .cash-counter { background: #2c3e50; color: #2ecc71; padding: 15px; border-radius: 10px; font-size: 35px; font-family: 'Courier New', monospace; margin-bottom: 20px; }
+        .receipt-line { font-size: 16px; color: #bdc3c7; min-height: 20px; margin-top: 5px; }
+
+        /* Money Drawer */
+        .drawer { background: #ecf0f1; padding: 20px; border-radius: 15px; border: 2px dashed #7f8c8d; }
+        .money-group { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 15px; }
+        
+        .note { cursor: pointer; padding: 12px 20px; border-radius: 4px; font-weight: bold; color: white; transition: 0.1s; border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 4px 0 rgba(0,0,0,0.2); }
+        .note:active { transform: translateY(3px); box-shadow: none; }
+        
+        .n10 { background: var(--note-10); } .n20 { background: var(--note-20); color: black; }
+        .n50 { background: var(--note-50); color: black; } .n100 { background: var(--note-100); color: black; }
+        .n200 { background: var(--note-200); color: black; } .n500 { background: var(--note-500); color: black; }
+        
+        .coin { cursor: pointer; width: 50px; height: 50px; background: var(--coin); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 3px solid #95a5a6; box-shadow: 0 3px 0 #7f8c8d; }
+        .coin:active { transform: translateY(2px); box-shadow: none; }
+
+        .btn-pay { background: var(--money-green); color: white; border: none; padding: 15px 40px; font-size: 22px; border-radius: 12px; cursor: pointer; font-weight: bold; margin-top: 20px; }
+        .btn-pay:hover { filter: brightness(1.1); }
+    </style>
+</head>
+<body>
+
+<div class="shop-card">
+    <h1 style="color: var(--dukaan-red); margin-top: 0;">🏬 Indian Supermarket</h1>
+    
+    <div class="shelf">
+        <div>
+            <div class="item-display" id="itemEmoji">🧸</div>
+            <div class="price-sticker">₹<span id="targetPrice">350</span></div>
+        </div>
+        <div style="text-align: left; padding-top: 10px;">
+            <p>Customer Goal: Pay the <b>Exact Amount</b></p>
+            <p id="feedback" style="color: #f1c40f;">Ready for your first customer!</p>
+        </div>
+    </div>
+
+    <div class="cash-counter">
+        Total: ₹<span id="displayTotal">0</span>
+        <div class="receipt-line" id="receipt">No money added yet</div>
+    </div>
+
+    <div class="drawer">
+        <p><b>Notes:</b></p>
+        <div class="money-group">
+            <div class="note n10" onclick="addMoney(10)">₹10</div>
+            <div class="note n20" onclick="addMoney(20)">₹20</div>
+            <div class="note n50" onclick="addMoney(50)">₹50</div>
+            <div class="note n100" onclick="addMoney(100)">₹100</div>
+            <div class="note n200" onclick="addMoney(200)">₹200</div>
+            <div class="note n500" onclick="addMoney(500)">₹500</div>
+        </div>
+        
+        <p><b>Coins:</b></p>
+        <div class="money-group">
+            <div class="coin" onclick="addMoney(1)">₹1</div>
+            <div class="coin" onclick="addMoney(2)">₹2</div>
+            <div class="coin" onclick="addMoney(5)">₹5</div>
+        </div>
+        
+        <button onclick="clearCounter()" style="margin-top:10px; cursor:pointer;">Reset Counter</button>
+    </div>
+
+    <button class="btn-pay" onclick="verifyPayment()">Collect Cash</button>
+</div>
+
+<script>
+    let currentTotal = 0;
+    let target = 350;
+    let tally = [];
+
+    const inventory = [
+        {e: '🧸', p: 357}, {e: '🎒', p: 820}, {e: '🚲', p: 950},
+        {e: '🏏', p: 125}, {e: '🍫', p: 48}, {e: '👟', p: 675}
+    ];
+
+    function addMoney(val) {
+        currentTotal += val;
+        tally.push(val);
+        document.getElementById('displayTotal').innerText = currentTotal;
+        document.getElementById('receipt').innerText = tally.join(' + ') + ' = ' + currentTotal;
+        document.getElementById('feedback').innerText = "Adding money...";
+        document.getElementById('feedback').style.color = "#f1c40f";
+    }
+
+    function clearCounter() {
+        currentTotal = 0;
+        tally = [];
+        document.getElementById('displayTotal').innerText = 0;
+        document.getElementById('receipt').innerText = "Counter cleared.";
+    }
+
+    function verifyPayment() {
+        const fb = document.getElementById('feedback');
+        if (currentTotal === target) {
+            fb.innerText = "🎉 AMAZING! You gave the exact change.";
+            fb.style.color = "#2ecc71";
+            setTimeout(loadNewItem, 2000);
+        } else if (currentTotal > target) {
+            fb.innerText = "⚠️ Too much! The customer only owes ₹" + target;
+            fb.style.color = "#e74c3c";
+        } else {
+            fb.innerText = "📉 Still short! You need ₹" + (target - currentTotal) + " more.";
+            fb.style.color = "#e67e22";
+        }
+    }
+
+    function loadNewItem() {
+        const item = inventory[Math.floor(Math.random() * inventory.length)];
+        target = item.p;
+        document.getElementById('targetPrice').innerText = target;
+        document.getElementById('itemEmoji').innerText = item.e;
+        clearCounter();
+        document.getElementById('feedback').innerText = "New Customer Arrived!";
+        document.getElementById('feedback').style.color = "white";
+    }
+</script>
+
+</body>
+</html>

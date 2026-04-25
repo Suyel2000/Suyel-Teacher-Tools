@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ultimate Number Line Navigator - Fixed</title>
+    <style>
+        :root {
+            --space-bg: #0f172a;
+            --rocket: #f97316;
+            --line-white: #ffffff;
+        }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: var(--space-bg); 
+            color: white; 
+            text-align: center; 
+            margin: 0; 
+            padding: 20px; 
+        }
+        .dashboard { 
+            max-width: 850px; 
+            margin: auto; 
+            background: rgba(255,255,255,0.05); 
+            padding: 30px; 
+            border-radius: 24px; 
+            border: 2px solid rgba(255,255,255,0.1); 
+        }
+        
+        /* Stats Display */
+        .mission-display { 
+            display: flex; 
+            justify-content: center; 
+            gap: 20px; 
+            margin-bottom: 30px; 
+        }
+        .stat-card { 
+            background: white; 
+            color: #1e293b; 
+            padding: 15px 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); 
+        }
+        .stat-card h3 { margin: 0; font-size: 12px; color: #64748b; text-transform: uppercase; }
+        .stat-card p { margin: 5px 0 0; font-size: 32px; font-weight: 800; }
+
+        /* THE NUMBER LINE SYSTEM */
+        .line-view-port {
+            position: relative;
+            height: 180px; /* High enough for rocket and labels */
+            margin: 40px 0;
+            background: rgba(255,255,255,0.02);
+            border-radius: 10px;
+            display: flex;
+            align-items: center; /* Centers the horizontal line vertically */
+        }
+
+        .main-axis {
+            width: 100%;
+            height: 4px;
+            background: var(--line-white);
+            position: relative;
+        }
+
+        .tick {
+            position: absolute;
+            top: -15px; /* Centers the 30px tick on the 4px line */
+            width: 3px;
+            height: 30px;
+            background: var(--line-white);
+        }
+
+        .tick-label {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 14px;
+            font-weight: bold;
+            color: #94a3b8;
+        }
+
+        #rocket {
+            position: absolute;
+            top: -65px; /* Floats above the line */
+            left: 0%;
+            font-size: 50px;
+            transform: translateX(-50%) rotate(45deg);
+            transition: left 0.3s ease-out;
+            z-index: 10;
+            text-shadow: 0 0 15px var(--rocket);
+        }
+
+        /* Controls */
+        .controls { 
+            background: rgba(255,255,255,0.1); 
+            padding: 25px; 
+            border-radius: 15px; 
+        }
+        input[type=range] { 
+            width: 100%; 
+            margin: 20px 0; 
+            cursor: pointer;
+        }
+
+        .mode-buttons { margin-bottom: 20px; }
+        .m-btn { 
+            background: #334155; color: white; border: none; 
+            padding: 10px 20px; border-radius: 8px; cursor: pointer; 
+            margin: 0 5px; font-weight: bold;
+        }
+        .m-btn.active { background: var(--rocket); }
+
+        #feedback { font-size: 20px; margin-top: 20px; height: 30px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <h1>🚀 Number Line Navigator</h1>
+    
+    <div class="mission-display">
+        <div class="stat-card">
+            <h3>Target</h3>
+            <p id="target-display">0.5</p>
+        </div>
+        <div class="stat-card">
+            <h3>Current</h3>
+            <p id="current-pos">0.0</p>
+        </div>
+    </div>
+
+    <div class="mode-buttons">
+        <button id="btn-dec" class="m-btn active" onclick="setMode('decimals')">Decimals (0 to 1)</button>
+        <button id="btn-int" class="m-btn" onclick="setMode('integers')">Integers (-5 to 5)</button>
+    </div>
+
+    <div class="line-view-port">
+        <div class="main-axis" id="axis">
+            <div id="rocket">🚀</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <input type="range" id="nav-slider" min="0" max="100" value="0">
+        <button onclick="checkLanding()" style="padding: 15px 45px; font-size: 18px; border-radius: 50px; cursor: pointer; background: #22c55e; border: none; color: white; font-weight: bold;">ENGAGE LANDING</button>
+    </div>
+
+    <div id="feedback"></div>
+</div>
+
+<script>
+    let mode = 'decimals';
+    let targetValue = 0.5;
+    const slider = document.getElementById('nav-slider');
+    const rocket = document.getElementById('rocket');
+    const axis = document.getElementById('axis');
+    const targetDisplay = document.getElementById('target-display');
+    const currentPosDisplay = document.getElementById('current-pos');
+
+    function setMode(newMode) {
+        mode = newMode;
+        document.getElementById('btn-dec').classList.toggle('active', mode === 'decimals');
+        document.getElementById('btn-int').classList.toggle('active', mode === 'integers');
+        
+        generateLine();
+        resetMission();
+        updateRocket();
+    }
+
+    function generateLine() {
+        // Clear old ticks but keep the rocket
+        const ticks = axis.querySelectorAll('.tick');
+        ticks.forEach(t => t.remove());
+
+        const count = 10;
+        for (let i = 0; i <= count; i++) {
+            const tick = document.createElement('div');
+            tick.className = 'tick';
+            tick.style.left = (i * 10) + '%';
+            
+            const label = document.createElement('div');
+            label.className = 'tick-label';
+            
+            if (mode === 'decimals') {
+                label.innerText = (i / 10).toFixed(1);
+            } else {
+                label.innerText = i - 5;
+            }
+            
+            tick.appendChild(label);
+            axis.appendChild(tick);
+        }
+    }
+
+    function updateRocket() {
+        const percent = slider.value;
+        rocket.style.left = percent + '%';
+        
+        let current;
+        if (mode === 'decimals') {
+            current = (percent / 100).toFixed(2);
+        } else {
+            current = ((percent / 10) - 5).toFixed(1);
+        }
+        currentPosDisplay.innerText = current;
+        document.getElementById('feedback').innerText = ""; 
+    }
+
+    function resetMission() {
+        if (mode === 'decimals') {
+            // Mix of easy decimals and simple fractions
+            const goals = [
+                {val: 0.2, txt: '1/5'}, {val: 0.5, txt: '1/2'}, 
+                {val: 0.75, txt: '3/4'}, {val: 0.1, txt: '0.1'}, 
+                {val: 0.9, txt: '0.9'}
+            ];
+            const pick = goals[Math.floor(Math.random() * goals.length)];
+            targetValue = pick.val;
+            targetDisplay.innerText = pick.txt;
+        } else {
+            targetValue = Math.floor(Math.random() * 11) - 5;
+            targetDisplay.innerText = targetValue;
+        }
+    }
+
+    function checkLanding() {
+        const current = parseFloat(currentPosDisplay.innerText);
+        const diff = Math.abs(current - targetValue);
+        const fb = document.getElementById('feedback');
+
+        if (diff < 0.02) {
+            fb.innerHTML = "✨ PERFECT LANDING! MISSION SUCCESS!";
+            fb.style.color = "#22c55e";
+            setTimeout(() => {
+                resetMission();
+                fb.innerText = "";
+            }, 2500);
+        } else {
+            fb.innerHTML = "🚨 MISSED! Check your calculations.";
+            fb.style.color = "#ef4444";
+        }
+    }
+
+    slider.addEventListener('input', updateRocket);
+    
+    // Start the app
+    setMode('decimals');
+</script>
+
+</body>
+</html>

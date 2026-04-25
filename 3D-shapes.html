@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Advanced 3D Shape Laboratory (Three.js)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2c3e50;
+            --accent: #e74c3c;
+            --bg: #f4f7f6;
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); text-align: center; margin: 0; padding: 20px; }
+        .app-card { max-width: 900px; margin: auto; background: white; padding: 25px; border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); border: 1px solid #ddd; }
+        
+        /* 3D Container */
+        #three-container {
+            width: 100%; height: 400px; background: radial-gradient(circle, #ffffff, #e6eff5);
+            border-radius: 16px; margin-bottom: 20px; overflow: hidden; position: relative; border: 2px solid #eee;
+        }
+
+        .selector { display: flex; justify-content: center; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+        button { padding: 10px 16px; border: 2px solid #eee; border-radius: 12px; background: white; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s; }
+        button:hover { background: #f8f9fa; }
+        button.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3); }
+
+        /* Slider */
+        .slider-container { margin: 20px 0; display: flex; align-items: center; justify-content: center; gap: 15px; }
+        input[type=range] { width: 70%; cursor: ew-resize; height: 10px; border-radius: 5px; background: #ddd; -webkit-appearance: none; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; background: var(--primary); border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+
+        /* Stats */
+        .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; }
+        .stat { padding: 18px; border-radius: 14px; color: white; font-weight: bold; font-size: 18px; box-shadow: 0 5px 10px rgba(0,0,0,0.05); }
+        .f-stat { background: var(--primary); }
+        .e-stat { background: var(--secondary); }
+        .v-stat { background: var(--accent); }
+        
+        .description-card { margin-top: 20px; padding: 15px; background: #fff9db; border-radius: 12px; border-left: 5px solid #f1c40f; text-align: left; font-size: 15px; color: #555; line-height: 1.5; }
+    </style>
+</head>
+<body>
+
+<div class="app-card">
+    <h1>🧊 Real 3D Shape Laboratory</h1>
+    <p>Select a real 3D model and use the slider to rotate it smoothly.</p>
+
+    <div class="selector">
+        <button class="active" onclick="loadShape('Cube')">Cube</button>
+        <button onclick="loadShape('Cuboid')">Cuboid</button>
+        <button onclick="loadShape('Cylinder')">Cylinder</button>
+        <button onclick="loadShape('Cone')">Cone</button>
+        <button onclick="loadShape('Sphere')">Sphere</button>
+        <button onclick="loadShape('Pyramid')">Sq. Pyramid</button>
+        <button onclick="loadShape('Prism')">Tri. Prism</button>
+    </div>
+
+    <div id="three-container"></div>
+
+    <div class="slider-container">
+        <label>Rotate Y:</label>
+        <input type="range" id="rotation-slider" min="0" max="360" value="0">
+    </div>
+
+    <div class="info-grid">
+        <div class="stat f-stat">Faces: <span id="f-count">6</span></div>
+        <div class="stat e-stat">Edges: <span id="e-count">12</span></div>
+        <div class="stat v-stat">Vertices: <span id="v-count">8</span></div>
+    </div>
+
+    <div class="description-card">
+        <strong>Detective's Note:</strong> <span id="shape-note">A Cube has 6 equal square faces.</span>
+    </div>
+</div>
+
+<script>
+    // --- Data Definitions (Class 5 Standard) ---
+    const shapeData = {
+        'Cube':     { f: 6, e: 12, v: 8, note: "6 equal square faces, 12 edges, and 8 vertices." },
+        'Cuboid':   { f: 6, e: 12, v: 8, note: "Also called a Rectangular Prism. Faces are rectangles." },
+        'Cylinder': { f: '3 (2 flat, 1 curved)', e: 2, v: 0, note: "Has two circular flat faces and one curved surface." },
+        'Cone':     { f: '2 (1 flat, 1 curved)', e: 1, v: 1, note: "Has one flat circular base and one sharp vertex (apex)." },
+        'Sphere':   { f: '1 (curved)', e: 0, v: 0, note: "Perfectly round with only one continuous curved surface." },
+        'Pyramid':  { f: 5, e: 8,  v: 5, note: "A Square-based Pyramid has 4 triangles and 1 square base." },
+        'Prism':    { f: 5, e: 9,  v: 6, note: "A Triangular Prism has 2 triangular bases and 3 rectangular sides." }
+    };
+
+    // --- Three.js Setup ---
+    let scene, camera, renderer, currentMesh, currentEdges;
+    const container = document.getElementById('three-container');
+
+    function initThree() {
+        scene = new THREE.Scene();
+        // scene.background = new THREE.Color(0xf1f2f6); // Radial gradient is set in CSS
+
+        camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(0, 1.2, 3); // Positioned slightly up and back
+        camera.lookAt(0, 0, 0);
+
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); // Alpha allows CSS background
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.shadowMap.enabled = true; // Enable shadows
+        container.appendChild(renderer.domElement);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(2, 4, 3);
+        directionalLight.castShadow = true;
+        scene.add(directionalLight);
+
+        animate();
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+    }
+
+    // --- Geometry Generation Factory ---
+    function getGeometry(name) {
+        switch (name) {
+            case 'Cube':     return new THREE.BoxGeometry(1, 1, 1);
+            case 'Cuboid':   return new THREE.BoxGeometry(1.6, 0.8, 0.8);
+            case 'Cylinder': return new THREE.CylinderGeometry(0.6, 0.6, 1.2, 32);
+            case 'Cone':     return new THREE.ConeGeometry(0.6, 1.2, 32);
+            case 'Sphere':   return new THREE.SphereGeometry(0.7, 32, 32);
+            case 'Pyramid':  return new THREE.ConeGeometry(0.8, 1.2, 4); // 4-sided cone is a pyramid
+            case 'Prism':    return new THREE.CylinderGeometry(0.6, 0.6, 1.4, 3); // 3-sided cylinder is a prism
+            default:         return new THREE.BoxGeometry(1, 1, 1);
+        }
+    }
+
+    // --- Core Interaction Function ---
+    function loadShape(name) {
+        // 1. Update UI (Buttons and Stats)
+        const data = shapeData[name];
+        document.getElementById('f-count').innerText = data.f;
+        document.getElementById('e-count').innerText = data.e;
+        document.getElementById('v-count').innerText = data.v;
+        document.getElementById('shape-note').innerText = data.note;
+
+        document.querySelectorAll('.selector button').forEach(btn => {
+            btn.classList.toggle('active', btn.innerText.includes(name));
+        });
+
+        // 2. Clear Existing Object
+        if (currentMesh) scene.remove(currentMesh);
+        if (currentEdges) scene.remove(currentEdges);
+
+        // 3. Create New Real 3D Object
+        const geometry = getGeometry(name);
+        
+        // Material for faces (translucent blue)
+        const material = new THREE.MeshPhongMaterial({
+            color: 0x3498db,
+            flatShading: (name !== 'Sphere' && name !== 'Cylinder' && name !== 'Cone'), // Use flat shading for polyhedrons
+            transparent: true,
+            opacity: 0.7,
+            shininess: 100
+        });
+        currentMesh = new THREE.Mesh(geometry, material);
+        currentMesh.castShadow = true;
+        currentMesh.receiveShadow = true;
+        
+        // Material for edges (dark wireframe overlay)
+        const edgeGeometry = new THREE.EdgesGeometry(geometry);
+        const edgeMaterial = new THREE.LineBasicMaterial({ color: 0x2c3e50, linewidth: 2 });
+        currentEdges = new THREE.LineSegments(edgeGeometry, edgeMaterial);
+
+        // Group mesh and edges to rotate together
+        const group = new THREE.Group();
+        group.add(currentMesh);
+        group.add(currentEdges);
+        scene.add(group);
+        
+        // Store group in currentMesh for rotation control
+        currentMesh = group; 
+
+        // 4. Handle Slider Reset
+        const slider = document.getElementById('rotation-slider');
+        slider.value = 0; // Reset slider position
+        updateRotation(0); // Reset object rotation
+    }
+
+    // --- Slider Rotation Logic (Anchored Fix) ---
+    const slider = document.getElementById('rotation-slider');
+    
+    function updateRotation(value) {
+        if (currentMesh) {
+            // Convert degrees to radians and apply to the Y axis (the anchored vertical axis)
+            const radians = THREE.MathUtils.degToRad(value);
+            currentMesh.rotation.y = radians;
+        }
+    }
+
+    slider.addEventListener('input', (e) => {
+        updateRotation(e.target.value);
+    });
+
+    // Handle window resizing
+    window.addEventListener('resize', onWindowResize, false);
+    function onWindowResize() {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    }
+
+    // --- Initial Load ---
+    initThree();
+    loadShape('Cube');
+
+</script>
+</body>
+</html>

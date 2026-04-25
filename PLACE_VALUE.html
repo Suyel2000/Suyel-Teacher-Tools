@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Place Value Builder Pro</title>
+<style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background: #f0f8ff; color: #333; }
+    .digits { margin: 20px; padding: 15px; background: #fff; border-radius: 12px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .digit { display: inline-block; padding: 15px 20px; margin: 5px; background: #e0e0e0; border-radius: 8px; font-size: 24px; font-weight: bold; cursor: grab; transition: transform 0.2s; }
+    .digit:hover { transform: scale(1.1); background: #d0d0d0; }
+    
+    .place-container { display: flex; justify-content: center; gap: 15px; margin: 20px; flex-wrap: wrap; }
+    .place-wrapper { display: flex; flex-direction: column; align-items: center; }
+    .place { width: 100px; height: 100px; border: 3px dashed #7f8c8d; border-radius: 10px; line-height: 100px; font-size: 32px; font-weight: bold; background: #fff; transition: all 0.3s; }
+    .label { margin-top: 8px; font-weight: bold; color: #2c3e50; }
+
+    /* Visual Blocks */
+    .visual { margin-top: 30px; display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; min-height: 200px; padding: 20px; }
+    .block { width: 15px; height: 15px; margin: 2px; background: #e67e22; border: 1px solid #d35400; }
+    .rod { display: inline-block; margin: 5px; border: 1px solid #27ae60; }
+    .rod div { width: 15px; height: 15px; background: #2ecc71; margin: 1px; }
+    .grid { display: grid; grid-template-columns: repeat(10, 8px); margin: 5px; border: 1px solid #2980b9; }
+    .grid div { width: 8px; height: 8px; background: #3498db; border: 0.1px solid #fff; }
+    .cube { width: 50px; height: 50px; background: #9b59b6; border: 2px solid #8e44ad; margin: 10px; position: relative; box-shadow: 4px 4px 0px #4b0082; }
+
+    #total-display { font-size: 28px; margin: 20px; color: #2c3e50; }
+    button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #e74c3c; color: white; border: none; border-radius: 5px; }
+</style>
+</head>
+<body>
+
+<h1>Place Value Builder</h1>
+<p>Drag a digit into a box to build your number!</p>
+
+<div class="digits" id="digits"></div>
+
+<div class="place-container">
+    <div class="place-wrapper">
+        <div class="place" id="p1000" data-value="1000">0</div>
+        <div class="label">Thousands</div>
+    </div>
+    <div class="place-wrapper">
+        <div class="place" id="p100" data-value="100">0</div>
+        <div class="label">Hundreds</div>
+    </div>
+    <div class="place-wrapper">
+        <div class="place" id="p10" data-value="10">0</div>
+        <div class="label">Tens</div>
+    </div>
+    <div class="place-wrapper">
+        <div class="place" id="p1" data-value="1">0</div>
+        <div class="label">Ones</div>
+    </div>
+</div>
+
+<div id="total-display">Total: 0</div>
+<button onclick="resetAll()">Reset Board</button>
+
+<div class="visual" id="visual"></div>
+
+<script>
+const digitContainer = document.getElementById("digits");
+const visual = document.getElementById("visual");
+const places = document.querySelectorAll(".place");
+
+// Create digits 0–9
+for (let i = 0; i <= 9; i++) {
+    let d = document.createElement("div");
+    d.className = "digit";
+    d.innerText = i;
+    d.draggable = true;
+    d.addEventListener("dragstart", (e) => {
+        e.dataTransfer.setData("text", i);
+        d.style.opacity = "0.5";
+    });
+    d.addEventListener("dragend", () => d.style.opacity = "1");
+    digitContainer.appendChild(d);
+}
+
+places.forEach(place => {
+    place.addEventListener("dragover", (e) => e.preventDefault());
+    place.addEventListener("drop", (e) => {
+        e.preventDefault();
+        place.innerText = e.dataTransfer.getData("text");
+        updateDisplay();
+    });
+});
+
+function updateDisplay() {
+    visual.innerHTML = "";
+    let total = 0;
+
+    places.forEach(place => {
+        let digit = parseInt(place.innerText);
+        let multiplier = parseInt(place.getAttribute("data-value"));
+        total += (digit * multiplier);
+        renderBlocks(digit, multiplier);
+    });
+
+    document.getElementById("total-display").innerText = "Total: " + total;
+}
+
+function renderBlocks(digit, value) {
+    for (let i = 0; i < digit; i++) {
+        let el = document.createElement("div");
+        if (value === 1) el.className = "block";
+        else if (value === 10) {
+            el.className = "rod";
+            for(let j=0; j<10; j++) el.appendChild(document.createElement("div"));
+        }
+        else if (value === 100) {
+            el.className = "grid";
+            for(let j=0; j<100; j++) el.appendChild(document.createElement("div"));
+        }
+        else if (value === 1000) el.className = "cube";
+        
+        visual.appendChild(el);
+    }
+}
+
+function resetAll() {
+    places.forEach(p => p.innerText = "0");
+    updateDisplay();
+}
+</script>
+
+</body>
+</html>

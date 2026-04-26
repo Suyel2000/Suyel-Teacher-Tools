@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>संज्ञा मास्टर | Hindi Noun Master</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Hind:wght@400;700&family=Quicksand:wght@500;700&display=swap');
+
+        :root {
+            --primary-pink: #ff85a1;
+            --primary-blue: #70d6ff;
+            --primary-yellow: #ffd670;
+            --primary-green: #2ecc71;
+            --text-color: #2c3e50;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Quicksand', 'Hind', sans-serif;
+            background-color: #eef2f3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .game-wrapper {
+            width: 95%;
+            max-width: 1100px;
+            background: white;
+            margin: 20px auto;
+            border-radius: 30px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: 6px solid var(--primary-pink);
+        }
+
+        /* --- UI HEADER (FIXED AS PER IMAGE) --- */
+        .teacher-box-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .teacher-bubble {
+            background: #fff9e6;
+            border: 4px solid var(--primary-yellow);
+            border-radius: 100px;
+            padding: 20px 40px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            max-width: 800px;
+        }
+
+        .teacher-img {
+            width: 80px;
+            height: 80px;
+            background: url('https://fonts.gstatic.com/s/e/notoemoji/latest/1f469_200d_1f3eb/512.webp') no-repeat center;
+            background-size: contain;
+        }
+
+        .teacher-text {
+            color: #b45f04;
+            font-family: 'Hind', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .tab-btn {
+            border: none;
+            border-radius: 50px;
+            padding: 15px 40px;
+            font-family: 'Hind', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+            color: white;
+        }
+
+        .tab-pink { background: var(--primary-pink); }
+        .tab-gray { background: #e0e0e0; color: black; }
+        .tab-pink.inactive { background: #e0e0e0; color: black; }
+        .tab-gray.active { background: #757575; color: white; }
+        /* -------------------------------------- */
+
+        .progress-bar-container { width: 100%; height: 15px; background: #eee; border-radius: 10px; margin: 10px 0 20px; overflow: hidden; }
+        .progress-fill { width: 0%; height: 100%; background: var(--primary-green); transition: 0.5s; }
+
+        .game-screen { display: none; }
+        .game-screen.active { display: block; }
+
+        .shuffle-btn {
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-family: 'Hind';
+            cursor: pointer;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .drag-container { 
+            display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; 
+            margin-bottom: 25px; padding: 15px; background: #f0f7ff; border-radius: 20px;
+            min-height: 100px;
+        }
+        .word-pill {
+            padding: 8px 18px; background: white; border: 2px solid var(--primary-blue);
+            border-radius: 25px; font-size: 1.2rem; font-weight: bold; cursor: grab;
+            font-family: 'Hind'; box-shadow: 0 4px 0 var(--primary-blue);
+        }
+
+        .basket-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .basket {
+            background: #fff; border: 3px dashed #bbb; border-radius: 20px; padding: 10px;
+            min-height: 180px; text-align: center; transition: 0.2s;
+        }
+        .basket.over { border-color: var(--primary-green); background: #f0fff0; }
+        .basket h3 { font-family: 'Hind'; margin: 5px 0; color: #555; }
+        .basket-items { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; }
+
+        .sentence-display { font-size: 2.2rem; padding: 50px; background: #fffbe6; border-radius: 20px; text-align: center; font-family: 'Hind'; }
+        .word-clickable { cursor: pointer; padding: 2px 8px; border-radius: 8px; margin: 0 4px; border-bottom: 2px transparent; }
+        .word-clickable:hover { background: #ffe082; }
+        .word-clickable.correct { background: var(--primary-green); color: white; }
+        .word-clickable.wrong { background: var(--primary-pink); color: white; animation: shake 0.4s; }
+
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+
+        #celebration {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.95); z-index: 100;
+            flex-direction: column; align-items: center; justify-content: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-wrapper">
+    <div class="teacher-box-container">
+        <div class="teacher-bubble">
+            <div class="teacher-img"></div>
+            <p class="teacher-text" id="teacher-msg">नमस्ते बच्चों! आज हम 'संज्ञा' (Noun) सीखेंगे।</p>
+        </div>
+    </div>
+
+    <div class="nav-tabs">
+        <button class="tab-btn tab-pink" id="tab-sort" onclick="switchTab('sorting')">1. शब्दों को छाँटो</button>
+        <button class="tab-btn tab-gray" id="tab-sent" onclick="switchTab('sentence')">2. वाक्य में पहचानो</button>
+    </div>
+
+    <div class="progress-bar-container">
+        <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <div id="sorting" class="game-screen active">
+        <div style="text-align: right;"><button class="shuffle-btn" onclick="shuffleWords()">🔀 शब्दों को मिलाएँ</button></div>
+        <div class="drag-container" id="dragContainer"></div>
+        <div class="basket-grid">
+            <div class="basket" data-type="person" ondragover="allowDrop(event)" ondrop="drop(event)" ondragenter="dEnter(event)" ondragleave="dLeave(event)">
+                <h3>👤 व्यक्ति / प्राणी</h3>
+                <div class="basket-items"></div>
+            </div>
+            <div class="basket" data-type="place" ondragover="allowDrop(event)" ondrop="drop(event)" ondragenter="dEnter(event)" ondragleave="dLeave(event)">
+                <h3>📍 स्थान</h3>
+                <div class="basket-items"></div>
+            </div>
+            <div class="basket" data-type="thing" ondragover="allowDrop(event)" ondrop="drop(event)" ondragenter="dEnter(event)" ondragleave="dLeave(event)">
+                <h3>📦 वस्तु</h3>
+                <div class="basket-items"></div>
+            </div>
+            <div class="basket" data-type="feeling" ondragover="allowDrop(event)" ondrop="drop(event)" ondragenter="dEnter(event)" ondragleave="dLeave(event)">
+                <h3>❤️ भाव</h3>
+                <div class="basket-items"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="sentence" class="game-screen">
+        <div id="sentenceArea" class="sentence-display"></div>
+        <div style="text-align:center; font-family:'Hind'; margin-top:20px; font-size: 1.2rem;" id="sentence-info">वाक्य 1 / 20</div>
+    </div>
+</div>
+
+<div id="celebration">
+    <h1 style="font-family:'Hind'; color:var(--primary-pink); font-size:4rem;">अद्भुत!</h1>
+    <p style="font-size:1.5rem;">आपने संज्ञा का पूरा अभ्यास कर लिया!</p>
+    <button onclick="location.reload()" style="padding:15px 30px; border-radius:50px; border:none; background:var(--primary-green); color:white; font-size:1.2rem; cursor:pointer;">दोबारा खेलें</button>
+</div>
+
+<script>
+    // Sound Engine
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSfx(freq, type, duration) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    }
+
+    const words = [
+        {w:"सीता", t:"person"}, {w:"मुंबई", t:"place"}, {w:"कलम", t:"thing"}, {w:"ख़ुशी", t:"feeling"},
+        {w:"हाथी", t:"person"}, {w:"बगीचा", t:"place"}, {w:"कुर्सी", t:"thing"}, {w:"बुढ़ापा", t:"feeling"},
+        {w:"अध्यापक", t:"person"}, {w:"भारत", t:"place"}, {w:"मोबाइल", t:"thing"}, {w:"मिठास", t:"feeling"},
+        {w:"शेर", t:"person"}, {w:"बाजार", t:"place"}, {w:"किताब", t:"thing"}, {w:"बचपन", t:"feeling"},
+        {w:"किसान", t:"person"}, {w:"मंदिर", t:"place"}, {w:"खिलौना", t:"thing"}, {w:"ईमानदारी", t:"feeling"}
+    ];
+
+    const sentences = [
+        {s:"मोहन फल खाता है।", n:["मोहन", "फल"]},
+        {s:"दिल्ली बहुत बड़ा शहर है।", n:["दिल्ली", "शहर"]},
+        {s:"मोर नाच रहा है।", n:["मोर"]},
+        {s:"मेज पर पुस्तक रखी है।", n:["मेज", "पुस्तक"]},
+        {s:"हिमालय बहुत ऊँचा है।", n:["हिमालय"]},
+        {s:"बच्चे मैदान में खेल रहे हैं।", n:["बच्चे", "मैदान"]},
+        {s:"फूलों में सुगंध है।", n:["फूलों", "सुगंध"]},
+        {s:"राधा गाना गाती है।", n:["राधा"]},
+        {s:"आम में मिठास होती है।", n:["आम", "मिठास"]},
+        {s:"शेर जंगल का राजा है।", n:["शेर", "जंगल", "राजा"]},
+        {s:"सूरज पूर्व से निकलता है।", n:["सूरज", "पूर्व"]},
+        {s:"मछली पानी में रहती है।", n:["मछली", "पानी"]},
+        {s:"जयपुर को गुलाबी नगरी कहते हैं।", n:["जयपुर", "नगरी"]},
+        {s:"पेड़ हमें ऑक्सीजन देते हैं।", n:["पेड़", "ऑक्सीजन"]},
+        {s:"मम्मी रसोई में खाना बना रही हैं।", n:["मम्मी", "रसोई", "खाना"]},
+        {s:"बन्दर पेड़ पर उछल रहा है।", n:["बन्दर", "पेड़"]},
+        {s:"कलम से लिखो।", n:["कलम"]},
+        {s:"सत्य की जीत होती है।", n:["सत्य", "जीत"]},
+        {s:"राम रामायण पढ़ता है।", n:["राम", "रामायण"]},
+        {s:"क्रोध इंसान का दुश्मन है।", n:["क्रोध", "दुश्मन"]}
+    ];
+
+    let currentSent = 0;
+    let score = 0;
+    const totalGoal = words.length + sentences.reduce((a, b) => a + b.n.length, 0);
+
+    function shuffleWords() {
+        playSfx(440, 'triangle', 0.2);
+        const container = document.getElementById('dragContainer');
+        container.innerHTML = '';
+        [...words].sort(()=>Math.random()-0.5).forEach(item => {
+            const exists = document.querySelector(`.basket-items #w-${item.w}`);
+            if(!exists) {
+                const div = document.createElement('div');
+                div.className = 'word-pill';
+                div.innerText = item.w;
+                div.draggable = true;
+                div.dataset.type = item.t;
+                div.id = "w-" + item.w;
+                div.ondragstart = (e) => {
+                    playSfx(300, 'sine', 0.1);
+                    e.dataTransfer.setData("text", e.target.id);
+                }
+                container.appendChild(div);
+            }
+        });
+    }
+
+    function init() {
+        shuffleWords();
+        loadSentence();
+    }
+
+    function switchTab(t) {
+        playSfx(600, 'sine', 0.1);
+        document.querySelectorAll('.game-screen').forEach(s => s.classList.remove('active'));
+        const sortBtn = document.getElementById('tab-sort');
+        const sentBtn = document.getElementById('tab-sent');
+
+        if(t === 'sorting') {
+            sortBtn.className = 'tab-btn tab-pink';
+            sentBtn.className = 'tab-btn tab-gray';
+            document.getElementById('sorting').classList.add('active');
+        } else {
+            sortBtn.className = 'tab-btn tab-pink inactive';
+            sentBtn.className = 'tab-btn tab-gray active';
+            document.getElementById('sentence').classList.add('active');
+        }
+    }
+
+    function allowDrop(e) { e.preventDefault(); }
+    function dEnter(e) { e.currentTarget.classList.add('over'); }
+    function dLeave(e) { e.currentTarget.classList.remove('over'); }
+
+    function drop(e) {
+        e.preventDefault();
+        const id = e.dataTransfer.getData("text");
+        const el = document.getElementById(id);
+        const basket = e.currentTarget;
+        basket.classList.remove('over');
+
+        if (el.dataset.type === basket.dataset.type) {
+            basket.querySelector('.basket-items').appendChild(el);
+            el.draggable = false;
+            playSfx(880, 'sine', 0.3);
+            updateScore(1, "शाबाश! सही जवाब।");
+        } else {
+            playSfx(150, 'sawtooth', 0.4);
+            updateScore(0, "कोशिश करो! सही जगह ढूँढो।");
+        }
+    }
+
+    function loadSentence() {
+        const area = document.getElementById('sentenceArea');
+        const data = sentences[currentSent];
+        area.innerHTML = '';
+        document.getElementById('sentence-info').innerText = `वाक्य ${currentSent + 1} / 20`;
+
+        data.s.split(' ').forEach(w => {
+            const span = document.createElement('span');
+            span.className = 'word-clickable';
+            span.innerText = w;
+            span.onclick = () => {
+                const clean = w.replace(/[।?!,.]/g, "");
+                if (data.n.includes(clean)) {
+                    if (!span.classList.contains('correct')) {
+                        span.classList.add('correct');
+                        playSfx(1000, 'sine', 0.2);
+                        updateScore(1, "सही संज्ञा!");
+                        checkSentenceDone();
+                    }
+                } else {
+                    span.classList.add('wrong');
+                    playSfx(200, 'square', 0.3);
+                    updateScore(0, "यह संज्ञा नहीं है।");
+                }
+            };
+            area.appendChild(span);
+        });
+    }
+
+    function checkSentenceDone() {
+        const correctOnes = document.querySelectorAll('.sentence-display .correct').length;
+        if (correctOnes === sentences[currentSent].n.length) {
+            setTimeout(() => {
+                currentSent++;
+                if (currentSent < 20) loadSentence();
+                else updateScore(0, "सभी वाक्य पूरे हुए!");
+            }, 800);
+        }
+    }
+
+    function updateScore(p, m) {
+        score += p;
+        document.getElementById('teacher-msg').innerText = m;
+        const progress = (score / totalGoal) * 100;
+        document.getElementById('progressFill').style.width = progress + '%';
+        if (progress >= 100) {
+            playSfx(523, 'sine', 0.2);
+            setTimeout(()=>playSfx(659, 'sine', 0.2), 150);
+            setTimeout(()=>playSfx(783, 'sine', 0.5), 300);
+            document.getElementById('celebration').style.display = 'flex';
+        }
+    }
+
+    init();
+</script>
+</body>
+</html>

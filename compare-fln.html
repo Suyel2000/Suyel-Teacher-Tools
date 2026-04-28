@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Balance Scale</title>
+    <style>
+        :root {
+            --left-color: #FF6B6B;
+            --right-color: #4D96FF;
+            --pivot: #2c3e50;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .header { text-align: center; margin-bottom: 20px; }
+
+        /* --- The Scale Animation --- */
+        #scale-container {
+            position: relative;
+            width: 600px;
+            height: 300px;
+            margin-top: 50px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #beam {
+            width: 500px;
+            height: 15px;
+            background: var(--pivot);
+            border-radius: 10px;
+            position: relative;
+            transition: transform 0.8s cubic-bezier(0.45, 0.05, 0.55, 0.95);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            z-index: 2;
+        }
+
+        .pivot-point {
+            width: 0; 
+            height: 0; 
+            border-left: 30px solid transparent;
+            border-right: 30px solid transparent;
+            border-bottom: 60px solid var(--pivot);
+            margin-top: -5px;
+        }
+
+        .pan {
+            width: 120px;
+            height: 20px;
+            background: #95a5a6;
+            border-radius: 0 0 50px 50px;
+            position: absolute;
+            top: 15px;
+            display: flex;
+            flex-direction: column-reverse;
+            align-items: center;
+            padding-bottom: 10px;
+            transition: transform 0.8s;
+        }
+
+        #pan-left { left: -20px; border-top: 5px solid var(--left-color); }
+        #pan-right { right: -20px; border-top: 5px solid var(--right-color); }
+
+        /* --- Blocks --- */
+        .weight-block {
+            width: 40px;
+            height: 25px;
+            margin: 2px;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+
+        /* --- UI --- */
+        .controls {
+            display: flex;
+            gap: 40px;
+            margin-top: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+
+        .side-ctrl { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        
+        input {
+            width: 60px;
+            padding: 10px;
+            font-size: 1.5rem;
+            text-align: center;
+            border: 3px solid #eee;
+            border-radius: 10px;
+        }
+
+        .comparison-symbol {
+            font-size: 4rem;
+            font-weight: bold;
+            color: var(--pivot);
+            margin: 20px;
+        }
+
+        .label { font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>⚖️ Math Balance Scale</h1>
+        <p>Explore which number is heavier!</p>
+    </div>
+
+    <div id="scale-container">
+        <div id="beam">
+            <div id="pan-left" class="pan"></div>
+            <div id="pan-right" class="pan"></div>
+        </div>
+        <div class="pivot-point"></div>
+    </div>
+
+    <div id="symbol" class="comparison-symbol">=</div>
+
+    <div class="controls">
+        <div class="side-ctrl">
+            <span class="label" style="color: var(--left-color)">Left Side</span>
+            <input type="number" id="val-l" value="0" min="0" max="10" oninput="updateScale()">
+        </div>
+
+        <button onclick="resetScale()" style="padding: 10px 20px; border-radius: 10px; border: none; background: #eee; cursor: pointer;">Reset</button>
+
+        <div class="side-ctrl">
+            <span class="label" style="color: var(--right-color)">Right Side</span>
+            <input type="number" id="val-r" value="0" min="0" max="10" oninput="updateScale()">
+        </div>
+    </div>
+
+    <script>
+        function updateScale() {
+            const left = parseInt(document.getElementById('val-l').value) || 0;
+            const right = parseInt(document.getElementById('val-r').value) || 0;
+            const beam = document.getElementById('beam');
+            const symbol = document.getElementById('symbol');
+
+            // 1. Calculate Rotation (Max 15 degrees)
+            let rotation = 0;
+            if (left > right) {
+                rotation = -15;
+                symbol.textContent = ">";
+            } else if (right > left) {
+                rotation = 15;
+                symbol.textContent = "<";
+            } else {
+                rotation = 0;
+                symbol.textContent = "=";
+            }
+
+            beam.style.transform = `rotate(${rotation}deg)`;
+
+            // 2. Counter-rotate pans so they stay upright
+            document.getElementById('pan-left').style.transform = `rotate(${-rotation}deg)`;
+            document.getElementById('pan-right').style.transform = `rotate(${-rotation}deg)`;
+
+            // 3. Draw Blocks
+            drawBlocks('pan-left', left, 'var(--left-color)');
+            drawBlocks('pan-right', right, 'var(--right-color)');
+        }
+
+        function drawBlocks(panId, count, color) {
+            const pan = document.getElementById(panId);
+            pan.innerHTML = '';
+            for(let i=0; i<count; i++) {
+                const block = document.createElement('div');
+                block.className = 'weight-block';
+                block.style.backgroundColor = color;
+                block.textContent = "1";
+                pan.appendChild(block);
+            }
+        }
+
+        function resetScale() {
+            document.getElementById('val-l').value = 0;
+            document.getElementById('val-r').value = 0;
+            updateScale();
+        }
+
+        // Init
+        updateScale();
+    </script>
+</body>
+</html>

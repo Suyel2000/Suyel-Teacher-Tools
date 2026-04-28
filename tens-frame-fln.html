@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tens Frame</title>
+    <style>
+        :root {
+            --primary: #4a90e2;
+            --secondary: #ff4757;
+            --bg: #f0f4f8;
+            --text: #2c3e50;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .lab-header { text-align: center; margin-bottom: 20px; }
+        
+        /* --- Workspace --- */
+        .workspace {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .frame-box {
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 4px solid #333;
+            text-align: center;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(5, 60px);
+            grid-template-rows: repeat(2, 60px);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .cell {
+            width: 60px;
+            height: 60px;
+            border: 2px dashed #ccc;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+            position: relative;
+        }
+
+        .cell:hover { background: #f8f9fa; border-color: var(--primary); }
+
+        .dot {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: none;
+            box-shadow: inset -3px -3px 8px rgba(0,0,0,0.2);
+        }
+
+        .filled .dot { display: block; animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .frame1 .dot { background: var(--secondary); }
+        .frame2 .dot { background: var(--primary); }
+
+        @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
+
+        /* --- Score & Info --- */
+        .info-panel {
+            margin-top: 30px;
+            background: white;
+            padding: 20px 40px;
+            border-radius: 50px;
+            font-size: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            display: flex;
+            gap: 30px;
+        }
+
+        .stat-item span { font-weight: bold; font-size: 2rem; color: var(--primary); }
+
+        .controls { margin-top: 25px; display: flex; gap: 15px; }
+        
+        button {
+            padding: 12px 25px;
+            font-size: 1rem;
+            border-radius: 15px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .btn-challenge { background: #f1c40f; color: #333; }
+        .btn-clear { background: #34495e; color: white; }
+        button:hover { transform: translateY(-3px); box-shadow: 0 5px 10px rgba(0,0,0,0.1); }
+
+        #msg { margin-top: 15px; font-weight: bold; color: #27ae60; font-size: 1.2rem; min-height: 1.5rem; }
+    </style>
+</head>
+<body>
+
+    <div class="lab-header">
+        <h1>🚀 Tens Frame</h1>
+        <p>Explore numbers from 0 to 20!</p>
+    </div>
+
+    <div id="msg"></div>
+
+    <div class="workspace">
+        <div class="frame-box frame1">
+            <div class="grid" id="grid1"></div>
+            <div class="frame-label">Frame A (Ones)</div>
+        </div>
+
+        <div class="frame-box frame2">
+            <div class="grid" id="grid2"></div>
+            <div class="frame-label">Frame B (More Ones)</div>
+        </div>
+    </div>
+
+    <div class="info-panel">
+        <div class="stat-item">Total Dots: <span id="total-count">0</span></div>
+        <div class="stat-item" id="place-value-text">0 Tens and 0 Ones</div>
+    </div>
+
+    <div class="controls">
+        <button class="btn-challenge" onclick="startChallenge()">New Challenge 🎲</button>
+        <button class="btn-clear" onclick="resetAll()">Reset Lab</button>
+    </div>
+
+<script>
+    let challengeNum = null;
+
+    function createGrids() {
+        const g1 = document.getElementById('grid1');
+        const g2 = document.getElementById('grid2');
+        for(let i=0; i<10; i++) {
+            g1.innerHTML += `<div class="cell" onclick="toggle(this)"><div class="dot"></div></div>`;
+            g2.innerHTML += `<div class="cell" onclick="toggle(this)"><div class="dot"></div></div>`;
+        }
+    }
+
+    function toggle(el) {
+        el.classList.toggle('filled');
+        updateStats();
+    }
+
+    function updateStats() {
+        const count = document.querySelectorAll('.filled').length;
+        document.getElementById('total-count').textContent = count;
+        
+        // Place Value Logic
+        const tens = Math.floor(count / 10);
+        const ones = count % 10;
+        document.getElementById('place-value-text').innerHTML = 
+            `<span>${tens}</span> Ten(s) and <span>${ones}</span> One(s)`;
+
+        if(challengeNum !== null && count === challengeNum) {
+            document.getElementById('msg').textContent = "✨ AMAZING! You built the number " + challengeNum + "! ✨";
+            challengeNum = null;
+        }
+    }
+
+    function startChallenge() {
+        challengeNum = Math.floor(Math.random() * 20) + 1;
+        document.getElementById('msg').style.color = "#333";
+        document.getElementById('msg').textContent = "CHALLENGE: Can you show me " + challengeNum + " dots?";
+    }
+
+    function resetAll() {
+        document.querySelectorAll('.cell').forEach(c => c.classList.remove('filled'));
+        document.getElementById('msg').textContent = "";
+        challengeNum = null;
+        updateStats();
+    }
+
+    createGrids();
+</script>
+
+</body>
+</html>

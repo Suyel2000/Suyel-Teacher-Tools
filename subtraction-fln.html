@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subtraction Through Lines</title>
+    <style>
+        :root {
+            --start-color: #4CAF50;
+            --take-color: #F44336;
+            --remain-color: #2E7D32;
+            --bg: #fdfdfd;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .app-container {
+            max-width: 700px;
+            width: 100%;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        h1 { color: #333; margin-bottom: 5px; }
+        p { color: #666; margin-bottom: 25px; }
+
+        /* --- Input Bar --- */
+        .math-input-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        input {
+            width: 80px;
+            height: 70px;
+            font-size: 2.2rem;
+            text-align: center;
+            border: 3px solid #ddd;
+            border-radius: 12px;
+            font-weight: bold;
+            outline: none;
+        }
+
+        #num-start { border-color: var(--start-color); color: var(--start-color); }
+        #num-take { border-color: var(--take-color); color: var(--take-color); }
+
+        .minus-sign { font-size: 3rem; font-weight: bold; color: #777; }
+
+        /* --- Visualization Area --- */
+        .work-area {
+            border: 2px solid #f0f0f0;
+            border-radius: 15px;
+            padding: 20px;
+            min-height: 200px;
+            margin-bottom: 20px;
+            background: #fafafa;
+        }
+
+        .line-group {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        /* --- Line Styling --- */
+        .line {
+            width: 10px;
+            height: 60px;
+            border-radius: 5px;
+            background-color: var(--start-color);
+            position: relative;
+            transition: all 0.3s ease;
+            animation: popIn 0.3s ease-out forwards;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        /* --- The "Cross Out" Styling --- */
+        .line.crossed {
+            background-color: #e0e0e0 !important;
+            transform: scale(0.9);
+        }
+
+        .line.crossed::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: -5px;
+            width: 20px;
+            height: 4px;
+            background-color: var(--take-color);
+            transform: rotate(-45deg);
+            border-radius: 2px;
+        }
+
+        /* --- Results --- */
+        .result-text {
+            font-size: 3.5rem;
+            font-weight: bold;
+            color: var(--remain-color);
+            margin-top: 10px;
+            display: none;
+        }
+
+        .btn-subtract {
+            background: var(--take-color);
+            color: white;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #b71c1c;
+        }
+
+        .btn-subtract:active { transform: translateY(4px); box-shadow: none; }
+        
+        .label-box { font-weight: bold; color: #888; margin-bottom: 10px; text-transform: uppercase; font-size: 0.9rem;}
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <h1>Subtraction Through Lines</h1>
+        <p>Enter numbers to see how we take away from a group!</p>
+
+        <div class="math-input-row">
+            <input type="number" id="num-start" placeholder="0" oninput="drawStartLines()">
+            <span class="minus-sign">−</span>
+            <input type="number" id="num-take" placeholder="0">
+        </div>
+
+        <div class="label-box" id="line-label">Your Starting Group</div>
+        <div class="work-area">
+            <div id="line-display" class="line-group"></div>
+        </div>
+
+        <div id="result-val" class="result-text">0</div>
+
+        <div style="margin-top: 20px;">
+            <button class="btn-subtract" onclick="doSubtraction()">Take Away! ✂️</button>
+            <button onclick="resetAll()" style="background:none; border:none; color:#999; cursor:pointer; text-decoration:underline; margin-left:15px;">Clear All</button>
+        </div>
+    </div>
+
+    <script>
+        function drawStartLines() {
+            const start = Math.min(parseInt(document.getElementById('num-start').value) || 0, 60);
+            const display = document.getElementById('line-display');
+            const res = document.getElementById('result-val');
+            const label = document.getElementById('line-label');
+
+            display.innerHTML = '';
+            res.style.display = 'none';
+            label.textContent = "Your Starting Group";
+
+            for(let i=0; i<start; i++) {
+                const line = document.createElement('div');
+                line.className = 'line';
+                display.appendChild(line);
+            }
+        }
+
+        function doSubtraction() {
+            const start = parseInt(document.getElementById('num-start').value) || 0;
+            const take = parseInt(document.getElementById('num-take').value) || 0;
+            const lines = document.querySelectorAll('.line');
+            const res = document.getElementById('result-val');
+            const label = document.getElementById('line-label');
+
+            if (take > start) {
+                alert("You can't take away more than you have!");
+                return;
+            }
+
+            label.textContent = "Taking Away " + take + "...";
+
+            // Cross out lines from the end
+            lines.forEach((line, index) => {
+                // Reset first
+                line.classList.remove('crossed');
+                
+                // Cross out the number requested (starting from the right)
+                if (index >= (start - take)) {
+                    setTimeout(() => {
+                        line.classList.add('crossed');
+                    }, (index - (start-take)) * 50);
+                }
+            });
+
+            // Show result
+            setTimeout(() => {
+                res.textContent = "Left: " + (start - take);
+                res.style.display = 'block';
+                label.textContent = "What remains:";
+            }, take * 55);
+        }
+
+        function resetAll() {
+            document.getElementById('num-start').value = '';
+            document.getElementById('num-take').value = '';
+            document.getElementById('line-display').innerHTML = '';
+            document.getElementById('result-val').style.display = 'none';
+            document.getElementById('line-label').textContent = "Your Starting Group";
+        }
+    </script>
+</body>
+</html>

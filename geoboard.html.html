@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Interactive Virtual Geoboard</title>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: #ffffff;
+            --text-color: #333333;
+            --border-color: #e2e8f0;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --board-bg: #fdfdfd;
+            --peg-color: #94a3b8;
+            --peg-shadow: rgba(0, 0, 0, 0.2);
+            --grid-line: #f1f5f9;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #0f172a;
+            --panel-bg: #1e293b;
+            --text-color: #f8fafc;
+            --border-color: #334155;
+            --board-bg: #1e293b;
+            --peg-color: #64748b;
+            --peg-shadow: rgba(0, 0, 0, 0.6);
+            --grid-line: #334155;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background-color: var(--panel-bg);
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 2rem;
+            color: var(--primary);
+        }
+
+        .controls-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Increased Sidebar Width for Smartboard */
+        .sidebar {
+            width: 380px; 
+            background-color: var(--panel-bg);
+            border-right: 1px solid var(--border-color);
+            padding: 30px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .main-area {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            position: relative;
+        }
+
+        #geoboard-container {
+            background-color: var(--board-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            padding: 20px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        canvas {
+            touch-action: none; /* Crucial for custom pointer events */
+            cursor: crosshair;
+            display: block;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            font-size: 1.2rem; /* Larger font */
+        }
+
+        /* Larger Touch Targets */
+        select, button {
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid var(--border-color);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        button.secondary {
+            background-color: transparent;
+            color: var(--text-color);
+            border: 2px solid var(--border-color);
+        }
+
+        button.secondary:hover {
+            background-color: var(--border-color);
+        }
+
+        .color-picker {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        .color-btn {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            border: 4px solid transparent;
+            cursor: pointer;
+            padding: 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .color-btn.selected {
+            border-color: var(--text-color);
+            transform: scale(1.15);
+        }
+
+        .info-panel {
+            background-color: var(--bg-color);
+            border-radius: 10px;
+            padding: 20px;
+            border: 2px solid var(--border-color);
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .info-value {
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 1.3rem;
+        }
+
+        /* Responsive handling for extremely large or small screens */
+        @media (max-width: 900px) {
+            .controls-container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: 45%;
+                border-right: none;
+                border-top: 1px solid var(--border-color);
+                order: 2;
+                padding: 15px;
+            }
+            .main-area {
+                height: 55%;
+                order: 1;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Virtual Geoboard</h1>
+        <div style="display: flex; gap: 15px;">
+            <button class="secondary" id="theme-toggle">🌙 Dark Mode</button>
+            <button class="secondary" id="export-btn">💾 Export Image</button>
+        </div>
+    </header>
+
+    <div class="controls-container">
+        <div class="sidebar">
+            <div class="control-group">
+                <label for="grid-size">Grid Size</label>
+                <select id="grid-size">
+                    <option value="5">5 × 5</option>
+                    <option value="10" selected>10 × 10</option>
+                    <option value="15">15 × 15</option>
+                    <option value="20">20 × 20</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Rubber Band Color</label>
+                <div class="color-picker" id="colors">
+                    <button class="color-btn selected" style="background-color: #ef4444;" data-color="#ef4444"></button>
+                    <button class="color-btn" style="background-color: #3b82f6;" data-color="#3b82f6"></button>
+                    <button class="color-btn" style="background-color: #22c55e;" data-color="#22c55e"></button>
+                    <button class="color-btn" style="background-color: #eab308;" data-color="#eab308"></button>
+                    <button class="color-btn" style="background-color: #a855f7;" data-color="#a855f7"></button>
+                    <button class="color-btn" style="background-color: #f97316;" data-color="#f97316"></button>
+                    <button class="color-btn" style="background-color: #1f2937;" data-color="#1f2937"></button>
+                    <button class="color-btn" style="background-color: #ec4899;" data-color="#ec4899"></button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Tools</label>
+                <button id="calc-btn">Calculate Area & Perimeter</button>
+                <button id="undo-btn" class="secondary">Undo Last Line</button>
+                <button id="clear-btn" class="secondary">Clear Board</button>
+                <label style="display: flex; align-items: center; gap: 12px; margin-top: 15px; cursor: pointer; font-size: 1.2rem;">
+                    <input type="checkbox" id="coords-toggle" style="width: 24px; height: 24px;"> Show Coordinates
+                </label>
+            </div>
+
+            <div class="info-panel" id="stats-panel">
+                <div class="info-row"><span>Shape:</span> <span class="info-value" id="stat-shape">-</span></div>
+                <div class="info-row"><span>Area:</span> <span class="info-value" id="stat-area">- sq units</span></div>
+                <div class="info-row"><span>Perimeter:</span> <span class="info-value" id="stat-perimeter">- units</span></div>
+                <div class="info-row"><span>Vertices:</span> <span class="info-value" id="stat-vertices">-</span></div>
+            </div>
+        </div>
+
+        <div class="main-area" id="main-area">
+            <div id="geoboard-container">
+                <canvas id="board"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State Management
+        const state = {
+            gridSize: 10,
+            pegs: [],
+            lines: [], // Array of objects: { startPeg, endPeg, color }
+            currentColor: '#ef4444',
+            drawingLine: null, // { startPeg, currentX, currentY }
+            showCoords: false,
+            darkMode: false
+        };
+
+        // DOM Elements
+        const canvas = document.getElementById('board');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('geoboard-container');
+        const mainArea = document.getElementById('main-area');
+
+        // Initialization
+        function init() {
+            setupEventListeners();
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+        }
+
+        function resizeCanvas() {
+            // Maximized sizing for Smartboards
+            const containerRect = container.getBoundingClientRect();
+            // Leave a small padding (20px total)
+            const maxDimension = Math.min(containerRect.width - 20, containerRect.height - 20);
+            
+            // Ensure canvas is square and takes up maximum space
+            canvas.width = maxDimension;
+            canvas.height = maxDimension;
+            
+            calculatePegPositions();
+            drawBoard();
+        }
+
+        function calculatePegPositions() {
+            state.pegs = [];
+            // Reduced margin ratio to make the internal grid larger
+            const margin = canvas.width * 0.05; 
+            const usableSpace = canvas.width - (margin * 2);
+            const spacing = usableSpace / (state.gridSize - 1);
+
+            for (let y = 0; y < state.gridSize; y++) {
+                for (let x = 0; x < state.gridSize; x++) {
+                    state.pegs.push({
+                        gridX: x,
+                        gridY: y,
+                        x: margin + (x * spacing),
+                        y: margin + ((state.gridSize - 1 - y) * spacing) // Y axis standard coordinate (bottom to top)
+                    });
+                }
+            }
+        }
+
+        // Drawing Functions
+        function drawBoard() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw lines
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            // Committed lines
+            state.lines.forEach(line => {
+                drawLine(line.startPeg.x, line.startPeg.y, line.endPeg.x, line.endPeg.y, line.color);
+            });
+
+            // Line currently being drawn
+            if (state.drawingLine) {
+                drawLine(state.drawingLine.startPeg.x, state.drawingLine.startPeg.y, state.drawingLine.currentX, state.drawingLine.currentY, state.currentColor, 0.6);
+            }
+
+            // Draw pegs - Increased size for Smartboard visibility
+            const pegRadius = Math.max(6, canvas.width / (state.gridSize * 5.5));
+            
+            state.pegs.forEach(peg => {
+                // Shadow
+                ctx.beginPath();
+                ctx.arc(peg.x + 3, peg.y + 3, pegRadius, 0, Math.PI * 2);
+                ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--peg-shadow').trim();
+                ctx.fill();
+
+                // Peg
+                ctx.beginPath();
+                ctx.arc(peg.x, peg.y, pegRadius, 0, Math.PI * 2);
+                ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--peg-color').trim();
+                ctx.fill();
+
+                // Coordinates
+                if (state.showCoords) {
+                    ctx.font = `bold ${Math.max(14, pegRadius * 1.8)}px Arial`;
+                    ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-color').trim();
+                    ctx.textAlign = 'center';
+                    ctx.fillText(`(${peg.gridX},${peg.gridY})`, peg.x, peg.y - pegRadius - 8);
+                }
+            });
+        }
+
+        function drawLine(x1, y1, x2, y2, color, alpha = 1) {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.strokeStyle = color;
+            ctx.globalAlpha = alpha;
+            // Increased line thickness for Smartboard visibility
+            ctx.lineWidth = Math.max(8, canvas.width / 50); 
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+        }
+
+        // Robust Pointer Events (Handles Mouse, Touch, Smartboard consistently)
+        function getPointerPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            // Scale handling to ensure exact alignment regardless of CSS scaling
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            return {
+                x: (e.clientX - rect.left) * scaleX,
+                y: (e.clientY - rect.top) * scaleY
+            };
+        }
+
+        function getClosestPeg(x, y) {
+            let closest = null;
+            let minDist = Infinity;
+            // Generous snapping threshold for easy smartboard touch
+            const threshold = canvas.width / state.gridSize * 0.45; 
+
+            state.pegs.forEach(peg => {
+                const dist = Math.hypot(peg.x - x, peg.y - y);
+                if (dist < minDist && dist < threshold) {
+                    minDist = dist;
+                    closest = peg;
+                }
+            });
+            return closest;
+        }
+
+        function setupEventListeners() {
+            canvas.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                const pos = getPointerPos(e);
+                const peg = getClosestPeg(pos.x, pos.y);
+                
+                if (peg) {
+                    canvas.setPointerCapture(e.pointerId);
+                    state.drawingLine = {
+                        startPeg: peg,
+                        currentX: peg.x,
+                        currentY: peg.y
+                    };
+                    drawBoard();
+                }
+            });
+
+            canvas.addEventListener('pointermove', (e) => {
+                e.preventDefault();
+                if (!state.drawingLine) return;
+                
+                const pos = getPointerPos(e);
+                state.drawingLine.currentX = pos.x;
+                state.drawingLine.currentY = pos.y;
+                
+                // Visual snap logic during move
+                const peg = getClosestPeg(pos.x, pos.y);
+                if (peg) {
+                    state.drawingLine.currentX = peg.x;
+                    state.drawingLine.currentY = peg.y;
+                }
+                
+                drawBoard();
+            });
+
+            canvas.addEventListener('pointerup', (e) => {
+                e.preventDefault();
+                if (!state.drawingLine) return;
+
+                canvas.releasePointerCapture(e.pointerId);
+                const pos = getPointerPos(e);
+                const endPeg = getClosestPeg(pos.x, pos.y);
+
+                if (endPeg && endPeg !== state.drawingLine.startPeg) {
+                    // Prevent duplicate exact lines
+                    const exists = state.lines.some(l => 
+                        (l.startPeg === state.drawingLine.startPeg && l.endPeg === endPeg) ||
+                        (l.startPeg === endPeg && l.endPeg === state.drawingLine.startPeg)
+                    );
+
+                    if (!exists) {
+                        state.lines.push({
+                            startPeg: state.drawingLine.startPeg,
+                            endPeg: endPeg,
+                            color: state.currentColor
+                        });
+                    }
+                }
+
+                state.drawingLine = null;
+                drawBoard();
+                clearStats(); // Reset stats on new action
+            });
+
+            // UI Controls
+            document.getElementById('grid-size').addEventListener('change', (e) => {
+                state.gridSize = parseInt(e.target.value);
+                state.lines = [];
+                clearStats();
+                calculatePegPositions();
+                drawBoard();
+            });
+
+            document.querySelectorAll('.color-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
+                    e.target.classList.add('selected');
+                    state.currentColor = e.target.dataset.color;
+                });
+            });
+
+            document.getElementById('clear-btn').addEventListener('click', () => {
+                state.lines = [];
+                clearStats();
+                drawBoard();
+            });
+
+            document.getElementById('undo-btn').addEventListener('click', () => {
+                state.lines.pop();
+                clearStats();
+                drawBoard();
+            });
+
+            document.getElementById('coords-toggle').addEventListener('change', (e) => {
+                state.showCoords = e.target.checked;
+                drawBoard();
+            });
+
+            document.getElementById('theme-toggle').addEventListener('click', () => {
+                state.darkMode = !state.darkMode;
+                document.body.setAttribute('data-theme', state.darkMode ? 'dark' : 'light');
+                document.getElementById('theme-toggle').innerText = state.darkMode ? '☀️ Light Mode' : '🌙 Dark Mode';
+                drawBoard(); // Redraw colors
+            });
+
+            document.getElementById('export-btn').addEventListener('click', () => {
+                // Temporary composite canvas to include background color in export
+                const expCanvas = document.createElement('canvas');
+                expCanvas.width = canvas.width;
+                expCanvas.height = canvas.height;
+                const expCtx = expCanvas.getContext('2d');
+                
+                expCtx.fillStyle = getComputedStyle(document.body).getPropertyValue('--board-bg').trim();
+                expCtx.fillRect(0, 0, expCanvas.width, expCanvas.height);
+                expCtx.drawImage(canvas, 0, 0);
+
+                const link = document.createElement('a');
+                link.download = `geoboard-${state.gridSize}x${state.gridSize}.png`;
+                link.href = expCanvas.toDataURL('image/png');
+                link.click();
+            });
+
+            document.getElementById('calc-btn').addEventListener('click', calculateGeometry);
+        }
+
+        // Geometry Math & Detection (Shoelace Formula & Distance)
+        function clearStats() {
+            document.getElementById('stat-shape').innerText = '-';
+            document.getElementById('stat-area').innerText = '- sq units';
+            document.getElementById('stat-perimeter').innerText = '- units';
+            document.getElementById('stat-vertices').innerText = '-';
+        }
+
+        function calculateGeometry() {
+            if (state.lines.length < 3) {
+                alert("Please draw a closed shape with at least 3 lines.");
+                return;
+            }
+
+            // Attempt to build a continuous polygon path
+            let path = [];
+            let edges = [...state.lines];
+            
+            // Start with the first edge
+            let currentEdge = edges.shift();
+            path.push(currentEdge.startPeg);
+            let currentPeg = currentEdge.endPeg;
+
+            let isClosed = false;
+
+            while (edges.length > 0) {
+                // Find next edge connected to currentPeg
+                const nextEdgeIdx = edges.findIndex(e => e.startPeg === currentPeg || e.endPeg === currentPeg);
+                
+                if (nextEdgeIdx === -1) {
+                    break; // Path broken
+                }
+
+                const nextEdge = edges.splice(nextEdgeIdx, 1)[0];
+                path.push(currentPeg);
+                
+                currentPeg = (nextEdge.startPeg === currentPeg) ? nextEdge.endPeg : nextEdge.startPeg;
+
+                // Check if loop closed
+                if (currentPeg === path[0]) {
+                    isClosed = true;
+                    break;
+                }
+            }
+
+            if (!isClosed) {
+                alert("Could not detect a single closed shape. Ensure your lines form a continuous loop without branches.");
+                return;
+            }
+
+            // Calculate Area (Shoelace Formula)
+            let area = 0;
+            for (let i = 0; i < path.length; i++) {
+                let j = (i + 1) % path.length;
+                area += (path[i].gridX * path[j].gridY) - (path[j].gridX * path[i].gridY);
+            }
+            area = Math.abs(area) / 2;
+
+            // Calculate Perimeter (Sum of Euclidean distances)
+            let perimeter = 0;
+            for (let i = 0; i < path.length; i++) {
+                let j = (i + 1) % path.length;
+                let dx = path[i].gridX - path[j].gridX;
+                let dy = path[i].gridY - path[j].gridY;
+                perimeter += Math.sqrt(dx*dx + dy*dy);
+            }
+
+            // Determine Basic Shape Name
+            let shapeName = "Custom Polygon";
+            const vCount = path.length;
+            if (vCount === 3) shapeName = "Triangle";
+            else if (vCount === 4) {
+                // Distinguish Square vs Rectangle vs Rhombus
+                let sides = [];
+                for (let i = 0; i < 4; i++) {
+                    let j = (i + 1) % 4;
+                    sides.push(Math.hypot(path[i].gridX - path[j].gridX, path[i].gridY - path[j].gridY));
+                }
+                const isEquilateral = sides.every(s => Math.abs(s - sides[0]) < 0.001);
+                
+                // Check diagonals for 90 deg corners (Square/Rect)
+                const diag1 = Math.hypot(path[0].gridX - path[2].gridX, path[0].gridY - path[2].gridY);
+                const diag2 = Math.hypot(path[1].gridX - path[3].gridX, path[1].gridY - path[3].gridY);
+                const isRectangular = Math.abs(diag1 - diag2) < 0.001;
+
+                if (isEquilateral && isRectangular) shapeName = "Square";
+                else if (isRectangular) shapeName = "Rectangle";
+                else if (isEquilateral) shapeName = "Rhombus";
+                else shapeName = "Quadrilateral";
+            }
+            else if (vCount === 5) shapeName = "Pentagon";
+            else if (vCount === 6) shapeName = "Hexagon";
+            else if (vCount === 8) shapeName = "Octagon";
+
+            // Update UI
+            document.getElementById('stat-shape').innerText = shapeName;
+            document.getElementById('stat-area').innerText = `${area.toFixed(1)} sq units`;
+            document.getElementById('stat-perimeter').innerText = `${perimeter.toFixed(2)} units`;
+            document.getElementById('stat-vertices').innerText = vCount;
+        }
+
+        // Start
+        init();
+
+    </script>
+</body>
+</html>

@@ -1,101 +1,1426 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Angle Explorer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazing Angles Lab</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; text-align: center; background: #eef2f3; padding: 20px; }
-        .box { max-width: 500px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        
-        .angle-viz { position: relative; width: 300px; height: 300px; margin: 30px auto; border-bottom: 4px solid #333; border-left: 4px solid #333; }
-        .arm { 
-            position: absolute; bottom: 0; left: 0; 
-            width: 250px; height: 6px; background: #e74c3c; 
-            transform-origin: left center; transition: transform 0.1s; 
-            border-radius: 10px;
-        }
-        .angle-arc {
-            position: absolute; bottom: 0; left: 0;
-            width: 80px; height: 80px; border: 3px solid #3498db;
-            border-radius: 0 100% 0 0; opacity: 0.5;
-            background: rgba(52, 152, 219, 0.2);
+        :root {
+            --primary: #4e54c8;
+            --secondary: #8f94fb;
+            --success: #2ecc71;
+            --warning: #f1c40f;
+            --danger: #e74c3c;
+            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --card-shadow: 0 10px 20px rgba(0,0,0,0.1), 0 6px 6px rgba(0,0,0,0.1);
+            --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            
+            /* Ultra-Vibrant Angle Colors */
+            --color-zero: #7f8c8d;
+            --color-acute: #00b894;
+            --color-right: #0984e3;
+            --color-obtuse: #e17055;
+            --color-straight: #6c5ce7;
+            --color-reflex: #d63031;
+            --color-complete: #fdcb6e;
         }
 
-        #angle-name { font-size: 32px; font-weight: bold; color: #2c3e50; margin: 15px 0; }
-        #degree-text { font-size: 24px; color: #7f8c8d; }
+        .dark-mode {
+            --bg-gradient: linear-gradient(135deg, #141e30 0%, #243b55 100%);
+            --card-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            color: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-main);
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            transition: background 0.3s;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            z-index: 10;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            cursor: pointer;
+        }
         
-        input[type=range] { width: 100%; margin: 20px 0; cursor: pointer; }
+        .dark-mode .logo-area { color: #fff; }
+
+        .controls-top {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .btn-icon {
+            background: white;
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        .btn-icon:hover { transform: scale(1.1); }
+        .dark-mode .btn-icon { background: #333; color: white; }
+
+        /* Layout Framework */
+        #app-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            padding: 20px;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .screen {
+            display: none;
+            animation: fadeIn 0.4s ease-in-out forwards;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+        }
+
+        .screen.active { display: flex; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Home Screen Styling */
+        #home-screen {
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding-top: 40px;
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            color: var(--primary);
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            animation: bounce 2s infinite alternate;
+        }
+        .dark-mode .hero-title { color: #8f94fb; }
+
+        @keyframes bounce {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-10px); }
+        }
+
+        .hero-subtitle {
+            font-size: 1.3rem;
+            margin-bottom: 40px;
+            opacity: 0.8;
+        }
+
+        .hero-graphic {
+            width: 200px;
+            height: 200px;
+            margin-bottom: 40px;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(240px, 1fr));
+            gap: 20px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        @media(max-width: 600px) {
+            .menu-grid { grid-template-columns: 1fr; }
+            .hero-title { font-size: 2.5rem; }
+        }
+
+        .btn-menu {
+            padding: 20px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: white;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.2s, filter 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-menu:hover { transform: translateY(-4px) scale(1.02); filter: brightness(1.1); }
+        .btn-learn { background: linear-gradient(135deg, #11998e, #38ef7d); }
+        .btn-practice { background: linear-gradient(135deg, #ff9966, #ff5e62); }
+        .btn-challenge { background: linear-gradient(135deg, #7f00ff, #e100ff); }
+        .btn-dashboard { background: linear-gradient(135deg, #00c6ff, #0072ff); }
+
+        /* Workspace & Sub-navigation */
+        .page-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 20px;
+        }
+        .btn-back {
+            background: white;
+            border: 2px solid var(--primary);
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+        .dark-mode .btn-back { background: #333; color: white; border-color: #fff; }
+
+        .sub-nav {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+        }
+        .sub-nav button {
+            padding: 12px 24px;
+            border: none;
+            background: rgba(255,255,255,0.6);
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            white-space: nowrap;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+        }
+        .sub-nav button.active {
+            background: var(--primary);
+            color: white;
+        }
+        .dark-mode .sub-nav button { background: #444; color: #bbb; }
+        .dark-mode .sub-nav button.active { background: var(--primary); color: white; }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+        @media (max-width: 900px) {
+            .workspace { grid-template-columns: 1fr; }
+        }
+
+        .control-panel, .display-panel {
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: var(--card-shadow);
+            min-height: 440px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        .dark-mode .control-panel, .dark-mode .display-panel { background: rgba(30,30,40,0.8); }
+
+        /* Protractor Layout Elements */
+        .angle-canvas-container {
+            position: relative;
+            width: 360px;
+            height: 360px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        canvas {
+            border-radius: 50%;
+            background: white;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.05), var(--card-shadow);
+        }
+        .dark-mode canvas { background: #2c2c35; }
         
-        .fact-card { background: #d5f5e3; padding: 15px; border-radius: 10px; margin-top: 20px; display: none; }
+        .angle-badge {
+            font-size: 2rem;
+            font-weight: 800;
+            padding: 10px 25px;
+            border-radius: 30px;
+            color: white;
+            margin-top: 20px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            transition: background 0.3s, transform 0.2s;
+            min-width: 240px;
+            text-align: center;
+        }
+
+        .angle-info-box {
+            text-align: center;
+            font-size: 1.2rem;
+            margin-top: 15px;
+            line-height: 1.5;
+            max-width: 320px;
+        }
+
+        .slider-control {
+            width: 100%;
+            margin-top: 25px;
+        }
+        .slider-control input {
+            width: 100%;
+            height: 15px;
+            border-radius: 10px;
+            outline: none;
+            -webkit-appearance: none;
+            background: #ddd;
+        }
+        .slider-control input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* Drag and Drop Interface */
+        .cards-container {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 30px;
+            min-height: 80px;
+        }
+        .angle-card {
+            background: white;
+            border: 3px solid #ddd;
+            border-radius: 15px;
+            padding: 15px 25px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: grab;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            touch-action: none;
+        }
+        .dark-mode .angle-card { background: #3a3a45; border-color: #555; }
+        
+        .baskets-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            width: 100%;
+        }
+        @media(max-width: 900px) { .baskets-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media(max-width: 450px) { .baskets-grid { grid-template-columns: 1fr; } }
+
+        .basket {
+            border: 3px dashed #bbb;
+            border-radius: 20px;
+            padding: 20px 10px;
+            text-align: center;
+            min-height: 130px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-weight: bold;
+            transition: all 0.2s;
+            background: rgba(255,255,255,0.3);
+        }
+        .basket.drag-over {
+            transform: scale(1.05);
+            background: rgba(255,255,255,0.9);
+        }
+        .basket[data-type="zero"] { border-color: var(--color-zero); color: var(--color-zero); }
+        .basket[data-type="acute"] { border-color: var(--color-acute); color: var(--color-acute); }
+        .basket[data-type="right"] { border-color: var(--color-right); color: var(--color-right); }
+        .basket[data-type="obtuse"] { border-color: var(--color-obtuse); color: var(--color-obtuse); }
+        .basket[data-type="straight"] { border-color: var(--color-straight); color: var(--color-straight); }
+        .basket[data-type="reflex"] { border-color: var(--color-reflex); color: var(--color-reflex); }
+        .basket[data-type="complete"] { border-color: var(--color-complete); color: var(--color-complete); }
+
+        .basket.glow-success { animation: basketGlow 0.5s ease; }
+        @keyframes basketGlow {
+            0% { transform: scale(1); box-shadow: 0 0 0px transparent; }
+            50% { transform: scale(1.08); box-shadow: 0 0 25px currentColor; }
+            100% { transform: scale(1); box-shadow: 0 0 0px transparent; }
+        }
+
+        /* Options & Hunt Elements */
+        .hunt-object-view {
+            width: 260px;
+            height: 260px;
+            background: white;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        .dark-mode .hunt-object-view { background: #2c2c35; }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            width: 100%;
+            max-width: 500px;
+        }
+        .btn-option {
+            background: white;
+            border: 2px solid #ccc;
+            padding: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-option:hover { background: #f0f0f0; transform: translateY(-2px); }
+        .dark-mode .btn-option { background: #3a3a45; border-color: #555; color: white; }
+
+        .feedback-banner {
+            margin-top: 15px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            min-height: 30px;
+            text-align: center;
+        }
+
+        /* Real Life Gallery Setup */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+            width: 100%;
+        }
+        .gallery-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: var(--card-shadow);
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .gallery-card:hover { transform: translateY(-5px); }
+        .dark-mode .gallery-card { background: #22222b; }
+        .gallery-svg-wrap {
+            width: 120px;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Challenge Zone Layout */
+        .challenge-top {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 20px;
+            background: #fff;
+            padding: 15px 25px;
+            border-radius: 15px;
+            box-shadow: var(--card-shadow);
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .dark-mode .challenge-top { background: #22222b; }
+        
+        /* Teacher Dashboard */
+        .dash-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+        .dash-stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: var(--card-shadow);
+        }
+        .dark-mode .dash-stat-card { background: #22222b; }
+        .dash-stat-val {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-top: 5px;
+        }
+        
+        .badge-wall {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .badge-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            font-weight: bold;
+            opacity: 0.2;
+            transition: opacity 0.3s;
+            width: 110px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        .badge-item.unlocked { opacity: 1; transform: scale(1.05); }
+
+        /* Assistant Mascot */
+        #mascot-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            border: 3px solid var(--primary);
+            border-radius: 20px;
+            padding: 15px;
+            max-width: 260px;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            z-index: 100;
+            cursor: pointer;
+            animation: float 3s ease-in-out infinite;
+        }
+        .dark-mode #mascot-container { background: #333; }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        .mascot-bubble { font-size: 0.9rem; line-height: 1.3; }
+
+        #celebration-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.85);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .trophy-container {
+            font-size: 6rem;
+            animation: pulse 1s infinite alternate;
+        }
+        @keyframes pulse {
+            from { transform: scale(1); } to { transform: scale(1.15); }
+        }
+
+        canvas#confetti-canvas {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 999;
+            display: none;
+        }
+
+        .hidden { display: none !important; }
+        .text-center { text-align: center; }
+        .audio-muted::after {
+            content: "❌";
+            position: absolute;
+            font-size: 0.7rem;
+            bottom: 2px; right: 2px;
+        }
     </style>
 </head>
 <body>
 
-<div class="box">
-    <h1>📐 Angle Explorer</h1>
-    <p>Move the slider to rotate the red arm!</p>
+    <header>
+        <div class="logo-area" onclick="goHome()">
+            <svg width="35" height="35" viewBox="0 0 100 100" style="transform: rotate(-20deg)">
+                <path d="M10,90 L90,90 M10,90 L70,20" stroke="var(--primary)" stroke-width="10" stroke-linecap="round" fill="none"/>
+                <path d="M40,90 A30,30 0 0,0 60,65" stroke="var(--warning)" stroke-width="6" fill="none"/>
+            </svg>
+            <span>Amazing Angles Lab</span>
+        </div>
+        <div class="controls-top">
+            <button class="btn-icon" id="btn-audio" onclick="toggleAudio()" title="Toggle Sound">🔊</button>
+            <button class="btn-icon" id="btn-theme" onclick="toggleTheme()" title="Toggle Theme">🌓</button>
+            <button class="btn-icon" id="btn-accessible" onclick="toggleAccessibility()" title="High Contrast Mode">👁️</button>
+        </div>
+    </header>
 
-    <div class="angle-viz">
-        <div class="angle-arc" id="arc"></div>
-        <div class="arm" id="moving-arm"></div>
+    <div id="app-container">
+
+        <div id="home-screen" class="screen active">
+            <h1 class="hero-title">Amazing Angles Lab!</h1>
+            <p class="hero-subtitle">Discover, Drag, Build, and Master the Geometry of Rotations! 📐✨</p>
+            
+            <div class="hero-graphic">
+                <svg width="100%" height="100%" viewBox="0 0 200 200">
+                    <circle cx="100" cy="100" r="80" fill="none" stroke="#ddd" stroke-width="4" stroke-dasharray="5,5"/>
+                    <line x1="100" y1="100" x2="160" y2="100" stroke="#ff5e62" stroke-width="8" stroke-linecap="round"/>
+                    <line x1="100" y1="100" x2="140" y2="40" stroke="#4e54c8" stroke-width="8" stroke-linecap="round">
+                        <animateTransform attributeName="transform" type="rotate" from="0 100 100" to="360 100 100" dur="10s" repeatCount="indefinite"/>
+                    </line>
+                    <circle cx="100" cy="100" r="12" fill="#333"/>
+                </svg>
+            </div>
+
+            <div class="menu-grid">
+                <button class="btn-menu btn-learn" onclick="switchScreen('learning-screen')">
+                    <span>📐 Learning Zone</span>
+                    <small>Explore 4 Magic Activities</small>
+                </button>
+                <button class="btn-menu btn-practice" onclick="switchScreen('practice-screen')">
+                    <span>🎯 Practice Zone</span>
+                    <small>Unlimited Adaptive Tasks</small>
+                </button>
+                <button class="btn-menu btn-challenge" onclick="switchScreen('challenge-screen')">
+                    <span>⚡ Challenge Zone</span>
+                    <small>Race Against the Clock!</small>
+                </button>
+                <button class="btn-menu btn-dashboard" onclick="switchScreen('dashboard-screen')">
+                    <span>📊 Teacher Dashboard</span>
+                    <small>Track Performance & Badges</small>
+                </button>
+            </div>
+        </div>
+
+        <div id="learning-screen" class="screen">
+            <div class="page-header">
+                <button class="btn-back" onclick="goHome()">🏠 Home</button>
+                <h2>Learning Zone Exploration</h2>
+            </div>
+            <div class="sub-nav">
+                <button id="tab-act1" class="active" onclick="switchActivity(1)">1. Magic Angle Maker</button>
+                <button id="tab-act2" onclick="switchActivity(2)">2. Angle Detective</button>
+                <button id="tab-act3" onclick="switchActivity(3)">3. Angle Hunt</button>
+                <button id="tab-act4" onclick="switchActivity(4)">4. Build the Angle</button>
+                <button id="tab-act5" onclick="switchActivity(5)">🖼️ Real-Life Gallery</button>
+            </div>
+
+            <div id="activity-1" class="workspace activity-sub">
+                <div class="control-panel">
+                    <h3>Manipulate the Arm!</h3>
+                    <p>Click and drag the interactive green handle or use the slider below to rotate. Watch the protractor degree metrics update instantly.</p>
+                    <div class="slider-control">
+                        <label for="maker-range" id="lbl-range">Angle Input: 45°</label>
+                        <input type="range" id="maker-range" min="0" max="360" value="45" oninput="updateAngleMaker(this.value)">
+                    </div>
+                    <div class="angle-badge" id="maker-badge">Acute Angle</div>
+                </div>
+                <div class="display-panel">
+                    <div class="angle-canvas-container">
+                        <canvas id="maker-canvas" width="360" height="360"></canvas>
+                    </div>
+                    <div class="angle-info-box" id="maker-desc">An acute angle is greater than 0° and less than 90°. It's sharp like a needle!</div>
+                </div>
+            </div>
+
+            <div id="activity-2" class="activity-sub hidden">
+                <h3 class="text-center">Drag the Angle Cards into the correct Geometric Baskets!</h3>
+                <div class="cards-container" id="detective-cards-pool"></div>
+                <div class="baskets-grid" id="detective-baskets-grid"></div>
+            </div>
+
+            <div id="activity-3" class="workspace activity-sub hidden">
+                <div class="control-panel">
+                    <h3>Real Object Angle Inspection</h3>
+                    <p id="hunt-prompt">Look carefully at the highlighting on the object inside the viewer box. What classification fits perfectly?</p>
+                    <div class="options-grid" id="hunt-options"></div>
+                    <div class="feedback-banner" id="hunt-feedback"></div>
+                    <button class="btn-back" id="hunt-next-btn" style="margin-top:15px; display:none;" onclick="loadHuntQuestion()">Next Object ➡️</button>
+                </div>
+                <div class="display-panel">
+                    <div class="hunt-object-view" id="hunt-graphic-container"></div>
+                    <h4 id="hunt-obj-title">Clock Face</h4>
+                </div>
+            </div>
+
+            <div id="activity-4" class="workspace activity-sub hidden">
+                <div class="control-panel">
+                    <h3 style="color:var(--primary)">Target Builder Objective</h3>
+                    <h2 id="build-target-text" style="font-size:2.2rem; margin:10px 0; color:var(--danger)">Make a Right Angle</h2>
+                    <p>Rotate the moveable ray handle accurately to build the targeted layout on the protractor face.</p>
+                    <button class="btn-back" style="background:var(--success); color:white; border:none; padding:12px 30px;" onclick="checkBuiltAngle()">Check Construction</button>
+                    <div class="feedback-banner" id="build-feedback"></div>
+                </div>
+                <div class="display-panel">
+                    <div class="angle-canvas-container">
+                        <canvas id="build-canvas" width="360" height="360"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div id="activity-5" class="activity-sub hidden">
+                <h3 class="text-center">Click on everyday assets to inspect their embedded geometric lines!</h3>
+                <div class="gallery-grid" id="gallery-layout"></div>
+            </div>
+        </div>
+
+        <div id="practice-screen" class="screen">
+            <div class="page-header">
+                <button class="btn-back" onclick="goHome()">🏠 Home</button>
+                <h2>Practice Arena (Unlimited Sandbox Mode)</h2>
+            </div>
+            <div class="workspace">
+                <div class="control-panel" id="practice-interactive-region"></div>
+                <div class="display-panel">
+                    <div id="practice-visual-region" class="angle-canvas-container" style="width:100%;"></div>
+                    <div class="feedback-banner" id="practice-feedback"></div>
+                    <button class="btn-back" id="btn-practice-next" style="display:none; margin-top:15px;" onclick="generatePracticeQuestion()">Next Question ➡️</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="challenge-screen" class="screen">
+            <div class="page-header">
+                <button class="btn-back" onclick="exitChallenge()">🏠 Exit</button>
+                <h2>Speed Angle Challenge Tournament</h2>
+            </div>
+
+            <div id="challenge-start-view" class="text-center" style="padding:40px 0;">
+                <p style="font-size:1.4rem; max-width:600px; margin: 0 auto 30px;">You will have <b>60 seconds</b> to correctly process up to <b>20 quickfire angle prompts</b>. Multipliers scale up with rapid configurations!</p>
+                <button class="btn-menu btn-challenge" style="display:inline-flex; width:auto; padding:20px 50px;" onclick="startChallengeGame()">LAUNCH CHALLENGE 🚀</button>
+            </div>
+
+            <div id="challenge-gameplay-view" class="hidden">
+                <div class="challenge-top">
+                    <div>⏱️ Time Left: <span id="chall-timer" style="color:var(--danger)">60</span>s</div>
+                    <div>🎯 Quest: <span id="chall-index">1</span>/20</div>
+                    <div>⭐ Score: <span id="chall-score" style="color:var(--success)">0</span></div>
+                </div>
+                <div class="workspace">
+                    <div class="control-panel" id="chall-quest-control"></div>
+                    <div class="display-panel" id="chall-quest-display" class="angle-canvas-container"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="dashboard-screen" class="screen">
+            <div class="page-header">
+                <button class="btn-back" onclick="goHome()">🏠 Home</button>
+                <h2>Teacher Dashboard & Metrics Console</h2>
+            </div>
+            <div class="dash-grid">
+                <div class="dash-stat-card">
+                    <div>Questions Answered</div>
+                    <div class="dash-stat-val" id="stat-attempted">0</div>
+                </div>
+                <div class="dash-stat-card">
+                    <div>Correct Adjustments</div>
+                    <div class="dash-stat-val" id="stat-correct" style="color:var(--success)">0</div>
+                </div>
+                <div class="dash-stat-card">
+                    <div>Accuracy Rating</div>
+                    <div class="dash-stat-val" id="stat-accuracy" style="color:var(--warning)">0%</div>
+                </div>
+                <div class="dash-stat-card">
+                    <div>Peak Challenge Score</div>
+                    <div class="dash-stat-val" id="stat-high" style="color:var(--secondary)">0</div>
+                </div>
+            </div>
+
+            <div class="control-panel" style="min-height:auto; align-items:flex-start; width:100%">
+                <h3>Student Trophy Case & Accomplishment Badges</h3>
+                <div class="badge-wall">
+                    <div class="badge-item" id="badge-explorer">
+                        <div style="font-size:3rem">⭐</div>
+                        <div>Angle Explorer</div>
+                    </div>
+                    <div class="badge-item" id="badge-detective">
+                        <div style="font-size:3rem">⭐⭐</div>
+                        <div>Angle Detective</div>
+                    </div>
+                    <div class="badge-item" id="badge-champion">
+                        <div style="font-size:3rem">⭐⭐⭐</div>
+                        <div>Angle Champion</div>
+                    </div>
+                    <div class="badge-item" id="badge-hero">
+                        <div style="font-size:3rem">🏆</div>
+                        <div>Geometry Hero</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div id="degree-text">0°</div>
-    <div id="angle-name">Zero Angle</div>
-
-    <input type="range" id="angle-slider" min="0" max="180" value="0">
-
-    <div class="fact-card" id="fact-card">
-        <strong>Did you know?</strong> <span id="fact-text"></span>
+    <div id="mascot-container" onclick="triggerMascotTip()">
+        <div style="font-size:2.5rem" id="mascot-face">🤖</div>
+        <div class="mascot-bubble">
+            <b>Protractor Bot:</b><br>
+            <span id="mascot-text">Hi! Welcome! Click any dashboard card or learn pathway to get fully certified!</span>
+        </div>
     </div>
-</div>
 
-<script>
-    const slider = document.getElementById('angle-slider');
-    const arm = document.getElementById('moving-arm');
-    const degreeText = document.getElementById('degree-text');
-    const angleName = document.getElementById('angle-name');
-    const factCard = document.getElementById('fact-card');
-    const factText = document.getElementById('fact-text');
+    <div id="celebration-overlay">
+        <div class="trophy-container">🏆</div>
+        <h1 style="font-size:3.5rem; margin:15px 0;">CONGRATULATIONS!</h1>
+        <h3 id="celebration-subtitle" style="font-size:1.5rem; font-weight:normal; max-width:600px; margin-bottom:30px;">You successfully cleared the evaluation map!</h3>
+        <button class="btn-back" style="font-size:1.3rem; padding:15px 40px;" onclick="closeCelebrationOverlay()">Return to Hub</button>
+    </div>
 
-    function updateAngle() {
-        const val = slider.value;
-        // We rotate negative because CSS rotation is clockwise
-        arm.style.transform = `rotate(-${val}deg)`;
-        degreeText.innerText = val + "°";
+    <canvas id="confetti-canvas"></canvas>
 
-        let type = "";
-        let fact = "";
-        factCard.style.display = "block";
+    <script>
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioContext = null;
+        let isMuted = false;
+        let accessibilityMode = false;
 
-        if (val == 0) {
-            type = "Zero Angle";
-            fact = "The two lines are perfectly on top of each other!";
-        } else if (val < 90) {
-            type = "Acute Angle";
-            fact = "This angle is 'a-cute' because it's small (less than 90°).";
-            angleName.style.color = "#27ae60";
-        } else if (val == 90) {
-            type = "Right Angle";
-            fact = "Like the corner of a book or a square. Exactly 90°!";
-            angleName.style.color = "#2980b9";
-        } else if (val < 180) {
-            type = "Obtuse Angle";
-            fact = "This is a big, wide angle (between 90° and 180°).";
-            angleName.style.color = "#e67e22";
-        } else {
-            type = "Straight Angle";
-            fact = "It looks just like a flat line. Exactly 180°!";
-            angleName.style.color = "#c0392b";
+        function initAudio() {
+            if(!audioContext) audioContext = new AudioCtx();
         }
 
-        angleName.innerText = type;
-        factText.innerText = fact;
-    }
+        function playSound(type) {
+            if (isMuted) return;
+            initAudio();
+            if(!audioContext) return;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            let now = audioContext.currentTime;
 
-    slider.oninput = updateAngle;
-    updateAngle(); // Initial call
-</script>
+            if (type === 'success') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now);
+                osc.frequency.setValueAtTime(659.25, now + 0.1);
+                osc.frequency.setValueAtTime(783.99, now + 0.2);
+                osc.frequency.setValueAtTime(1046.50, now + 0.3);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                osc.start(now); osc.stop(now + 0.5);
+            } else if (type === 'fail') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.linearRampToValueAtTime(90, now + 0.3);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                osc.start(now); osc.stop(now + 0.35);
+            } else if (type === 'click') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(440, now);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                osc.start(now); osc.stop(now + 0.08);
+            } else if (type === 'special') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, now);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now); osc.stop(now + 0.2);
+            }
+        }
 
+        function toggleAudio() {
+            isMuted = !isMuted;
+            document.getElementById('btn-audio').classList.toggle('audio-muted', isMuted);
+            document.getElementById('btn-audio').innerText = isMuted ? '🔇' : '🔊';
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            playSound('click');
+            renderMaker();
+            renderBuilder();
+        }
+
+        function toggleAccessibility() {
+            accessibilityMode = !accessibilityMode;
+            document.body.style.fontSize = accessibilityMode ? '1.25rem' : '1rem';
+            playSound('click');
+        }
+
+        let globalStats = { attempted: 0, correct: 0, highScore: 0, badges: new Set() };
+
+        const ANGLE_TYPES = {
+            ZERO: { name: 'Zero Angle', range: [0, 0], color: 'var(--color-zero)', desc: 'Exactly 0°. The arms lie perfectly flat on top of each other.' },
+            ACUTE: { name: 'Acute Angle', range: [1, 89], color: 'var(--color-acute)', desc: 'Between 1° and 89°. Smaller than a right corner. It\'s sharp!' },
+            RIGHT: { name: 'Right Angle', range: [90, 90], color: 'var(--color-right)', desc: 'Exactly 90°. Forms a perfect clean square corner.' },
+            OBTUSE: { name: 'Obtuse Angle', range: [91, 179], color: 'var(--color-obtuse)', desc: 'Between 91° and 179°. Wider than a corner, but not flat.' },
+            STRAIGHT: { name: 'Straight Angle', range: [180, 180], color: 'var(--color-straight)', desc: 'Exactly 180°. Forms a completely flat straight line.' },
+            REFLEX: { name: 'Reflex Angle', range: [181, 359], color: 'var(--color-reflex)', desc: 'Between 181° and 359°. Rotated past a flat line.' },
+            COMPLETE: { name: 'Complete Angle', range: [360, 360], color: 'var(--color-complete)', desc: 'Exactly 360°. A full turnaround revolution loop.' }
+        };
+
+        function getAngleType(deg) {
+            if (deg === 0) return ANGLE_TYPES.ZERO;
+            if (deg > 0 && deg < 90) return ANGLE_TYPES.ACUTE;
+            if (deg === 90) return ANGLE_TYPES.RIGHT;
+            if (deg > 90 && deg < 180) return ANGLE_TYPES.OBTUSE;
+            if (deg === 180) return ANGLE_TYPES.STRAIGHT;
+            if (deg > 180 && deg < 360) return ANGLE_TYPES.REFLEX;
+            if (deg === 360) return ANGLE_TYPES.COMPLETE;
+            return ANGLE_TYPES.ZERO;
+        }
+
+        function trackPerformance(isCorrect) {
+            globalStats.attempted++;
+            if (isCorrect) globalStats.correct++;
+            if (globalStats.attempted >= 1) globalStats.badges.add('explorer');
+            if (globalStats.correct >= 5) globalStats.badges.add('detective');
+            if (globalStats.correct >= 15) globalStats.badges.add('champion');
+            if (globalStats.correct >= 30) globalStats.badges.add('hero');
+            updateDashboardDOM();
+        }
+
+        function updateDashboardDOM() {
+            document.getElementById('stat-attempted').innerText = globalStats.attempted;
+            document.getElementById('stat-correct').innerText = globalStats.correct;
+            const acc = globalStats.attempted > 0 ? Math.round((globalStats.correct / globalStats.attempted) * 100) : 0;
+            document.getElementById('stat-accuracy').innerText = acc + '%';
+            document.getElementById('stat-high').innerText = globalStats.highScore;
+
+            if (globalStats.badges.has('explorer')) document.getElementById('badge-explorer').classList.add('unlocked');
+            if (globalStats.badges.has('detective')) document.getElementById('badge-detective').classList.add('unlocked');
+            if (globalStats.badges.has('champion')) document.getElementById('badge-champion').classList.add('unlocked');
+            if (globalStats.badges.has('hero')) document.getElementById('badge-hero').classList.add('unlocked');
+        }
+
+        function switchScreen(screenId) {
+            playSound('click');
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (screenId === 'learning-screen') switchActivity(1);
+            else if (screenId === 'practice-screen') generatePracticeQuestion();
+            else if (screenId === 'dashboard-screen') updateDashboardDOM();
+        }
+
+        function goHome() { switchScreen('home-screen'); }
+
+        const REAL_LIFE_OBJECTS = [
+            { name: 'Clock Hands (3 O\'Clock)', angle: 90, type: 'right', svg: `<svg width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" stroke="#333" stroke-width="4" fill="#f8f9fa"/><line x1="50" y1="50" x2="50" y2="20" stroke="var(--color-right)" stroke-width="5" stroke-linecap="round"/><line x1="50" y1="50" x2="80" y2="50" stroke="var(--color-right)" stroke-width="5" stroke-linecap="round"/><circle cx="50" cy="50" r="4" fill="#333"/></svg>` },
+            { name: 'Open Pair of Scissors', angle: 45, type: 'acute', svg: `<svg width="100" height="100" viewBox="0 0 100 100"><line x1="15" y1="20" x2="85" y2="70" stroke="#7f8c8d" stroke-width="6" stroke-linecap="round"/><line x1="15" y1="70" x2="85" y2="20" stroke="#7f8c8d" stroke-width="6" stroke-linecap="round"/><circle cx="20" cy="23" r="10" stroke="var(--color-acute)" stroke-width="4" fill="none"/><circle cx="20" cy="67" r="10" stroke="var(--color-acute)" stroke-width="4" fill="none"/><circle cx="50" cy="45" r="4" fill="#333"/></svg>` },
+            { name: 'Open Laptop Screen', angle: 120, type: 'obtuse', svg: `<svg width="100" height="100" viewBox="0 0 100 100"><line x1="20" y1="70" x2="80" y2="70" stroke="#333" stroke-width="6" stroke-linecap="round"/><line x1="50" y1="70" x2="20" y2="30" stroke="var(--color-obtuse)" stroke-width="6" stroke-linecap="round"/></svg>` },
+            { name: 'Opened Reading Book', angle: 180, type: 'straight', svg: `<svg width="100" height="100" viewBox="0 0 100 100"><path d="M10,60 Q30,55 50,60 Q70,55 90,60 L90,75 Q70,70 50,75 Q30,70 10,75 Z" fill="#eb4d4b"/><line x1="10" y1="60" x2="90" y2="60" stroke="var(--color-straight)" stroke-width="4"/></svg>` },
+            { name: 'Juicy Pizza Slice', angle: 45, type: 'acute', svg: `<svg width="100" height="100" viewBox="0 0 100 100"><path d="M50,80 L25,20 A30,30 0 0,1 75,20 Z" fill="#f1c40f" stroke="#e67e22" stroke-width="3"/><circle cx="45" cy="40" r="4" fill="#e74c3c"/><circle cx="55" cy="55" r="5" fill="#e74c3c"/></svg>` },
+            { name: 'Pacman Shape Character', angle: 300, type: 'reflex', svg: `<svg width="100" height="100" viewBox="0 0 100 100"><path d="M50,50 L80,30 A35,35 0 1,1 80,70 Z" fill="var(--color-reflex)"/><circle cx="45" cy="25" r="3" fill="#000"/></svg>` }
+        ];
+
+        /* ==================== CORE HIGH-RES PROTRACTOR ENGINE ==================== */
+        let makerAngle = 45;
+        let isDraggingMaker = false;
+
+        function initActivity1() {
+            const canvas = document.getElementById('maker-canvas');
+            canvas.addEventListener('mousedown', startMakerDrag);
+            canvas.addEventListener('mousemove', moveMakerDrag);
+            window.addEventListener('mouseup', stopMakerDrag);
+            canvas.addEventListener('touchstart', startMakerDrag, {passive: false});
+            canvas.addEventListener('touchmove', moveMakerDrag, {passive: false});
+            window.addEventListener('touchend', stopMakerDrag);
+            updateAngleMaker(45);
+        }
+
+        function updateAngleMaker(val) {
+            makerAngle = parseInt(val);
+            document.getElementById('maker-range').value = makerAngle;
+            document.getElementById('lbl-range').innerText = `Angle Input: ${makerAngle}°`;
+            const profile = getAngleType(makerAngle);
+            const badge = document.getElementById('maker-badge');
+            badge.innerText = profile.name;
+            badge.style.background = profile.color;
+            document.getElementById('maker-desc').innerText = profile.desc;
+            
+            if([0, 90, 180, 360].includes(makerAngle)) {
+                playSound('special');
+            }
+            renderMaker();
+        }
+
+        function renderCanvasCommon(ctx, angle, color, isChallenge = false) {
+            const isDark = document.body.classList.contains('dark-mode');
+            const size = ctx.canvas.width;
+            const center = size / 2;
+            const radius = center - 40;
+
+            ctx.clearRect(0, 0, size, size);
+            
+            // Ultra-smooth configuration via canvas styles
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+
+            // Protractor Body Face
+            ctx.beginPath();
+            ctx.arc(center, center, radius, 0, Math.PI * 2);
+            ctx.fillStyle = isDark ? '#23232e' : '#ffffff';
+            ctx.fill();
+            ctx.strokeStyle = isDark ? '#444' : '#dfe6e9';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+
+            // Colorful Filled Sector Track
+            if (angle > 0) {
+                ctx.beginPath();
+                ctx.moveTo(center, center);
+                ctx.arc(center, center, radius, 0, -angle * Math.PI / 180, true);
+                ctx.closePath();
+                ctx.fillStyle = color + '28'; // Rich transparency layer
+                ctx.fill();
+                
+                // Outer tracking guideline accent line
+                ctx.beginPath();
+                ctx.arc(center, center, radius, 0, -angle * Math.PI / 180, true);
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            }
+
+            // --- PROTRACTOR MEASUREMENT DEGREE TICKS ---
+            ctx.save();
+            ctx.translate(center, center);
+            for (let i = 0; i < 360; i += 5) {
+                const rad = -i * Math.PI / 180;
+                let tickLength = i % 10 === 0 ? 12 : 6;
+                if (i % 30 === 0) tickLength = 18;
+
+                ctx.beginPath();
+                ctx.moveTo((radius - tickLength) * Math.cos(rad), (radius - tickLength) * Math.sin(rad));
+                ctx.lineTo(radius * Math.cos(rad), radius * Math.sin(rad));
+                
+                if (i % 30 === 0) {
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 2.5;
+                } else {
+                    ctx.strokeStyle = isDark ? '#777' : '#b2bec3';
+                    ctx.lineWidth = 1;
+                }
+                ctx.stroke();
+
+                // Numbers for major 30-degree blocks
+                if (i % 30 === 0 && !isChallenge) {
+                    ctx.font = "bold 11px sans-serif";
+                    ctx.fillStyle = isDark ? '#bdc3c7' : '#636e72';
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    const textDist = radius - 30;
+                    ctx.fillText(i + "°", textDist * Math.cos(rad), textDist * Math.sin(rad));
+                }
+            }
+            ctx.restore();
+
+            // Fixed Reference Baseline Ray
+            ctx.beginPath();
+            ctx.moveTo(center, center);
+            ctx.lineTo(center + radius, center);
+            ctx.strokeStyle = isDark ? '#ffffff' : '#2d3436';
+            ctx.lineWidth = 5;
+            ctx.stroke();
+
+            // Moveable Dynamic Vector Ray
+            const dynamicRad = -angle * Math.PI / 180;
+            const targetX = center + radius * Math.cos(dynamicRad);
+            const targetY = center + radius * Math.sin(dynamicRad);
+
+            ctx.beginPath();
+            ctx.moveTo(center, center);
+            ctx.lineTo(targetX, targetY);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 6;
+            ctx.stroke();
+
+            // Center Pin Joint
+            ctx.beginPath();
+            ctx.arc(center, center, 8, 0, Math.PI * 2);
+            ctx.fillStyle = isDark ? '#fff' : '#2d3436';
+            ctx.fill();
+
+            // Green Drag Handle Grip
+            ctx.beginPath();
+            ctx.arc(targetX, targetY, 14, 0, Math.PI * 2);
+            ctx.fillStyle = 'var(--success)';
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+
+        function renderMaker() {
+            const canvas = document.getElementById('maker-canvas');
+            if(!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const profile = getAngleType(makerAngle);
+            renderCanvasCommon(ctx, makerAngle, profile.color);
+        }
+
+        function getCanvasAngle(e, canvasElement) {
+            const rect = canvasElement.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const x = clientX - rect.left - (canvasElement.width / 2);
+            const y = clientY - rect.top - (canvasElement.height / 2);
+            let atan = -Math.atan2(y, x) * 180 / Math.PI;
+            if (atan < 0) atan += 360;
+            return Math.round(atan);
+        }
+
+        function startMakerDrag(e) { e.preventDefault(); isDraggingMaker = true; moveMakerDrag(e); }
+        function moveMakerDrag(e) { if (!isDraggingMaker) return; const angle = getCanvasAngle(e, document.getElementById('maker-canvas')); updateAngleMaker(angle); }
+        function stopMakerDrag() { isDraggingMaker = false; }
+
+        /* ==================== ACTIVITY 2: DRAG AND DROP ==================== */
+        const DETECTIVE_POOL_ITEMS = [15, 90, 135, 180, 240, 360, 45, 270];
+        let currentDraggedData = null;
+
+        function initActivity2() {
+            const pool = document.getElementById('detective-cards-pool');
+            const grid = document.getElementById('detective-baskets-grid');
+            pool.innerHTML = ''; grid.innerHTML = '';
+
+            // Shuffle cards
+            DETECTIVE_POOL_ITEMS.sort(() => Math.random() - 0.5).forEach((deg, idx) => {
+                const card = document.createElement('div');
+                card.className = 'angle-card'; card.innerText = `${deg}°`;
+                card.draggable = true; card.id = `det-card-${idx}`; card.dataset.degree = deg;
+                
+                card.addEventListener('dragstart', (e) => {
+                    currentDraggedData = { id: card.id, deg: deg };
+                    e.dataTransfer.setData('text/plain', card.id);
+                });
+                card.addEventListener('touchstart', () => { currentDraggedData = { id: card.id, deg: deg }; }, {passive: true});
+                pool.appendChild(card);
+            });
+
+            Object.keys(ANGLE_TYPES).forEach(key => {
+                const typeObj = ANGLE_TYPES[key];
+                const basket = document.createElement('div');
+                basket.className = 'basket'; basket.dataset.type = key.toLowerCase();
+                basket.innerHTML = `<div>📂</div><div>${typeObj.name}</div>`;
+                
+                basket.addEventListener('dragover', (e) => e.preventDefault());
+                basket.addEventListener('dragenter', () => basket.classList.add('drag-over'));
+                basket.addEventListener('dragleave', () => basket.classList.remove('drag-over'));
+                basket.addEventListener('drop', () => { basket.classList.remove('drag-over'); processDropMatch(basket); });
+                basket.addEventListener('touchend', () => { if(currentDraggedData) processDropMatch(basket); });
+                grid.appendChild(basket);
+            });
+        }
+
+        function processDropMatch(basketTarget) {
+            if(!currentDraggedData) return;
+            const itemDeg = parseInt(currentDraggedData.deg);
+            const targetType = basketTarget.dataset.type;
+            const realTypeProfile = getAngleType(itemDeg);
+
+            if (realTypeProfile.name.toLowerCase().includes(targetType)) {
+                playSound('success'); trackPerformance(true);
+                basketTarget.classList.add('glow-success');
+                setTimeout(() => basketTarget.classList.remove('glow-success'), 600);
+                const matchedCard = document.getElementById(currentDraggedData.id);
+                if (matchedCard) matchedCard.remove();
+                triggerConfettiEffect();
+                if(document.getElementById('detective-cards-pool').children.length === 0) {
+                    setTimeout(initActivity2, 2000);
+                }
+            } else {
+                playSound('fail'); trackPerformance(false);
+            }
+            currentDraggedData = null;
+        }
+
+        /* ==================== ACTIVITY 3: ANGLE HUNT ==================== */
+        let huntIndex = 0;
+        function initActivity3() { huntIndex = 0; loadHuntQuestion(); }
+        function loadHuntQuestion() {
+            document.getElementById('hunt-next-btn').style.display = 'none';
+            document.getElementById('hunt-feedback').innerText = '';
+            const obj = REAL_LIFE_OBJECTS[huntIndex % REAL_LIFE_OBJECTS.length];
+            document.getElementById('hunt-obj-title').innerText = obj.name;
+            document.getElementById('hunt-graphic-container').innerHTML = obj.svg;
+
+            const optionsBox = document.getElementById('hunt-options');
+            optionsBox.innerHTML = '';
+            const choices = ['Acute Angle', 'Right Angle', 'Obtuse Angle', 'Straight Angle', 'Reflex Angle'];
+            choices.forEach(choice => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-option'; btn.innerText = choice;
+                btn.onclick = () => checkHuntAnswer(choice, obj.type, btn);
+                optionsBox.appendChild(btn);
+            });
+            huntIndex++;
+        }
+
+        function checkHuntAnswer(chosen, correctTypeKey, buttonTrigger) {
+            if (chosen.toLowerCase().includes(correctTypeKey)) {
+                playSound('success'); trackPerformance(true);
+                document.getElementById('hunt-feedback').innerHTML = '<span style="color:var(--success)">🌟 Correct! Excellent work!</span>';
+                document.getElementById('hunt-next-btn').style.display = 'inline-block';
+                triggerConfettiEffect();
+            } else {
+                playSound('fail'); trackPerformance(false);
+                buttonTrigger.style.background = 'var(--danger)'; buttonTrigger.style.color = 'white';
+            }
+        }
+
+        /* ==================== ACTIVITY 4: ANGLE BUILDER ==================== */
+        let buildTargetAngle = 90;
+        let userBuiltAngle = 0;
+        let isDraggingBuilder = false;
+        const TARGETS_POOL = [0, 45, 90, 120, 180, 270, 360];
+        let targetPoolIdx = 0;
+
+        function initActivity4() {
+            const canvas = document.getElementById('build-canvas');
+            canvas.addEventListener('mousedown', startBuildDrag);
+            canvas.addEventListener('mousemove', moveBuildDrag);
+            window.addEventListener('mouseup', stopBuildDrag);
+            canvas.addEventListener('touchstart', startBuildDrag, {passive: false});
+            canvas.addEventListener('touchmove', moveBuildDrag, {passive: false});
+            window.addEventListener('touchend', stopBuildDrag);
+            targetPoolIdx = 0; loadNewBuildTarget();
+        }
+
+        function loadNewBuildTarget() {
+            buildTargetAngle = TARGETS_POOL[targetPoolIdx % TARGETS_POOL.length];
+            const profile = getAngleType(buildTargetAngle);
+            document.getElementById('build-target-text').innerText = `Construct a: ${profile.name} (${buildTargetAngle}°)`;
+            document.getElementById('build-feedback').innerText = '';
+            userBuiltAngle = 15; renderBuilder();
+        }
+
+        function renderBuilder() {
+            const canvas = document.getElementById('build-canvas');
+            if(!canvas) return;
+            renderCanvasCommon(canvas.getContext('2d'), userBuiltAngle, 'var(--primary)');
+        }
+
+        function startBuildDrag(e) { e.preventDefault(); isDraggingBuilder = true; moveBuildDrag(e); }
+        function moveBuildDrag(e) { if(!isDraggingBuilder) return; userBuiltAngle = getCanvasAngle(e, document.getElementById('build-canvas')); renderBuilder(); }
+        function stopBuildDrag() { isDraggingBuilder = false; }
+
+        function checkBuiltAngle() {
+            if (Math.abs(userBuiltAngle - buildTargetAngle) <= 2) {
+                playSound('success'); trackPerformance(true);
+                document.getElementById('build-feedback').innerHTML = `<span style="color:var(--success)">🎯 Perfect! You matched ${buildTargetAngle}°!</span>`;
+                triggerConfettiEffect(); targetPoolIdx++;
+                setTimeout(loadNewBuildTarget, 2000);
+            } else {
+                playSound('fail'); trackPerformance(false);
+                document.getElementById('build-feedback').innerHTML = `<span style="color:var(--danger)">Currently tracking at ${userBuiltAngle}°. Adjust carefully!</span>`;
+            }
+        }
+
+        /* ==================== ACTIVITY 5: REAL LIFE GALLERY ==================== */
+        function initActivity5() {
+            const grid = document.getElementById('gallery-layout'); grid.innerHTML = '';
+            REAL_LIFE_OBJECTS.forEach(obj => {
+                const card = document.createElement('div'); card.className = 'gallery-card';
+                card.innerHTML = `<div class="gallery-svg-wrap">${obj.svg}</div><h3>${obj.name}</h3><div style="font-weight:bold; color:var(--primary)">${obj.angle}° (${getAngleType(obj.angle).name})</div>`;
+                grid.appendChild(card);
+            });
+        }
+
+        function switchActivity(actNum) {
+            document.querySelectorAll('.activity-sub').forEach(v => v.classList.add('hidden'));
+            document.querySelectorAll('.sub-nav button').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-act${actNum}`).classList.add('active');
+            document.getElementById(`activity-${actNum}`).classList.remove('hidden');
+            if(actNum === 1) initActivity1();
+            if(actNum === 2) initActivity2();
+            if(actNum === 3) initActivity3();
+            if(actNum === 4) initActivity4();
+            if(actNum === 5) initActivity5();
+        }
+
+        /* ==================== PRACTICE ZONE ==================== */
+        function generatePracticeQuestion() {
+            document.getElementById('btn-practice-next').style.display = 'none';
+            document.getElementById('practice-feedback').innerText = '';
+            const interactiveRegion = document.getElementById('practice-interactive-region');
+            const visualRegion = document.getElementById('practice-visual-region');
+            interactiveRegion.innerHTML = ''; visualRegion.innerHTML = '';
+
+            const mode = Math.random() > 0.5 ? 0 : 1;
+            const randomDegrees = TARGETS_POOL[Math.floor(Math.random() * TARGETS_POOL.length)];
+            const typeProfile = getAngleType(randomDegrees);
+
+            if (mode === 0) {
+                interactiveRegion.innerHTML = `<h3>Identify This Angle</h3><div class="options-grid" id="practice-options-box"></div>`;
+                const canvas = document.createElement('canvas'); canvas.width = 300; canvas.height = 300;
+                visualRegion.appendChild(canvas);
+                renderCanvasCommon(canvas.getContext('2d'), randomDegrees, typeProfile.color);
+
+                const optBox = document.getElementById('practice-options-box');
+                Object.keys(ANGLE_TYPES).forEach(key => {
+                    const btn = document.createElement('button'); btn.className = 'btn-option'; btn.innerText = ANGLE_TYPES[key].name;
+                    btn.onclick = () => {
+                        if (ANGLE_TYPES[key].name === typeProfile.name) {
+                            playSound('success'); trackPerformance(true); triggerConfettiEffect();
+                            document.getElementById('practice-feedback').innerHTML = '<span style="color:var(--success)">⭐ Brilliant!</span>';
+                            document.getElementById('btn-practice-next').style.display = 'inline-block';
+                        } else { playSound('fail'); trackPerformance(false); }
+                    };
+                    optBox.appendChild(btn);
+                });
+            } else {
+                interactiveRegion.innerHTML = `<h3>Interactive Challenge</h3><h2 style="color:var(--danger)">Build exactly: ${randomDegrees}°</h2><button class="btn-back" style="background:var(--success); color:white; border:none; padding:12px 30px;" onclick="checkPracticeBuild(${randomDegrees})">Verify Built Layout</button>`;
+                const canvas = document.createElement('canvas'); canvas.width = 300; canvas.height = 300;
+                visualRegion.appendChild(canvas);
+                userBuiltAngle = 20; renderCanvasCommon(canvas.getContext('2d'), userBuiltAngle, 'var(--secondary)');
+
+                canvas.addEventListener('mousedown', () => isDraggingBuilder = true);
+                canvas.addEventListener('mousemove', (e) => { if(!isDraggingBuilder) return; userBuiltAngle = getCanvasAngle(e, canvas); renderCanvasCommon(canvas.getContext('2d'), userBuiltAngle, 'var(--secondary)'); });
+                window.addEventListener('mouseup', () => isDraggingBuilder = false);
+            }
+        }
+
+        function checkPracticeBuild(target) {
+            if(Math.abs(userBuiltAngle - target) <= 3) {
+                playSound('success'); trackPerformance(true); triggerConfettiEffect();
+                document.getElementById('practice-feedback').innerHTML = '<span style="color:var(--success)">⭐ Amazing Accuracy!</span>';
+                document.getElementById('btn-practice-next').style.display = 'inline-block';
+            } else { playSound('fail'); trackPerformance(false); }
+        }
+
+        /* ==================== TOURNAMENT CHALLENGE ZONE ==================== */
+        let challTimerVal = 60; let challScoreVal = 0; let challIndexVal = 1; let challIntervalToken = null; let currentChallTarget = 0;
+
+        function startChallengeGame() {
+            document.getElementById('challenge-start-view').classList.add('hidden');
+            document.getElementById('challenge-gameplay-view').classList.remove('hidden');
+            challTimerVal = 60; challScoreVal = 0; challIndexVal = 1;
+            document.getElementById('chall-timer').innerText = challTimerVal;
+            document.getElementById('chall-score').innerText = challScoreVal;
+            challIntervalToken = setInterval(() => {
+                challTimerVal--; document.getElementById('chall-timer').innerText = challTimerVal;
+                if(challTimerVal <= 0) endChallengeGame();
+            }, 1000);
+            loadChallengeQuestion();
+        }
+
+        function loadChallengeQuestion() {
+            if(challIndexVal > 20) { endChallengeGame(); return; }
+            document.getElementById('chall-index').innerText = challIndexVal;
+            const ctrl = document.getElementById('chall-quest-control');
+            const disp = document.getElementById('chall-quest-display');
+            ctrl.innerHTML = ''; disp.innerHTML = '';
+
+            currentChallTarget = TARGETS_POOL[Math.floor(Math.random() * TARGETS_POOL.length)];
+            const profile = getAngleType(currentChallTarget);
+
+            ctrl.innerHTML = `<h3>Identify the degree marker for:</h3><h2 style="color:var(--primary); font-size:2rem;">${profile.name}</h2><div class="options-grid" id="chall-options"></div>`;
+            const optionsGroup = [currentChallTarget, (currentChallTarget+45)%360, (currentChallTarget+135)%360, (currentChallTarget+90)%360];
+            const uniqueOptions = [...new Set(optionsGroup)].sort(() => Math.random() - 0.5);
+
+            uniqueOptions.forEach(opt => {
+                const btn = document.createElement('button'); btn.className = 'btn-option'; btn.innerText = `${opt}°`;
+                btn.onclick = () => {
+                    if(opt === currentChallTarget) { challScoreVal += 10; triggerConfettiEffect(); playSound('success'); }
+                    else { playSound('fail'); }
+                    challIndexVal++; loadChallengeQuestion();
+                };
+                document.getElementById('chall-options').appendChild(btn);
+            });
+
+            const canvas = document.createElement('canvas'); canvas.width = 300; canvas.height = 300;
+            disp.appendChild(canvas);
+            // Challenge mode hides ticks to prevent direct copying, showing a beautiful smooth round arc structure
+            renderCanvasCommon(canvas.getContext('2d'), currentChallTarget, profile.color, true);
+        }
+
+        function endChallengeGame() {
+            clearInterval(challIntervalToken);
+            if(challScoreVal > globalStats.highScore) globalStats.highScore = challScoreVal;
+            document.getElementById('celebration-subtitle').innerHTML = `Challenge over!<br><b>Final Score:</b> ${challScoreVal} Points`;
+            document.getElementById('celebration-overlay').style.display = 'flex';
+            exitChallenge();
+        }
+
+        function exitChallenge() {
+            clearInterval(challIntervalToken);
+            document.getElementById('challenge-start-view').classList.remove('hidden');
+            document.getElementById('challenge-gameplay-view').classList.add('hidden');
+            goHome();
+        }
+
+        function closeCelebrationOverlay() { document.getElementById('celebration-overlay').style.display = 'none'; }
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (screenId === 'learning-screen') switchActivity(1);
+            else if (screenId === 'practice-screen') generatePracticeQuestion();
+            else if (screenId === 'dashboard-screen') updateDashboardDOM();
+        }
+
+        const MASCOT_TIPS = ["A complete angle sweeps exactly 360°!", "Right angles make a perfect square L-shape corner!", "Acute angles are sharp! They measure less than 90°.", "Straight angles are perfectly flat, like a ruler line at 180°."];
+        function triggerMascotTip() { document.getElementById('mascot-text').innerText = MASCOT_TIPS[Math.floor(Math.random() * MASCOT_TIPS.length)]; }
+
+        /* ==================== ENGINE SEEDING AND CONFETTI ANIMATIONS ==================== */
+        let confettiCanvas, confettiCtx, confettiParticles = [], confettiAnimationToken = null;
+        function triggerConfettiEffect() {
+            confettiCanvas = document.getElementById('confetti-canvas'); confettiCtx = confettiCanvas.getContext('2d');
+            confettiCanvas.style.display = 'block'; confettiCanvas.width = window.innerWidth; confettiCanvas.height = window.innerHeight;
+            confettiParticles = [];
+            for(let i=0; i<50; i++) {
+                confettiParticles.push({ x: Math.random()*confettiCanvas.width, y: -20, r: Math.random()*6+4, d: Math.random()*100, color: `hsl(${Math.random()*360}, 90%, 60%)` });
+            }
+            if(confettiAnimationToken) cancelAnimationFrame(confettiAnimationToken);
+            animateConfettiLoop();
+            setTimeout(() => { cancelAnimationFrame(confettiAnimationToken); confettiCanvas.style.display = 'none'; }, 2000);
+        }
+
+        function animateConfettiLoop() {
+            confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+            let alive = false;
+            confettiParticles.forEach(p => {
+                p.y += 4; if (p.y < confettiCanvas.height) alive = true;
+                confettiCtx.beginPath(); confettiCtx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+                confettiCtx.fillStyle = p.color; confettiCtx.fill();
+            });
+            if(alive) confettiAnimationToken = requestAnimationFrame(animateConfettiLoop);
+        }
+
+        window.onload = () => { initActivity1(); };
+    </script>
 </body>
 </html>

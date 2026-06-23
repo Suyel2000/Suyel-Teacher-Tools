@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📝 हिन्दी लिंग क्विज़</title>
+    <style>
+        :root {
+            --primary: #FF6B6B;
+            --secondary: #4D96FF;
+            --accent: #FFD93D;
+            --success: #6BCB77;
+            --danger: #FF6B6B;
+            --bg: #F0F4F8;
+            --card-bg: #FFFFFF;
+            --text: #2C3E50;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 750px;
+            background: var(--card-bg);
+            border-radius: 24px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.05);
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        h1 {
+            font-size: 2.4rem;
+            color: var(--secondary);
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #7F8C8D;
+            margin-bottom: 25px;
+            font-style: italic;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            background: #EAECEE;
+            border-radius: 12px;
+            height: 18px;
+            width: 100%;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, var(--secondary), var(--success));
+            height: 100%;
+            width: 0%;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            background: #EDF2F7;
+            padding: 12px 20px;
+            border-radius: 14px;
+        }
+
+        /* Question Wrapper */
+        .question-box {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 25px;
+            padding: 25px;
+            background: #F2F4F4;
+            border-radius: 18px;
+            border-left: 8px solid var(--primary);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        /* Options Layout */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        @media (max-width: 600px) {
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+            h1 { font-size: 1.8rem; }
+            .question-box { font-size: 1.5rem; }
+        }
+
+        .option-btn {
+            background: #FFFFFF;
+            border: 3px solid #BDC3C7;
+            border-radius: 16px;
+            padding: 16px 20px;
+            font-size: 1.4rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .option-btn:hover:not(:disabled) {
+            border-color: var(--secondary);
+            background: #EBF5FB;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+        }
+
+        .option-btn.correct {
+            background-color: #2ECC71 !important;
+            border-color: #27AE60 !important;
+            color: white !important;
+            animation: popEffect 0.3s ease;
+        }
+
+        .option-btn.wrong {
+            background-color: #E74C3C !important;
+            border-color: #C0392B !important;
+            color: white !important;
+            animation: shakeEffect 0.3s ease;
+        }
+
+        /* Instant Feedback */
+        .feedback {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 15px 0;
+            min-height: 45px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Controls */
+        .nav-actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .btn-next { background: var(--secondary); color: white; }
+        .btn-prev { background: #95A5A6; color: white; }
+        .btn-shuffle { background: #9B59B6; color: white; width: 100%; margin-top: 15px; font-size: 1.3rem; }
+
+        .btn:hover { opacity: 0.95; transform: translateY(-2px); }
+        .btn:disabled { background: #BDC3C7; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        /* Toast Message */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #2C3E50;
+            color: white;
+            padding: 14px 28px;
+            border-radius: 30px;
+            font-size: 1.2rem;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 9999;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+
+        /* Completion Screen */
+        .result-screen { display: none; }
+
+        .certificate-box {
+            border: 6px double var(--accent);
+            padding: 35px;
+            background: #FFFDF4;
+            border-radius: 20px;
+            margin-top: 20px;
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(241, 196, 15, 0.1);
+        }
+
+        .certificate-title {
+            font-size: 2rem;
+            color: #B7950B;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .badge-display {
+            font-size: 2.2rem;
+            margin: 20px 0;
+            padding: 12px 25px;
+            background: #FEF9E7;
+            border-radius: 12px;
+            display: inline-block;
+            border: 2px dashed var(--accent);
+        }
+
+        .input-name {
+            font-size: 1.4rem;
+            padding: 12px;
+            width: 85%;
+            max-width: 320px;
+            border: 2px solid #BDC3C7;
+            border-radius: 10px;
+            text-align: center;
+            margin: 15px 0;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .input-name:focus { border-color: var(--secondary); }
+
+        #confetti {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Animations */
+        @keyframes popEffect {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.04); }
+            100% { transform: scale(1); }
+        }
+        @keyframes shakeEffect {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+
+        /* Print Mode Optimization */
+        @media print {
+            body * { visibility: hidden; }
+            .certificate-box, .certificate-box * { visibility: visible; }
+            .certificate-box { position: absolute; left: 0; top: 0; width: 100%; border: none; background: white; }
+            .input-name { border: none; font-weight: bold; font-size: 1.8rem; background: transparent; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="main-container">
+        <header>
+            <h1>📝 हिन्दी लिंग क्विज़</h1>
+            <p class="subtitle">"पुल्लिंग और स्त्रीलिंग शब्दों को मजेदार तरीके से सीखें!"</p>
+        </header>
+
+        <div id="quiz-screen">
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <div class="stats-row">
+                <span id="question-number">Question 1 / 50</span>
+                <span id="score-display">Score: 0</span>
+            </div>
+
+            <div class="question-box" id="question-text">
+                लोड हो रहा है...
+            </div>
+
+            <div class="options-grid" id="options-container">
+                </div>
+
+            <div class="feedback" id="feedback-text"></div>
+
+            <div class="nav-actions">
+                <button class="btn btn-prev" id="btn-prev" onclick="previousQuestion()">⬅ Previous Question</button>
+                <button class="btn btn-next" id="btn-next" onclick="nextQuestion()">Next Question ➡</button>
+            </div>
+
+            <button class="btn btn-shuffle" onclick="shuffleQuiz()">🔀 Shuffle Questions</button>
+        </div>
+
+        <div id="result-screen" class="result-screen">
+            <h2>🎉 शानदार! आपने क्विज़ पूरा कर लिया है।</h2>
+            
+            <div class="certificate-box" id="certificate">
+                <canvas id="confetti"></canvas>
+                <div class="certificate-title">🏆 Certificate of Achievement 🏆</div>
+                <p style="font-size: 1.1rem;">यह प्रमाणित किया जाता है कि</p>
+                <input type="text" class="input-name" id="student-name" placeholder="अपना नाम यहाँ लिखें">
+                <p style="font-size: 1.1rem; margin: 10px 0;">ने "हिन्दी लिंग क्विज़" में सफलतापूर्वक भाग लेकर उत्कृष्ट प्रदर्शन किया।</p>
+                
+                <div class="badge-display" id="badge-text">👍 अच्छा प्रयास</div>
+                
+                <div style="font-size: 1.4rem; margin-top: 15px; font-weight: bold;">
+                    अंक (Score): <span id="final-score" style="color:var(--success);">0</span> / 50 (<span id="final-percent">0%</span>)
+                </div>
+            </div>
+
+            <div class="nav-actions" style="margin-top: 25px;">
+                <button class="btn btn-prev" onclick="window.print()">🖨 Print Certificate</button>
+                <button class="btn btn-next" onclick="restartQuiz()">Restart Quiz 🔄</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">संदेश</div>
+
+    <script>
+        // 50 प्रश्नों का डेटा बैंक
+        const originalQuestions = [
+            // पुल्लिंग से स्त्रीलिंग (1–25)
+            { id: 1, type: "convert", q: "राजा का स्त्रीलिंग क्या है?", ans: "रानी", alt: ["दासी", "महिला", "राजकुमारी"] },
+            { id: 2, type: "convert", q: "पुत्र का स्त्रीलिंग क्या है?", ans: "पुत्री", alt: ["बेटा", "पुत्रवधू", "लड़की"] },
+            { id: 3, type: "convert", q: "लड़का का स्त्रीलिंग क्या है?", ans: "لड़की", ans: "लड़की", alt: ["महिला", "दासी", "बच्ची"] },
+            { id: 4, type: "convert", q: "भाई का स्त्रीलिंग क्या है?", ans: "बहन", alt: ["भाभी", "माता", "चाची"] },
+            { id: 5, type: "convert", q: "पति का स्त्रीलिंग क्या है?", ans: "पत्नी", alt: ["स्त्री", "महिला", "माता"] },
+            { id: 6, type: "convert", q: "घोड़ा का स्त्रीलिंग क्या है?", ans: "घोड़ी", alt: ["घोड़िन", "गधी", "खच्चर"] },
+            { id: 7, type: "convert", q: "शेर का स्त्रीलिंग क्या है?", ans: "शेरनी", alt: ["बाघिन", "सिंहनी", "बिल्ली"] },
+            { id: 8, type: "convert", q: "बकरा का स्त्रीलिंग क्या है?", ans: "बकरी", alt: ["बकरिया", "भेड़", "गाय"] },
+            { id: 9, type: "convert", q: "मोर का स्त्रीलिंग क्या है?", ans: "मोरनी", alt: ["चिड़िया", "हंसनी", "कबूतर"] },
+            { id: 10, type: "convert", q: "हाती का स्त्रीलिंग क्या है?", q: "हाथी का स्त्रीलिंग क्या है?", ans: "हथिनी", alt: ["हाथिन", "हाथिनी", "मादा हाथी"] },
+            { id: 11, type: "convert", q: "देव का स्त्रीलिंग क्या है?", ans: "देवी", alt: ["देवता", "स्त्री", "नारी"] },
+            { id: 12, type: "convert", q: "दूल्हा का स्त्रीलिंग क्या है?", ans: "दुल्हन", alt: ["दुल्हिन", "लड़की", "चाची"] },
+            { id: 13, type: "convert", q: "नर का स्त्रीलिंग क्या है?", ans: "मादा", alt: ["महिला", "पुरुष", "नारी"] },
+            { id: 14, type: "convert", q: "बैल का स्त्रीलिंग क्या है?", ans: "गाय", alt: ["भैंस", "बकरी", "बैलनी"] },
+            { id: 15, type: "convert", q: "अध्यापक का स्त्रीलिंग क्या है?", ans: "अध्यापिका", alt: ["अध्यापिकी", "शिक्षिका", "छात्र"] },
+            { id: 16, type: "convert", q: "गायक का स्त्रीलिंग क्या है?", ans: "गायिका", alt: ["गायकनी", "गीतकार", "गायन"] },
+            { id: 17, type: "convert", q: "नायक का स्त्रीलिंग क्या है?", ans: "नायिका", alt: ["नायिकी", "अभिनेत्री", "महिला"] },
+            { id: 18, type: "convert", q: "सेवक का स्त्रीलिंग क्या है?", ans: "सेविका", alt: ["दासी", "नौकरानी", "सेवकनी"] },
+            { id: 19, type: "convert", q: "छात्र का स्त्रीलिंग क्या है?", ans: "छात्रा", alt: ["छात्रानी", "लड़की", "विद्यार्थी"] },
+            { id: 20, type: "convert", q: "अभिनेता का स्त्रीलिंग क्या है?", ans: "अभिनेत्री", alt: ["नायिका", "अभिनेतानी", "महिला"] },
+            { id: 21, type: "convert", q: "कवि का स्त्रीलिंग क्या है?", ans: "कवयित्री", alt: ["कविनी", "कवयित्रीनी", "लेखिका"] },
+            { id: 22, type: "convert", q: "पुजारी का स्त्रीलिंग क्या है?", ans: "पुजारिन", alt: ["पुजारीनी", "पुजारिका", "देवी"] },
+            { id: 23, type: "convert", q: "मालिक का स्त्रीलिंग क्या है?", ans: "मालकिन", alt: ["मालिकनी", "मालकी", "स्त्री"] },
+            { id: 24, type: "convert", q: "धोबी का स्त्रीलिंग क्या है?", ans: "धोबिन", alt: ["धोबिनी", "धोबनी", "महिला"] },
+            { id: 25, type: "convert", q: "जादूगर का स्त्रीलिंग क्या है?", ans: "जादूगरनी", alt: ["जादूगरी", "जादूगरिन", "परी"] },
+
+            // स्त्रीलिंग पहचानो (26–35)
+            { id: 26, type: "identify", q: "इनमें से स्त्रीलिंग शब्द कौन-सा है?", ans: "रानी", alt: ["राजा", "लड़का", "घोड़ा"] },
+            { id: 27, type: "identify", q: "इनमें से स्त्रीलिंग शब्द कौन-सा है?", ans: "गायिका", alt: ["गायक", "अध्यापक", "कवि"] },
+            { id: 28, type: "identify", q: "इनमें से स्त्रीलिंग शब्द कौन-सा है?", ans: "अध्यापिका", alt: ["छात्र", "मालिक", "सेवक"] },
+            { id: 29, type: "identify", q: "इनमें से स्त्रीलिंग शब्द कौन-सा है?", ans: "छात्रा", alt: ["पुत्र", "नर", "बैल"] },
+            { id: 30, type: "identify", q: "इनमें से स्त्रीलिंग शब्द कौन-सा है?", ans: "अभिनेत्री", alt: ["नायक", "अभिनेता", "जादूगर"] },
+            { id: 31, type: "identify", q: "इनमें से स्त्रीलिंग शब्द कौन-सा है?", ans: "बहन", alt: ["भाई", "पिता", "दूल्हा"] },
+            { id: 32, type: "identify", q: "इनमें से स्त्रीलिंग शब्द कौन-सा है?", ans: "बकरी", alt: ["बकरा", "शेर", "मोर"] },
+            { id: 33, type: "identify", q: "इनमें से स्त्रीलिंग शब्द कौन-सा है?", ans: "घोड़ी", alt: ["घोड़ा", "हाथी", "ऊँट"] },
+            { id: 34, type: "identify", q: "इनमें से स्त्रीलिंग शब्द कौन-सा है?", ans: "देवी", alt: ["देव", "देवता", "पुरुष"] },
+            { id: 35, type: "identify", q: "इनमें से स्त्रीलिंग शब्द कौन-सा है?", ans: "दुल्हन", alt: ["दूल्हा", "पति", "भाई"] },
+
+            // मिश्रित प्रश्न (36–50)
+            { id: 36, type: "mix", q: "गाय का पुल्लिंग क्या है?", ans: "बैल", alt: ["गायनी", "सांड", "पशु"] },
+            { id: 37, type: "mix", q: "रानी का पुल्लिंग क्या है?", ans: "राजा", alt: ["पुरुष", "मंत्री", "सिपाही"] },
+            { id: 38, type: "mix", q: "बहन का पुल्लिंग क्या है?", ans: "भाई", alt: ["चाचा", "पिता", "दोस्त"] },
+            { id: 39, type: "mix", q: "लड़की का पुल्लिंग क्या है?", ans: "लड़का", alt: ["आदमी", "पुरुष", "बच्चा"] },
+            { id: 40, type: "mix", q: "पत्नी का पुल्लिंग क्या है?", ans: "पति", alt: ["पुरुष", "लड़का", "भाई"] },
+            { id: 41, type: "mix", q: "शेरनी का पुल्लिंग क्या है?", ans: "शेर", alt: ["चीता", "बाघ", "सिंह"] },
+            { id: 42, type: "mix", q: "मोरनी का पुल्लिंग क्या है?", ans: "मोर", alt: ["तोता", "कबूतर", "चिड़िया"] },
+            { id: 43, type: "mix", q: "हथिनी का पुल्लिंग क्या है?", ans: "हाथी", alt: ["हाथिन", "गज", "नर हाथी"] },
+            { id: 44, type: "mix", q: "नायिका का पुल्लिंग क्या है?", ans: "नायक", alt: ["गायक", "लेखक", "अभिनेता"] },
+            { id: 45, type: "mix", q: "गायिका का पुल्लिंग क्या है?", ans: "गायक", alt: ["कवि", "गीतकार", "संगीतकार"] },
+            { id: 46, type: "mix", q: "सेविका का पुल्लिंग क्या है?", ans: "सेवक", alt: ["राजा", "मालिक", "नौकर"] },
+            { id: 47, type: "mix", q: "छात्रा का पुल्लिंग क्या है?", ans: "छात्र", alt: ["गुरु", "शिक्षक", "लड़का"] },
+            { id: 48, type: "mix", q: "कवयित्री का पुल्लिंग क्या है?", ans: "कवि", alt: ["लेखक", "शायर", "कविराज"] },
+            { id: 49, type: "mix", q: "मालकिन का पुल्लिंग क्या है?", ans: "मालिक", alt: ["नौकर", "मजदूर", "सेठ"] },
+            { id: 50, type: "mix", q: "जादूगरनी का पुल्लिंग क्या है?", ans: "जादूगर", alt: ["तांत्रिक", "भूत", "सपेरा"] }
+        ];
+
+        let quizQuestions = [...originalQuestions];
+        let currentIndex = 0;
+        let score = 0;
+        let selectionTracker = new Array(quizQuestions.length).fill(null);
+
+        // Web Audio API सिंथेसाइज़र इंजन
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSoundEffect(type) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'correct') {
+                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.08); // E5
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.22);
+            } else if (type === 'wrong') {
+                osc.frequency.setValueAtTime(196, audioCtx.currentTime); // G3
+                osc.frequency.setValueAtTime(147, audioCtx.currentTime + 0.1); // D3
+                gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.28);
+            } else if (type === 'complete') {
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, i) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.connect(g); g.connect(audioCtx.destination);
+                    o.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.08);
+                    g.gain.setValueAtTime(0.12, audioCtx.currentTime + i * 0.08);
+                    o.start(audioCtx.currentTime + i * 0.08);
+                    o.stop(audioCtx.currentTime + i * 0.08 + 0.25);
+                });
+            }
+        }
+
+        // ऐरे तत्वों का फेरबदल (Fisher-Yates Shuffle)
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // स्क्रीन अलर्ट मेसेज
+        function triggerToast(msg) {
+            const toast = document.getElementById("toast");
+            toast.innerText = msg;
+            toast.classList.add("show");
+            setTimeout(() => toast.classList.remove("show"), 3000);
+        }
+
+        // एक्टिव प्रश्न को रेंडर करना
+        function renderCurrentQuestion() {
+            if (currentIndex >= quizQuestions.length) {
+                showQuizCompletion();
+                return;
+            }
+
+            const currentObj = quizQuestions[currentIndex];
+            
+            // डेटा ट्रैकर अपडेट करें
+            document.getElementById("question-number").innerText = `Question ${currentIndex + 1} / ${quizQuestions.length}`;
+            document.getElementById("score-display").innerText = `Score: ${score}`;
+            const computedProgress = (currentIndex / quizQuestions.length) * 100;
+            document.getElementById("progress-bar").style.width = `${computedProgress}%`;
+
+            // प्रश्न टेक्स्ट सेट करें
+            document.getElementById("question-text").innerText = currentObj.q;
+            
+            // यदि इस प्रश्न के विकल्प पहले से जनरेट नहीं हुए हैं
+            if (!currentObj.shuffledOptions) {
+                currentObj.shuffledOptions = shuffleArray([currentObj.ans, ...currentObj.alt]);
+            }
+
+            const optionsGrid = document.getElementById("options-container");
+            optionsGrid.innerHTML = "";
+            document.getElementById("feedback-text").innerText = "";
+
+            // विकल्प बटन रेंडर करना
+            currentObj.shuffledOptions.forEach(optionText => {
+                const optButton = document.createElement("button");
+                optButton.className = "option-btn";
+                optButton.innerText = optionText;
+                optButton.onclick = () => verifyAnswer(optButton, optionText);
+                optionsGrid.appendChild(optButton);
+            });
+
+            // नेविगेशन और प्रोग्रेस कंट्रोल्स लॉक/अनलॉक
+            document.getElementById("btn-prev").disabled = currentIndex === 0;
+            document.getElementById("btn-next").innerText = currentIndex === quizQuestions.length - 1 ? "क्विज़ समाप्त करें 🏁" : "Next Question ➡";
+
+            // इतिहास में दिए उत्तर की जाँच और प्रदर्शन
+            if (selectionTracker[currentIndex] !== null) {
+                reloadHistoricChoice();
+            }
+        }
+
+        // चयन सत्यापन प्रक्रिया
+        function verifyAnswer(clickedBtn, selection) {
+            if (selectionTracker[currentIndex] !== null) return; // लॉक होने पर दोबारा चयन रोकें
+
+            const currentObj = quizQuestions[currentIndex];
+            selectionTracker[currentIndex] = selection;
+
+            const allButtons = document.querySelectorAll(".option-btn");
+            allButtons.forEach(btn => btn.disabled = true);
+
+            if (selection === currentObj.ans) {
+                clickedBtn.classList.add("correct");
+                document.getElementById("feedback-text").innerHTML = "<span style='color: #2ECC71;'>✅ शाबाश! सही उत्तर</span>";
+                score++;
+                document.getElementById("score-display").innerText = `Score: ${score}`;
+                playSoundEffect('correct');
+            } else {
+                clickedBtn.classList.add("wrong");
+                document.getElementById("feedback-text").innerHTML = `<span style='color: #E74C3C;'>❌ सही उत्तर है: <strong>${currentObj.ans}</strong></span>`;
+                
+                allButtons.forEach(btn => {
+                    if (btn.innerText === currentObj.ans) btn.classList.add("correct");
+                });
+                playSoundEffect('wrong');
+            }
+            
+            // अंतिम प्रोग्रेस इंडिकेटर बार सिंक करें
+            const updatedProgress = ((currentIndex + 1) / quizQuestions.length) * 100;
+            document.getElementById("progress-bar").style.width = `${updatedProgress}%`;
+        }
+
+        // पिछले/अगले प्रश्न पर जाने पर पुराने उत्तर को प्रदर्शित रखना
+        function reloadHistoricChoice() {
+            const currentObj = quizQuestions[currentIndex];
+            const oldSelection = selectionTracker[currentIndex];
+            const allButtons = document.querySelectorAll(".option-btn");
+
+            allButtons.forEach(btn => {
+                btn.disabled = true;
+                if (btn.innerText === oldSelection) {
+                    btn.classList.add(oldSelection === currentObj.ans ? "correct" : "wrong");
+                }
+                if (btn.innerText === currentObj.ans) {
+                    btn.classList.add("correct");
+                }
+            });
+
+            if (oldSelection === currentObj.ans) {
+                document.getElementById("feedback-text").innerHTML = "<span style='color: #2ECC71;'>✅ शाबाश! सही उत्तर</span>";
+            } else {
+                document.getElementById("feedback-text").innerHTML = `<span style='color: #E74C3C;'>❌ सही उत्तर है: <strong>${currentObj.ans}</strong></span>`;
+            }
+        }
+
+        function nextQuestion() {
+            if (selectionTracker[currentIndex] === null) {
+                triggerToast("कृपया आगे बढ़ने से पहले एक विकल्प चुनें!");
+                return;
+            }
+            currentIndex++;
+            renderCurrentQuestion();
+        }
+
+        function previousQuestion() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                renderCurrentQuestion();
+            }
+        }
+
+        // शफल बटन ऑपरेशन
+        function shuffleQuiz() {
+            quizQuestions = shuffleArray([...originalQuestions]);
+            quizQuestions.forEach(item => item.shuffledOptions = null);
+            currentIndex = 0;
+            score = 0;
+            selectionTracker = new Array(quizQuestions.length).fill(null);
+            renderCurrentQuestion();
+            triggerToast("प्रश्नों को सफलतापूर्वक मिश्रित किया गया।");
+        }
+
+        // क्विज़ समाप्ति स्क्रीन जनरेटर
+        function showQuizCompletion() {
+            document.getElementById("quiz-screen").style.display = "none";
+            document.getElementById("result-screen").style.display = "block";
+            
+            document.getElementById("final-score").innerText = score;
+            const calculatedPercent = Math.round((score / quizQuestions.length) * 100);
+            document.getElementById("final-percent").innerText = `${calculatedPercent}%`;
+
+            let textBadge = "";
+            if (calculatedPercent >= 90) textBadge = "🏆 लिंग विशेषज्ञ";
+            else if (calculatedPercent >= 70) textBadge = "🌟 हिन्दी भाषा निपुण";
+            else if (calculatedPercent >= 50) textBadge = "👍 अच्छा प्रयास";
+            else textBadge = "📚 और अभ्यास करें";
+
+            document.getElementById("badge-text").innerText = textBadge;
+            playSoundEffect('complete');
+            launchConfettiAnimation();
+        }
+
+        function restartQuiz() {
+            document.getElementById("result-screen").style.display = "none";
+            document.getElementById("quiz-screen").style.display = "block";
+            document.getElementById("student-name").value = "";
+            shuffleQuiz();
+        }
+
+        // क्लाइंट-साइड कंफ़ेट्टी एनीमेशन
+        function launchConfettiAnimation() {
+            const canvas = document.getElementById("confetti");
+            const ctx = canvas.getContext("2d");
+            canvas.width = canvas.parentElement.offsetWidth;
+            canvas.height = canvas.parentElement.offsetHeight;
+
+            let confettis = [];
+            for (let i = 0; i < 75; i++) {
+                confettis.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    radius: Math.random() * 5 + 4,
+                    density: Math.random() * canvas.height,
+                    color: `hsl(${Math.random() * 360}, 90%, 60%)`,
+                    sway: Math.random() * 8 - 4
+                });
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                confettis.forEach((p, index) => {
+                    ctx.beginPath();
+                    ctx.lineWidth = p.radius;
+                    ctx.strokeStyle = p.color;
+                    ctx.moveTo(p.x + p.sway + p.radius / 2, p.y);
+                    ctx.lineTo(p.x + p.sway, p.y + p.sway + p.radius / 2);
+                    ctx.stroke();
+                    
+                    p.y += Math.cos(p.density) + 1.5 + p.radius / 2;
+                    p.x += Math.sin(p.density) * 0.5;
+                    
+                    if (p.y > canvas.height) {
+                        confettis[index] = p;
+                        p.y = -20;
+                        p.x = Math.random() * canvas.width;
+                    }
+                });
+                requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        // लोड होने पर निष्पादन
+        window.onload = () => {
+            renderCurrentQuestion();
+        };
+    </script>
+</body>
+</html>

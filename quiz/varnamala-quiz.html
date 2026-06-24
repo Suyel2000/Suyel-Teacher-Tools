@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔤 हिन्दी वर्णमाला क्विज़</title>
+    <style>
+        /* बाल-अनुकूल, चमकीली और आकर्षक कलर थीम */
+        :root {
+            --primary: #FF4757;
+            --secondary: #2ED573;
+            --accent: #FFA500;
+            --info: #1E90FF;
+            --success: #2ED573;
+            --danger: #FF6B6B;
+            --bg-gradient: linear-gradient(135deg, #FFEFD5 0%, #E0FFFF 100%);
+            --card-bg: #FFFFFF;
+            --text-color: #2F3542;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+        }
+
+        /* मुख्य क्विज़ कंटेनर */
+        .quiz-container {
+            width: 100%;
+            max-width: 850px;
+            background: var(--card-bg);
+            border-radius: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+            padding: 35px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border: 5px solid #FFDF00;
+        }
+
+        header h1 {
+            font-size: 2.8rem;
+            color: var(--primary);
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        header .subtitle {
+            font-size: 1.4rem;
+            color: #57606F;
+            margin-bottom: 25px;
+            font-weight: bold;
+        }
+
+        /* प्रोग्रेस बार */
+        .progress-wrapper {
+            background: #F1F2F6;
+            border-radius: 20px;
+            height: 25px;
+            width: 100%;
+            margin-bottom: 20px;
+            overflow: hidden;
+            border: 3px solid #CED6E0;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #FF4757, #FFA500, #2ED573);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease-in-out;
+        }
+
+        /* स्टेट्स काउंटर */
+        .stats-container {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin-bottom: 25px;
+            background: #FFEAA7;
+            padding: 12px 25px;
+            border-radius: 20px;
+            border: 2px dashed #FF9F43;
+        }
+
+        /* इमेज सपोर्ट स्टाइल */
+        .question-image-box {
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .question-image-box img {
+            max-height: 180px;
+            max-width: 100%;
+            object-fit: contain;
+            border-radius: 15px;
+            border: 3px solid #1E90FF;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        /* प्रश्न कार्ड */
+        .question-card {
+            font-size: 2.2rem;
+            font-weight: bold;
+            background: #F1F2F6;
+            padding: 25px;
+            border-radius: 24px;
+            margin-bottom: 25px;
+            color: #2F3542;
+            box-shadow: inset 0 3px 6px rgba(0,0,0,0.05);
+            border-bottom: 5px solid var(--info);
+        }
+
+        /* बड़े रंगीन विकल्प बटन ग्रिड */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        @media (max-width: 650px) {
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+            header h1 { font-size: 2rem; }
+            header .subtitle { font-size: 1.1rem; }
+            .question-card { font-size: 1.6rem; }
+        }
+
+        .opt-btn {
+            background: #FFFFFF;
+            border: 4px solid #FFEAA7;
+            border-radius: 20px;
+            padding: 20px;
+            font-size: 1.6rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 6px 0 #FFEAA7;
+            color: var(--text-color);
+        }
+
+        .opt-btn:hover:not(:disabled) {
+            background: #FFF9E6;
+            transform: translateY(-3px);
+            box-shadow: 0 9px 0 #FFEAA7;
+        }
+
+        .opt-btn:active:not(:disabled) {
+            transform: translateY(3px);
+            box-shadow: 0 3px 0 #FFEAA7;
+        }
+
+        /* इंस्टेंट फीडबैक स्टाइल्स */
+        .opt-btn.correct {
+            background-color: var(--success) !important;
+            border-color: #26AF5F !important;
+            box-shadow: 0 6px 0 #26AF5F !important;
+            color: white !important;
+            animation: pop 0.3s ease-in-out;
+        }
+
+        .opt-btn.wrong {
+            background-color: var(--danger) !important;
+            border-color: #E84118 !important;
+            box-shadow: 0 6px 0 #E84118 !important;
+            color: white !important;
+            animation: shake 0.3s ease-in-out;
+        }
+
+        .feedback-message {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin: 15px 0;
+            min-height: 45px;
+        }
+
+        /* नेविगेशन एक्शन बटन्स */
+        .control-actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .btn-ui {
+            padding: 15px 30px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 18px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 5px 0 rgba(0,0,0,0.1);
+        }
+
+        .btn-prev { background: #A4B0BE; color: white; box-shadow: 0 5px 0 #747D8C; }
+        .btn-next { background: var(--info); color: white; box-shadow: 0 5px 0 #0984E3; }
+        .btn-shuffle { background: #FF6B6B; color: white; width: 100%; margin-top: 20px; font-size: 1.4rem; box-shadow: 0 5px 0 #EE5253; }
+
+        .btn-ui:hover:not(:disabled) { opacity: 0.95; transform: translateY(-2px); }
+        .btn-ui:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.1); }
+        .btn-ui:disabled { background: #CED6E0; box-shadow: none; cursor: not-allowed; transform: none; }
+
+        /* टोस्ट मेसेज */
+        .toast-notification {
+            position: fixed;
+            bottom: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2F3542;
+            color: white;
+            padding: 15px 35px;
+            border-radius: 30px;
+            font-size: 1.3rem;
+            transition: bottom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1000;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        /* समापन और प्रमाणपत्र स्क्रीन */
+        .hidden-section { display: none; }
+
+        .certificate-frame {
+            border: 8px double var(--accent);
+            padding: 40px;
+            background: #FFFDF3;
+            border-radius: 24px;
+            margin: 25px 0;
+            position: relative;
+            box-shadow: inset 0 0 30px rgba(255, 165, 0, 0.15);
+        }
+
+        .cert-title {
+            font-size: 2.4rem;
+            color: #D35400;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .badge-box {
+            font-size: 2.4rem;
+            margin: 20px 0;
+            padding: 15px 35px;
+            background: #FEF9E7;
+            border-radius: 20px;
+            display: inline-block;
+            border: 3px dashed var(--accent);
+            font-weight: bold;
+            color: #BA4A00;
+        }
+
+        .name-field {
+            font-size: 1.6rem;
+            padding: 12px;
+            width: 85%;
+            max-width: 380px;
+            border: 3px solid #BDC3C7;
+            border-radius: 16px;
+            text-align: center;
+            margin: 15px 0;
+            outline: none;
+            background: #FFFFFF;
+        }
+        .name-field:focus { border-color: var(--info); box-shadow: 0 0 10px rgba(30, 144, 255, 0.2); }
+
+        #canvas-confetti {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* एनीमेशन */
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.06); }
+            100% { transform: scale(1); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+
+        /* प्रिंट सीएसएस */
+        @media print {
+            body * { visibility: hidden; }
+            .quiz-container, .certificate-frame, .certificate-frame * { visibility: visible; }
+            body { background: white; padding: 0; }
+            .quiz-container { box-shadow: none; padding: 0; border: none; max-width: 100%; }
+            header, #quiz-screen, h2, .control-actions { display: none !important; }
+            .certificate-frame { position: absolute; left: 0; top: 0; width: 100%; border: 5px solid #D35400; background: white; }
+            .name-field { border: none; font-weight: bold; font-size: 2.2rem; background: transparent; color: black; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="quiz-container">
+        <header>
+            <h1>🔤 हिन्दी वर्णमाला क्विज़</h1>
+            <p class="subtitle">"स्वर और व्यंजन को खेल-खेली में सीखें!"</p>
+        </header>
+
+        <div id="quiz-screen">
+            <div class="progress-wrapper">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <div class="stats-container">
+                <span id="question-count-label">प्रगति: 1 / 50</span>
+                <span id="score-label">अंक: 0</span>
+            </div>
+
+            <div class="question-image-box" id="image-box-container">
+                <img id="question-img-element" src="" alt="वर्णमाला चित्र" onerror="this.parentElement.style.display='none';">
+            </div>
+
+            <div class="question-card" id="question-display">
+                लोड हो रहा है...
+            </div>
+
+            <div class="options-grid" id="options-grid-container">
+                </div>
+
+            <div class="feedback-message" id="feedback-display"></div>
+
+            <div class="control-actions">
+                <button class="btn-ui btn-prev" id="prev-btn" onclick="goToPreviousQuestion()">⬅ पिछला प्रश्न</button>
+                <button class="btn-ui btn-next" id="next-btn" onclick="goToNextQuestion()">अगला प्रश्न ➡</button>
+            </div>
+
+            <button class="btn-ui btn-shuffle" onclick="handleShuffleButton()">🔀 वर्णमाला बदलें (Shuffle)</button>
+        </div>
+
+        <div id="result-screen" class="hidden-section">
+            <h2>🎉 अद्भुत! आपने वर्णमाला क्विज़ पूरा कर लिया है।</h2>
+            
+            <div class="certificate-frame">
+                <canvas id="canvas-confetti"></canvas>
+                <div class="cert-title">🏆 वर्णमाला प्रमाण पत्र 🏆</div>
+                <p style="font-size: 1.3rem; font-weight: 500;">यह प्रमाणित किया जाता है कि</p>
+                <input type="text" class="name-field" id="student-name-input" placeholder="यहाँ अपना नाम लिखें">
+                <p style="font-size: 1.3rem; margin: 12px 0; font-weight: 500;">ने "हिन्दी वर्णमाला क्विज़" को सफलतापूर्वक और सर्वश्रेष्ठ अंकों के साथ उत्तीर्ण किया है।</p>
+                
+                <div class="badge-box" id="badge-display-area">👍 अच्छा प्रयास</div>
+                
+                <div style="font-size: 1.6rem; margin-top: 15px; font-weight: bold;">
+                    कुल प्राप्तांक: <span id="final-score-val" style="color:var(--success);">0</span> / 50 (<span id="final-percentage-val">0%</span>)
+                </div>
+            </div>
+
+            <div class="control-actions" style="margin-top: 25px;">
+                <button class="btn-ui btn-prev" onclick="window.print()">🖨 प्रमाण पत्र प्रिंट करें</button>
+                <button class="btn-ui btn-next" onclick="resetAndRestartQuiz()">पुनः प्रयास करें 🔄</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-notification" id="toast-alert">संदेश</div>
+
+    <script>
+        // सभी 50 प्रश्नों का ऐरे फॉर्मेट संग्रह
+        const masterQuestionBank = [
+            // स्वर पहचानो (1–15)
+            { id: 1, q: "इनमें से कौन-सा स्वर है?", ans: "अ", alt: ["क", "ख", "ग"] },
+            { id: 2, q: "इनमें से कौन-सा स्वर है?", ans: "आ", alt: ["च", "छ", "ज"] },
+            { id: 3, q: "इनमें से कौन-सा स्वर है?", ans: "इ", alt: ["ट", "ठ", "ड"] },
+            { id: 4, q: "इनमें से कौन-सा स्वर है?", ans: "ई", alt: ["त", "थ", "द"] },
+            { id: 5, q: "इनमें से कौन-सा स्वर है?", ans: "उ", alt: ["प", "फ", "ब"] },
+            { id: 6, q: "इनमें से कौन-सा स्वर है?", ans: "ऊ", alt: ["य", "र", "ल"] },
+            { id: 7, q: "इनमें से कौन-sa स्वर है?", ans: "ए", alt: ["व", "श", "ष"] },
+            { id: 8, q: "इनमें से कौन-सा स्वर है?", ans: "ऐ", alt: ["स", "ह", "क्ष"] },
+            { id: 9, q: "इनमें से कौन-सा स्वर है?", ans: "ओ", alt: ["त्र", "ज्ञ", "श्र"] },
+            { id: 10, q: "इनमें से कौन-सा स्वर है?", ans: "औ", alt: ["ङ", "ञ", "ण"] },
+            { id: 11, q: "हिन्दी में कितने स्वर होते हैं?", ans: "13", alt: ["11", "33", "39"] },
+            { id: 12, q: "स्वर किसे कहते हैं?", ans: "जिनका उच्चारण बिना किसी अन्य वर्ण की सहायता से होता है", alt: ["जिनके उच्चारण में व्यंजन की सहायता लगती है", "जो शब्द संज्ञा की विशेषता बताते हैं", "जो किसी कार्य के होने का बोध कराते हैं"] },
+            { id: 13, q: "इनमें से कौन-सा स्वर नहीं है?", ans: "क", alt: ["अ", "इ", "उ"] },
+            { id: 14, q: "'अ' किस वर्ग में आता है?", ans: "स्वर", alt: ["व्यंजन", "संयुक्त वर्ण", "क्रिया"] },
+            { id: 15, q: "'ओ' किस प्रकार का वर्ण है?", ans: "स्वर", alt: ["व्यंजन", "अनुस्वार", "विसर्ग"] },
+
+            // व्यंजन पहचानो (16–30)
+            { id: 16, q: "इनमें से कौन-सा व्यंजन है?", ans: "क", alt: ["अ", "आ", "इ"] },
+            { id: 17, q: "इनमें से कौन-सा व्यंजन है?", ans: "ग", alt: ["ई", "उ", "ऊ"] },
+            { id: 18, q: "इनमें से कौन-sa व्यंजन है?", ans: "च", alt: ["ए", "ऐ", "ओ"] },
+            { id: 19, q: "इनमें से कौन-सा व्यंजन है?", ans: "ट", alt: ["औ", "अं", "अः"] },
+            { id: 20, q: "इनमें से कौन-सा व्यंजन है?", ans: "त", alt: ["ऋ", "आ", "ई"] },
+            { id: 21, q: "इनमें से कौन-सा व्यंजन है?", ans: "प", alt: ["उ", "ए", "ओ"] },
+            { id: 22, q: "इनमें से कौन-सा व्यंजन है?", ans: "ब", alt: ["अ", "इ", "ऊ"] },
+            { id: 23, q: "इनमें से कौन-सा व्यंजन है?", ans: "म", alt: ["ऐ", "औ", "ऋ"] },
+            { id: 24, q: "इनमें से कौन-सा व्यंजन है?", ans: "य", alt: ["आ", "ई", "उ"] },
+            { id: 25, q: "इनमें से कौन-सा व्यंजन है?", ans: "र", alt: ["ए", "ओ", "अं"] },
+            { id: 26, q: "हिन्दी में कितने व्यंजन होते हैं?", ans: "39", alt: ["13", "33", "52"] },
+            { id: 27, q: "व्यंजन किसे कहते हैं?", ans: "जिनके उच्चारण में स्वर की सहायता लगती है", alt: ["जिनका उच्चारण स्वतंत्र रूप से होता है", "जो बिना किसी सहायता के बोले जाते हैं", "जो मात्राओं का निर्माण करते हैं"] },
+            { id: 28, q: "इनमें से कौन-सा व्यंजन नहीं है?", ans: "आ", alt: ["क", "च", "त"] },
+            { id: 29, q: "'क' किस वर्ग में आता है?", ans: "व्यंजन", alt: ["स्वर", "संज्ञा", "सर्वनाम"] },
+            { id: 30, q: "'म' किस प्रकार का वर्ण है?", ans: "व्यंजन", alt: ["स्वर", "विदेशी वर्ण", "स्वर और व्यंजन दोनों"] },
+
+            // अक्षर से शब्द पहचानो (31–40)
+            { id: 31, q: "'क' से कौन-सा शब्द बनता है?", ans: "कमल", alt: ["खरगोश", "गमला", "घड़ी"], img: "images/kamal.png" },
+            { id: 32, q: "'ग' से कौन-सा शब्द बनता है?", ans: "गमला", alt: ["कबूतर", "चम्मच", "टमाटर"], img: "images/gamla.png" },
+            { id: 33, q: "'च' से कौन-सा शब्द बनता है?", ans: "चम्मच", alt: ["छाता", "जहाज", "झंडा"] },
+            { id: 34, q: "'ज' से कौन-सा शब्द बनता है?", ans: "जहाज", alt: ["टमाटर", "तितली", "पतंग"] },
+            { id: 35, q: "'ट' से कौन-सा शब्द बनता है?", ans: "टमाटर", alt: ["ठठेरा", "डमरू", "ढोलक"] },
+            { id: 36, q: "'त' से कौन-सा शब्द बनता है?", ans: "تितली", ans: "तितली", alt: ["थर्मस", "दवात", "धनुष"] },
+            { id: 37, q: "'प' से कौन-सा शब्द बनता है?", ans: "पतंग", alt: ["फल", "बकरी", "भालू"], img: "images/patang.png" },
+            { id: 38, q: "'ब' से कौन-सा शब्द बनता है?", ans: "बकरी", alt: ["मछली", "यज्ञ", "रथ"] },
+            { id: 39, q: "'म' से कौन-सा शब्द बनता है?", ans: "मछली", alt: ["लड़का", "वन", "शलगम"] },
+            { id: 40, q: "'र' से कौन-सा शब्द बनता है?", ans: "रसगुल्ला", alt: ["सेब", "हवाईजहाज", "त्रिशूल"] },
+
+            // मिश्रित प्रश्न (41–50)
+            { id: 41, q: "हिन्दी वर्णमाला में स्वर और व्यंजन मिलकर क्या बनाते हैं?", ans: "वर्णमाला", alt: ["शब्दकोश", "वाक्य", "कहानी"] },
+            { id: 42, q: "इनमें से कौन-सा स्वर है?", ans: "ऋ", alt: ["श", "ष", "स"] },
+            { id: 43, q: "इनमें से कौन-सा व्यंजन है?", ans: "श", alt: ["अ", "ऋ", "औ"] },
+            { id: 44, q: "'अ' से कौन-सा शब्द बनता है?", ans: "अनार", alt: ["आम", "इमली", "ईख"], img: "images/anar.png" },
+            { id: 45, q: "'इ' से कौन-सा शब्द बनता है?", ans: "इमली", alt: ["ईश्वर", "उल्लू", "ऊँट"], img: "images/imli.png" },
+            { id: 46, q: "'उ' से कौन-सा शब्द बनता है?", ans: "उल्लू", alt: ["ऊँट", "ऋषि", "एड़ी"], img: "images/ullu.png" },
+            { id: 47, q: "'ए' से कौन-सा शब्द बनता है?", ans: "एड़ी", alt: ["ऐनक", "ओखली", "औरत"], img: "images/edi.png" },
+            { id: 48, q: "'ओ' से कौन-सा शब्द बनता है?", ans: "ओखली", alt: ["औषधि", "अंगूर", "अनार"], img: "images/okhli.png" },
+            { id: 49, q: "'औ' से कौन-सा शब्द बनता है?", ans: "औरत", alt: ["ओस", "अंगूठी", "आम"], img: "images/aurat.png" },
+            { id: 50, q: "हिन्दी वर्णमाला सीखना क्यों आवश्यक है?", ans: "पढ़ने और लिखने के लिए", alt: ["खेलने के लिए", "दौड़ने के लिए", "सोने के लिए"] }
+        ];
+
+        let currentActiveQuestions = [...masterQuestionBank];
+        let currentQuestionIndex = 0;
+        let runningScore = 0;
+        let responseTracker = new Array(currentActiveQuestions.length).fill(null);
+
+        // सिंथेटिक वेब ऑडियो API इंजन (रियल-टाइम साउंड जेनरेशन बिना किसी एक्सटर्नल डिपेंडेंसी के)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function triggerSound(type) {
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            if (type === 'correct') {
+                oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.08); // E5
+                gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                oscillator.start(); oscillator.stop(audioCtx.currentTime + 0.25);
+            } else if (type === 'wrong') {
+                oscillator.frequency.setValueAtTime(220.00, audioCtx.currentTime); // A3
+                oscillator.frequency.setValueAtTime(164.81, audioCtx.currentTime + 0.1); // E3
+                gainNode.gain.setValueAtTime(0.25, audioCtx.currentTime);
+                oscillator.start(); oscillator.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'complete') {
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.connect(gain); gain.connect(audioCtx.destination);
+                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime + idx * 0.1);
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime + idx * 0.1);
+                    osc.start(audioCtx.currentTime + idx * 0.1); osc.stop(audioCtx.currentTime + idx * 0.1 + 0.3);
+                });
+            }
+        }
+
+        // फ़िशर-येट्स रैंडमाइज़ेशन ऐल्गोरिदम
+        function randomizeArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function showToast(messageText) {
+            const toast = document.getElementById("toast-alert");
+            toast.innerText = messageText;
+            toast.style.bottom = "30px";
+            setTimeout(() => { toast.style.bottom = "-100px"; }, 2500);
+        }
+
+        // प्रश्न रेंडर करने का मुख्य लॉजिक
+        function renderQuestion() {
+            if (currentQuestionIndex >= currentActiveQuestions.length) {
+                renderQuizCompletionScreen();
+                return;
+            }
+
+            const currentObj = currentActiveQuestions[currentQuestionIndex];
+            
+            // प्रोग्रेस और स्टेट्स अपडेट
+            document.getElementById("question-count-label").innerText = `प्रगति: ${currentQuestionIndex + 1} / ${currentActiveQuestions.length}`;
+            document.getElementById("score-label").innerText = `अंक: ${runningScore}`;
+            
+            const progressPct = (currentQuestionIndex / currentActiveQuestions.length) * 100;
+            document.getElementById("progress-bar").style.width = `${progressPct}%`;
+
+            // बोनस इमेज हैंडलिंग व्यवस्था
+            const imageBox = document.getElementById("image-box-container");
+            const imgElement = document.getElementById("question-img-element");
+            if (currentObj.img) {
+                imgElement.src = currentObj.img;
+                imageBox.style.display = "block";
+            } else {
+                imageBox.style.display = "none";
+                imgElement.src = "";
+            }
+
+            // प्रश्न टेक्स्ट सेट करें
+            document.getElementById("question-display").innerText = currentObj.q;
+            
+            // विकल्पों का ऑटो-रैंडमाइज़ेशन
+            if (!currentObj.shuffledOptions) {
+                currentObj.shuffledOptions = randomizeArray([currentObj.ans, ...currentObj.alt]);
+            }
+
+            const optionsGrid = document.getElementById("options-grid-container");
+            optionsGrid.innerHTML = "";
+            document.getElementById("feedback-display").innerText = "";
+
+            currentObj.shuffledOptions.forEach(optionText => {
+                const button = document.createElement("button");
+                button.className = "opt-btn";
+                button.innerText = optionText;
+                button.onclick = () => evaluateUserChoice(button, optionText);
+                optionsGrid.appendChild(button);
+            });
+
+            // नेविगेशन बटन लॉक / अनलॉक
+            document.getElementById("prev-btn").disabled = currentQuestionIndex === 0;
+            document.getElementById("next-btn").innerText = currentQuestionIndex === currentActiveQuestions.length - 1 ? "क्विज़ समाप्त करें 🏁" : "अगला प्रश्न ➡";
+
+            // यदि प्रश्न पहले ही हल किया जा चुका है तो पुरानी अवस्था बहाल करें
+            if (responseTracker[currentQuestionIndex] !== null) {
+                restorePreviousAnswerState();
+            }
+        }
+
+        // चयनित उत्तर का तुरंत सत्यापन (Instant Feedback)
+        function evaluateUserChoice(selectedButton, chosenText) {
+            if (responseTracker[currentQuestionIndex] !== null) return;
+
+            const targetObj = currentActiveQuestions[currentQuestionIndex];
+            responseTracker[currentQuestionIndex] = chosenText;
+
+            const buttons = document.querySelectorAll(".opt-btn");
+            buttons.forEach(btn => btn.disabled = true);
+
+            if (chosenText === targetObj.ans) {
+                selectedButton.classList.add("correct");
+                document.getElementById("feedback-display").innerHTML = "<span style='color: #2ED573;'>✅ बिल्कुल सही! बहुत अच्छे।</span>";
+                runningScore++;
+                document.getElementById("score-label").innerText = `अंक: ${runningScore}`;
+                triggerSound('correct');
+            } else {
+                selectedButton.classList.add("wrong");
+                document.getElementById("feedback-display").innerHTML = `<span style='color: #FF6B6B;'>❌ प्रयास अच्छा था! सही उत्तर: <strong>${targetObj.ans}</strong></span>`;
+                
+                buttons.forEach(btn => {
+                    if (btn.innerText === targetObj.ans) btn.classList.add("correct");
+                });
+                triggerSound('wrong');
+            }
+            
+            const updatedProgressPct = ((currentQuestionIndex + 1) / currentActiveQuestions.length) * 100;
+            document.getElementById("progress-bar").style.width = `${updatedProgressPct}%`;
+        }
+
+        // पहले से दिए गए उत्तरों की अवस्था को पुनर्स्थापित करना
+        function restorePreviousAnswerState() {
+            const targetObj = currentActiveQuestions[currentQuestionIndex];
+            const previousSavedChoice = responseTracker[currentQuestionIndex];
+            const buttons = document.querySelectorAll(".opt-btn");
+
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                if (btn.innerText === previousSavedChoice) {
+                    btn.classList.add(previousSavedChoice === targetObj.ans ? "correct" : "wrong");
+                }
+                if (btn.innerText === targetObj.ans) {
+                    btn.classList.add("correct");
+                }
+            });
+
+            if (previousSavedChoice === targetObj.ans) {
+                document.getElementById("feedback-display").innerHTML = "<span style='color: #2ED573;'>✅ बिल्कुल सही! बहुत अच्छे।</span>";
+            } else {
+                document.getElementById("feedback-display").innerHTML = `<span style='color: #FF6B6B;'>❌ सही उत्तर: <strong>${targetObj.ans}</strong></span>`;
+            }
+        }
+
+        function goToNextQuestion() {
+            if (responseTracker[currentQuestionIndex] === null) {
+                showToast("कृपया आगे बढ़ने से पहले किसी एक अक्षर को चुनें!");
+                return;
+            }
+            currentQuestionIndex++;
+            renderQuestion();
+        }
+
+        function goToPreviousQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion();
+            }
+        }
+
+        // शफल बटन ऑपरेशन
+        function handleShuffleButton() {
+            currentActiveQuestions = randomizeArray([...masterQuestionBank]);
+            currentActiveQuestions.forEach(item => item.shuffledOptions = null);
+            currentQuestionIndex = 0;
+            runningScore = 0;
+            responseTracker = new Array(currentActiveQuestions.length).fill(null);
+            renderQuestion();
+            showToast("वर्णमाला को सफलतापूर्वक मिश्रित (Shuffle) कर दिया गया है।");
+        }
+
+        // फाइनल परिणाम और सर्टिफिकेट जेनरेशन
+        function renderQuizCompletionScreen() {
+            document.getElementById("quiz-screen").style.display = "none";
+            document.getElementById("result-screen").style.display = "block";
+            
+            document.getElementById("final-score-val").innerText = runningScore;
+            const percentage = Math.round((runningScore / currentActiveQuestions.length) * 100);
+            document.getElementById("final-percentage-val").innerText = `${percentage}%`;
+
+            let achievementBadge = "";
+            if (percentage >= 90) achievementBadge = "🏆 वर्णमाला विशेषज्ञ";
+            else if (percentage >= 70) achievementBadge = "🌟 अक्षर मित्र";
+            else if (percentage >= 50) achievementBadge = "👍 अच्छा प्रयास";
+            else achievementBadge = "📚 और अभ्यास करें";
+
+            document.getElementById("badge-display-area").innerText = achievementBadge;
+            triggerSound('complete');
+            initializeConfettiEffect();
+        }
+
+        function resetAndRestartQuiz() {
+            document.getElementById("result-screen").style.display = "none";
+            document.getElementById("quiz-screen").style.display = "block";
+            document.getElementById("student-name-input").value = "";
+            handleShuffleButton();
+        }
+
+        // कैनवास आधारित डिजिटल कंफ़ेट्टी सेलिब्रेशन एनीमेशन
+        function initializeConfettiEffect() {
+            const canvas = document.getElementById("canvas-confetti");
+            const ctx = canvas.getContext("2d");
+            canvas.width = canvas.parentElement.offsetWidth;
+            canvas.height = canvas.parentElement.offsetHeight;
+
+            let particles = [];
+            for (let i = 0; i < 80; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    size: Math.random() * 5 + 4,
+                    speedY: Math.random() * 2 + 2,
+                    speedX: Math.random() * 2 - 1,
+                    color: `hsl(${Math.random() * 360}, 90%, 60%)`
+                });
+            }
+
+            function runConfettiLoop() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach((p) => {
+                    ctx.beginPath();
+                    ctx.fillStyle = p.color;
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    p.y += p.speedY;
+                    p.x += p.speedX;
+                    
+                    if (p.y > canvas.height) {
+                        p.y = -10;
+                        p.x = Math.random() * canvas.width;
+                    }
+                });
+                requestAnimationFrame(runConfettiLoop);
+            }
+            runConfettiLoop();
+        }
+
+        // ऐप्लिकेशन लोड होने पर डिफ़ॉल्ट रूप से प्रारंभ करें
+        window.onload = () => {
+            renderQuestion();
+        };
+    </script>
+</body>
+</html>

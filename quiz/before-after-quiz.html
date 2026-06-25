@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔢 Before, After & Between Numbers Quiz</title>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #FF7675, #74B9FF, #A29BFE, #FFEAA7);
+            --glass-bg: rgba(255, 255, 255, 0.23);
+            --glass-border: rgba(255, 255, 255, 0.45);
+            --text-main: #2D3436;
+            --correct-green: #2ECC71;
+            --wrong-red: #FF7675;
+            --btn-blue: #0984E3;
+            --app-font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: var(--app-font);
+            background: var(--primary-gradient);
+            background-size: 400% 400%;
+            animation: gradientShift 20s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Ambient Parallax Physics Layer */
+        .ambient-physics-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .ambient-particle {
+            position: absolute;
+            font-weight: 800;
+            color: rgba(255, 255, 255, 0.15);
+            animation: moveUpstream 15s linear infinite;
+            bottom: -100px;
+        }
+
+        @keyframes moveUpstream {
+            0% { transform: translateY(0) rotate(0deg) scale(0.9); opacity: 0; }
+            15% { opacity: 0.3; }
+            85% { opacity: 0.3; }
+            100% { transform: translateY(-125vh) rotate(360deg) scale(1.4); opacity: 0; }
+        }
+
+        /* Core Glassmorphism Interface Card */
+        .quiz-panel-wrapper {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 3px solid var(--glass-border);
+            border-radius: 30px;
+            padding: 30px;
+            width: 100%;
+            max-width: 850px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+            z-index: 5;
+            position: relative;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2.3rem;
+            color: #FFF;
+            text-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 1.15rem;
+            color: #F8F9FA;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Metric Trackers HUD */
+        .stats-hud {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.45);
+            padding: 12px 24px;
+            border-radius: 18px;
+            font-weight: 700;
+            color: var(--text-main);
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 14px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            margin-bottom: 25px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #2ECC71, #00CEC9);
+            border-radius: 20px;
+            transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* Main Dynamic Card Elements */
+        .question-card {
+            background: rgba(255, 255, 255, 0.94);
+            padding: 30px;
+            border-radius: 22px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.03);
+            margin-bottom: 20px;
+            text-align: center;
+            animation: cardEntrance 0.35s ease-out;
+        }
+
+        @keyframes cardEntrance {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-tag {
+            display: inline-block;
+            background: #6C5CE7;
+            color: white;
+            padding: 5px 16px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            letter-spacing: 0.6px;
+        }
+
+        .question-content {
+            font-size: 1.65rem;
+            font-weight: 700;
+            color: var(--text-main);
+            line-height: 1.4;
+        }
+
+        /* Grid Configuration for Interactive Option Nodes */
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .option-node {
+            background: rgba(255, 255, 255, 0.95);
+            border: 3px solid transparent;
+            border-radius: 16px;
+            padding: 18px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.2, 1, 0.3, 1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .option-node:hover:not([disabled]) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            border-color: #74B9FF;
+            background: #FFF;
+        }
+
+        .option-node.correct {
+            background: var(--correct-green) !important;
+            color: #FFF !important;
+            border-color: #27AE60;
+        }
+
+        .option-node.wrong {
+            background: var(--wrong-red) !important;
+            color: #FFF !important;
+            border-color: #C0392B;
+        }
+
+        /* Real-Time Concept Explanation Display Box */
+        .explanation-card {
+            display: none;
+            background: #E8F8F5;
+            border-left: 6px solid var(--correct-green);
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #1E8449;
+            text-align: left;
+            animation: cardEntrance 0.3s ease-out;
+        }
+        .explanation-card.incorrect-alert {
+            background: #FDEDEC;
+            border-left-color: var(--wrong-red);
+            color: #922B21;
+        }
+
+        /* Action Cluster Systems */
+        .navigation-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .btn-system {
+            background: var(--btn-blue);
+            color: white;
+            border: none;
+            padding: 14px 26px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(9, 132, 227, 0.25);
+        }
+
+        .btn-system:hover:not([disabled]) {
+            background: #0263B1;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(9, 132, 227, 0.4);
+        }
+
+        .btn-system:disabled {
+            background: #B2BEC3;
+            box-shadow: none;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .btn-shuffle {
+            background: #F1C40F;
+            color: #2D3436;
+            box-shadow: 0 4px 12px rgba(241, 196, 15, 0.25);
+        }
+        .btn-shuffle:hover {
+            background: #D4AC0D;
+        }
+
+        /* Summary Certificate Module Design */
+        .certificate-container {
+            display: none;
+            text-align: center;
+            background: white;
+            padding: 35px;
+            border-radius: 26px;
+            box-shadow: 0 15px 45px rgba(0,0,0,0.12);
+            color: #2C3E50;
+            animation: cardEntrance 0.5s ease-out;
+        }
+
+        .certificate-border-engraving {
+            border: 6px double #F1C40F;
+            padding: 30px 20px;
+            border-radius: 18px;
+            background: #FAFAFA;
+        }
+
+        .cert-crown {
+            font-size: 4.8rem;
+            margin-bottom: 10px;
+            display: inline-block;
+            animation: crownBobbing 2s infinite alternate ease-in-out;
+        }
+
+        @keyframes crownBobbing {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-10px); }
+        }
+
+        .badge-title-string {
+            font-size: 2.1rem;
+            font-weight: 800;
+            color: #D35400;
+            margin-bottom: 15px;
+        }
+
+        .cert-metric-readout {
+            font-size: 1.45rem;
+            margin: 20px 0;
+            font-weight: 700;
+            color: #34495E;
+        }
+
+        .cert-actions-cluster {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .btn-restart { background: #2ECC71; box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3); }
+        .btn-restart:hover { background: #27AE60; }
+        .btn-print { background: #E67E22; box-shadow: 0 4px 12px rgba(230, 126, 34, 0.3); }
+        .btn-print:hover { background: #D35400; }
+
+        #canvas-confetti-mat {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 99;
+        }
+
+        /* Screen Breakpoint Adaptations */
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8rem; }
+            .options-grid { grid-template-columns: 1fr; gap: 12px; }
+            .quiz-panel-wrapper { padding: 20px 15px; }
+            .option-node { padding: 15px; font-size: 1.25rem; }
+            .btn-system { padding: 11px 18px; font-size: 0.95rem; }
+            .question-content { font-size: 1.35rem; }
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            .certificate-container, .certificate-container * { visibility: visible; }
+            .certificate-container { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; padding: 0; margin: 0; }
+            .cert-actions-cluster { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-physics-layer" id="ambientPhysicsContainer"></div>
+    <canvas id="canvas-confetti-mat"></canvas>
+
+    <div class="quiz-panel-wrapper">
+        <div id="quizWorkspace">
+            <header>
+                <h1>🔢 Before, After & Between Numbers Quiz</h1>
+                <p class="subtitle">Observe • Think • Complete the Number Sequence</p>
+            </header>
+
+            <div class="stats-hud">
+                <div>Question: <span id="hud-current">1</span>/50</div>
+                <div>Score: <span id="hud-score">0</span></div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+
+            <div class="question-card">
+                <span class="section-tag" id="sectionTag">Section A</span>
+                <div class="question-content" id="questionString">Extracting computational sequences...</div>
+            </div>
+
+            <div class="explanation-card" id="explanationCard"></div>
+
+            <div class="options-grid" id="optionsGrid"></div>
+
+            <div class="navigation-row">
+                <button class="btn-system" id="btnPrev" onclick="navigateStep(-1)">⬅️ Previous</button>
+                <button class="btn-system btn-shuffle" id="btnShuffle" onclick="shuffleMatrixSet()">🔀 Shuffle Items</button>
+                <button class="btn-system" id="btnNext" onclick="navigateStep(1)">Next ➡️</button>
+            </div>
+        </div>
+
+        <div id="certificateWorkspace" class="certificate-container">
+            <div class="certificate-border-engraving">
+                <div class="cert-crown" id="certIcon">🏆</div>
+                <div class="badge-title-string" id="certTitle">Number Sequence Master</div>
+                <h2>Certificate of Merit Achievement</h2>
+                <p>Successfully evaluated and passed all 50 numerical linear continuity structures across 2, 3, and 4-digit parameters.</p>
+                <div class="cert-metric-readout" id="certScoreBox">Score: 100% (50/50 Correct)</div>
+                
+                <div class="cert-actions-cluster">
+                    <button class="btn-system btn-restart" onclick="restartQuizSession()">🔄 Reset Challenge</button>
+                    <button class="btn-system btn-print" onclick="window.print()">🖨️ Print Certificate</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Web Audio API Synthesizer Core Sound Processor
+        const SoundFX = {
+            audioContext: null,
+            init() {
+                if (!this.audioContext) {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
+            play(event) {
+                this.init();
+                if (this.audioContext.state === 'suspended') this.audioContext.resume();
+
+                const osc = this.audioContext.createOscillator();
+                const nodeGain = this.audioContext.createGain();
+                osc.connect(nodeGain);
+                nodeGain.connect(this.audioContext.destination);
+                const timeline = this.audioContext.currentTime;
+
+                if (event === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(550, timeline);
+                    nodeGain.gain.setValueAtTime(0.06, timeline);
+                    nodeGain.gain.exponentialRampToValueAtTime(0.001, timeline + 0.07);
+                    osc.start(timeline);
+                    osc.stop(timeline + 0.07);
+                } else if (event === 'correct') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, timeline); // C5
+                    osc.frequency.setValueAtTime(659.25, timeline + 0.07); // E5
+                    osc.frequency.setValueAtTime(783.99, timeline + 0.14); // G5
+                    nodeGain.gain.setValueAtTime(0.12, timeline);
+                    nodeGain.gain.exponentialRampToValueAtTime(0.001, timeline + 0.38);
+                    osc.start(timeline);
+                    osc.stop(timeline + 0.38);
+                } else if (event === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(260, timeline);
+                    osc.frequency.linearRampToValueAtTime(140, timeline + 0.24);
+                    nodeGain.gain.setValueAtTime(0.12, timeline);
+                    nodeGain.gain.exponentialRampToValueAtTime(0.001, timeline + 0.26);
+                    osc.start(timeline);
+                    osc.stop(timeline + 0.26);
+                } else if (event === 'complete') {
+                    const polyphony = [523.25, 659.25, 783.99, 1046.50];
+                    polyphony.forEach((freq, idx) => {
+                        const o = this.audioContext.createOscillator();
+                        const g = this.audioContext.createGain();
+                        o.type = 'sine';
+                        o.frequency.setValueAtTime(freq, timeline + idx * 0.06);
+                        g.gain.setValueAtTime(0.05, timeline + idx * 0.06);
+                        g.gain.exponentialRampToValueAtTime(0.001, timeline + 0.6);
+                        o.connect(g);
+                        g.connect(this.audioContext.destination);
+                        o.start(timeline + idx * 0.06);
+                        o.stop(timeline + 0.6);
+                    });
+                }
+            }
+        };
+
+        // Complete 50-Question Bank Array Matrix
+        const staticMasterBank = [
+            // Section A — Before Numbers (2-Digit) (1–10)
+            { type: 'before', sec: 'Section A: Before Numbers (2-Digit)', q: 'Which number comes before 45?', target: 45, a: 44, o: [44, 46, 43, 47] },
+            { type: 'before', sec: 'Section A: Before Numbers (2-Digit)', q: 'Which number comes before 70?', target: 70, a: 69, o: [69, 71, 60, 72] },
+            { type: 'before', sec: 'Section A: Before Numbers (2-Digit)', q: 'Which number comes before 99?', target: 99, a: 98, o: [98, 100, 97, 89] },
+            { type: 'before', sec: 'Section A: Before Numbers (2-Digit)', q: 'Which number comes before 15?', target: 15, a: 14, o: [14, 16, 13, 25] },
+            { type: 'before', sec: 'Section A: Before Numbers (2-Digit)', q: 'Which number comes before 32?', target: 32, a: 31, o: [31, 33, 30, 23] },
+            { type: 'before', sec: 'Section A: Before Numbers (2-Digit)', q: 'Which number comes before 88?', target: 88, a: 87, o: [87, 89, 78, 86] },
+            { type: 'before', sec: 'Section A: Before Numbers (2-Digit)', q: 'Which number comes before 23?', target: 23, a: 22, o: [22, 24, 21, 32] },
+            { type: 'before', sec: 'Section A: Before Numbers (2-Digit)', q: 'Which number comes before 61?', target: 61, a: 60, o: [60, 62, 59, 71] },
+            { type: 'before', sec: 'Section A: Before Numbers (2-Digit)', q: 'Which number comes before 50?', target: 50, a: 49, o: [49, 51, 40, 52] },
+            { type: 'before', sec: 'Section A: Before Numbers (2-Digit)', q: 'Which number comes before 11?', target: 11, a: 10, o: [10, 12, 9, 21] },
+
+            // Section B — After Numbers (2-Digit) (11–20)
+            { type: 'after', sec: 'Section B: After Numbers (2-Digit)', q: 'Which number comes after 38?', target: 38, a: 39, o: [39, 37, 40, 36] },
+            { type: 'after', sec: 'Section B: After Numbers (2-Digit)', q: 'Which number comes after 64?', target: 64, a: 65, o: [65, 63, 74, 66] },
+            { type: 'after', sec: 'Section B: After Numbers (2-Digit)', q: 'Which number comes after 19?', target: 19, a: 20, o: [20, 18, 21, 10] },
+            { type: 'after', sec: 'Section B: After Numbers (2-Digit)', q: 'Which number comes after 82?', target: 82, a: 83, o: [83, 81, 92, 84] },
+            { type: 'after', sec: 'Section B: After Numbers (2-Digit)', q: 'Which number comes after 49?', target: 49, a: 50, o: [50, 48, 51, 60] },
+            { type: 'after', sec: 'Section B: After Numbers (2-Digit)', q: 'Which number comes after 75?', target: 75, a: 76, o: [76, 74, 85, 77] },
+            { type: 'after', sec: 'Section B: After Numbers (2-Digit)', q: 'Which number comes after 21?', target: 21, a: 22, o: [22, 20, 23, 31] },
+            { type: 'after', sec: 'Section B: After Numbers (2-Digit)', q: 'Which number comes after 93?', target: 93, a: 94, o: [94, 92, 95, 83] },
+            { type: 'after', sec: 'Section B: After Numbers (2-Digit)', q: 'Which number comes after 57?', target: 57, a: 58, o: [58, 56, 67, 59] },
+            { type: 'after', sec: 'Section B: After Numbers (2-Digit)', q: 'Which number comes after 12?', target: 12, a: 13, o: [13, 11, 14, 22] },
+
+            // Section C — Between Numbers (2-Digit) (21–25)
+            { type: 'between', sec: 'Section C: Between Numbers (2-Digit)', q: 'Which number comes between 52 and 54?', start: 52, end: 54, a: 53, o: [53, 55, 51, 50] },
+            { type: 'between', sec: 'Section C: Between Numbers (2-Digit)', q: 'Which number comes between 87 and 89?', start: 87, end: 89, a: 88, o: [88, 86, 90, 78] },
+            { type: 'between', sec: 'Section C: Between Numbers (2-Digit)', q: 'Which number comes between 14 and 16?', start: 14, end: 16, a: 15, o: [15, 13, 17, 25] },
+            { type: 'between', sec: 'Section C: Between Numbers (2-Digit)', q: 'Which number comes between 39 and 41?', start: 39, end: 41, a: 40, o: [40, 38, 42, 50] },
+            { type: 'between', sec: 'Section C: Between Numbers (2-Digit)', q: 'Which number comes between 71 and 73?', start: 71, end: 73, a: 72, o: [72, 70, 74, 82] },
+
+            // Section D — 3-Digit Numbers (26–40)
+            { type: 'before', sec: 'Section D: 3-Digit Numbers', q: 'Which number comes before 365?', target: 365, a: 364, o: [364, 366, 355, 465] },
+            { type: 'after', sec: 'Section D: 3-Digit Numbers', q: 'Which number comes after 728?', target: 728, a: 729, o: [729, 727, 730, 828] },
+            { type: 'between', sec: 'Section D: 3-Digit Numbers', q: 'Which number comes between 514 and 516?', start: 514, end: 516, a: 515, o: [515, 513, 517, 525] },
+            { type: 'before', sec: 'Section D: 3-Digit Numbers', q: 'Which number comes before 900?', target: 900, a: 899, o: [899, 901, 800, 890] },
+            { type: 'after', sec: 'Section D: 3-Digit Numbers', q: 'Which number comes after 999?', target: 999, a: 1000, o: [1000, 998, 1001, 900] },
+            { type: 'before', sec: 'Section D: 3-Digit Numbers', q: 'Which number comes before 150?', target: 150, a: 149, o: [149, 151, 140, 250] },
+            { type: 'after', sec: 'Section D: 3-Digit Numbers', q: 'Which number comes after 421?', target: 421, a: 422, o: [422, 420, 423, 521] },
+            { type: 'between', sec: 'Section D: 3-Digit Numbers', q: 'Which number comes between 888 and 890?', start: 888, end: 890, a: 889, o: [889, 887, 891, 789] },
+            { type: 'before', sec: 'Section D: 3-Digit Numbers', q: 'Which number comes before 630?', target: 630, a: 629, o: [629, 631, 620, 530] },
+            { type: 'after', sec: 'Section D: 3-Digit Numbers', q: 'Which number comes after 109?', target: 109, a: 110, o: [110, 108, 111, 209] },
+            { type: 'between', sec: 'Section D: 3-Digit Numbers', q: 'Which number comes between 245 and 247?', start: 245, end: 247, a: 246, o: [246, 244, 248, 346] },
+            { type: 'before', sec: 'Section D: 3-Digit Numbers', q: 'Which number comes before 784?', target: 784, a: 783, o: [783, 785, 774, 884] },
+            { type: 'after', sec: 'Section D: 3-Digit Numbers', q: 'Which number comes after 555?', target: 555, a: 556, o: [556, 554, 565, 557] },
+            { type: 'between', sec: 'Section D: 3-Digit Numbers', q: 'Which number comes between 962 and 964?', start: 962, end: 964, a: 963, o: [963, 961, 965, 863] },
+            { type: 'before', sec: 'Section D: 3-Digit Numbers', q: 'Which number comes before 400?', target: 400, a: 399, o: [399, 401, 300, 390] },
+
+            // Section E — 4-Digit Numbers (41–50)
+            { type: 'before', sec: 'Section E: 4-Digit Numbers', q: 'Which number comes before 4,250?', target: '4,250', a: 4249, o: [4249, 4251, 4240, 4350] },
+            { type: 'after', sec: 'Section E: 4-Digit Numbers', q: 'Which number comes after 6,899?', target: '6,899', a: 6900, o: [6900, 6898, 6901, 6800] },
+            { type: 'between', sec: 'Section E: 4-Digit Numbers', q: 'Which number comes between 7,431 and 7,433?', start: '7,431', end: '7,433', a: 7432, o: [7432, 7430, 7434, 7532] },
+            { type: 'before', sec: 'Section E: 4-Digit Numbers', q: 'Which number comes before 1,000?', target: '1,000', a: 999, o: [999, 1001, 990, 900] },
+            { type: 'after', sec: 'Section E: 4-Digit Numbers', q: 'Which number comes after 9,999?', target: '9,999', a: 10000, o: [10000, 9998, 10001, 9990] },
+            { type: 'between', sec: 'Section E: 4-Digit Numbers', q: 'Which number comes between 3,199 and 3,201?', start: '3,199', end: '3,201', a: 3200, o: [3200, 3198, 3201, 3100] },
+            { type: 'before', sec: 'Section E: 4-Digit Numbers', q: 'Which number comes before 5,800?', target: '5,800', a: 5799, o: [5799, 5801, 5700, 5790] },
+            { type: 'after', sec: 'Section E: 4-Digit Numbers', q: 'Which number comes after 2,499?', target: '2,499', a: 2500, o: [2500, 2498, 2501, 2400] },
+            { type: 'between', sec: 'Section E: 4-Digit Numbers', q: 'Which number comes between 8,750 and 8,752?', start: '8,750', end: '8,752', a: 8751, o: [8751, 8749, 8753, 8651] },
+            { type: 'before', sec: 'Section E: 4-Digit Numbers', q: 'Which number comes before 9,001?', target: '9,001', a: 9000, o: [9000, 9002, 8999, 8001] }
+        ];
+
+        let runtimeDataBank = JSON.parse(JSON.stringify(staticMasterBank));
+        let activePointer = 0;
+        let selectedAnswersLog = {};
+        let accumulativeScore = 0;
+
+        function runAmbientLayer() {
+            const container = document.getElementById('ambientPhysicsContainer');
+            container.innerHTML = '';
+            const characters = ['12', '99', '500', '+', '1', '76', '45', '8', '320', 'K'];
+            for (let i = 0; i < 15; i++) {
+                const el = document.createElement('div');
+                el.className = 'ambient-particle';
+                el.innerText = characters[Math.floor(Math.random() * characters.length)];
+                el.style.left = `${Math.random() * 100}%`;
+                el.style.animationDelay = `${Math.random() * 10}s`;
+                el.style.animationDuration = `${10 + Math.random() * 8}s`;
+                container.appendChild(el);
+            }
+        }
+
+        function shuffleArrayAlgorithm(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+        }
+
+        function shuffleMatrixSet() {
+            SoundFX.play('click');
+            shuffleArrayAlgorithm(runtimeDataBank);
+            runtimeDataBank.forEach(node => node._shuffledOptions = null);
+            selectedAnswersLog = {};
+            activePointer = 0;
+            accumulativeScore = 0;
+            renderQuestionStage();
+        }
+
+        function renderQuestionStage() {
+            const node = runtimeDataBank[activePointer];
+            
+            document.getElementById('hud-current').innerText = activePointer + 1;
+            document.getElementById('hud-score').innerText = accumulativeScore;
+
+            const progressPct = (activePointer / runtimeDataBank.length) * 100;
+            document.getElementById('progressBar').style.width = `${progressPct}%`;
+
+            document.getElementById('btnPrev').disabled = activePointer === 0;
+            document.getElementById('btnNext').disabled = (activePointer === runtimeDataBank.length - 1) && selectedAnswersLog[activePointer] === undefined;
+
+            document.getElementById('sectionTag').innerText = node.sec;
+            document.getElementById('questionString').innerText = node.q;
+
+            const explCard = document.getElementById('explanationCard');
+            explCard.style.display = 'none';
+
+            const grid = document.getElementById('optionsGrid');
+            grid.innerHTML = '';
+
+            if (!node._shuffledOptions) {
+                let optionsCopy = [...node.o];
+                shuffleArrayAlgorithm(optionsCopy);
+                node._shuffledOptions = optionsCopy;
+            }
+
+            node._shuffledOptions.forEach(opt => {
+                const button = document.createElement('button');
+                button.className = 'option-node';
+                button.innerText = typeof opt === 'number' ? opt.toLocaleString() : opt;
+                button.onclick = () => processSelection(button, opt);
+                grid.appendChild(button);
+            });
+
+            // Restore selection snapshot if item is historically locked
+            if (selectedAnswersLog[activePointer] !== undefined) {
+                const pastAnswer = selectedAnswersLog[activePointer];
+                exposeExplanationCard(node, pastAnswer === node.a);
+                Array.from(grid.children).forEach(btn => {
+                    btn.disabled = true;
+                    const normalizedVal = parseInt(btn.innerText.replace(/,/g, ''), 10);
+                    if (normalizedVal === node.a) btn.classList.add('correct');
+                    if (normalizedVal === pastAnswer && pastAnswer !== node.a) btn.classList.add('wrong');
+                });
+            }
+        }
+
+        function processSelection(clickedBtn, value) {
+            const node = runtimeDataBank[activePointer];
+            selectedAnswersLog[activePointer] = value;
+
+            const grid = document.getElementById('optionsGrid');
+            Array.from(grid.children).forEach(btn => btn.disabled = true);
+
+            const isCorrect = value === node.a;
+
+            if (isCorrect) {
+                clickedBtn.classList.add('correct');
+                accumulativeScore++;
+                document.getElementById('hud-score').innerText = accumulativeScore;
+                SoundFX.play('correct');
+            } else {
+                clickedBtn.classList.add('wrong');
+                SoundFX.play('wrong');
+                Array.from(grid.children).forEach(btn => {
+                    const normalizedVal = parseInt(btn.innerText.replace(/,/g, ''), 10);
+                    if (normalizedVal === node.a) btn.classList.add('correct');
+                });
+            }
+
+            exposeExplanationCard(node, isCorrect);
+            document.getElementById('btnNext').disabled = false;
+
+            if (Object.keys(selectedAnswersLog).length === runtimeDataBank.length) {
+                setTimeout(triggerEvaluationSummary, 1500);
+            }
+        }
+
+        function exposeExplanationCard(node, isCorrect) {
+            const explCard = document.getElementById('explanationCard');
+            let explanationText = "";
+
+            const fmtAns = node.a.toLocaleString();
+            if (node.type === 'before') {
+                explanationText = `${fmtAns} comes immediately before ${node.target}.`;
+            } else if (node.type === 'after') {
+                explanationText = `${fmtAns} comes immediately after ${node.target}.`;
+            } else if (node.type === 'between') {
+                explanationText = `${fmtAns} comes right between ${node.start} and ${node.end}.`;
+            }
+
+            explCard.innerText = isCorrect ? `✅ Correct! ${explanationText}` : `❌ Let's learn: ${explanationText}`;
+            explCard.className = isCorrect ? 'explanation-card' : 'explanation-card incorrect-alert';
+            explCard.style.display = 'block';
+        }
+
+        function navigateStep(velocity) {
+            SoundFX.play('click');
+            activePointer += velocity;
+            renderQuestionStage();
+        }
+
+        function triggerEvaluationSummary() {
+            SoundFX.play('complete');
+            document.getElementById('quizWorkspace').style.display = 'none';
+            document.getElementById('certificateWorkspace').style.display = 'block';
+
+            const percentage = Math.round((accumulativeScore / runtimeDataBank.length) * 100);
+            let iconStr = "📚";
+            let titleStr = "Keep Practicing";
+
+            if (percentage >= 90) {
+                iconStr = "🏆";
+                titleStr = "Number Sequence Master";
+                launchConfettiBlast();
+            } else if (percentage >= 70) {
+                iconStr = "🌟";
+                titleStr = "Sequence Explorer";
+                launchConfettiBlast();
+            } else if (percentage >= 50) {
+                iconStr = "👍";
+                titleStr = "Good Learner";
+            }
+
+            document.getElementById('certIcon').innerText = iconStr;
+            document.getElementById('certTitle').innerText = titleStr;
+            document.getElementById('certScoreBox').innerText = `Score: ${percentage}% (${accumulativeScore}/${runtimeDataBank.length} Correct)`;
+        }
+
+        function restartQuizSession() {
+            runtimeDataBank = JSON.parse(JSON.stringify(staticMasterBank));
+            selectedAnswersLog = {};
+            activePointer = 0;
+            accumulativeScore = 0;
+            document.getElementById('certificateWorkspace').style.display = 'none';
+            document.getElementById('quizWorkspace').style.display = 'block';
+            renderQuestionStage();
+        }
+
+        function launchConfettiBlast() {
+            const canvas = document.getElementById('canvas-confetti-mat');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            let particles = [];
+            const hexTones = ['#FF7675', '#74B9FF', '#2ECC71', '#F1C40F', '#A29BFE', '#E67E22'];
+
+            for (let i = 0; i < 150; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    radius: Math.random() * 5 + 4,
+                    density: Math.random() * canvas.height,
+                    color: hexTones[Math.floor(Math.random() * hexTones.length)],
+                    wave: Math.random() * 10 - 5,
+                    fallSpeed: Math.random() * 3 + 2.5
+                });
+            }
+
+            function processFrame() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    p.y += p.fallSpeed;
+                    p.x += Math.sin(p.density) * 0.5;
+
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.fill();
+                });
+
+                if (particles.some(p => p.y < canvas.height)) {
+                    requestAnimationFrame(processFrame);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+            processFrame();
+        }
+
+        window.onload = () => {
+            runAmbientLayer();
+            renderQuestionStage();
+        };
+
+        window.onresize = () => {
+            const canvas = document.getElementById('canvas-confetti-mat');
+            if (canvas) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+        };
+    </script>
+</body>
+</html>

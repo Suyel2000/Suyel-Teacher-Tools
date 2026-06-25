@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔢 Number Names Quiz</title>
+    <style>
+        :root {
+            --primary-grad: linear-gradient(135deg, #FF6B6B, #4D96FF);
+            --bg-grad: linear-gradient(135deg, #6C5CE7, #A29BFE, #FFEAA7);
+            --glass-bg: rgba(255, 255, 255, 0.22);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --text-dark: #2D3436;
+            --correct-color: #2ECC71;
+            --wrong-color: #FF7675;
+            --font-stack: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: var(--font-stack);
+            background: var(--bg-grad);
+            background-size: 400% 400%;
+            animation: moveGradient 16s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        @keyframes moveGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Ambient Floating Numbers Animation */
+        .ambient-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .floating-digit {
+            position: absolute;
+            font-weight: 800;
+            color: rgba(255, 255, 255, 0.12);
+            font-size: calc(2rem + 3vw);
+            animation: driftUp 14s linear infinite;
+            bottom: -120px;
+        }
+
+        @keyframes driftUp {
+            0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+            15% { opacity: 0.25; }
+            85% { opacity: 0.25; }
+            100% { transform: translateY(-125vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* Main Workspace Wrapper */
+        .app-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 2px solid var(--glass-border);
+            border-radius: 28px;
+            padding: 30px;
+            width: 100%;
+            max-width: 820px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12);
+            z-index: 5;
+            position: relative;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #FFF;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            margin-bottom: 4px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #F5F6FA;
+            font-weight: 600;
+        }
+
+        /* Analytics Dashboard HUD */
+        .hud-display {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.45);
+            padding: 12px 20px;
+            border-radius: 16px;
+            font-weight: 700;
+            color: var(--text-dark);
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 14px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            margin-bottom: 25px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #2ECC71, #00CEC9);
+            border-radius: 20px;
+            transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Interactive Quiz Cards */
+        .quiz-card {
+            background: rgba(255, 255, 255, 0.92);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+            margin-bottom: 20px;
+            text-align: center;
+            animation: slideIn 0.4s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-badge {
+            display: inline-block;
+            background: #6C5CE7;
+            color: white;
+            padding: 4px 14px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .question-text {
+            font-size: 1.55rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            line-height: 1.4;
+        }
+
+        /* Grid Configuration for Answer Targets */
+        .options-layout {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 25px;
+        }
+
+        .option-node {
+            background: rgba(255, 255, 255, 0.95);
+            border: 3px solid transparent;
+            border-radius: 16px;
+            padding: 18px 12px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.2, 1, 0.3, 1);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .option-node:hover:not([disabled]) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+            border-color: #4D96FF;
+            background: #FFF;
+        }
+
+        .option-node:active:not([disabled]) {
+            transform: translateY(-1px);
+        }
+
+        /* Response Visual States */
+        .option-node.correct {
+            background: var(--correct-color) !important;
+            color: #FFF !important;
+            border-color: #27AE60;
+        }
+
+        .option-node.wrong {
+            background: var(--wrong-color) !important;
+            color: #FFF !important;
+            border-color: #C0392B;
+        }
+
+        /* Navigation Management Controls */
+        .nav-cluster {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .btn-core {
+            background: #4D96FF;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 12px rgba(77, 150, 255, 0.3);
+        }
+
+        .btn-core:hover:not([disabled]) {
+            background: #2574F5;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(77, 150, 255, 0.45);
+        }
+
+        .btn-core:disabled {
+            background: #B2BEC3;
+            box-shadow: none;
+            cursor: not-allowed;
+            opacity: 0.55;
+        }
+
+        .shuffle-action {
+            background: #F1C40F;
+            color: #2D3436;
+            box-shadow: 0 4px 12px rgba(241, 196, 15, 0.3);
+        }
+        .shuffle-action:hover:not([disabled]) {
+            background: #D4AC0D;
+            box-shadow: 0 6px 16px rgba(241, 196, 15, 0.45);
+        }
+
+        /* Certificate Screen Styling */
+        .certificate-panel {
+            display: none;
+            text-align: center;
+            background: white;
+            padding: 35px;
+            border-radius: 24px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+            color: #2C3E50;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .certificate-frame {
+            border: 6px double #F1C40F;
+            padding: 25px;
+            border-radius: 16px;
+            background: #FAFAFA;
+        }
+
+        .award-icon {
+            font-size: 4.5rem;
+            margin-bottom: 8px;
+            display: inline-block;
+            animation: bounce 2s infinite alternate;
+        }
+
+        @keyframes bounce {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-8px); }
+        }
+
+        .badge-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #D35400;
+            margin-bottom: 12px;
+        }
+
+        .cert-metric {
+            font-size: 1.4rem;
+            margin: 15px 0;
+            font-weight: 700;
+        }
+
+        .action-cluster {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .btn-restart { background: #2ECC71; box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3); }
+        .btn-restart:hover { background: #27AE60; }
+        .btn-print { background: #E67E22; box-shadow: 0 4px 12px rgba(230, 126, 34, 0.3); }
+        .btn-print:hover { background: #D35400; }
+
+        #canvas-confetti {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 99;
+        }
+
+        /* Responsive Layout Framework */
+        @media (max-width: 768px) {
+            h1 { font-size: 1.9rem; }
+            .options-layout { grid-template-columns: 1fr; gap: 12px; }
+            .app-container { padding: 18px; }
+            .option-node { padding: 15px 10px; font-size: 1.15rem; }
+            .btn-core { padding: 10px 16px; font-size: 0.95rem; }
+            .question-text { font-size: 1.3rem; }
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            .certificate-panel, .certificate-panel * { visibility: visible; }
+            .certificate-panel { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; padding: 0; margin: 0; }
+            .action-cluster { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-layer" id="ambientLayer"></div>
+    <canvas id="canvas-confetti"></canvas>
+
+    <div class="app-container">
+        <div id="quizWorkspace">
+            <header>
+                <h1>🔢 Number Names Quiz</h1>
+                <p class="subtitle">Read • Recognize • Match • Master Number Names</p>
+            </header>
+
+            <div class="hud-display">
+                <div>Question: <span id="hud-current">1</span>/50</div>
+                <div>Score: <span id="hud-score">0</span></div>
+            </div>
+
+            <div class="progress-track">
+                <div class="progress-fill" id="progressBar"></div>
+            </div>
+
+            <div class="quiz-card">
+                <span class="section-badge" id="sectionBadge">Section A</span>
+                <div class="question-text" id="questionText">Loading Question Module...</div>
+            </div>
+
+            <div class="options-layout" id="optionsGrid"></div>
+
+            <div class="nav-cluster">
+                <button class="btn-core" id="btnPrev" onclick="stepQuestion(-1)">⬅️ Previous</button>
+                <button class="btn-core shuffle-action" id="btnShuffle" onclick="shuffleActiveBank()">🔀 Shuffle Quiz</button>
+                <button class="btn-core" id="btnNext" onclick="stepQuestion(1)">Next ➡️</button>
+            </div>
+        </div>
+
+        <div id="certificateWorkspace" class="certificate-panel">
+            <div class="certificate-frame">
+                <div class="award-icon" id="certBadgeIcon">🏆</div>
+                <div class="badge-title" id="certBadgeTitle">Number Name Master</div>
+                <h2>Certificate of Excellence</h2>
+                <p>Awarded for successfully tackling the comprehensive 1–9,999 Number Names Math Challenge.</p>
+                <div class="cert-metric" id="certScoreBox">Score: 100% (50/50 Correct)</div>
+                
+                <div class="action-cluster">
+                    <button class="btn-core btn-restart" onclick="restartSession()">🔄 Restart Quiz</button>
+                    <button class="btn-core btn-print" onclick="window.print()">🖨️ Print Certificate</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Web Audio API Synthesizer Core
+        const AudioSynth = {
+            ctx: null,
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
+            trigger(type) {
+                this.init();
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+
+                const osc = this.ctx.createOscillator();
+                const gainNode = this.ctx.createGain();
+                osc.connect(gainNode);
+                gainNode.connect(this.ctx.destination);
+                const now = this.ctx.currentTime;
+
+                if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(500, now);
+                    gainNode.gain.setValueAtTime(0.08, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'correct') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+                    osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+                    gainNode.gain.setValueAtTime(0.12, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(240, now);
+                    osc.frequency.linearRampToValueAtTime(130, now + 0.28);
+                    gainNode.gain.setValueAtTime(0.12, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'complete') {
+                    this.playChord([523.25, 659.25, 783.99, 1046.50], 0.6);
+                }
+            },
+            playChord(freqs, len) {
+                const now = this.ctx.currentTime;
+                freqs.forEach(f => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(f, now);
+                    gain.gain.setValueAtTime(0.04, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + len);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + len);
+                });
+            }
+        };
+
+        // Fully Populated 50-Question Master Matrix Array
+        const rawMasterBank = [
+            // Section A: Two-Digit Numbers (1-15)
+            { section: 'Section A: Two-Digit Numbers', q: 'Which is the correct number name for 48?', a: 'Forty-eight', o: ['Forty-eight', 'Eighty-four', 'Forty-five', 'Fifty-eight'] },
+            { section: 'Section A: Two-Digit Numbers', q: 'Which number is Seventy-three?', a: '73', o: ['37', '63', '73', '83'] },
+            { section: 'Section A: Two-Digit Numbers', q: 'Which is the correct number name for 24?', a: 'Twenty-four', o: ['Twenty-four', 'Forty-two', 'Twenty-fower', 'Fourteen'] },
+            { section: 'Section A: Two-Digit Numbers', q: 'Which number is Eighty-nine?', a: '89', o: ['98', '89', '79', '88'] },
+            { section: 'Section A: Two-Digit Numbers', q: 'Which is the correct number name for 15?', a: 'Fifteen', o: ['Fiveteen', 'Fifteen', 'Fifty', 'Five'] },
+            { section: 'Section A: Two-Digit Numbers', q: 'Which number is Thirty-six?', a: '36', o: ['63', '33', '46', '36'] },
+            { section: 'Section A: Two-Digit Numbers', q: 'Which is the correct number name for 92?', a: 'Ninety-two', o: ['Ninety-two', 'Twenty-nine', 'Ninetie-two', 'Eighty-two'] },
+            { section: 'Section A: Two-Digit Numbers', q: 'Which number is Fifty-one?', a: '51', o: ['15', '55', '51', '61'] },
+            { section: 'Section A: Two-Digit Numbers', q: 'Which is the correct number name for 67?', a: 'Sixty-seven', o: ['Sixty-seven', 'Seventy-six', 'Sixteen-seven', 'Fifty-seven'] },
+            { section: 'Section A: Two-Digit Numbers', q: 'Which number is Fourteen?', a: '14', o: ['41', '14', '40', '44'] },
+            { section: 'Section A: Two-Digit Numbers', q: 'Which is the correct number name for 78?', a: 'Seventy-eight', o: ['Seventy-eight', 'Eighty-seven', 'Sixty-eight', 'Seventeen-eight'] },
+            { section: 'Section A: Two-Digit Numbers', q: 'Which number is Eighty-three?', a: '83', o: ['38', '83', '73', '93'] },
+            { section: 'Section A: Two-Digit Numbers', q: 'Which is the correct number name for 35?', a: 'Thirty-five', o: ['Thirty-five', 'Fifty-three', 'Thirteen-five', 'Forty-five'] },
+            { section: 'Section A: Two-Digit Numbers', q: 'Which number is Ninety-five?', a: '95', o: ['59', '90', '95', '85'] },
+            { section: 'Section A: Two-Digit Numbers', q: 'Which is the correct number name for 12?', a: 'Twelve', o: ['Twelv', 'Twelve', 'Twenty', 'Two'] },
+
+            // Section B: Three-Digit Numbers (16-30)
+            { section: 'Section B: Three-Digit Numbers', q: 'Which is the correct number name for 348?', a: 'Three hundred forty-eight', o: ['Three hundred forty-eight', 'Three hundred eighty-four', 'Four hundred thirty-eight', 'Three hundred forty'] },
+            { section: 'Section B: Three-Digit Numbers', q: 'Which number is Nine hundred twenty-six?', a: '926', o: ['962', '926', '629', '296'] },
+            { section: 'Section B: Three-Digit Numbers', q: 'Which is the correct number name for 105?', a: 'One hundred five', o: ['One hundred five', 'One hundred fifty', 'One zero five', 'Ten hundred five'] },
+            { section: 'Section B: Three-Digit Numbers', q: 'Which number is Five hundred seventy-two?', a: '572', o: ['527', '752', '572', '275'] },
+            { section: 'Section B: Three-Digit Numbers', q: 'Which is the correct number name for 619?', a: 'Six hundred nineteen', o: ['Six hundred nineteen', 'Six hundred ninety', 'Six hundred nine', 'Nineteen hundred six'] },
+            { section: 'Section B: Three-Digit Numbers', q: 'Which number is Four hundred thirty?', a: '430', o: ['403', '433', '340', '430'] },
+            { section: 'Section B: Three-Digit Numbers', q: 'Which is the correct number name for 870?', a: 'Eight hundred seventy', o: ['Eight hundred seventy', 'Eight hundred seven', 'Seven hundred eighty', 'Eight hundred seventeen'] },
+            { section: 'Section B: Three-Digit Numbers', q: 'Which number is Two hundred forty-four?', a: '244', o: ['424', '244', '224', '442'] },
+            { section: 'Section B: Three-Digit Numbers', q: 'Which is the correct number name for 763?', a: 'Seven hundred sixty-three', o: ['Seven hundred sixty-three', 'Six hundred seventy-three', 'Seven hundred thirty-six', 'Seven hundred sixty'] },
+            { section: 'Section B: Three-Digit Numbers', q: 'Which number is One hundred eleven?', a: '111', o: ['101', '111', '110', '1111'] },
+            { section: 'Section B: Three-Digit Numbers', q: 'Which is the correct number name for 500?', a: 'Five hundred', o: ['Five hundred', 'Fifty hundred', 'Five zero zero', 'Five hundred zero'] },
+            { section: 'Section B: Three-Digit Numbers', q: 'Which number is Eight hundred ninety-four?', a: '894', o: ['849', '984', '894', '890'] },
+            { section: 'Section B: Three-Digit Numbers', q: 'Which is the correct number name for 256?', a: 'Two hundred fifty-six', o: ['Two hundred fifty-six', 'Two hundred sixty-five', 'Five hundred twenty-six', 'Two hundred fifty'] },
+            { section: 'Section B: Three-Digit Numbers', q: 'Which number is Seven hundred five?', a: '705', o: ['750', '705', '507', '755'] },
+            { section: 'Section B: Three-Digit Numbers', q: 'Which is the correct number name for 999?', a: 'Nine hundred ninety-nine', o: ['Nine hundred ninety-nine', 'Nine hundred ninety', 'Nine hundred nine', 'Nine thousand ninety-nine'] },
+
+            // Section C: Four-Digit Numbers (31-45)
+            { section: 'Section C: Four-Digit Numbers', q: 'Which is the correct number name for 4,582?', a: 'Four thousand five hundred eighty-two', o: ['Four thousand five hundred eighty-two', 'Four thousand eight hundred fifty-two', 'Five thousand four hundred eighty-two', 'Four thousand five hundred twenty-eight'] },
+            { section: 'Section C: Four-Digit Numbers', q: 'Which number is Seven thousand one hundred forty-six?', a: '7,146', o: ['7,416', '7,164', '7,146', '7,641'] },
+            { section: 'Section C: Four-Digit Numbers', q: 'Which is the correct number name for 2,035?', a: 'Two thousand thirty-five', o: ['Two thousand thirty-five', 'Two thousand three hundred five', 'Twenty thousand thirty-five', 'Two thousand thirty'] },
+            { section: 'Section C: Four-Digit Numbers', q: 'Which number is Three thousand six hundred eighty?', a: '3,680', o: ['3,068', '3,608', '3,680', '6,380'] },
+            { section: 'Section C: Four-Digit Numbers', q: 'Which is the correct number name for 8,100?', a: 'Eight thousand one hundred', o: ['Eight thousand one hundred', 'Eight thousand ten', 'Eighty-one hundred', 'Eight thousand one zero zero'] },
+            { section: 'Section C: Four-Digit Numbers', q: 'Which number is Five thousand four hundred twelve?', a: '5,412', o: ['5,421', '5,412', '4,512', '5,142'] },
+            { section: 'Section C: Four-Digit Numbers', q: 'Which is the correct number name for 6,715?', a: 'Six thousand seven hundred fifteen', o: ['Six thousand seven hundred fifteen', 'Six thousand seven hundred fifty', 'Seven thousand six hundred fifteen', 'Six thousand seven hundred five'] },
+            { section: 'Section C: Four-Digit Numbers', q: 'Which number is One thousand eight hundred ninety-three?', a: '1,893', o: ['1,983', '1,839', '1,893', '8,193'] },
+            { section: 'Section C: Four-Digit Numbers', q: 'Which is the correct number name for 9,504?', a: 'Nine thousand five hundred four', o: ['Nine thousand five hundred four', 'Nine thousand five hundred forty', 'Nine thousand forty-five', 'Five thousand nine hundred four'] },
+            { section: 'Section C: Four-Digit Numbers', q: 'Which number is Two thousand two hundred twenty-two?', a: '2,222', o: ['2,202', '2,222', '22,222', '2,220'] },
+            { section: 'Section C: Four-Digit Numbers', q: 'Which is the correct number name for 3,400?', a: 'Three thousand four hundred', o: ['Three thousand four hundred', 'Thirty-four hundred', 'Three thousand four zero', 'Four thousand three hundred'] },
+            { section: 'Section C: Four-Digit Numbers', q: 'Which number is Six thousand fifty-nine?', a: '6,059', o: ['6,590', '6,059', '6,509', '5,906'] },
+            { section: 'Section C: Four-Digit Numbers', q: 'Which is the correct number name for 7,841?', a: 'Seven thousand eight hundred forty-one', o: ['Seven thousand eight hundred forty-one', 'Seven thousand four hundred eighty-one', 'Eight thousand seven hundred forty-one', 'Seven thousand eight hundred fourteen'] },
+            { section: 'Section C: Four-Digit Numbers', q: 'Which number is Eight thousand three hundred seven?', a: '8,307', o: ['8,370', '8,037', '3,807', '8,307'] },
+            { section: 'Section C: Four-Digit Numbers', q: 'Which is the correct number name for 1,111?', a: 'One thousand one hundred eleven', o: ['One thousand one hundred eleven', 'Eleven hundred eleven', 'One thousand eleven', 'One thousand one hundred one'] },
+
+            // Section D: Mixed Challenge (46-50)
+            { section: 'Section D: Mixed Challenge', q: 'Which is the correct spelling?', a: 'Forty', o: ['Fourty', 'Forty', 'Forti', 'Fourtee'] },
+            { section: 'Section D: Mixed Challenge', q: 'Which number name is correct for 1,205?', a: 'One thousand two hundred five', o: ['One thousand two hundred five', 'One thousand twenty-five', 'Twelve hundred five', 'One thousand two five'] },
+            { section: 'Section D: Mixed Challenge', q: 'Which number is Eight thousand nine hundred ninety-nine?', a: '8,999', o: ['8,999', '8,909', '8,990', '9,899'] },
+            { section: 'Section D: Mixed Challenge', q: 'Which is the correct number name for 9,001?', a: 'Nine thousand one', o: ['Nine thousand one', 'Nine hundred one', 'Nine thousand ten', 'Nine thousand eleven'] },
+            { section: 'Section D: Mixed Challenge', q: 'Which number is Five thousand six hundred thirty-two?', a: '5,632', o: ['5,326', '5,632', '5,623', '5,236'] }
+        ];
+
+        let quizData = JSON.parse(JSON.stringify(rawMasterBank));
+        let activeIdx = 0;
+        let loggedAnswers = {};
+        let runningScore = 0;
+
+        function runBgFloaters() {
+            const container = document.getElementById('ambientLayer');
+            container.innerHTML = '';
+            const sampleSet = ['48', '73', '348', '926', '4K', '51', '999', '12', '83', '45'];
+            for (let i = 0; i < 14; i++) {
+                const node = document.createElement('div');
+                node.className = 'floating-digit';
+                node.innerText = sampleSet[Math.floor(Math.random() * sampleSet.length)];
+                node.style.left = `${Math.random() * 100}%`;
+                node.style.animationDelay = `${Math.random() * 10}s`;
+                node.style.animationDuration = `${10 + Math.random() * 8}s`;
+                container.appendChild(node);
+            }
+        }
+
+        function fisherYatesShuffle(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+        }
+
+        function shuffleActiveBank() {
+            AudioSynth.trigger('click');
+            fisherYatesShuffle(quizData);
+            quizData.forEach(item => item._scrambled = null); // Reset item level shuffling
+            loggedAnswers = {};
+            activeIdx = 0;
+            runningScore = 0;
+            updateInterface();
+        }
+
+        function updateInterface() {
+            const currentItem = quizData[activeIdx];
+            
+            document.getElementById('hud-current').innerText = activeIdx + 1;
+            document.getElementById('hud-score').innerText = runningScore;
+            
+            const fillPct = (activeIdx / quizData.length) * 100;
+            document.getElementById('progressBar').style.width = `${fillPct}%`;
+
+            document.getElementById('btnPrev').disabled = activeIdx === 0;
+            document.getElementById('btnNext').disabled = (activeIdx === quizData.length - 1) && loggedAnswers[activeIdx] === undefined;
+
+            document.getElementById('sectionBadge').innerText = currentItem.section;
+            document.getElementById('questionText').innerText = currentItem.q;
+
+            const grid = document.getElementById('optionsGrid');
+            grid.innerHTML = '';
+
+            // Cache options scrambling per question sequence
+            if (!currentItem._scrambled) {
+                let optionsClone = [...currentItem.o];
+                fisherYatesShuffle(optionsClone);
+                currentItem._scrambled = optionsClone;
+            }
+
+            currentItem._scrambled.forEach(val => {
+                const node = document.createElement('button');
+                node.className = 'option-node';
+                node.innerText = val;
+                node.onclick = () => processSelection(node, val);
+                grid.appendChild(node);
+            });
+
+            // Restore state if item was previously answered
+            if (loggedAnswers[activeIdx] !== undefined) {
+                const selectedVal = loggedAnswers[activeIdx];
+                Array.from(grid.children).forEach(btn => {
+                    btn.disabled = true;
+                    if (btn.innerText === currentItem.a) btn.classList.add('correct');
+                    if (btn.innerText === selectedVal && selectedVal !== currentItem.a) btn.classList.add('wrong');
+                });
+            }
+        }
+
+        function processSelection(clickedBtn, selectedValue) {
+            const currentItem = quizData[activeIdx];
+            loggedAnswers[activeIdx] = selectedValue;
+
+            const grid = document.getElementById('optionsGrid');
+            Array.from(grid.children).forEach(btn => btn.disabled = true);
+
+            if (selectedValue === currentItem.a) {
+                clickedBtn.classList.add('correct');
+                runningScore++;
+                document.getElementById('hud-score').innerText = runningScore;
+                AudioSynth.trigger('correct');
+            } else {
+                clickedBtn.classList.add('wrong');
+                AudioSynth.trigger('wrong');
+                Array.from(grid.children).forEach(btn => {
+                    if (btn.innerText === currentItem.a) btn.classList.add('correct');
+                });
+            }
+
+            document.getElementById('btnNext').disabled = false;
+
+            // Trigger certificate window if complete
+            if (Object.keys(loggedAnswers).length === quizData.length) {
+                setTimeout(evaluateFinalScores, 1200);
+            }
+        }
+
+        function stepQuestion(direction) {
+            AudioSynth.trigger('click');
+            activeIdx += direction;
+            updateInterface();
+        }
+
+        function evaluateFinalScores() {
+            AudioSynth.trigger('complete');
+            document.getElementById('quizWorkspace').style.display = 'none';
+            document.getElementById('certificateWorkspace').style.display = 'block';
+
+            const percentage = Math.round((runningScore / quizData.length) * 100);
+            let badgeIcon = "📚";
+            let badgeTitle = "Keep Practicing";
+
+            if (percentage >= 90) {
+                badgeIcon = "🏆";
+                badgeTitle = "Number Name Master";
+                runConfettiRain();
+            } else if (percentage >= 70) {
+                badgeIcon = "🌟";
+                badgeTitle = "Number Explorer";
+                runConfettiRain();
+            } else if (percentage >= 50) {
+                badgeIcon = "👍";
+                badgeTitle = "Good Learner";
+            }
+
+            document.getElementById('certBadgeIcon').innerText = badgeIcon;
+            document.getElementById('certBadgeTitle').innerText = badgeTitle;
+            document.getElementById('certScoreBox').innerText = `Score: ${percentage}% (${runningScore}/${quizData.length} Correct)`;
+        }
+
+        function restartSession() {
+            quizData = JSON.parse(JSON.stringify(rawMasterBank));
+            loggedAnswers = {};
+            activeIdx = 0;
+            runningScore = 0;
+            document.getElementById('certificateWorkspace').style.display = 'none';
+            document.getElementById('quizWorkspace').style.display = 'block';
+            updateInterface();
+        }
+
+        function runConfettiRain() {
+            const canvas = document.getElementById('canvas-confetti');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            let microParticles = [];
+            const palette = ['#FF6B6B', '#4D96FF', '#1DD1A1', '#FECA57', '#FF9FF3', '#54A0FF'];
+
+            for (let i = 0; i < 140; i++) {
+                microParticles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    radius: Math.random() * 5 + 4,
+                    density: Math.random() * canvas.height,
+                    color: palette[Math.floor(Math.random() * palette.length)],
+                    sway: Math.random() * 12 - 6,
+                    speed: Math.random() * 3 + 2
+                });
+            }
+
+            function frame() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                microParticles.forEach(p => {
+                    p.y += p.speed;
+                    p.x += Math.sin(p.density) * 0.6;
+                    
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.fill();
+                });
+
+                if (microParticles.some(p => p.y < canvas.height)) {
+                    requestAnimationFrame(frame);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+            frame();
+        }
+
+        window.onload = () => {
+            runBgFloaters();
+            updateInterface();
+        };
+
+        window.onresize = () => {
+            const canvas = document.getElementById('canvas-confetti');
+            if (canvas) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+        };
+    </script>
+</body>
+</html>

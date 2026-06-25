@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔢 Place Value Quiz</title>
+    <style>
+        :root {
+            --bg-light: linear-gradient(135deg, #6C5CE7, #A8E6CF, #FF8B94, #FFD3B6);
+            --bg-dark: linear-gradient(135deg, #110E2E, #1F1A3A, #0B081F);
+            --card-glass-light: rgba(255, 255, 255, 0.25);
+            --card-glass-dark: rgba(25, 20, 45, 0.7);
+            --border-glass-light: rgba(255, 255, 255, 0.45);
+            --border-glass-dark: rgba(255, 255, 255, 0.1);
+            --text-light: #2D3436;
+            --text-dark: #F5F6FA;
+            --emerald: #10AC84;
+            --rose: #EE5253;
+            --indigo: #54A0FF;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-light);
+            background-size: 400% 400%;
+            animation: gradientMotion 22s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            overflow-x: hidden;
+            position: relative;
+            color: var(--text-light);
+            transition: background 0.3s, color 0.3s;
+        }
+
+        body.dark-mode {
+            background: var(--bg-dark);
+            color: var(--text-dark);
+        }
+
+        @keyframes gradientMotion {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .ambient-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .floating-token {
+            position: absolute;
+            font-size: 2.2rem;
+            opacity: 0.12;
+            animation: floatUpward 15s linear infinite;
+            bottom: -60px;
+            color: #FFF;
+        }
+
+        @keyframes floatUpward {
+            0% { transform: translateY(0) rotate(0deg) scale(0.8); opacity: 0; }
+            20% { opacity: 0.25; }
+            80% { opacity: 0.25; }
+            100% { transform: translateY(-120vh) rotate(360deg) scale(1.4); opacity: 0; }
+        }
+
+        .quiz-shell {
+            background: var(--card-glass-light);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 3px solid var(--border-glass-light);
+            border-radius: 32px;
+            padding: 24px;
+            width: 100%;
+            max-width: 940px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12);
+            z-index: 5;
+            position: relative;
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        body.dark-mode .quiz-shell {
+            background: var(--card-glass-dark);
+            border-color: var(--border-glass-dark);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 2.6rem;
+            color: #FFF;
+            text-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .subtitle {
+            font-size: 1.15rem;
+            color: #F8F9FA;
+            font-weight: 600;
+            margin-top: 4px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .mode-toggle {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.25);
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.25rem;
+            transition: transform 0.2s;
+        }
+        .mode-toggle:hover { transform: scale(1.1); }
+
+        /* Navigation Menu Tabs */
+        .workspace-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.25);
+            padding: 4px;
+            border-radius: 16px;
+        }
+        body.dark-mode .workspace-tabs { background: rgba(0,0,0,0.2); }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: #2D3436;
+            cursor: pointer;
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+        body.dark-mode .tab-btn { color: #DFE4EA; }
+        .tab-btn.active {
+            background: #FFF;
+            color: #6C5CE7;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        body.dark-mode .tab-btn.active { background: #1F1A3A; color: #A8E6CF; }
+
+        /* Start Screen Level Matrix Selector */
+        .difficulty-matrix {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 14px;
+            margin-top: 20px;
+        }
+        @media (min-width: 576px) { .difficulty-matrix { grid-template-columns: repeat(2, 1fr); } }
+
+        .lvl-btn {
+            padding: 18px;
+            border: none;
+            border-radius: 18px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #FFF;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .lvl-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 18px rgba(0,0,0,0.15); }
+        .b-2d { background: #10AC84; }
+        .b-3d { background: #2980B9; }
+        .b-4d { background: #8E44AD; }
+        .b-5d { background: #D35400; }
+        .b-6d { background: #C0392B; }
+
+        /* HUD Tracker components */
+        .hud-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.75);
+            padding: 10px 20px;
+            border-radius: 16px;
+            font-weight: 700;
+            margin-bottom: 14px;
+            color: #2D3436;
+        }
+        body.dark-mode .hud-panel { background: rgba(31, 26, 58, 0.85); color: #F5F6FA; }
+
+        .progress-track {
+            width: 100%;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #10AC84, #54A0FF);
+            transition: width 0.3s ease;
+        }
+
+        /* Work Arena Cards */
+        .board-card {
+            background: #FFF;
+            padding: 24px;
+            border-radius: 20px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.02);
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        body.dark-mode .board-card { background: #1F1A3A; }
+
+        .badge-tag {
+            display: inline-block;
+            background: #6C5CE7;
+            color: #FFF;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-bottom: 14px;
+            text-transform: uppercase;
+        }
+
+        .q-text { font-size: 1.4rem; font-weight: 700; margin-bottom: 16px; }
+        
+        .math-hero {
+            font-size: 3.2rem;
+            font-weight: 800;
+            background: #F8F9FA;
+            padding: 12px 24px;
+            border-radius: 16px;
+            display: inline-block;
+            letter-spacing: 2px;
+            margin-bottom: 14px;
+            color: #6C5CE7;
+        }
+        body.dark-mode .math-hero { background: #2A244E; color: #A8E6CF; }
+        .highlight-digit { color: #EE5253; text-decoration: underline; }
+
+        /* Multiple Choice Structure */
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        @media (min-width: 576px) { .options-grid { grid-template-columns: repeat(2, 1fr); } }
+
+        .opt-node {
+            background: #FFF;
+            border: 2px solid #E4E7EB;
+            border-radius: 14px;
+            padding: 16px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #2D3436;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        body.dark-mode .opt-node { background: #2A244E; border-color: #3B336A; color: #F5F6FA; }
+        .opt-node:hover:not([disabled]) { transform: translateY(-2px); border-color: #6C5CE7; background: #F9F8FF; }
+        body.dark-mode .opt-node:hover:not([disabled]) { background: #332B61; border-color: #A8E6CF; }
+
+        .opt-node.correct { background: var(--emerald) !important; color: #FFF !important; border-color: #0E9A75 !important; }
+        .opt-node.wrong { background: var(--rose) !important; color: #FFF !important; border-color: #D63031 !important; }
+
+        .expl-plate {
+            display: none;
+            background: #E8F8F5;
+            border-left: 5px solid var(--emerald);
+            padding: 14px;
+            border-radius: 12px;
+            margin-bottom: 18px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #1E8449;
+            text-align: left;
+        }
+        body.dark-mode .expl-plate { background: #16352B; color: #72D5A3; }
+        .expl-plate.mistake { background: #FDEDEC; border-left-color: var(--rose); color: #922B21; }
+        body.dark-mode .expl-plate.mistake { background: #3C1E22; color: #FADBD8; }
+
+        /* Action Controls Layout */
+        .ctrl-row { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+        
+        .act-btn {
+            background: #2D3436;
+            color: #FFF;
+            border: none;
+            padding: 12px 22px;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .act-btn:hover:not([disabled]) { background: #1E2223; transform: translateY(-1px); }
+        .act-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        body.dark-mode .act-btn { background: #485460; }
+        body.dark-mode .act-btn:hover:not([disabled]) { background: #575f67; }
+        
+        .b-home { background: #54A0FF; } .b-home:hover:not([disabled]) { background: #2E86DE; }
+        .b-shuf { background: #E67E22; } .b-shuf:hover:not([disabled]) { background: #D35400; }
+
+        /* Interactive Grid Chart Builder Layout */
+        .chart-table {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            background: #F1F2F6;
+            padding: 10px;
+            border-radius: 16px;
+            margin-bottom: 16px;
+            overflow-x: auto;
+        }
+        body.dark-mode .chart-table { background: #2A244E; }
+        
+        .chart-hdr { background: #6C5CE7; color: #FFF; padding: 8px 4px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; text-align: center; min-width: 75px; }
+        .chart-slot { background: #FFF; height: 75px; border-radius: 10px; border: 2px dashed #CBD5E1; display: flex; align-items: center; justify-content: center; min-width: 75px; margin-top: 4px;}
+        body.dark-mode .chart-slot { background: #1F1A3A; border-color: #3B336A; }
+
+        .digit-token {
+            background: linear-gradient(135deg, #FF8B94, #FFD3B6);
+            color: #2D3436;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 800;
+            cursor: grab;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .digit-token:active { cursor: grabbing; }
+
+        .palette-dock {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            background: #F8F9FA;
+            padding: 12px;
+            border-radius: 14px;
+            min-height: 65px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+        body.dark-mode .palette-dock { background: #2A244E; }
+
+        /* Certificate Framework view */
+        .diploma-view { display: none; text-align: center; background: #FFF; padding: 30px; border-radius: 24px; color: #2D3436; }
+        body.dark-mode .diploma-view { background: #1F1A3A; color: #F5F6FA; }
+        .diploma-frame { border: 5px double #6C5CE7; padding: 20px; border-radius: 18px; background: #FFFFFF; }
+        body.dark-mode .diploma-frame { background: #1A1533; border-color: #A8E6CF; }
+        .badge-title { font-size: 2.2rem; font-weight: 900; color: #6C5CE7; margin-bottom: 10px; }
+        body.dark-mode .badge-title { color: #A8E6CF; }
+
+        #canvas-confetti { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999; }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8rem; }
+            .q-text { font-size: 1.15rem; }
+            .math-hero { font-size: 2.2rem; }
+            .chart-hdr { font-size: 0.7rem; min-width: 60px; }
+            .chart-slot { height: 60px; min-width: 60px; }
+            .digit-token { width: 40px; height: 40px; font-size: 1.2rem; }
+        }
+        @media print {
+            body * { visibility: hidden; }
+            .diploma-view, .diploma-view * { visibility: visible; }
+            .diploma-view { position: absolute; left: 0; top: 0; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-layer" id="ambientContainer"></div>
+    <canvas id="canvas-confetti"></canvas>
+
+    <div class="quiz-shell">
+        <header>
+            <h1>🔢 Place Value Quiz</h1>
+            <p class="subtitle">Understand Digits • Discover Place Values • Master Number Sense</p>
+            <button class="mode-toggle" onclick="toggleDarkMode()" title="Change Visual Palette">🌓</button>
+        </header>
+
+        <div id="viewStart">
+            <div class="board-card" style="background: rgba(255,255,255,0.4);">
+                <h2 style="font-weight: 700; color: #FFF; text-shadow: 0 2px 4px rgba(0,0,0,0.15);">Select Difficulty Level</h2>
+                <div class="difficulty-matrix">
+                    <button class="lvl-btn b-2d" onclick="initLevelSession(2)">🟢 2-Digit Numbers</button>
+                    <button class="lvl-btn b-3d" onclick="initLevelSession(3)">🔵 3-Digit Numbers</button>
+                    <button class="lvl-btn b-4d" onclick="initLevelSession(4)">🟣 4-Digit Numbers</button>
+                    <button class="lvl-btn b-5d" onclick="initLevelSession(5)">🟠 5-Digit Numbers</button>
+                    <button class="lvl-btn b-6d" onclick="initLevelSession(6)">🔴 6-Digit Numbers</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="viewCore" style="display: none;">
+            <div class="workspace-tabs">
+                <button class="tab-btn active" id="btnTabQuiz" onclick="toggleViewMode('mcq')">📝 Multiple Choice Quiz</button>
+                <button class="tab-btn" id="btnTabChart" onclick="toggleViewMode('chart')">🕹️ Interactive Place Value Chart</button>
+            </div>
+
+            <div id="arenaMCQ">
+                <div class="hud-panel">
+                    <div>Question: <span id="hudCurrent">1</span>/50</div>
+                    <div>Score: <span id="hudScore">0</span></div>
+                </div>
+                <div class="progress-track"><div class="progress-fill" id="progressBar"></div></div>
+
+                <div class="board-card">
+                    <span class="badge-tag" id="levelBadge">Level Loading</span>
+                    <div class="q-text" id="questionPrompt">Parsing generation metrics parameters...</div>
+                    <div id="mathDisplayWindow"></div>
+                </div>
+
+                <div class="expl-plate" id="explanationBox"></div>
+                <div class="options-grid" id="optionsGrid"></div>
+            </div>
+
+            <div id="arenaChart" style="display: none;">
+                <div class="board-card">
+                    <span class="badge-tag" style="background: #E67E22;">Interactive Sandbox</span>
+                    <div class="q-text">Drag each digit token into its mathematically correct place value position slot row!</div>
+                    <div class="math-hero" id="chartTargetDisplay">0000</div>
+
+                    <div class="chart-table">
+                        <div><div class="chart-hdr">H. Thousands</div><div class="chart-slot" data-place="5" id="slot-5"></div></div>
+                        <div><div class="chart-hdr">T. Thousands</div><div class="chart-slot" data-place="4" id="slot-4"></div></div>
+                        <div><div class="chart-hdr">Thousands</div><div class="chart-slot" data-place="3" id="slot-3"></div></div>
+                        <div><div class="chart-hdr">Hundreds</div><div class="chart-slot" data-place="2" id="slot-2"></div></div>
+                        <div><div class="chart-hdr">Tens</div><div class="chart-slot" data-place="1" id="slot-1"></div></div>
+                        <div><div class="chart-hdr">Ones</div><div class="chart-slot" data-place="0" id="slot-0"></div></div>
+                    </div>
+
+                    <p style="font-weight: 700; margin-bottom: 10px; font-size: 0.9rem; color: #7F8C8D;">💡 Smartboard Note: You can also tap a digit token to snap it directly to the next free slot!</p>
+                    <div class="palette-dock" id="chartPalette"></div>
+                </div>
+                <div class="expl-plate" id="chartFeedbackBox"></div>
+                <div class="ctrl-row" style="justify-content: center; gap: 12px; margin-bottom: 15px;">
+                    <button class="act-btn b-shuf" onclick="generateChartSession()">🔄 Next Number</button>
+                    <button class="act-btn" style="background: var(--emerald);" onclick="evaluateChartState()">✅ Check Alignment</button>
+                </div>
+            </div>
+
+            <div class="ctrl-row">
+                <button class="act-btn b-home" onclick="goHome()">🏠 Change Difficulty</button>
+                <button class="act-btn b-shuf" id="btnCoreShuffle" onclick="shuffleCurrentSession()">🔀 Shuffle Level</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="act-btn" id="btnPrev" onclick="navigateActiveIndex(-1)">⬅️ Prev</button>
+                    <button class="act-btn" id="btnNext" onclick="navigateActiveIndex(1)">Next ➡️</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="viewDiploma" class="diploma-view">
+            <div class="diploma-frame">
+                <div style="font-size: 5rem; margin-bottom: 10px;" id="diplomaIcon">🏆</div>
+                <div class="badge-title" id="diplomaTitle">Place Value Master</div>
+                <h2>Certificate of Numerical Excellence</h2>
+                <p style="margin: 10px 0; font-size: 1.1rem; font-style: italic;">Successfully demonstrated superb mathematical aptitude across base-10 numerical structures, face values, and positional alignment.</p>
+                <h3 style="margin: 18px 0; color: #6C5CE7;" id="diplomaScoreTag">Score tally computation loaded.</h3>
+                
+                <div style="display: flex; justify-content: center; gap: 12px; margin-top: 20px;">
+                    <button class="act-btn" style="background: var(--emerald);" onclick="restartSession()">🔄 Restart Quiz</button>
+                    <button class="act-btn b-home" onclick="goHome()">🏠 Level Selection</button>
+                    <button class="act-btn b-shuf" onclick="window.print()">🖨️ Print Record</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Audio FX Core Engine Synthesizer (Web Audio API Infrastructure)
+        const AudioFX = {
+            ctx: null,
+            init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+            play(type) {
+                try {
+                    this.init();
+                    if (this.ctx.state === 'suspended') this.ctx.resume();
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.connect(gain); gain.connect(this.ctx.destination);
+                    const now = this.ctx.currentTime;
+
+                    if (type === 'click' || type === 'drag') {
+                        osc.type = 'sine'; osc.frequency.setValueAtTime(type === 'click' ? 580 : 620, now);
+                        gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                        osc.start(now); osc.stop(now + 0.05);
+                    } else if (type === 'correct') {
+                        osc.type = 'triangle'; osc.frequency.setValueAtTime(523.25, now);
+                        osc.frequency.setValueAtTime(659.25, now + 0.08);
+                        osc.frequency.setValueAtTime(783.99, now + 0.16);
+                        gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                        osc.start(now); osc.stop(now + 0.35);
+                    } else if (type === 'wrong') {
+                        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(220, now);
+                        osc.frequency.linearRampToValueAtTime(120, now + 0.2);
+                        gain.gain.setValueAtTime(0.07, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+                        osc.start(now); osc.stop(now + 0.22);
+                    } else if (type === 'complete') {
+                        const arpeggio = [523.25, 659.25, 783.99, 1046.50];
+                        arpeggio.forEach((f, i) => {
+                            const o = this.ctx.createOscillator(); const g = this.ctx.createGain();
+                            o.type = 'sine'; o.frequency.setValueAtTime(f, now + i * 0.06);
+                            g.gain.setValueAtTime(0.04, now + i * 0.06); g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.4);
+                            o.connect(g); g.connect(this.ctx.destination);
+                            o.start(now + i * 0.06); o.stop(now + i * 0.06 + 0.4);
+                        });
+                    }
+                } catch(e) { console.warn("Audio Context init block bypassed."); }
+            }
+        };
+
+        // Databanks Instantiation Context Layers
+        const placeValue2Digit = []; const placeValue3Digit = []; const placeValue4Digit = [];
+        const placeValue5Digit = []; const placeValue6Digit = [];
+
+        // Algorithmic Procedural Generation Sub-Engine
+        function produceProblemBlock(digitsCount, uniqueRefIndex) {
+            let minRange = Math.pow(10, digitsCount - 1);
+            let maxRange = Math.pow(10, digitsCount) - 1;
+            
+            // Generate a non-repeating problem sequence
+            let computedValue = minRange + (uniqueRefIndex * 19 + 7) % (maxRange - minRange);
+            let digitsStr = computedValue.toString();
+            let digitsArray = digitsStr.split('');
+            const length = digitsArray.length;
+
+            const positionNames = ["Ones", "Tens", "Hundreds", "Thousands", "Ten Thousands", "Hundred Thousands"];
+            
+            // Pick an active digit for focusing questions
+            let targetedOffset = uniqueRefIndex % length;
+            let currentDigitChar = digitsArray[targetedOffset];
+            let numericalTargetDigit = parseInt(currentDigitChar);
+            
+            let structuralWeightValue = Math.pow(10, length - 1 - targetedOffset);
+            let structuralPlaceValue = numericalTargetDigit * structuralWeightValue;
+            let descriptivePlaceName = positionNames[length - 1 - targetedOffset];
+
+            let promptStr = "";
+            let screenMarkup = "";
+            let correctSolutionValue = "";
+            let alternativesDecoys = [];
+            
+            // Build localized analytical contextual explanation text blocks
+            let breakdownSegments = [];
+            for (let i = 0; i < length; i++) {
+                let d = digitsArray[i];
+                let pName = positionNames[length - 1 - i];
+                let pVal = parseInt(d) * Math.pow(10, length - 1 - i);
+                breakdownSegments.push(`${d} is in the ${pName} place = ${pVal.toLocaleString()}`);
+            }
+            let coreExplanationText = `In ${computedValue.toLocaleString()}, ${breakdownSegments.join(', ')}. Therefore, the requirement translates directly to our selected value definition.`;
+
+            // Question Type Matrices Router Strategy
+            let typeModulus = uniqueRefIndex % 4;
+
+            if (typeModulus === 0) {
+                promptStr = `What is the place value of the highlighted digit ${currentDigitChar}?`;
+                
+                let highlightHTML = [];
+                for(let idx=0; idx<length; idx++) {
+                    if(idx === targetedOffset) highlightHTML.push(`<span class="highlight-digit">${digitsArray[idx]}</span>`);
+                    else highlightHTML.push(digitsArray[idx]);
+                }
+                screenMarkup = `<div class="math-hero">${highlightHTML.join('')}</div>`;
+                correctSolutionValue = structuralPlaceValue.toLocaleString();
+                
+                alternativesDecoys = [
+                    numericalTargetDigit.toString(),
+                    (structuralPlaceValue * 10).toLocaleString(),
+                    (structuralPlaceValue / 10 || structuralPlaceValue + 5).toLocaleString()
+                ];
+            } else if (typeModulus === 1) {
+                promptStr = `Which digit is located inside the ${descriptivePlaceName} place value position?`;
+                screenMarkup = `<div class="math-hero">${computedValue.toLocaleString()}</div>`;
+                correctSolutionValue = currentDigitChar;
+                
+                alternativesDecoys = digitsArray.filter(v => v !== currentDigitChar);
+                while(alternativesDecoys.length < 3) {
+                    alternativesDecoys.push(((numericalTargetDigit + 3) % 10).toString());
+                }
+            } else if (typeModulus === 2) {
+                promptStr = `Which digit in this number holds a computed place value of ${structuralPlaceValue.toLocaleString()}?`;
+                screenMarkup = `<div class="math-hero">${computedValue.toLocaleString()}</div>`;
+                correctSolutionValue = currentDigitChar;
+                
+                alternativesDecoys = digitsArray.filter(v => v !== currentDigitChar);
+                while(alternativesDecoys.length < 3) {
+                    alternativesDecoys.push(((numericalTargetDigit + 4) % 10).toString());
+                }
+            } else {
+                // Face Value Interleaved Challenge vs Positional Place Value
+                if (digitsCount >= 4 && uniqueRefIndex % 2 === 0) {
+                    promptStr = `What is the FACE VALUE of the digit ${currentDigitChar} in this number?`;
+                    screenMarkup = `<div class="math-hero">${computedValue.toLocaleString()}</div>`;
+                    correctSolutionValue = currentDigitChar;
+                    alternativesDecoys = [structuralPlaceValue.toLocaleString(), descriptivePlaceName, "0"];
+                    coreExplanationText = `The FACE VALUE of a digit is always simply the digit itself, regardless of its position! Thus, the face value of ${currentDigitChar} remains ${currentDigitChar}.`;
+                } else {
+                    promptStr = `Choose the correct numerical place name for the position of digit ${currentDigitChar}:`;
+                    screenMarkup = `<div class="math-hero">${computedValue.toLocaleString()}</div>`;
+                    correctSolutionValue = descriptivePlaceName;
+                    alternativesDecoys = positionNames.filter(n => n !== descriptivePlaceName).slice(0, 3);
+                }
+            }
+
+            // Clean alternative selections options duplicates and protect references leaks
+            let uniqueDecoysList = Array.from(new Set(alternativesDecoys)).filter(v => v !== correctSolutionValue && v !== "");
+            while (uniqueDecoysList.length < 3) {
+                uniqueDecoysList.push((Math.random() * 100).toFixed(0));
+            }
+
+            return {
+                text: promptStr,
+                markup: screenMarkup,
+                ans: correctSolutionValue,
+                decoys: uniqueDecoysList.slice(0, 3),
+                explanation: `✅ Correct! ${coreExplanationText}`,
+                digitsList: digitsArray,
+                rawNum: computedValue
+            };
+        }
+
+        // Initialize and allocate matrices contents arrays loops
+        function buildQuestionsDatabase() {
+            for (let i = 0; i < 50; i++) {
+                placeValue2Digit.push(produceProblemBlock(2, i));
+                placeValue3Digit.push(produceProblemBlock(3, i));
+                placeValue4Digit.push(produceProblemBlock(4, i));
+                placeValue5Digit.push(produceProblemBlock(5, i));
+                placeValue6Digit.push(produceProblemBlock(6, i));
+            }
+        }
+
+        // Global Orchestration States Engine Registers
+        let activeDatasetPointer = [];
+        let indexTrackCursor = 0;
+        let runningSessionScore = 0;
+        let selectedLvlIndicator = 2;
+        let sessionAnswersRegistry = {};
+        let functionalAppViewMode = 'mcq';
+
+        function initLevelSession(difficultyTiers) {
+            AudioFX.play('click');
+            selectedLvlIndicator = difficultyTiers;
+
+            if (difficultyTiers === 2) activeDatasetPointer = placeValue2Digit;
+            else if (difficultyTiers === 3) activeDatasetPointer = placeValue3Digit;
+            else if (difficultyTiers === 4) activeDatasetPointer = placeValue4Digit;
+            else if (difficultyTiers === 5) activeDatasetPointer = placeValue5Digit;
+            else if (difficultyTiers === 6) activeDatasetPointer = placeValue6Digit;
+
+            document.getElementById('viewStart').style.display = 'none';
+            document.getElementById('viewDiploma').style.display = 'none';
+            document.getElementById('viewCore').style.display = 'block';
+
+            sessionAnswersRegistry = {};
+            indexTrackCursor = 0;
+            runningSessionScore = 0;
+
+            toggleViewMode('mcq');
+            populateQuizDisplayLevel();
+        }
+
+        function populateQuizDisplayLevel() {
+            const dataNode = activeDatasetPointer[indexTrackCursor];
+
+            document.getElementById('hudCurrent').innerText = indexTrackCursor + 1;
+            document.getElementById('hudScore').innerText = runningSessionScore;
+            document.getElementById('progressBar').style.width = `${(indexTrackCursor / activeDatasetPointer.length) * 100}%`;
+
+            document.getElementById('btnPrev').disabled = indexTrackCursor === 0;
+            document.getElementById('btnNext').disabled = sessionAnswersRegistry[indexTrackCursor] === undefined;
+            document.getElementById('levelBadge').innerText = `${selectedLvlIndicator}-Digit Complexity`;
+            document.getElementById('explanationBox').style.display = 'none';
+
+            document.getElementById('questionPrompt').innerText = dataNode.text;
+            document.getElementById('mathDisplayWindow').innerHTML = dataNode.markup;
+
+            const container = document.getElementById('optionsGrid');
+            container.innerHTML = '';
+
+            // Generate options ordering patterns if not yet recorded
+            if (!dataNode._scrambledPool) {
+                let optionsArr = [dataNode.ans, ...dataNode.decoys];
+                for (let i = optionsArr.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [optionsArr[i], optionsArr[j]] = [optionsArr[j], optionsArr[i]];
+                }
+                dataNode._scrambledPool = optionsArr;
+            }
+
+            dataNode._scrambledPool.forEach(choiceText => {
+                const button = document.createElement('button');
+                button.className = 'opt-node';
+                button.innerText = choiceText;
+                button.onclick = () => processUserSelectedOption(button, choiceText);
+                container.appendChild(button);
+            });
+
+            // Re-render historic responses if returning backwards through progress indices
+            if (sessionAnswersRegistry[indexTrackCursor] !== undefined) {
+                const recordedChoice = sessionAnswersRegistry[indexTrackCursor];
+                displayFeedbackExplanationPlate(dataNode, recordedChoice === dataNode.ans);
+                Array.from(container.children).forEach(btn => {
+                    btn.disabled = true;
+                    if (btn.innerText === dataNode.ans) btn.classList.add('correct');
+                    if (btn.innerText === recordedChoice && recordedChoice !== dataNode.ans) btn.classList.add('wrong');
+                });
+            }
+        }
+
+        function processUserSelectedOption(selectedButton, variantValueString) {
+            const currentItemRef = activeDatasetPointer[indexTrackCursor];
+            sessionAnswersRegistry[indexTrackCursor] = variantValueString;
+
+            const gridChildren = document.getElementById('optionsGrid').children;
+            Array.from(gridChildren).forEach(b => b.disabled = true);
+
+            const resolutionMatches = (variantValueString === currentItemRef.ans);
+
+            if (resolutionMatches) {
+                selectedButton.classList.add('correct');
+                runningSessionScore++;
+                document.getElementById('hudScore').innerText = runningSessionScore;
+                AudioFX.play('correct');
+            } else {
+                selectedButton.classList.add('wrong');
+                AudioFX.play('wrong');
+                Array.from(gridChildren).forEach(b => {
+                    if (b.innerText === currentItemRef.ans) b.classList.add('correct');
+                });
+            }
+
+            displayFeedbackExplanationPlate(currentItemRef, resolutionMatches);
+            document.getElementById('btnNext').disabled = false;
+
+            if (Object.keys(sessionAnswersRegistry).length === activeDatasetPointer.length) {
+                setTimeout(revealGraduationAwardPlate, 1500);
+            }
+        }
+
+        function displayFeedbackExplanationPlate(itemContext, stateValid) {
+            const plate = document.getElementById('explanationBox');
+            plate.innerText = stateValid ? itemContext.explanation : `❌ Review: ${itemContext.explanation}`;
+            plate.className = stateValid ? 'expl-plate' : 'expl-plate mistake';
+            plate.style.display = 'block';
+        }
+
+        function navigateActiveIndex(offsetDelta) {
+            AudioFX.play('click');
+            indexTrackCursor += offsetDelta;
+            populateQuizDisplayLevel();
+        }
+
+        function shuffleCurrentSession() {
+            AudioFX.play('click');
+            for (let i = activeDatasetPointer.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [activeDatasetPointer[i], activeDatasetPointer[j]] = [activeDatasetPointer[j], activeDatasetPointer[i]];
+            }
+            activeDatasetPointer.forEach(p => p._scrambledPool = null);
+            sessionAnswersRegistry = {};
+            indexTrackCursor = 0;
+            runningSessionScore = 0;
+            populateQuizDisplayLevel();
+        }
+
+        function goHome() {
+            AudioFX.play('click');
+            document.getElementById('viewCore').style.display = 'none';
+            document.getElementById('viewDiploma').style.display = 'none';
+            document.getElementById('viewStart').style.display = 'block';
+        }
+
+        function toggleViewMode(targetViewString) {
+            AudioFX.play('click');
+            functionalAppViewMode = targetViewString;
+            document.getElementById('btnTabQuiz').classList.toggle('active', targetViewString === 'mcq');
+            document.getElementById('btnTabChart').classList.toggle('active', targetViewString === 'chart');
+
+            if (targetViewString === 'mcq') {
+                document.getElementById('arenaMCQ').style.display = 'block';
+                document.getElementById('arenaChart').style.display = 'none';
+                document.getElementById('btnCoreShuffle').style.visibility = 'visible';
+                document.getElementById('btnPrev').style.visibility = 'visible';
+                document.getElementById('btnNext').style.visibility = 'visible';
+            } else {
+                document.getElementById('arenaMCQ').style.display = 'none';
+                document.getElementById('arenaChart').style.display = 'block';
+                document.getElementById('btnCoreShuffle').style.visibility = 'hidden';
+                document.getElementById('btnPrev').style.visibility = 'hidden';
+                document.getElementById('btnNext').style.visibility = 'hidden';
+                generateChartSession();
+            }
+        }
+
+        /* 🕹️ DRAG & DROP PLACE VALUE CHART LOGIC INTERACTION BUILDER */
+        let activeSelectedDragId = null;
+        let chartTargetProblemData = null;
+
+        function generateChartSession() {
+            AudioFX.play('click');
+            document.getElementById('chartFeedbackBox').style.display = 'none';
+            
+            // Clean active chart slots
+            for (let i = 0; i <= 5; i++) {
+                let slot = document.getElementById(`slot-${i}`);
+                slot.innerHTML = '';
+                // Hide columns context based on the current level difficulty context size setup
+                if (i >= selectedLvlIndicator) {
+                    slot.parentElement.style.opacity = '0.25';
+                    slot.parentElement.style.pointerEvents = 'none';
+                } else {
+                    slot.parentElement.style.opacity = '1';
+                    slot.parentElement.style.pointerEvents = 'auto';
+                }
+            }
+
+            const activeLevelIndexPool = activeDatasetPointer[Math.floor(Math.random() * activeDatasetPointer.length)];
+            chartTargetProblemData = activeLevelIndexPool;
+
+            document.getElementById('chartTargetDisplay').innerText = activeLevelIndexPool.rawNum.toLocaleString();
+
+            const paletteDock = document.getElementById('chartPalette');
+            paletteDock.innerHTML = '';
+
+            let structuralDigitsCopy = [...activeLevelIndexPool.digitsList];
+            
+            // Shuffle alignment items for presentation placement inside palette docks
+            for (let i = structuralDigitsCopy.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [structuralDigitsCopy[i], structuralDigitsCopy[j]] = [structuralDigitsCopy[j], structuralDigitsCopy[i]];
+            }
+
+            structuralDigitsCopy.forEach((digit, index) => {
+                const token = document.createElement('div');
+                token.className = 'digit-token';
+                token.innerText = digit;
+                token.draggable = true;
+                token.id = `token-ref-${index}`;
+                token.dataset.digitValue = digit;
+
+                token.addEventListener('dragstart', function(e) {
+                    activeSelectedDragId = this.id;
+                    AudioFX.play('drag');
+                });
+
+                // Universal smart-tap response mechanic handler
+                token.onclick = function() {
+                    AudioFX.play('click');
+                    if (this.parentElement.id === 'chartPalette') {
+                        // Locate the first vacant slot mapping to active visibility columns criteria bounds
+                        for (let i = 0; i < selectedLvlIndicator; i++) {
+                            let targetSlot = document.getElementById(`slot-${i}`);
+                            if (targetSlot.children.length === 0) {
+                                targetSlot.appendChild(this);
+                                return;
+                            }
+                        }
+                    } else {
+                        document.getElementById('chartPalette').appendChild(this);
+                    }
+                };
+
+                paletteDock.appendChild(token);
+            });
+        }
+
+        // Wire target slots drop listeners once globally
+        document.querySelectorAll('.chart-slot').forEach(slot => {
+            slot.addEventListener('dragover', e => e.preventDefault());
+            slot.addEventListener('drop', function(e) {
+                e.preventDefault();
+                if (activeSelectedDragId) {
+                    const candidateNode = document.getElementById(activeSelectedDragId);
+                    if (candidateNode) {
+                        if (this.children.length > 0) {
+                            document.getElementById('chartPalette').appendChild(this.children[0]);
+                        }
+                        this.appendChild(candidateNode);
+                        AudioFX.play('click');
+                    }
+                }
+            });
+        });
+
+        function evaluateChartState() {
+            let correctOrientation = true;
+            let checksIncomplete = false;
+
+            for (let i = 0; i < selectedLvlIndicator; i++) {
+                let slot = document.getElementById(`slot-${i}`);
+                let childToken = slot.querySelector('.digit-token');
+                
+                if (!childToken) {
+                    checksIncomplete = true;
+                } else {
+                    let positionIndexFromRight = i;
+                    let arrayIndexFromLeft = selectedLvlIndicator - 1 - positionIndexFromRight;
+                    let expectedCharacterDigit = chartTargetProblemData.digitsList[arrayIndexFromLeft];
+                    
+                    if (childToken.dataset.digitValue !== expectedCharacterDigit) {
+                        correctOrientation = false;
+                    }
+                }
+            }
+
+            const feedback = document.getElementById('chartFeedbackBox');
+            if (checksIncomplete) {
+                feedback.innerText = "⚠️ Fill all the available slot columns with a digit token first!";
+                feedback.className = "expl-plate mistake";
+                AudioFX.play('wrong');
+            } else if (correctOrientation) {
+                feedback.innerText = `🎉 Brilliant analysis! You mapped every positional column value correctly for ${chartTargetProblemData.rawNum.toLocaleString()}.`;
+                feedback.className = "expl-plate";
+                AudioFX.play('correct');
+            } else {
+                feedback.innerText = "❌ Some digits are misaligned. Remember: Ones are on the far right, Tens come next, then Hundreds, and so on!";
+                feedback.className = "expl-plate mistake";
+                AudioFX.play('wrong');
+            }
+            feedback.style.display = 'block';
+        }
+
+        /* 🏆 REWARDS AND SUMMARY REPORT PRESENTATION ENGINE */
+        function revealGraduationAwardPlate() {
+            AudioFX.play('complete');
+            document.getElementById('viewCore').style.display = 'none';
+            document.getElementById('viewDiploma').style.display = 'block';
+
+            const percentageMetric = Math.round((runningSessionScore / activeDatasetPointer.length) * 100);
+            let badgeGlyph = "📚"; let designatorTitle = "Keep Practicing";
+
+            if (percentageMetric >= 90) {
+                badgeGlyph = "🏆"; designatorTitle = "Place Value Master"; deployConfettiBlast();
+            } else if (percentageMetric >= 70) {
+                badgeGlyph = "🌟"; designatorTitle = "Number Sense Champion"; deployConfettiBlast();
+            } else if (percentageMetric >= 50) {
+                badgeGlyph = "👍"; designatorTitle = "Good Learner";
+            }
+
+            document.getElementById('diplomaIcon').innerText = badgeGlyph;
+            document.getElementById('diplomaTitle').innerText = designatorTitle;
+            document.getElementById('diplomaScoreTag').innerText = `Performance score verified successfully: accuracy level of ${percentageMetric}% (${runningSessionScore} / ${activeDatasetPointer.length} Correct Problems Logged).`;
+        }
+
+        function restartSession() {
+            initLevelSession(selectedLvlIndicator);
+        }
+
+        function toggleDarkMode() {
+            AudioFX.play('click');
+            document.body.classList.toggle('dark-mode');
+        }
+
+        // Background Decoration Generators Layout
+        function deployAmbientFloatingGems() {
+            const host = document.getElementById('ambientContainer');
+            host.innerHTML = '';
+            const variants = ['100', '10', '1', '🔢', '⭐', '💎', '🟢'];
+            for (let i = 0; i < 16; i++) {
+                const node = document.createElement('div');
+                node.className = 'floating-token';
+                node.innerText = variants[Math.floor(Math.random() * variants.length)];
+                node.style.left = `${Math.random() * 100}%`;
+                node.style.animationDelay = `${Math.random() * 10}s`;
+                node.style.animationDuration = `${12 + Math.random() * 6}s`;
+                host.appendChild(node);
+            }
+        }
+
+        function deployConfettiBlast() {
+            const canv = document.getElementById('canvas-confetti');
+            const cxx = canv.getContext('2d');
+            canv.width = window.innerWidth; canv.height = window.innerHeight;
+
+            let pieces = [];
+            const hexTones = ['#6C5CE7', '#A8E6CF', '#FF8B94', '#FFD3B6', '#10AC84', '#54A0FF'];
+
+            for (let i = 0; i < 150; i++) {
+                pieces.push({
+                    x: Math.random() * canv.width,
+                    y: Math.random() * canv.height - canv.height,
+                    r: Math.random() * 4 + 4,
+                    sway: Math.random() * canv.height,
+                    color: hexTones[Math.floor(Math.random() * hexTones.length)],
+                    v: Math.random() * 4 + 3
+                });
+            }
+
+            function animationFrameStep() {
+                cxx.clearRect(0, 0, canv.width, canv.height);
+                pieces.forEach(p => {
+                    p.y += p.v; p.x += Math.sin(p.sway) * 0.4;
+                    cxx.beginPath(); cxx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    cxx.fillStyle = p.color; cxx.fill();
+                });
+                if (pieces.some(p => p.y < canv.height)) {
+                    requestAnimationFrame(animationFrameStep);
+                } else {
+                    cxx.clearRect(0, 0, canv.width, canv.height);
+                }
+            }
+            animationFrameStep();
+        }
+
+        window.onload = () => {
+            buildQuestionsDatabase();
+            deployAmbientFloatingGems();
+        };
+
+        window.onresize = () => {
+            const canvas = document.getElementById('canvas-confetti');
+            if (canvas) { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        };
+    </script>
+</body>
+</html>

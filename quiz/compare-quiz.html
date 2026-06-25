@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚖️ Compare Numbers Quiz</title>
+    <style>
+        :root {
+            --bg-light: linear-gradient(135deg, #FF7E5F, #FEB47B, #86E3CE, #D6E4E5);
+            --bg-dark: linear-gradient(135deg, #0F172A, #1E293B, #111827);
+            --card-glass-light: rgba(255, 255, 255, 0.28);
+            --card-glass-dark: rgba(30, 41, 59, 0.7);
+            --border-glass-light: rgba(255, 255, 255, 0.5);
+            --border-glass-dark: rgba(255, 255, 255, 0.1);
+            --text-light: #1E293B;
+            --text-dark: #F8FAFC;
+            --emerald: #10B981;
+            --rose: #EF4444;
+            --indigo: #6366F1;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-light);
+            background-size: 400% 400%;
+            animation: gradientMotion 20s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            overflow-x: hidden;
+            position: relative;
+            color: var(--text-light);
+            transition: background 0.3s, color 0.3s;
+        }
+
+        body.dark-mode {
+            background: var(--bg-dark);
+            color: var(--text-dark);
+        }
+
+        @keyframes gradientMotion {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .ambient-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .floating-token {
+            position: absolute;
+            font-size: 2.5rem;
+            opacity: 0.12;
+            animation: floatUpward 14s linear infinite;
+            bottom: -60px;
+            color: #FFF;
+            font-weight: bold;
+        }
+
+        @keyframes floatUpward {
+            0% { transform: translateY(0) rotate(0deg) scale(0.8); opacity: 0; }
+            20% { opacity: 0.25; }
+            80% { opacity: 0.25; }
+            100% { transform: translateY(-120vh) rotate(360deg) scale(1.4); opacity: 0; }
+        }
+
+        .quiz-shell {
+            background: var(--card-glass-light);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 3px solid var(--border-glass-light);
+            border-radius: 32px;
+            padding: 24px;
+            width: 100%;
+            max-width: 960px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+            z-index: 5;
+            position: relative;
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        body.dark-mode .quiz-shell {
+            background: var(--card-glass-dark);
+            border-color: var(--border-glass-dark);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #FFF;
+            text-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        body.dark-mode h1 {
+            color: #6366F1;
+        }
+
+        .subtitle {
+            font-size: 1.15rem;
+            color: #F8FAFC;
+            font-weight: 600;
+            margin-top: 4px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        body.dark-mode .subtitle { color: #94A3B8; }
+
+        .mode-toggle {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.25);
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.25rem;
+            transition: transform 0.2s;
+        }
+        .mode-toggle:hover { transform: scale(1.1); }
+
+        .workspace-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px;
+            border-radius: 16px;
+        }
+        body.dark-mode .workspace-tabs { background: rgba(0,0,0,0.3); }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: var(--text-light);
+            cursor: pointer;
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+        body.dark-mode .tab-btn { color: #A5B4FC; }
+        .tab-btn.active {
+            background: #FFF;
+            color: #4F46E5;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        body.dark-mode .tab-btn.active { background: #312E81; color: #F8FAFC; }
+
+        .difficulty-matrix {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 14px;
+            margin-top: 20px;
+        }
+        @media (min-width: 576px) { .difficulty-matrix { grid-template-columns: repeat(2, 1fr); } }
+        @media (min-width: 768px) { .difficulty-matrix { grid-template-columns: repeat(3, 1fr); } }
+
+        .lvl-btn {
+            padding: 20px;
+            border: none;
+            border-radius: 18px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #FFF;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .lvl-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
+        .b-2d { background: #10B981; }
+        .b-3d { background: #3B82F6; }
+        .b-4d { background: #8B5CF6; }
+        .b-5d { background: #F59E0B; }
+        .b-6d { background: #EF4444; }
+        .b-7d { background: #EC4899; }
+
+        .hud-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 12px 20px;
+            border-radius: 16px;
+            font-weight: 700;
+            margin-bottom: 14px;
+        }
+        body.dark-mode .hud-panel { background: rgba(15, 23, 42, 0.8); color: #F8FAFC; }
+
+        .progress-track {
+            width: 100%;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #3B82F6, #10B981);
+            transition: width 0.3s ease;
+        }
+
+        .board-card {
+            background: #FFF;
+            padding: 24px;
+            border-radius: 20px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.02);
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        body.dark-mode .board-card { background: #1E293B; }
+
+        .badge-tag {
+            display: inline-block;
+            background: #6366F1;
+            color: #FFF;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-bottom: 14px;
+            text-transform: uppercase;
+        }
+
+        .q-text { font-size: 1.35rem; font-weight: 700; margin-bottom: 20px; line-height: 1.4; }
+        
+        .compare-window {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .math-hero {
+            font-size: 2.8rem;
+            font-weight: 800;
+            background: #F1F5F9;
+            padding: 12px 24px;
+            border-radius: 16px;
+            display: inline-block;
+            letter-spacing: 1px;
+            color: #4F46E5;
+            min-width: 160px;
+            text-align: center;
+        }
+        body.dark-mode .math-hero { background: #334155; color: #818CF8; }
+
+        .symbol-well {
+            width: 80px;
+            height: 80px;
+            border-radius: 16px;
+            background: #E2E8F0;
+            border: 3px dashed #94A3B8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            font-weight: 800;
+            color: #0F172A;
+        }
+        body.dark-mode .symbol-well { background: #475569; border-color: #64748B; color: #FFF; }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        @media (min-width: 576px) { .options-grid { grid-template-columns: repeat(2, 1fr); } }
+
+        .opt-node {
+            background: #FFF;
+            border: 2px solid #E2E8F0;
+            border-radius: 14px;
+            padding: 18px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        body.dark-mode .opt-node { background: #334155; border-color: #475569; color: #F8FAFC; }
+        .opt-node:hover:not([disabled]) { transform: translateY(-2px); border-color: #6366F1; background: #EEF2FF; }
+        body.dark-mode .opt-node:hover:not([disabled]) { background: #475569; border-color: #818CF8; }
+
+        .opt-node.correct { background: var(--emerald) !important; color: #FFF !important; border-color: #047857 !important; }
+        .opt-node.wrong { background: var(--rose) !important; color: #FFF !important; border-color: #B91C1C !important; }
+
+        .expl-plate {
+            display: none;
+            background: #ECFDF5;
+            border-left: 5px solid var(--emerald);
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 18px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #065F46;
+            text-align: left;
+        }
+        body.dark-mode .expl-plate { background: #064E3B; color: #A7F3D0; }
+        .expl-plate.mistake { background: #FEF2F2; border-left-color: var(--rose); color: #991B1B; }
+        body.dark-mode .expl-plate.mistake { background: #7F1D1D; color: #FCA5A5; }
+
+        .ctrl-row { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+        
+        .act-btn {
+            background: #334155;
+            color: #FFF;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .act-btn:hover:not([disabled]) { background: #1E293B; transform: translateY(-1px); }
+        .act-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        body.dark-mode .act-btn { background: #475569; }
+        body.dark-mode .act-btn:hover:not([disabled]) { background: #64748B; }
+        
+        .b-home { background: #3B82F6; } .b-home:hover:not([disabled]) { background: #2563EB; }
+        .b-shuf { background: #F59E0B; } .b-shuf:hover:not([disabled]) { background: #D97706; }
+
+        /* Drag Lab Sandbox Items */
+        .sandbox-board {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+            padding: 10px;
+        }
+
+        .drop-row-container {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+
+        .sandbox-basket {
+            background: #F8FAFC;
+            border: 2px dashed #CBD5E1;
+            border-radius: 16px;
+            padding: 16px;
+            min-width: 220px;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        body.dark-mode .sandbox-basket { background: #334155; border-color: #475569; }
+        .sandbox-basket h4 { font-size: 1rem; color: #64748B; text-transform: uppercase; margin-bottom: 4px; }
+        body.dark-mode .sandbox-basket h4 { color: #94A3B8; }
+
+        .symbol-token {
+            background: linear-gradient(135deg, #6366F1, #4F46E5);
+            color: #FFF;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            font-weight: 800;
+            cursor: grab;
+            box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
+            touch-action: none;
+        }
+        .symbol-token:active { cursor: grabbing; }
+
+        .number-box-token {
+            background: #F1F5F9;
+            border: 2px solid #CBD5E1;
+            padding: 10px 20px;
+            font-size: 1.5rem;
+            font-weight: 800;
+            border-radius: 12px;
+            cursor: grab;
+            color: #334155;
+        }
+        body.dark-mode .number-box-token { background: #475569; color: #FFF; border-color: #64748B; }
+
+        .palette-dock {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            background: #F1F5F9;
+            padding: 16px;
+            border-radius: 16px;
+            min-height: 80px;
+            width: 100%;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        body.dark-mode .palette-dock { background: #1E293B; }
+
+        .diploma-view { display: none; text-align: center; background: #FFF; padding: 30px; border-radius: 24px; color: #1E293B; }
+        body.dark-mode .diploma-view { background: #1E293B; color: #F8FAFC; }
+        .diploma-frame { border: 6px double #6366F1; padding: 24px; border-radius: 18px; background: #FFFFFF; }
+        body.dark-mode .diploma-frame { background: #0F172A; border-color: #818CF8; }
+        .badge-title { font-size: 2.4rem; font-weight: 900; color: #6366F1; margin-bottom: 10px; }
+        body.dark-mode .badge-title { color: #818CF8; }
+
+        #canvas-confetti { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999; }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8rem; }
+            .q-text { font-size: 1.15rem; }
+            .math-hero { font-size: 2rem; min-width: 120px; padding: 8px 16px; }
+            .symbol-well { width: 65px; height: 65px; font-size: 2.2rem; }
+        }
+        @media print {
+            body * { visibility: hidden; }
+            .diploma-view, .diploma-view * { visibility: visible; }
+            .diploma-view { position: absolute; left: 0; top: 0; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-layer" id="ambientContainer"></div>
+    <canvas id="canvas-confetti"></canvas>
+
+    <div class="quiz-shell">
+        <header>
+            <h1>⚖️ Compare Numbers Quiz</h1>
+            <p class="subtitle">Compare • Think • Choose the Correct Symbol</p>
+            <button class="mode-toggle" onclick="toggleDarkMode()" title="Toggle Dark/Light Mode">🌓</button>
+        </header>
+
+        <div id="viewStart">
+            <div class="board-card" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);">
+                <h2 style="font-weight: 700; color: #FFF; text-shadow: 0 2px 5px rgba(0,0,0,0.2); margin-bottom: 10px;">Select Difficulty Level</h2>
+                <div class="difficulty-matrix">
+                    <button class="lvl-btn b-2d" onclick="initLevelSession(2)">🟢 2-Digit Numbers</button>
+                    <button class="lvl-btn b-3d" onclick="initLevelSession(3)">🔵 3-Digit Numbers</button>
+                    <button class="lvl-btn b-4d" onclick="initLevelSession(4)">🟣 4-Digit Numbers</button>
+                    <button class="lvl-btn b-5d" onclick="initLevelSession(5)">🟠 5-Digit Numbers</button>
+                    <button class="lvl-btn b-6d" onclick="initLevelSession(6)">🔴 6-Digit Numbers</button>
+                    <button class="lvl-btn b-7d" onclick="initLevelSession(7)">🟡 7-Digit Numbers</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="viewCore" style="display: none;">
+            <div class="workspace-tabs">
+                <button class="tab-btn active" id="btnTabQuiz" onclick="toggleViewMode('mcq')">📝 Multiple Choice Quiz</button>
+                <button class="tab-btn" id="btnTabChart" onclick="toggleViewMode('sandbox')">🕹️ Interactive Compare Mode</button>
+            </div>
+
+            <div id="arenaMCQ">
+                <div class="hud-panel">
+                    <div>Question: <span id="hudCurrent">1</span>/50</div>
+                    <div>Score: <span id="hudScore">0</span></div>
+                </div>
+                <div class="progress-track"><div class="progress-fill" id="progressBar"></div></div>
+
+                <div class="board-card">
+                    <span class="badge-tag" id="levelBadge">Loading...</span>
+                    <div class="q-text" id="questionPrompt">Preparing numbers dataset framework...</div>
+                    <div id="mathDisplayWindow"></div>
+                </div>
+
+                <div class="expl-plate" id="explanationBox"></div>
+                <div class="options-grid" id="optionsGrid"></div>
+            </div>
+
+            <div id="arenaSandbox" style="display: none;">
+                <div class="board-card">
+                    <span class="badge-tag" style="background: #F59E0B;">Interactive Sandbox</span>
+                    <div class="q-text">Build the complete statement! Drag or tap elements to classify them correctly.</div>
+                    
+                    <div class="sandbox-board">
+                        <div class="compare-window">
+                            <div class="sandbox-basket" id="basketLeftNum" data-accept="num"><h4>Left Number</h4></div>
+                            <div class="symbol-well" id="sandboxSymbolWell" data-accept="symbol">?</div>
+                            <div class="sandbox-basket" id="basketRightNum" data-accept="num"><h4>Right Number</h4></div>
+                        </div>
+
+                        <div class="drop-row-container">
+                            <div class="sandbox-basket" id="basketSmaller" data-accept="num"><h4>🟢 Smaller Box</h4></div>
+                            <div class="sandbox-basket" id="basketGreater" data-accept="num"><h4>🔴 Greater Box</h4></div>
+                        </div>
+
+                        <div class="palette-dock" id="sandboxPalette"></div>
+                    </div>
+                </div>
+                <div class="expl-plate" id="sandboxFeedbackBox"></div>
+                <div class="ctrl-row" style="justify-content: center; gap: 12px; margin-bottom: 15px;">
+                    <button class="act-btn b-shuf" onclick="generateSandboxSession()">🔄 Next Challenge</button>
+                    <button class="act-btn" style="background: var(--emerald);" onclick="evaluateSandboxState()">✅ Check Answer</button>
+                </div>
+            </div>
+
+            <div class="ctrl-row">
+                <button class="act-btn b-home" onclick="goHome()">🏠 Change Difficulty</button>
+                <button class="act-btn b-shuf" id="btnCoreShuffle" onclick="shuffleCurrentSession()">🔀 Shuffle Level</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="act-btn" id="btnPrev" onclick="navigateActiveIndex(-1)">⬅️ Prev</button>
+                    <button class="act-btn" id="btnNext" onclick="navigateActiveIndex(1)">Next ➡️</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="viewDiploma" class="diploma-view">
+            <div class="diploma-frame">
+                <div style="font-size: 5rem; margin-bottom: 12px;" id="diplomaIcon">🏆</div>
+                <div class="badge-title" id="diplomaTitle">Compare Numbers Master</div>
+                <h2>Certificate of Comparative Excellence</h2>
+                <p style="margin: 12px 0; font-size: 1.15rem; font-style: italic;">Successfully finalized advanced base-10 inequalities sorting, structural logic comparison validations, and numerical optimization challenges.</p>
+                <h3 style="margin: 20px 0; color: #6366F1;" id="diplomaScoreTag">Score matrix analysis running...</h3>
+                
+                <div style="display: flex; justify-content: center; gap: 12px; margin-top: 24px;">
+                    <button class="act-btn" style="background: var(--emerald);" onclick="restartSession()">🔄 Restart Quiz</button>
+                    <button class="act-btn b-home" onclick="goHome()">🏠 Level Selection</button>
+                    <button class="act-btn b-shuf" onclick="window.print()">🖨️ Print Certificate</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Audio Synthesizer Platform Core Logic Framework (Web Audio API Architecture)
+        const AudioFX = {
+            ctx: null,
+            init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+            play(type) {
+                try {
+                    this.init();
+                    if (this.ctx.state === 'suspended') this.ctx.resume();
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.connect(gain); gain.connect(this.ctx.destination);
+                    const now = this.ctx.currentTime;
+
+                    if (type === 'click' || type === 'drag') {
+                        osc.type = 'sine'; osc.frequency.setValueAtTime(type === 'click' ? 600 : 660, now);
+                        gain.gain.setValueAtTime(0.04, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+                        osc.start(now); osc.stop(now + 0.06);
+                    } else if (type === 'correct') {
+                        osc.type = 'sine'; osc.frequency.setValueAtTime(587.33, now);
+                        osc.frequency.setValueAtTime(783.99, now + 0.1);
+                        gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                        osc.start(now); osc.stop(now + 0.4);
+                    } else if (type === 'wrong') {
+                        osc.type = 'triangle'; osc.frequency.setValueAtTime(180, now);
+                        osc.frequency.linearRampToValueAtTime(90, now + 0.25);
+                        gain.gain.setValueAtTime(0.08, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
+                        osc.start(now); osc.stop(now + 0.26);
+                    } else if (type === 'complete') {
+                        const chord = [523.25, 659.25, 783.99, 987.77, 1046.50];
+                        chord.forEach((f, idx) => {
+                            const o = this.ctx.createOscillator(); const g = this.ctx.createGain();
+                            o.type = 'sine'; o.frequency.setValueAtTime(f, now + idx * 0.07);
+                            g.gain.setValueAtTime(0.03, now + idx * 0.07); g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.5);
+                            o.connect(g); g.connect(this.ctx.destination);
+                            o.start(now + idx * 0.07); o.stop(now + idx * 0.07 + 0.5);
+                        });
+                    }
+                } catch(err) { console.warn("Audio Context setup bypassed configuration limits."); }
+            }
+        };
+
+        // Databanks Arrays Allocation Layout Structures
+        const compare2Digit = []; const compare3Digit = []; const compare4Digit = [];
+        const compare5Digit = []; const compare6Digit = []; const compare7Digit = [];
+
+        // Procedural Mathematical Data Generator Optimization Machine
+        function constructProblemUnit(digitsCount, uniqueSeedIndex) {
+            const floorValue = Math.pow(10, digitsCount - 1);
+            const roofValue = Math.pow(10, digitsCount) - 1;
+
+            // Generate deterministic non-repeating pairs
+            let baseNum1 = floorValue + (uniqueSeedIndex * 37 + 13) % (roofValue - floorValue);
+            let baseNum2 = floorValue + (uniqueSeedIndex * 43 + 29) % (roofValue - floorValue);
+
+            // Inject strategic equality nodes and close neighborhood bounds differences
+            let patternModulus = uniqueSeedIndex % 5;
+            if (patternModulus === 0) {
+                baseNum2 = baseNum1;
+            } else if (patternModulus === 1) {
+                // Modulate final digits to challenge place value tracking accuracy
+                let numStr = baseNum1.toString();
+                if(numStr.length > 2) {
+                    let reversedEnd = numStr.substring(0, numStr.length - 2) + numStr.charAt(numStr.length-1) + numStr.charAt(numStr.length-2);
+                    baseNum2 = parseInt(reversedEnd) || baseNum1;
+                }
+            }
+
+            let correctSymbol = "=";
+            if (baseNum1 > baseNum2) correctSymbol = ">";
+            if (baseNum1 < baseNum2) correctSymbol = "<";
+
+            let promptStr = "";
+            let screenMarkup = "";
+            let solutionString = "";
+            let randomDecoysList = [];
+            let localizedExplanation = "";
+
+            // Dynamic Problem Types Router Matrix (Includes all explicit request varieties)
+            let typeSelection = uniqueSeedIndex % 5;
+
+            if (typeSelection === 0) {
+                // Type 1: Symbol Selection Challenge
+                promptStr = "Choose the correct mathematical symbol to complete the statement below:";
+                screenMarkup = `
+                    <div class="compare-window">
+                        <div class="math-hero">${baseNum1.toLocaleString()}</div>
+                        <div class="symbol-well">?</div>
+                        <div class="math-hero">${baseNum2.toLocaleString()}</div>
+                    </div>`;
+                solutionString = correctSymbol;
+                randomDecoysList = [">", "<", "="].filter(s => s !== correctSymbol);
+                // Pad choice count to 4 selections if needed for consistency requirements
+                randomDecoysList.push("★"); 
+
+                if (correctSymbol === "=") {
+                    localizedExplanation = `${baseNum1.toLocaleString()} and ${baseNum2.toLocaleString()} are exactly equal.`;
+                } else {
+                    localizedExplanation = `${baseNum1.toLocaleString()} is ${baseNum1 > baseNum2 ? 'greater' : 'smaller'} than ${baseNum2.toLocaleString()}.`;
+                }
+            } 
+            else if (typeSelection === 1) {
+                // Type 2: Greater Value Evaluation Context
+                promptStr = "Analyze the numbers below. Which number has the greater value?";
+                screenMarkup = `
+                    <div class="compare-window">
+                        <div class="math-hero">${baseNum1.toLocaleString()}</div>
+                        <div style="font-size:1.5rem; font-weight:bold;">vs</div>
+                        <div class="math-hero">${baseNum2.toLocaleString()}</div>
+                    </div>`;
+                
+                if (baseNum1 === baseNum2) {
+                    solutionString = "They are equal";
+                    randomDecoysList = [baseNum1.toLocaleString(), (baseNum1 + 1).toLocaleString(), "None of these"];
+                } else {
+                    solutionString = Math.max(baseNum1, baseNum2).toLocaleString();
+                    randomDecoysList = [Math.min(baseNum1, baseNum2).toLocaleString(), "They are equal", "Neither"];
+                }
+                localizedExplanation = baseNum1 === baseNum2 ? "Both values match perfectly." : `${Math.max(baseNum1, baseNum2).toLocaleString()} contains the highest value weight structure.`;
+            } 
+            else if (typeSelection === 2) {
+                // Type 3: Smaller Value Isolation Mode
+                promptStr = "Look closely at the numbers. Which number has the smaller value?";
+                screenMarkup = `
+                    <div class="compare-window">
+                        <div class="math-hero">${baseNum1.toLocaleString()}</div>
+                        <div style="font-size:1.5rem; font-weight:bold;">vs</div>
+                        <div class="math-hero">${baseNum2.toLocaleString()}</div>
+                    </div>`;
+
+                if (baseNum1 === baseNum2) {
+                    solutionString = "They are equal";
+                    randomDecoysList = [baseNum1.toLocaleString(), (baseNum1 - 1).toLocaleString(), "None"];
+                } else {
+                    solutionString = Math.min(baseNum1, baseNum2).toLocaleString();
+                    randomDecoysList = [Math.max(baseNum1, baseNum2).toLocaleString(), "They are equal", "Neither"];
+                }
+                localizedExplanation = baseNum1 === baseNum2 ? "Both entries share matching positional counts." : `${Math.min(baseNum1, baseNum2).toLocaleString()} is lower when comparing highest-place digits.`;
+            } 
+            else if (typeSelection === 3) {
+                // Type 4: Valid Comparison Statement Analysis
+                promptStr = "Which mathematical comparison statement written below is completely correct?";
+                screenMarkup = "";
+                
+                let correctStatement = `${baseNum1.toLocaleString()} ${correctSymbol} ${baseNum2.toLocaleString()}`;
+                solutionString = correctStatement;
+
+                let falseSymbol1 = correctSymbol === ">" ? "<" : ">";
+                let falseSymbol2 = correctSymbol === "=" ? "<" : "=";
+
+                randomDecoysList = [
+                    `${baseNum1.toLocaleString()} ${falseSymbol1} ${baseNum2.toLocaleString()}`,
+                    `${baseNum1.toLocaleString()} ${falseSymbol2} ${baseNum2.toLocaleString()}`,
+                    "None of the statements are true"
+                ];
+                localizedExplanation = `Only the statement expressing '${baseNum1.toLocaleString()} ${correctSymbol} ${baseNum2.toLocaleString()}' perfectly represents the inequality constraint rules.`;
+            } 
+            else {
+                // Type 5: Mixed Challenge Pool Extravaganza (Greatest/Smallest from Set of 4)
+                let itemA = baseNum1;
+                let itemB = baseNum2;
+                let itemC = floorValue + (uniqueSeedIndex * 53 + 47) % (roofValue - floorValue);
+                let itemD = floorValue + (uniqueSeedIndex * 61 + 89) % (roofValue - floorValue);
+
+                let setArray = [itemA, itemB, itemC, itemD];
+                let choiceTypeFlag = uniqueSeedIndex % 2 === 0; // Alternates greatest vs smallest
+
+                promptStr = choiceTypeFlag ? "Identify the GREATEST number from the collection below:" : "Identify the SMALLEST number from the collection below:";
+                
+                screenMarkup = `
+                    <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:12px;">
+                        ${setArray.map(n => `<span class="math-hero" style="font-size:1.6rem; min-width:110px; padding:6px 12px;">${n.toLocaleString()}</span>`).join('')}
+                    </div>`;
+
+                let calculatedTargetNum = choiceTypeFlag ? Math.max(...setArray) : Math.min(...setArray);
+                solutionString = calculatedTargetNum.toLocaleString();
+                randomDecoysList = setArray.filter(n => n !== calculatedTargetNum).map(n => n.toLocaleString());
+                
+                while(randomDecoysList.length < 3) {
+                    randomDecoysList.push((floorValue + 2).toLocaleString());
+                }
+                localizedExplanation = choiceTypeFlag ? 
+                    `Comparing the numbers side by side shows that ${solutionString} rises to the largest total value.` : 
+                    `Aligning positional columns reveals that ${solutionString} is lower than all other options.`;
+            }
+
+            return {
+                text: promptStr,
+                markup: screenMarkup,
+                ans: solutionString,
+                decoys: Array.from(new Set(randomDecoysList)).filter(d => d !== solutionString).slice(0,3),
+                explanation: `Therefore, ${baseNum1.toLocaleString()} ${correctSymbol} ${baseNum2.toLocaleString()}. ${localizedExplanation}`,
+                numLeft: baseNum1,
+                numRight: baseNum2,
+                symCorrect: correctSymbol
+            };
+        }
+
+        // Auto-generation deployment loop
+        function initializeCalculatedQuestions() {
+            for (let i = 0; i < 50; i++) {
+                compare2Digit.push(constructProblemUnit(2, i));
+                compare3Digit.push(constructProblemUnit(3, i));
+                compare4Digit.push(constructProblemUnit(4, i));
+                compare5Digit.push(constructProblemUnit(5, i));
+                compare6Digit.push(constructProblemUnit(6, i));
+                compare7Digit.push(constructProblemUnit(7, i));
+            }
+        }
+
+        // Application State Matrices Trackers
+        let activeDatasetPointer = [];
+        let indexTrackCursor = 0;
+        let runningSessionScore = 0;
+        let selectedLvlIndicator = 2;
+        let sessionAnswersRegistry = {};
+        let functionalAppViewMode = 'mcq';
+
+        function initLevelSession(difficultyTier) {
+            AudioFX.play('click');
+            selectedLvlIndicator = difficultyTier;
+
+            if (difficultyTier === 2) activeDatasetPointer = compare2Digit;
+            else if (difficultyTier === 3) activeDatasetPointer = compare3Digit;
+            else if (difficultyTier === 4) activeDatasetPointer = compare4Digit;
+            else if (difficultyTier === 5) activeDatasetPointer = compare5Digit;
+            else if (difficultyTier === 6) activeDatasetPointer = compare6Digit;
+            else if (difficultyTier === 7) activeDatasetPointer = compare7Digit;
+
+            document.getElementById('viewStart').style.display = 'none';
+            document.getElementById('viewDiploma').style.display = 'none';
+            document.getElementById('viewCore').style.display = 'block';
+
+            sessionAnswersRegistry = {};
+            indexTrackCursor = 0;
+            runningSessionScore = 0;
+
+            toggleViewMode('mcq');
+            populateQuizDisplayLevel();
+        }
+
+        function populateQuizDisplayLevel() {
+            const itemNode = activeDatasetPointer[indexTrackCursor];
+
+            document.getElementById('hudCurrent').innerText = indexTrackCursor + 1;
+            document.getElementById('hudScore').innerText = runningSessionScore;
+            document.getElementById('progressBar').style.width = `${(indexTrackCursor / activeDatasetPointer.length) * 100}%`;
+
+            document.getElementById('btnPrev').disabled = indexTrackCursor === 0;
+            document.getElementById('btnNext').disabled = sessionAnswersRegistry[indexTrackCursor] === undefined;
+            document.getElementById('levelBadge').innerText = `${selectedLvlIndicator}-Digit Complexity Range`;
+            document.getElementById('explanationBox').style.display = 'none';
+
+            document.getElementById('questionPrompt').innerText = itemNode.text;
+            document.getElementById('mathDisplayWindow').innerHTML = itemNode.markup;
+
+            const grid = document.getElementById('optionsGrid');
+            grid.innerHTML = '';
+
+            // Generate stable randomized ordering arrays blocks if not cached
+            if (!itemNode._scrambledPool) {
+                let choicesCollection = [itemNode.ans, ...itemNode.decoys];
+                // Ensure exactly 4 options per requirement constraint rules
+                while(choicesCollection.length < 4) {
+                    choicesCollection.push("None of these");
+                }
+                // Perform quick modern Fisher-Yates array shuffle operation
+                for (let i = choicesCollection.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [choicesCollection[i], choicesCollection[j]] = [choicesCollection[j], choicesCollection[i]];
+                }
+                itemNode._scrambledPool = choicesCollection;
+            }
+
+            itemNode._scrambledPool.forEach(variantString => {
+                const nodeButton = document.createElement('button');
+                nodeButton.className = 'opt-node';
+                nodeButton.innerText = variantString;
+                nodeButton.onclick = () => verifySelectedAnswerNode(nodeButton, variantString);
+                grid.appendChild(nodeButton);
+            });
+
+            // Backwards backtracking historic navigation states logic
+            if (sessionAnswersRegistry[indexTrackCursor] !== undefined) {
+                const legacyChoice = sessionAnswersRegistry[indexTrackCursor];
+                renderContextFeedbackExplanationBox(itemNode, legacyChoice === itemNode.ans);
+                Array.from(grid.children).forEach(btn => {
+                    btn.disabled = true;
+                    if (btn.innerText === itemNode.ans) btn.classList.add('correct');
+                    if (btn.innerText === legacyChoice && legacyChoice !== itemNode.ans) btn.classList.add('wrong');
+                });
+            }
+        }
+
+        function verifySelectedAnswerNode(targetBtn, optionValueText) {
+            const activeItem = activeDatasetPointer[indexTrackCursor];
+            sessionAnswersRegistry[indexTrackCursor] = optionValueText;
+
+            const gridButtons = document.getElementById('optionsGrid').children;
+            Array.from(gridButtons).forEach(b => b.disabled = true);
+
+            const isValidationSuccessful = (optionValueText === activeItem.ans);
+
+            if (isValidationSuccessful) {
+                targetBtn.classList.add('correct');
+                runningSessionScore++;
+                document.getElementById('hudScore').innerText = runningSessionScore;
+                AudioFX.play('correct');
+            } else {
+                targetBtn.classList.add('wrong');
+                AudioFX.play('wrong');
+                Array.from(gridButtons).forEach(b => {
+                    if (b.innerText === activeItem.ans) b.classList.add('correct');
+                });
+            }
+
+            renderContextFeedbackExplanationBox(activeItem, isValidationSuccessful);
+            document.getElementById('btnNext').disabled = false;
+
+            if (Object.keys(sessionAnswersRegistry).length === activeDatasetPointer.length) {
+                setTimeout(revealGraduationAwardPlate, 1500);
+            }
+        }
+
+        function renderContextFeedbackExplanationBox(itemObject, verificationStatus) {
+            const containerBox = document.getElementById('explanationBox');
+            containerBox.innerText = verificationStatus ? `✅ Correct! ${itemObject.explanation}` : `❌ Review Step: ${itemObject.explanation}`;
+            containerBox.className = verificationStatus ? 'expl-plate' : 'expl-plate mistake';
+            containerBox.style.display = 'block';
+        }
+
+        function navigateActiveIndex(stepValue) {
+            AudioFX.play('click');
+            indexTrackCursor += stepValue;
+            populateQuizDisplayLevel();
+        }
+
+        function shuffleCurrentSession() {
+            AudioFX.play('click');
+            for (let i = activeDatasetPointer.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [activeDatasetPointer[i], activeDatasetPointer[j]] = [activeDatasetPointer[j], activeDatasetPointer[i]];
+            }
+            activeDatasetPointer.forEach(unit => unit._scrambledPool = null);
+            sessionAnswersRegistry = {};
+            indexTrackCursor = 0;
+            runningSessionScore = 0;
+            populateQuizDisplayLevel();
+        }
+
+        function goHome() {
+            AudioFX.play('click');
+            document.getElementById('viewCore').style.display = 'none';
+            document.getElementById('viewDiploma').style.display = 'none';
+            document.getElementById('viewStart').style.display = 'block';
+        }
+
+        function toggleViewMode(targetModeId) {
+            AudioFX.play('click');
+            functionalAppViewMode = targetModeId;
+            document.getElementById('btnTabQuiz').classList.toggle('active', targetModeId === 'mcq');
+            document.getElementById('btnTabChart').classList.toggle('active', targetModeId === 'sandbox');
+
+            if (targetModeId === 'mcq') {
+                document.getElementById('arenaMCQ').style.display = 'block';
+                document.getElementById('arenaSandbox').style.display = 'none';
+                document.getElementById('btnCoreShuffle').style.visibility = 'visible';
+                document.getElementById('btnPrev').style.visibility = 'visible';
+                document.getElementById('btnNext').style.visibility = 'visible';
+            } else {
+                document.getElementById('arenaMCQ').style.display = 'none';
+                document.getElementById('arenaSandbox').style.display = 'block';
+                document.getElementById('btnCoreShuffle').style.visibility = 'hidden';
+                document.getElementById('btnPrev').style.visibility = 'hidden';
+                document.getElementById('btnNext').style.visibility = 'hidden';
+                generateSandboxSession();
+            }
+        }
+
+        /* 🕹️ INTERACTIVE COMPARE MODE PLATFORM SANDBOX MECHANICS */
+        let sandboxTargetRecord = null;
+        let dragRegistryPayloadId = null;
+
+        function generateSandboxSession() {
+            AudioFX.play('click');
+            document.getElementById('sandboxFeedbackBox').style.display = 'none';
+
+            // Reset dynamic text boxes/zones
+            const sWell = document.getElementById('sandboxSymbolWell');
+            sWell.innerText = "?"; sWell.dataset.assignedValue = "";
+            
+            const bLeft = document.getElementById('basketLeftNum');
+            bLeft.innerHTML = "<h4>Left Number</h4>"; bLeft.dataset.assignedValue = "";
+            
+            const bRight = document.getElementById('basketRightNum');
+            bRight.innerHTML = "<h4>Right Number</h4>"; bRight.dataset.assignedValue = "";
+            
+            const bSmall = document.getElementById('basketSmaller');
+            bSmall.innerHTML = "<h4>🟢 Smaller Box</h4>"; bSmall.dataset.assignedValue = "";
+            
+            const bGreat = document.getElementById('basketGreater');
+            bGreat.innerHTML = "<h4>🔴 Greater Box</h4>"; bGreat.dataset.assignedValue = "";
+
+            // Pull a dynamic item frame out of active selected pool arrays
+            sandboxTargetRecord = activeDatasetPointer[Math.floor(Math.random() * activeDatasetPointer.length)];
+
+            const palette = document.getElementById('sandboxPalette');
+            palette.innerHTML = '';
+
+            // Construct drag tokens pool structural matrix arrays
+            let tokensPool = [
+                { type: 'symbol', value: '>' },
+                { type: 'symbol', value: '<' },
+                { type: 'symbol', value: '=' },
+                { type: 'num', value: sandboxTargetRecord.numLeft.toLocaleString() }
+            ];
+
+            if(sandboxTargetRecord.numLeft !== sandboxTargetRecord.numRight) {
+                tokensPool.push({ type: 'num', value: sandboxTargetRecord.numRight.toLocaleString() });
+            }
+
+            // Shuffle presentation layout placement inside sandbox docking areas
+            tokensPool.sort(() => Math.random() - 0.5);
+
+            tokensPool.forEach((tokenData, index) => {
+                const element = document.createElement('div');
+                element.id = `sandbox-token-${index}`;
+                element.dataset.type = tokenData.type;
+                element.dataset.value = tokenData.value;
+
+                if(tokenData.type === 'symbol') {
+                    element.className = 'symbol-token';
+                    element.innerText = tokenData.value;
+                } else {
+                    element.className = 'number-box-token';
+                    element.innerText = tokenData.value;
+                }
+
+                element.draggable = true;
+                element.addEventListener('dragstart', function(e) {
+                    dragRegistryPayloadId = this.id;
+                    AudioFX.play('drag');
+                });
+
+                // Add robust alternative Smart-Tap framework functionality for responsive smartboard users
+                element.onclick = function() {
+                    AudioFX.play('click');
+                    handleSmartTapRouting(this);
+                };
+
+                palette.appendChild(element);
+            });
+        }
+
+        // Bind global framework drop listeners across designated interface baskets
+        document.querySelectorAll('.sandbox-basket, .symbol-well').forEach(zone => {
+            zone.addEventListener('dragover', e => e.preventDefault());
+            zone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                if (!dragRegistryPayloadId) return;
+                const activeNode = document.getElementById(dragRegistryPayloadId);
+                if (!activeNode) return;
+
+                executeZonePlacement(this, activeNode);
+            });
+        });
+
+        function executeZonePlacement(targetZone, nodeToPlace) {
+            // Verify structural datatype match compatibility requirements
+            if (targetZone.dataset.accept !== nodeToPlace.dataset.type) {
+                AudioFX.play('wrong');
+                return;
+            }
+
+            // Evict existing child contents back into palette warehouse if zone is already populated
+            const legacyToken = targetZone.querySelector('.symbol-token, .number-box-token');
+            if (legacyToken) {
+                document.getElementById('sandboxPalette').appendChild(legacyToken);
+            }
+
+            targetZone.appendChild(nodeToPlace);
+            targetZone.dataset.assignedValue = nodeToPlace.dataset.value;
+            AudioFX.play('click');
+        }
+
+        function handleSmartTapRouting(clickedNode) {
+            if (clickedNode.parentElement.id !== 'sandboxPalette') {
+                // If it is already inside a target zone, clicking drops it back to the selection palette dock
+                const parentZone = clickedNode.parentElement;
+                parentZone.dataset.assignedValue = "";
+                if(parentZone.classList.contains('symbol-well')) parentZone.innerText = "?";
+                document.getElementById('sandboxPalette').appendChild(clickedNode);
+                return;
+            }
+
+            // Look for matching unpopulated zones to auto-route the clicked node
+            const nodeDataType = clickedNode.dataset.type;
+            
+            if (nodeDataType === 'symbol') {
+                const well = document.getElementById('sandboxSymbolWell');
+                if (!well.dataset.assignedValue) {
+                    well.innerHTML = "";
+                    well.appendChild(clickedNode);
+                    well.dataset.assignedValue = clickedNode.dataset.value;
+                    return;
+                }
+            } else {
+                // Try to fill standard layout positions sequentially
+                const targetOrderIds = ['basketLeftNum', 'basketRightNum', 'basketSmaller', 'basketGreater'];
+                for (let id of targetOrderIds) {
+                    let zone = document.getElementById(id);
+                    if (!zone.dataset.assignedValue) {
+                        zone.appendChild(clickedNode);
+                        zone.dataset.assignedValue = clickedNode.dataset.value;
+                        return;
+                    }
+                }
+            }
+        }
+
+        function evaluateSandboxState() {
+            const symVal = document.getElementById('sandboxSymbolWell').dataset.assignedValue;
+            const leftVal = document.getElementById('basketLeftNum').dataset.assignedValue;
+            const rightVal = document.getElementById('basketRightNum').dataset.assignedValue;
+            const smallVal = document.getElementById('basketSmaller').dataset.assignedValue;
+            const greatVal = document.getElementById('basketGreater').dataset.assignedValue;
+
+            const feedback = document.getElementById('sandboxFeedbackBox');
+            feedback.style.display = 'block';
+
+            // Verify if all required nodes are assigned
+            if (!symVal || !leftVal || !rightVal || !smallVal || !greatVal) {
+                feedback.innerText = "⚠️ Missing placements detected! Fill all comparison boxes and sorting baskets before validation.";
+                feedback.className = "expl-plate mistake";
+                AudioFX.play('wrong');
+                return;
+            }
+
+            // Convert data strings back into base numbers for math verification calculations
+            const parsedLeft = parseInt(leftVal.replace(/,/g, ''));
+            const parsedRight = parseInt(rightVal.replace(/,/g, ''));
+            const parsedSmall = parseInt(smallVal.replace(/,/g, ''));
+            const parsedGreat = parseInt(greatVal.replace(/,/g, ''));
+
+            // Check statement balance validity constraints
+            let isStatementValid = false;
+            if (symVal === '=' && parsedLeft === parsedRight) isStatementValid = true;
+            if (symVal === '>' && parsedLeft > parsedRight) isStatementValid = true;
+            if (symVal === '<' && parsedLeft < parsedRight) isStatementValid = true;
+
+            // Check basket sorting classifications matrix validity
+            let isSortingValid = false;
+            const realMin = Math.min(sandboxTargetRecord.numLeft, sandboxTargetRecord.numRight);
+            const realMax = Math.max(sandboxTargetRecord.numLeft, sandboxTargetRecord.numRight);
+
+            if (parsedSmall === realMin && parsedGreat === realMax) {
+                isSortingValid = true;
+            }
+
+            if (isStatementValid && isSortingValid) {
+                feedback.innerText = `🎉 Outstanding! Your statement balance setup matches completely, and you sorted the numbers correctly into the Smaller and Greater boxes.`;
+                feedback.className = "expl-plate";
+                AudioFX.play('correct');
+            } else {
+                let errorDetails = [];
+                if(!isStatementValid) errorDetails.push("The mathematical symbol statement does not check out.");
+                if(!isSortingValid) errorDetails.push("Check your choices for the Smaller and Greater boxes.");
+                
+                feedback.innerText = `❌ Discrepancies found: ${errorDetails.join(' ')} Try re-arranging the tokens.`;
+                feedback.className = "expl-plate mistake";
+                AudioFX.play('wrong');
+            }
+        }
+
+        /* 🏆 REWARDS AND SUMMARY ACHIEVEMENT PLATFORM */
+        function revealGraduationAwardPlate() {
+            AudioFX.play('complete');
+            document.getElementById('viewCore').style.display = 'none';
+            document.getElementById('viewDiploma').style.display = 'block';
+
+            const percentageMetric = Math.round((runningSessionScore / activeDatasetPointer.length) * 100);
+            let iconGlyph = "📚"; let designatorTitle = "Keep Practicing";
+
+            if (percentageMetric >= 90) {
+                iconGlyph = "🏆"; designatorTitle = "Compare Numbers Master"; deployConfettiBlast();
+            } else if (percentageMetric >= 70) {
+                iconGlyph = "🌟"; designatorTitle = "Number Detective"; deployConfettiBlast();
+            } else if (percentageMetric >= 50) {
+                iconGlyph = "👍"; designatorTitle = "Good Learner";
+            }
+
+            document.getElementById('diplomaIcon').innerText = iconGlyph;
+            document.getElementById('diplomaTitle').innerText = designatorTitle;
+            document.getElementById('diplomaScoreTag').innerText = `Performance verified successfully: total accuracy level calculated at ${percentageMetric}% (${runningSessionScore} / ${activeDatasetPointer.length} Correct Logged Actions).`;
+        }
+
+        function restartSession() {
+            initLevelSession(selectedLvlIndicator);
+        }
+
+        function toggleDarkMode() {
+            AudioFX.play('click');
+            document.body.classList.toggle('dark-mode');
+        }
+
+        // Decorative background visual assets generators layout
+        function generateAmbientDecorativeTokens() {
+            const boundaryContainer = document.getElementById('ambientContainer');
+            boundaryContainer.innerHTML = '';
+            const charactersList = ['>', '<', '=', '⚖️', '12', '75', '99', '0'];
+            for (let i = 0; i < 18; i++) {
+                const node = document.createElement('div');
+                node.className = 'floating-token';
+                node.innerText = charactersList[Math.floor(Math.random() * charactersList.length)];
+                node.style.left = `${Math.random() * 100}%`;
+                node.style.animationDelay = `${Math.random() * 8}s`;
+                node.style.animationDuration = `${10 + Math.random() * 6}s`;
+                boundaryContainer.appendChild(node);
+            }
+        }
+
+        function deployConfettiBlast() {
+            const canv = document.getElementById('canvas-confetti');
+            const cxx = canv.getContext('2d');
+            canv.width = window.innerWidth; canv.height = window.innerHeight;
+
+            let parametersPool = [];
+            const hexPalette = ['#6366F1', '#10B981', '#EF4444', '#F59E0B', '#EC4899', '#3B82F6'];
+
+            for (let i = 0; i < 140; i++) {
+                parametersPool.push({
+                    x: Math.random() * canv.width,
+                    y: Math.random() * canv.height - canv.height,
+                    r: Math.random() * 4 + 4,
+                    swayFactor: Math.random() * canv.height,
+                    color: hexPalette[Math.floor(Math.random() * hexPalette.length)],
+                    speedY: Math.random() * 4 + 3
+                });
+            }
+
+            function frameStepLoop() {
+                cxx.clearRect(0, 0, canv.width, canv.height);
+                parametersPool.forEach(p => {
+                    p.y += p.speedY; p.x += Math.sin(p.swayFactor) * 0.35;
+                    cxx.beginPath(); cxx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    cxx.fillStyle = p.color; cxx.fill();
+                });
+                if (parametersPool.some(p => p.y < canv.height)) {
+                    requestAnimationFrame(frameStepLoop);
+                } else {
+                    cxx.clearRect(0, 0, canv.width, canv.height);
+                }
+            }
+            frameStepLoop();
+        }
+
+        window.onload = () => {
+            initializeCalculatedQuestions();
+            generateAmbientDecorativeTokens();
+        };
+
+        window.onresize = () => {
+            const canvas = document.getElementById('canvas-confetti');
+            if (canvas) { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        };
+    </script>
+</body>
+</html>

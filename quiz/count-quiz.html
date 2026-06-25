@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔢 Counting Quiz</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #FF7675, #74B9FF, #A29BFE, #FFEAA7);
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --text-dark: #2D3436;
+            --correct-color: #2ECC71;
+            --wrong-color: #FF7675;
+            --primary-blue: #0984E3;
+            --font-family: 'Comic Sans MS', 'Chalkboard SE', 'Segoe UI', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background: var(--bg-gradient);
+            background-size: 400% 400%;
+            animation: ambientGradient 18s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        @keyframes ambientGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Ambient Floating Layer */
+        .ambient-space {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .floating-item {
+            position: absolute;
+            font-weight: bold;
+            color: rgba(255, 255, 255, 0.2);
+            animation: driftUp 12s linear infinite;
+            bottom: -100px;
+        }
+
+        @keyframes driftUp {
+            0% { transform: translateY(0) rotate(0deg) scale(0.8); opacity: 0; }
+            10% { opacity: 0.3; }
+            90% { opacity: 0.3; }
+            100% { transform: translateY(-120vh) rotate(360deg) scale(1.3); opacity: 0; }
+        }
+
+        /* Main Workspace Container */
+        .quiz-app {
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 3px solid var(--glass-border);
+            border-radius: 32px;
+            padding: 25px;
+            width: 100%;
+            max-width: 880px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+            z-index: 5;
+            position: relative;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            font-size: 2.6rem;
+            color: #FFF;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.12);
+            margin-bottom: 2px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #FFF;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Live Tracker HUD Layout */
+        .hud-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            color: var(--text-dark);
+            font-size: 1.15rem;
+            margin-bottom: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 16px;
+            background: rgba(255, 255, 255, 0.35);
+            border-radius: 20px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #2ECC71, #00CEC9);
+            border-radius: 20px;
+            transition: width 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+        }
+
+        /* Question & Interactive Playground Cards */
+        .stage-card {
+            background: rgba(255, 255, 255, 0.94);
+            padding: 25px;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            text-align: center;
+            animation: popIn 0.4s ease;
+        }
+
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.96); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .badge-tag {
+            display: inline-block;
+            background: #6C5CE7;
+            color: #FFF;
+            padding: 4px 16px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .question-text {
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: var(--text-dark);
+            margin-bottom: 15px;
+        }
+
+        /* Interactive Display Arena for Object Groups */
+        .counting-arena {
+            background: #F8F9FA;
+            border: 3px dashed #DFE6E9;
+            border-radius: 20px;
+            padding: 20px;
+            margin: 15px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            min-height: 140px;
+        }
+
+        .comparison-layout {
+            display: flex;
+            width: 100%;
+            gap: 15px;
+            justify-content: space-around;
+        }
+
+        .group-container {
+            flex: 1;
+            background: rgba(255,255,255,0.7);
+            border: 2px solid #BCB6FF;
+            border-radius: 16px;
+            padding: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+            min-height: 100px;
+            position: relative;
+        }
+
+        .group-label {
+            position: absolute;
+            top: -10px;
+            left: 15px;
+            background: #4D96FF;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        /* Dynamic Object Styles */
+        .countable-node {
+            font-size: 2.6rem;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: inline-block;
+            padding: 4px;
+            border-radius: 12px;
+            border: 2px solid transparent;
+        }
+
+        .countable-node:hover {
+            transform: scale(1.15);
+        }
+
+        .countable-node.counted {
+            background: #E8F8F5;
+            border-color: #2ECC71;
+            box-shadow: 0 0 12px rgba(46, 204, 113, 0.6);
+            transform: scale(1.05);
+        }
+
+        /* Scratchpad Count Helper Controls */
+        .scratchpad-hud {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-top: 10px;
+            background: #ECEFF1;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-weight: bold;
+        }
+
+        .scratchpad-counter {
+            color: var(--primary-blue);
+            font-size: 1.2rem;
+        }
+
+        .btn-mini {
+            background: #74B9FF;
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-mini:hover { background: #0984E3; }
+
+        /* Multiple-Choice Answer Grids */
+        .choices-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .choice-node {
+            background: rgba(255, 255, 255, 0.95);
+            border: 3px solid transparent;
+            border-radius: 18px;
+            padding: 16px;
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: var(--text-dark);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.04);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .choice-node:hover:not([disabled]) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            border-color: #74B9FF;
+        }
+
+        .choice-node.correct {
+            background: var(--correct-color) !important;
+            color: white !important;
+            border-color: #27AE60;
+        }
+
+        .choice-node.wrong {
+            background: var(--wrong-color) !important;
+            color: white !important;
+            border-color: #C0392B;
+        }
+
+        /* Navigation Management Controls */
+        .nav-cluster {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .btn-action {
+            background: #0984E3;
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 12px rgba(9, 132, 227, 0.3);
+        }
+
+        .btn-action:hover:not([disabled]) {
+            background: #0263B1;
+            transform: translateY(-2px);
+        }
+
+        .btn-action:disabled {
+            background: #B2BEC3;
+            box-shadow: none;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .shuffle-action {
+            background: #F1C40F;
+            color: #2D3436;
+            box-shadow: 0 4px 12px rgba(241, 196, 15, 0.3);
+        }
+        .shuffle-action:hover { background: #D4AC0D; }
+
+        /* Award Certificate Screen Overlay */
+        .certificate-screen {
+            display: none;
+            text-align: center;
+            background: white;
+            padding: 35px;
+            border-radius: 28px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+            color: #2C3E50;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.2);
+        }
+
+        .cert-border {
+            border: 8px double #F1C40F;
+            padding: 25px;
+            border-radius: 20px;
+            background: #FCFDFD;
+        }
+
+        .badge-graphics {
+            font-size: 5rem;
+            margin-bottom: 5px;
+            animation: bounce 2s infinite alternate;
+        }
+
+        @keyframes bounce {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-10px); }
+        }
+
+        .badge-rank {
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: #D35400;
+            margin-bottom: 15px;
+        }
+
+        .cert-score {
+            font-size: 1.5rem;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+
+        .cert-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .btn-restart { background: #2ECC71; box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3); }
+        .btn-restart:hover { background: #27AE60; }
+        .btn-print { background: #E67E22; box-shadow: 0 4px 12px rgba(230, 126, 34, 0.3); }
+        .btn-print:hover { background: #D35400; }
+
+        #canvas-celebration {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 99;
+        }
+
+        /* Adaptive Responsiveness Adjustments */
+        @media (max-width: 768px) {
+            h1 { font-size: 2rem; }
+            .choices-grid { grid-template-columns: 1fr; gap: 10px; }
+            .quiz-app { padding: 15px; }
+            .choice-node { padding: 12px; font-size: 1.3rem; }
+            .btn-action { padding: 12px 18px; font-size: 0.95rem; }
+            .question-text { font-size: 1.3rem; }
+            .countable-node { font-size: 2.1rem; }
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            .certificate-screen, .certificate-screen * { visibility: visible; }
+            .certificate-screen { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; padding: 0; }
+            .cert-actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-space" id="ambientSpace"></div>
+    <canvas id="canvas-celebration"></canvas>
+
+    <div class="quiz-app">
+        <div id="quizStage">
+            <header>
+                <h1>🔢 Counting Quiz</h1>
+                <p class="subtitle">Count • Think • Learn • Enjoy</p>
+            </header>
+
+            <div class="hud-bar">
+                <div>Question: <span id="hud-current">1</span>/50</div>
+                <div>Score: <span id="hud-score">0</span></div>
+            </div>
+
+            <div class="progress-track">
+                <div class="progress-fill" id="progressBar"></div>
+            </div>
+
+            <div class="stage-card">
+                <span class="badge-tag" id="sectionTag">Section A</span>
+                <div class="question-text" id="questionText">Loading Question Data Matrix...</div>
+                
+                <div class="counting-arena" id="countingArena"></div>
+
+                <div class="scratchpad-hud">
+                    <span>Your Tap Counter: <span class="scratchpad-counter" id="scratchCount">0</span></span>
+                    <button class="btn-mini" onclick="resetScratchpad()">Clear Count</button>
+                </div>
+            </div>
+
+            <div class="choices-grid" id="choicesGrid"></div>
+
+            <div class="nav-cluster">
+                <button class="btn-action" id="btnPrev" onclick="moveQuestion(-1)">⬅️ Previous</button>
+                <button class="btn-action shuffle-action" id="btnShuffle" onclick="shuffleCurrentSession()">🔀 Shuffle Items</button>
+                <button class="btn-action" id="btnNext" onclick="moveQuestion(1)">Next ➡️</button>
+            </div>
+        </div>
+
+        <div id="certificateStage" class="certificate-screen">
+            <div class="cert-border">
+                <div class="badge-graphics" id="certIcon">🏆</div>
+                <div class="badge-rank" id="certTitle">Counting Champion</div>
+                <h2>Certificate of Accomplishment</h2>
+                <p>Excellence award verified for successfully passing the comprehensive 50-stage Math Counting Challenge.</p>
+                <div class="cert-score" id="certScoreLabel">Score: 100% (50/50 Correct)</div>
+                
+                <div class="cert-actions">
+                    <button class="btn-action btn-restart" onclick="restartQuiz()">🔄 Play Again</button>
+                    <button class="btn-action btn-print" onclick="window.print()">🖨️ Print Certificate</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Web Audio API Offline Synthesizer Core Engine
+        const AudioSynth = {
+            ctx: null,
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
+            play(type) {
+                this.init();
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+
+                const osc = this.ctx.createOscillator();
+                const amp = this.ctx.createGain();
+                osc.connect(amp);
+                amp.connect(this.ctx.destination);
+                const time = this.ctx.currentTime;
+
+                if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(450, time);
+                    amp.gain.setValueAtTime(0.05, time);
+                    amp.gain.exponentialRampToValueAtTime(0.001, time + 0.06);
+                    osc.start(time);
+                    osc.stop(time + 0.06);
+                } else if (type === 'node') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(587.33, time); // D5
+                    amp.gain.setValueAtTime(0.08, time);
+                    amp.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
+                    osc.start(time);
+                    osc.stop(time + 0.1);
+                } else if (type === 'correct') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, time); // C5
+                    osc.frequency.setValueAtTime(659.25, time + 0.08); // E5
+                    osc.frequency.setValueAtTime(783.99, time + 0.16); // G5
+                    amp.gain.setValueAtTime(0.12, time);
+                    amp.gain.exponentialRampToValueAtTime(0.001, time + 0.4);
+                    osc.start(time);
+                    osc.stop(time + 0.4);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, time);
+                    osc.frequency.linearRampToValueAtTime(120, time + 0.25);
+                    amp.gain.setValueAtTime(0.12, time);
+                    amp.gain.exponentialRampToValueAtTime(0.001, time + 0.3);
+                    osc.start(time);
+                    osc.stop(time + 0.3);
+                } else if (type === 'complete') {
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((f, i) => {
+                        const o = this.ctx.createOscillator();
+                        const g = this.ctx.createGain();
+                        o.type = 'sine';
+                        o.frequency.setValueAtTime(f, time + i * 0.05);
+                        g.gain.setValueAtTime(0.04, time + i * 0.05);
+                        g.gain.exponentialRampToValueAtTime(0.001, time + 0.5);
+                        o.connect(g);
+                        g.connect(this.ctx.destination);
+                        o.start(time + i * 0.05);
+                        o.stop(time + 0.5);
+                    });
+                }
+            }
+        };
+
+        // Complete 50-Question Master Repository Array
+        const rawQuestionBank = [
+            // Section A: Count the Objects (1–20)
+            { type: 'count', sec: 'Section A: Count Objects', q: 'How many apples are there?', emoji: '🍎', cnt: 7, o: [5, 6, 7, 9] },
+            { type: 'count', sec: 'Section A: Count Objects', q: 'How many stars are there?', emoji: '⭐', cnt: 9, o: [7, 8, 9, 10] },
+            { type: 'count', sec: 'Section A: Count Objects', q: 'How many balloons are there?', emoji: '🎈', cnt: 12, o: [10, 11, 12, 13] },
+            { type: 'count', sec: 'Section A: Count Objects', q: 'How many bananas are there?', emoji: '🍌', cnt: 5, o: [4, 5, 6, 7] },
+            { type: 'count', sec: 'Section A: Count Objects', q: 'How many strawberries are there?', emoji: '🍓', cnt: 15, o: [13, 14, 15, 16] },
+            { type: 'count', sec: 'Section A: Count Objects', q: 'How many fish are there?', emoji: '🐠', cnt: 3, o: [2, 3, 4, 5] },
+            { type: 'count', sec: 'Section A: Count Objects', q: 'How many butterflies are there?', emoji: '🦋', cnt: 8, o: [6, 7, 8, 10] },
+            { type: 'count', sec: 'Section A: Count Objects', q: 'How many cars are there?', emoji: '🚗', cnt: 6, o: [5, 6, 7, 8] },
+            { type: 'count', sec: 'Section A: Count Objects', q: 'How many books are there?', emoji: '📚', cnt: 11, o: [9, 10, 11, 12] },
+            { type: 'count', sec: 'Section A: Count Objects', q: 'How many footballs are there?', emoji: '⚽', cnt: 4, o: [3, 4, 5, 6] },
+            { type: 'count', sec: 'Section A: Count Objects', q: 'How many trees are there?', emoji: '🌳', cnt: 10, o: [8, 9, 10, 11] },
+            { type: 'count', sec: 'Section A: Count Objects', q: 'How many ladybugs are there?', emoji: '🐞', cnt: 14, o: [12, 13, 14, 15] },
+            { type: 'count', sec: 'Section A: Count Objects', q: 'How many gifts are there?', emoji: '🎁', cnt: 17, o: [15, 16, 17, 18] },
+            { type: 'count', sec: 'Section A: Count Objects', q: 'How many pencils are there?', emoji: '✏️', cnt: 13, o: [11, 12, 13, 14] },
+            { type: 'count', sec: 'Section A: Count Objects', q: 'How many flowers are there?', emoji: '🌸', cnt: 16, o: [14, 15, 16, 17] },
+            { type: 'count', sec: 'Section A: Count Objects', q: 'How many basketballs are there?', emoji: '🏀', cnt: 2, o: [1, 2, 3, 4] },
+            { type: 'count', sec: 'Section A: Count Objects', q: 'How many grapes are there?', emoji: '🍇', cnt: 19, o: [17, 18, 19, 20] },
+            { type: 'count', sec: 'Section A: Count Objects', q: 'How many birds are there?', emoji: '🐦', cnt: 18, o: [16, 17, 18, 19] },
+            { type: 'count', sec: 'Section A: Count Objects', q: 'How many ribbons are there?', emoji: '🎀', cnt: 20, o: [18, 19, 20, 15] },
+            { type: 'count', sec: 'Section A: Count Objects', q: 'How many sunflowers are there?', emoji: '🌻', cnt: 1, o: [0, 1, 2, 3] },
+
+            // Section B: Count and Compare (21–35)
+            { type: 'compare', mode: 'more', sec: 'Section B: Compare Groups', q: 'Which group has MORE stars?', emoji: '⭐', groupA: 8, groupB: 5, o: ['Group A', 'Group B'] },
+            { type: 'compare', mode: 'fewer', sec: 'Section B: Compare Groups', q: 'Which group has FEWER apples?', emoji: '🍎', groupA: 4, groupB: 9, o: ['Group A', 'Group B'] },
+            { type: 'compare', mode: 'more', sec: 'Section B: Compare Groups', q: 'Which group has MORE balloons?', emoji: '🎈', groupA: 6, groupB: 12, o: ['Group A', 'Group B'] },
+            { type: 'compare', mode: 'fewer', sec: 'Section B: Compare Groups', q: 'Which group has FEWER fish?', emoji: '🐠', groupA: 10, groupB: 7, o: ['Group A', 'Group B'] },
+            { type: 'compare', mode: 'more', sec: 'Section B: Compare Groups', q: 'Which group has MORE books?', emoji: '📚', groupA: 11, groupB: 4, o: ['Group A', 'Group B'] },
+            { type: 'compare', mode: 'fewer', sec: 'Section B: Compare Groups', q: 'Which group has FEWER cars?', emoji: '🚗', groupA: 5, groupB: 3, o: ['Group A', 'Group B'] },
+            { type: 'compare', mode: 'more', sec: 'Section B: Compare Groups', q: 'Which group has MORE flowers?', emoji: '🌸', groupA: 7, groupB: 13, o: ['Group A', 'Group B'] },
+            { type: 'compare', mode: 'fewer', sec: 'Section B: Compare Groups', q: 'Which group has FEWER gifts?', emoji: '🎁', groupA: 14, groupB: 8, o: ['Group A', 'Group B'] },
+            { type: 'compare', mode: 'more', sec: 'Section B: Compare Groups', q: 'Which group has MORE butterflies?', emoji: '🦋', groupA: 9, groupB: 6, o: ['Group A', 'Group B'] },
+            { type: 'compare', mode: 'fewer', sec: 'Section B: Compare Groups', q: 'Which group has FEWER birds?', emoji: '🐦', groupA: 2, groupB: 6, o: ['Group A', 'Group B'] },
+            { type: 'compare', mode: 'more', sec: 'Section B: Compare Groups', q: 'Which group has MORE ladybugs?', emoji: '🐞', groupA: 15, groupB: 11, o: ['Group A', 'Group B'] },
+            { type: 'compare', mode: 'fewer', sec: 'Section B: Compare Groups', q: 'Which group has FEWER trees?', emoji: '🌳', groupA: 8, groupB: 12, o: ['Group A', 'Group B'] },
+            { type: 'compare', mode: 'more', sec: 'Section B: Compare Groups', q: 'Which group has MORE bananas?', emoji: '🍌', groupA: 4, groupB: 10, o: ['Group A', 'Group B'] },
+            { type: 'compare', mode: 'fewer', sec: 'Section B: Compare Groups', q: 'Which group has FEWER pencils?', emoji: '✏️', groupA: 13, groupB: 9, o: ['Group A', 'Group B'] },
+            { type: 'compare', mode: 'more', sec: 'Section B: Compare Groups', q: 'Which group has MORE footballs?', emoji: '⚽', groupA: 16, groupB: 14, o: ['Group A', 'Group B'] },
+
+            // Section C: Count Altogether (36–45)
+            { type: 'altogether', sec: 'Section C: Count Altogether', q: 'How many fruits are there altogether?', emojiA: '🍎', cntA: 4, emojiB: '🍌', cntB: 3, o: [5, 6, 7, 8] },
+            { type: 'altogether', sec: 'Section C: Count Altogether', q: 'How many objects are there altogether?', emojiA: '⭐', cntA: 5, emojiB: '🌸', cntB: 4, o: [7, 8, 9, 10] },
+            { type: 'altogether', sec: 'Section C: Count Altogether', q: 'How many toys are there altogether?', emojiA: '🎈', cntA: 6, emojiB: '🎁', cntB: 6, o: [10, 11, 12, 13] },
+            { type: 'altogether', sec: 'Section C: Count Altogether', q: 'How many animals are there altogether?', emojiA: '🐠', cntA: 8, emojiB: '🐞', cntB: 4, o: [10, 11, 12, 14] },
+            { type: 'altogether', sec: 'Section C: Count Altogether', q: 'How many items are there altogether?', emojiA: '📚', cntA: 7, emojiB: '✏️', cntB: 5, o: [11, 12, 13, 14] },
+            { type: 'altogether', sec: 'Section C: Count Altogether', q: 'How many balls are there altogether?', emojiA: '⚽', cntA: 3, emojiB: '🏀', cntB: 5, o: [6, 7, 8, 9] },
+            { type: 'altogether', sec: 'Section C: Count Altogether', q: 'How many nature items are there altogether?', emojiA: '🌳', cntA: 9, emojiB: '🌻', cntB: 2, o: [10, 11, 12, 13] },
+            { type: 'altogether', sec: 'Section C: Count Altogether', q: 'How many sweets are there altogether?', emojiA: '🍓', cntA: 10, emojiB: '🍇', cntB: 5, o: [13, 14, 15, 16] },
+            { type: 'altogether', sec: 'Section C: Count Altogether', q: 'How many dynamic objects are there altogether?', emojiA: '🦋', cntA: 6, emojiB: '🐦', cntB: 7, o: [11, 12, 13, 14] },
+            { type: 'altogether', sec: 'Section C: Count Altogether', q: 'How many items are there altogether?', emojiA: '🚗', cntA: 4, emojiB: '🎀', cntB: 8, o: [11, 12, 13, 14] },
+
+            // Section D: Mixed Challenge (46–50)
+            { type: 'mixed-select', mode: 'target-match', sec: 'Section D: Mixed Challenge', q: 'Which picture shows exactly 12 objects?', emoji: '🎈', cnt: 12, o: [10, 11, 12, 13] },
+            { type: 'mixed-select', mode: 'target-match', sec: 'Section D: Mixed Challenge', q: 'Which group has exactly 15 balloons?', emoji: '🎈', cnt: 15, o: [13, 14, 15, 16] },
+            { type: 'count', sec: 'Section D: Mixed Challenge', q: 'Count all the animals safely.', emoji: '🐠', cnt: 14, o: [12, 13, 14, 15] },
+            { type: 'altogether', sec: 'Section D: Mixed Challenge', q: 'How many objects are there in total?', emojiA: '⭐', cntA: 8, emojiB: '🎁', cntB: 7, o: [13, 14, 15, 16] },
+            { type: 'count', sec: 'Section D: Mixed Challenge', q: 'Choose the correct total object count configuration.', emoji: '🌸', cnt: 11, o: [9, 10, 11, 12] }
+        ];
+
+        let quizSet = JSON.parse(JSON.stringify(rawQuestionBank));
+        let activeIdx = 0;
+        let recordAnswers = {};
+        let scoreCounter = 0;
+        let userScratchCount = 0;
+
+        function renderAtmosphere() {
+            const ambient = document.getElementById('ambientSpace');
+            ambient.innerHTML = '';
+            const materials = ['⭐', '🎈', '1', '2', '3', '🍎', '✨', '🌸', '5', '7'];
+            for(let i = 0; i < 15; i++) {
+                const node = document.createElement('div');
+                node.className = 'floating-item';
+                node.innerText = materials[Math.floor(Math.random() * materials.length)];
+                node.style.left = `${Math.random() * 100}%`;
+                node.style.animationDelay = `${Math.random() * 8}s`;
+                node.style.animationDuration = `${9 + Math.random() * 8}s`;
+                ambient.appendChild(node);
+            }
+        }
+
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+        }
+
+        function shuffleCurrentSession() {
+            AudioSynth.play('click');
+            shuffleArray(quizSet);
+            quizSet.forEach(item => item._scrambledChoices = null);
+            recordAnswers = {};
+            activeIdx = 0;
+            scoreCounter = 0;
+            resetScratchpad();
+            displayQuestion();
+        }
+
+        function resetScratchpad() {
+            userScratchCount = 0;
+            document.getElementById('scratchCount').innerText = userScratchCount;
+            Array.from(document.querySelectorAll('.countable-node')).forEach(el => el.classList.remove('counted'));
+        }
+
+        function handleNodeTap(el) {
+            AudioSynth.play('node');
+            if (el.classList.contains('counted')) {
+                el.classList.remove('counted');
+                if (userScratchCount > 0) userScratchCount--;
+            } else {
+                el.classList.add('counted');
+                userScratchCount++;
+            }
+            document.getElementById('scratchCount').innerText = userScratchCount;
+        }
+
+        function displayQuestion() {
+            const data = quizSet[activeIdx];
+            resetScratchpad();
+
+            document.getElementById('hud-current').innerText = activeIdx + 1;
+            document.getElementById('hud-score').innerText = scoreCounter;
+
+            const progressPct = (activeIdx / quizSet.length) * 100;
+            document.getElementById('progressBar').style.width = `${progressPct}%`;
+
+            document.getElementById('btnPrev').disabled = activeIdx === 0;
+            document.getElementById('btnNext').disabled = (recordAnswers[activeIdx] === undefined);
+
+            document.getElementById('sectionTag').innerText = data.sec;
+            document.getElementById('questionText').innerText = data.q;
+
+            const arena = document.getElementById('countingArena');
+            arena.className = 'counting-arena';
+            arena.innerHTML = '';
+
+            // Construct Graphical Groups dynamically 
+            if (data.type === 'count' || data.type === 'mixed-select') {
+                for (let i = 0; i < data.cnt; i++) {
+                    const span = document.createElement('span');
+                    span.className = 'countable-node';
+                    span.innerText = data.emoji;
+                    span.onclick = () => handleNodeTap(span);
+                    arena.appendChild(span);
+                }
+            } else if (data.type === 'compare') {
+                arena.className = 'counting-arena comparison-layout';
+                
+                const boxA = document.createElement('div');
+                boxA.className = 'group-container';
+                boxA.innerHTML = `<span class="group-label">Group A</span>`;
+                for(let i=0; i<data.groupA; i++) {
+                    const s = document.createElement('span');
+                    s.className = 'countable-node';
+                    s.innerText = data.emoji;
+                    s.onclick = () => handleNodeTap(s);
+                    boxA.appendChild(s);
+                }
+
+                const boxB = document.createElement('div');
+                boxB.className = 'group-container';
+                boxB.innerHTML = `<span class="group-label">Group B</span>`;
+                for(let i=0; i<data.groupB; i++) {
+                    const s = document.createElement('span');
+                    s.className = 'countable-node';
+                    s.innerText = data.emoji;
+                    s.onclick = () => handleNodeTap(s);
+                    boxB.appendChild(s);
+                }
+                arena.appendChild(boxA);
+                arena.appendChild(boxB);
+            } else if (data.type === 'altogether') {
+                for (let i = 0; i < data.cntA; i++) {
+                    const span = document.createElement('span');
+                    span.className = 'countable-node';
+                    span.innerText = data.emojiA;
+                    span.onclick = () => handleNodeTap(span);
+                    arena.appendChild(span);
+                }
+                for (let i = 0; i < data.cntB; i++) {
+                    const span = document.createElement('span');
+                    span.className = 'countable-node';
+                    span.innerText = data.emojiB;
+                    span.onclick = () => handleNodeTap(span);
+                    arena.appendChild(span);
+                }
+            }
+
+            // Render Answer Choice Nodes
+            const grid = document.getElementById('choicesGrid');
+            grid.innerHTML = '';
+
+            if (!data._scrambledChoices) {
+                let optionsList = [...data.o];
+                shuffleArray(optionsList);
+                data._scrambledChoices = optionsList;
+            }
+
+            // Figure out matching solution values
+            let computedAnswer = data.cnt;
+            if(data.type === 'compare') {
+                computedAnswer = data.mode === 'more' 
+                    ? (data.groupA > data.groupB ? 'Group A' : 'Group B')
+                    : (data.groupA < data.groupB ? 'Group A' : 'Group B');
+            } else if(data.type === 'altogether') {
+                computedAnswer = data.cntA + data.cntB;
+            }
+
+            data._scrambledChoices.forEach(choice => {
+                const btn = document.createElement('button');
+                btn.className = 'choice-node';
+                btn.innerText = choice;
+                btn.onclick = () => evaluateChoiceSelection(btn, choice, computedAnswer);
+                grid.appendChild(btn);
+            });
+
+            // Re-render past state if item already has locked answer
+            if (recordAnswers[activeIdx] !== undefined) {
+                const pastChoice = recordAnswers[activeIdx];
+                Array.from(grid.children).forEach(btn => {
+                    btn.disabled = true;
+                    if (btn.innerText == computedAnswer) btn.classList.add('correct');
+                    if (btn.innerText == pastChoice && pastChoice != computedAnswer) btn.classList.add('wrong');
+                });
+            }
+        }
+
+        function evaluateChoiceSelection(selectedBtn, chosenVal, correctVal) {
+            recordAnswers[activeIdx] = chosenVal;
+            const grid = document.getElementById('choicesGrid');
+            Array.from(grid.children).forEach(b => b.disabled = true);
+
+            if (chosenVal == correctVal) {
+                selectedBtn.classList.add('correct');
+                scoreCounter++;
+                document.getElementById('hud-score').innerText = scoreCounter;
+                AudioSynth.play('correct');
+            } else {
+                selectedBtn.classList.add('wrong');
+                AudioSynth.play('wrong');
+                Array.from(grid.children).forEach(b => {
+                    if (b.innerText == correctVal) b.classList.add('correct');
+                });
+            }
+
+            document.getElementById('btnNext').disabled = false;
+
+            if (Object.keys(recordAnswers).length === quizSet.length) {
+                setTimeout(revealCertificateSummary, 1500);
+            }
+        }
+
+        function moveQuestion(step) {
+            AudioSynth.play('click');
+            activeIdx += step;
+            displayQuestion();
+        }
+
+        function revealCertificateSummary() {
+            AudioSynth.play('complete');
+            document.getElementById('quizStage').style.display = 'none';
+            document.getElementById('certificateStage').style.display = 'block';
+
+            const finalPct = Math.round((scoreCounter / quizSet.length) * 100);
+            let badgeIcon = "📚";
+            let badgeTitle = "Keep Practicing";
+
+            if (finalPct >= 90) {
+                badgeIcon = "🏆";
+                badgeTitle = "Counting Champion";
+                triggerConfettiShower();
+            } else if (finalPct >= 70) {
+                badgeIcon = "🌟";
+                badgeTitle = "Counting Explorer";
+                triggerConfettiShower();
+            } else if (finalPct >= 50) {
+                badgeIcon = "👍";
+                badgeTitle = "Good Learner";
+            }
+
+            document.getElementById('certIcon').innerText = badgeIcon;
+            document.getElementById('certTitle').innerText = badgeTitle;
+            document.getElementById('certScoreLabel').innerText = `Score: ${finalPct}% (${scoreCounter}/${quizSet.length} Correct Answers)`;
+        }
+
+        function restartQuiz() {
+            quizSet = JSON.parse(JSON.stringify(rawQuestionBank));
+            recordAnswers = {};
+            activeIdx = 0;
+            scoreCounter = 0;
+            document.getElementById('certificateStage').style.display = 'none';
+            document.getElementById('quizStage').style.display = 'block';
+            resetScratchpad();
+            displayQuestion();
+        }
+
+        function triggerConfettiShower() {
+            const canvas = document.getElementById('canvas-celebration');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            let particles = [];
+            const hues = ['#FF7675', '#74B9FF', '#2ECC71', '#F1C40F', '#9B59B6', '#E67E22'];
+
+            for (let i = 0; i < 150; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    r: Math.random() * 6 + 4,
+                    d: Math.random() * canvas.height,
+                    color: hues[Math.floor(Math.random() * hues.length)],
+                    tilt: Math.random() * 10 - 5,
+                    tiltAngleIncremental: Math.random() * 0.07 + 0.02,
+                    tiltAngle: 0
+                });
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach((p, index) => {
+                    p.tiltAngle += p.tiltAngleIncremental;
+                    p.y += (Math.cos(p.d) + 3 + p.r / 2) / 2;
+                    p.x += Math.sin(p.tiltAngle);
+                    p.tilt = Math.sin(p.tiltAngle - index / 3) * 15;
+
+                    ctx.beginPath();
+                    ctx.lineWidth = p.r;
+                    ctx.strokeStyle = p.color;
+                    ctx.moveTo(p.x + p.tilt + p.r / 2, p.y);
+                    ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 2);
+                    ctx.stroke();
+                });
+
+                if (particles.some(p => p.y < canvas.height)) {
+                    requestAnimationFrame(animate);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+            animate();
+        }
+
+        window.onload = () => {
+            renderAtmosphere();
+            displayQuestion();
+        };
+
+        window.onresize = () => {
+            const canvas = document.getElementById('canvas-celebration');
+            if (canvas) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+        };
+    </script>
+</body>
+</html>

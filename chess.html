@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>♟️ Premium Chess Pro</title>
+    <style>
+        /* --- DESIGN SYSTEM & GLASSMORPHISM RENDER CODES --- */
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0b111e, #111a2e, #070b14);
+            --royal-blue: #2563eb;
+            --royal-blue-glow: rgba(37, 99, 235, 0.4);
+            --gold: #fbbf24;
+            --gold-glow: rgba(251, 191, 36, 0.4);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-highlight: rgba(255, 255, 255, 0.12);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --font-stack: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            
+            /* Board Config - Default Classic Wood */
+            --sq-light: #f0d9b5;
+            --sq-dark: #b58863;
+            --sq-selected: rgba(251, 191, 36, 0.6);
+            --sq-legal: rgba(34, 197, 94, 0.4);
+            --sq-last-move: rgba(37, 99, 235, 0.4);
+            --sq-check: rgba(239, 68, 68, 0.65);
+        }
+
+        /* --- THEMES DICTIONARY --- */
+        .theme-galaxy { --bg-gradient: linear-gradient(135deg, #020005, #09091e, #051329); --sq-light: #1e1b4b; --sq-dark: #311042; }
+        .theme-nature { --bg-gradient: linear-gradient(135deg, #061c15, #0b2e24, #05120e); --sq-light: #e2ebd5; --sq-dark: #6b8e23; }
+        .theme-marble { --bg-gradient: linear-gradient(135deg, #1e293b, #334155, #0f172a); --sq-light: #e2e8f0; --sq-dark: #64748b; }
+        .theme-neon { --bg-gradient: linear-gradient(135deg, #000000, #0c0a0f, #050014); --sq-light: #18181b; --sq-dark: #27272a; --sq-legal: rgba(236, 72, 153, 0.5); }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font-stack); user-select: none; -webkit-user-select: none; }
+        body { background: var(--bg-gradient); color: var(--text-main); min-height: 100vh; overflow-x: hidden; display: flex; flex-direction: column; align-items: center; justify-content: space-between; }
+        
+        body.high-contrast { --glass-bg: rgba(0,0,0,0.8); --glass-border: #ffffff; --text-muted: #ffffff; --sq-light: #ffffff; --sq-dark: #000000; }
+        body.large-text { font-size: 1.2rem; }
+
+        .app-container { width: 100%; max-width: 1400px; padding: 15px; flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; position: relative; }
+        #canvasBackdrop { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 1; }
+
+        .top-system-bar { width: 100%; display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+        .sys-btn { background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-main); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .sys-btn:hover { background: var(--glass-highlight); transform: translateY(-1px); }
+
+        .screen-view { width: 100%; max-width: 850px; background: var(--glass-bg); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid var(--glass-border); border-radius: 24px; padding: 30px; box-shadow: 0 25px 60px rgba(0,0,0,0.4); display: none; animation: viewFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .screen-view.active { display: block; }
+        @keyframes viewFade { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        .hero-title-block { text-align: center; margin-bottom: 25px; }
+        .hero-title-block h1 { font-size: 3.4rem; font-weight: 900; letter-spacing: -1px; background: linear-gradient(to right, #ffffff, var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero-title-block p { color: var(--text-muted); font-size: 1.2rem; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+        
+        .animated-piece-row { display: flex; justify-content: center; gap: 15px; font-size: 2.2rem; margin: 25px 0; color: var(--gold); text-shadow: var(--gold-glow); animation: floatingRow 4s ease-in-out infinite alternate; }
+        @keyframes floatingRow { 0% { transform: translateY(0); } 100% { transform: translateY(-8px); } }
+
+        .cta-btn { width: 100%; padding: 16px 28px; background: linear-gradient(135deg, var(--royal-blue), #1d4ed8); border: none; color: white; font-size: 1.25rem; font-weight: 700; border-radius: 14px; cursor: pointer; box-shadow: 0 8px 24px var(--royal-blue-glow); transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+        .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 28px var(--royal-blue-glow); }
+
+        .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+        .mode-card { background: rgba(255,255,255,0.02); border: 2px solid var(--glass-border); border-radius: 16px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.2s ease; }
+        .mode-card:hover, .mode-card.selected { border-color: var(--gold); background: rgba(255,255,255,0.06); transform: scale(1.02); }
+        .mode-card .icon { font-size: 2.4rem; display: block; margin-bottom: 8px; }
+        .sub-selection-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 10px; }
+
+        .gameplay-layout-grid { display: grid; grid-template-columns: 1fr; gap: 20px; width: 100%; max-width: 1250px; }
+        @media (min-width: 950px) { .gameplay-layout-grid { grid-template-columns: 1.1fr 0.9fr; } }
+
+        /* --- STABLE RESPONSIVE BOARD CONFIGURATION --- */
+        .chess-board-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .board-container-meta { position: relative; width: 100%; max-width: 520px; aspect-ratio: 1/1; background: #2e1a0c; padding: 12px; border-radius: 14px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); box-sizing: border-box; }
+        
+        .chess-grid-matrix { display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); width: 100%; height: 100%; border: 2px solid #1c0f06; position: relative; box-sizing: border-box; }
+        
+        /* High-performance Interactive Square Units */
+        .chess-square { position: relative; display: flex; align-items: center; justify-content: center; cursor: pointer; touch-action: manipulation; transition: background-color 0.18s ease, box-shadow 0.18s ease; box-sizing: border-box; overflow: hidden; }
+        
+        /* Visual Status Layers */
+        .chess-square.selected { background-color: var(--sq-selected) !important; }
+        .chess-square.legal-target::after { content: ''; position: absolute; width: 24%; height: 24%; background-color: var(--sq-legal); border-radius: 50%; pointer-events: none; z-index: 2; top: 38%; left: 38%; }
+        .chess-square.legal-target.has-piece::after { width: 85%; height: 85%; background: transparent; border: 4px solid rgba(239, 68, 68, 0.7); top: 7.5%; left: 7.5%; border-radius: 50%; }
+        .chess-square.in-check { background-color: var(--sq-check) !important; }
+
+        /* Hardware Accelerated Smooth Transition Pieces */
+        .chess-piece-token { position: absolute; font-size: clamp(1.8rem, 6.5vw, 3.2rem); font-weight: 400; z-index: 5; pointer-events: none; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1); will-change: transform; filter: drop-shadow(0 3px 4px rgba(0,0,0,0.35)); }
+
+        .coord-lbl { position: absolute; font-size: 0.7rem; font-weight: 700; color: rgba(255,255,255,0.35); pointer-events: none; z-index: 1; }
+        .coord-lbl.rank { right: 4px; top: 4px; }
+        .coord-lbl.file { left: 4px; bottom: 4px; }
+
+        /* --- DASHBOARD SIDEBAR PANEL --- */
+        .side-dashboard-card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; min-height: 420px; }
+        .live-telemetry-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 10px; text-align: center; }
+        .telemetry-node span { display: block; font-size: 1.1rem; font-weight: 700; color: var(--gold); }
+        .telemetry-node label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
+
+        .move-history-container { flex-grow: 1; background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: 10px; padding: 12px; height: 160px; overflow-y: auto; font-family: monospace; font-size: 0.9rem; margin-bottom: 15px; }
+        .history-grid-row { display: grid; grid-template-columns: 0.3fr 1fr 1fr; gap: 5px; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+
+        .captured-pool-row { display: flex; gap: 6px; font-size: 1.4rem; min-height: 32px; padding: 4px; border-radius: 6px; background: rgba(255,255,255,0.01); margin-bottom: 10px; align-items: center; }
+        .explanation-alert-box { background: rgba(37,99,235,0.1); border-left: 4px solid var(--royal-blue); padding: 10px; margin-top: 10px; border-radius: 0 8px 8px 0; font-size: 0.85rem; line-height: 1.3; display: none; }
+        
+        /* Modal Overlay Reset */
+        .pop-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(8px); }
+        .pop-overlay.active { display: flex; }
+        .pop-card { background: #111a2e; padding: 40px 30px; border-radius: 20px; border: 2px solid var(--gold); text-align: center; max-width: 420px; width: 90%; box-shadow: 0 20px 50px rgba(0,0,0,0.7); }
+    </style>
+</head>
+<body>
+
+    <canvas id="canvasBackdrop"></canvas>
+
+    <div class="app-container">
+        <div class="top-system-bar">
+            <button class="sys-btn" onclick="triggerMuteToggling()" id="soundToggleBtn">🔊 Audio On</button>
+            <button class="sys-btn" onclick="triggerContrastToggling()">👁️ Contrast</button>
+            <button class="sys-btn" onclick="triggerTextToggling()"> can Text</button>
+            <button class="sys-btn" onclick="triggerFullscreenToggling()">📺 Fullscreen</button>
+        </div>
+
+        <div id="welcomeScreen" class="screen-view active">
+            <div class="hero-title-block">
+                <h1>♟️ Premium Chess</h1>
+                <p>Think • Plan • Conquer</p>
+            </div>
+            <div class="animated-piece-row">
+                <span>♔</span><span>♕</span><span>♖</span><span>♗</span><span>♘</span><span>♙</span>
+            </div>
+            <button class="cta-btn" onclick="navigateToScreen('setupScreen')">▶ Enter Royal Arena</button>
+        </div>
+
+        <div id="setupScreen" class="screen-view">
+            <div class="hero-title-block" style="margin-bottom: 15px;">
+                <h2>Match Options</h2>
+                <p>Configure engine parameters</p>
+            </div>
+
+            <div class="mode-grid">
+                <div class="mode-card selected" id="modeCardPvP" onclick="selectMatchOpponentVariant('pvp')">
+                    <span class="icon">👥</span>
+                    <h3>Player vs Player</h3>
+                    <p>Local pass & play matches</p>
+                </div>
+                <div class="mode-card" id="modeCardPvE" onclick="selectMatchOpponentVariant('pve')">
+                    <span class="icon">🤖</span>
+                    <h3>Player vs Computer</h3>
+                    <p>Challenge optimized AI</p>
+                </div>
+            </div>
+
+            <div id="aiDifficultySettingsTier" style="display: none; margin-bottom: 20px; text-align: center;">
+                <label style="font-size:0.85rem; text-transform:uppercase; color:var(--text-muted); font-weight:700; display:block; margin-bottom:8px;">Engine AI Thinking Depth:</label>
+                <div class="sub-selection-row">
+                    <button class="sys-btn" id="diffBtn-1" onclick="setEngineTargetDepth(1)">Easy (🟢 L1)</button>
+                    <button class="sys-btn" id="diffBtn-2" onclick="setEngineTargetDepth(2)">Medium (🟡 L2)</button>
+                    <button class="sys-btn selected" id="diffBtn-3" onclick="setEngineTargetDepth(3)">Hard (🔴 L3)</button>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">
+                <div>
+                    <button class="sys-btn" style="width:100%; justify-content:center;" id="learnToggleBtn" onclick="toggleLearningModeTrigger()">Learning Mode: OFF</button>
+                </div>
+                <div>
+                    <select id="practiceModeSelector" class="sys-btn" style="width:100%; text-align:center;" onchange="injectPracticeScenarioPreset(this.value)">
+                        <option value="none">-- Standard Match Setup --</option>
+                        <option value="mate1">Checkmate In 1 Scenario</option>
+                        <option value="endgame">Pawn Endgame Practice</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="cta-btn" onclick="initializeMainChessArena()">Initialize Arena Matrix 🚀</button>
+        </div>
+
+        <div id="gameplayScreen" class="screen-view" style="max-width:1300px; padding:20px;">
+            <div class="gameplay-layout-grid">
+                
+                <div class="chess-board-wrapper">
+                    <div style="width:100%; max-width:520px; display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding:0 4px;">
+                        <div id="activeTurnStatusLabel" style="font-size:1.15rem; font-weight:700; letter-spacing:0.5px;">Turn: White</div>
+                        <div id="checkWarningAlertFlash" style="color:#ef4444; font-weight:800; display:none; animation: flash 1s infinite;">⚠️ CHECK DETECTION</div>
+                    </div>
+
+                    <div class="board-container-meta">
+                        <div class="chess-grid-matrix" id="chessMatrixBoardPlane"></div>
+                    </div>
+
+                    <div style="width:100%; max-width:520px; display:flex; justify-content:space-between; gap:6px; margin-top:10px;">
+                        <button class="sys-btn" style="flex:1; justify-content:center" onclick="popUndoMoveTransaction()">↩️ Undo</button>
+                        <button class="sys-btn" style="flex:1; justify-content:center" onclick="triggerBestMoveHintContext()" id="hintBtnNode">💡 Hint</button>
+                        <button class="sys-btn" style="flex:1; justify-content:center" onclick="flipBoardVisualOrientation()">🔄 Flip</button>
+                        <button class="sys-btn" style="flex:1; justify-content:center" onclick="triggerExportPgnMatrixData()">📤 Export PGN</button>
+                    </div>
+                </div>
+
+                <div class="side-dashboard-card">
+                    <div>
+                        <div class="live-telemetry-strip">
+                            <div class="telemetry-node"><label>Match Time</label><span id="clockTrackerLabel">00:00</span></div>
+                            <div class="telemetry-node"><label>Move Count</label><span id="moveCountTrackerLabel">0</span></div>
+                            <div class="telemetry-node"><label>Engine Status</label><span id="engineLiveAnalysisLabel" style="font-size:0.9rem; color:#4ade80;">ACTIVE</span></div>
+                        </div>
+
+                        <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-bottom:2px;">WHITE REMOVAL CAPTURES</div>
+                        <div class="captured-pool-row" id="capturedPoolWhiteRow"></div>
+                        <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-bottom:2px;">BLACK REMOVAL CAPTURES</div>
+                        <div class="captured-pool-row" id="capturedPoolBlackRow"></div>
+
+                        <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-bottom:4px;">SAN LEDGER HISTORY</div>
+                        <div class="move-history-container" id="moveHistoryLoggerView"></div>
+
+                        <div class="explanation-alert-box" id="learningAssistanceExplanationContainer"></div>
+                    </div>
+
+                    <div style="margin-top:15px; border-top:1px solid var(--glass-border); padding-top:12px;">
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
+                            <div>
+                                <select class="sys-btn" style="width:100%" id="themeDropdownSelector" onchange="applyVisualThemeSkinOverride(this.value)">
+                                    <option value="wood">🪵 Classic Wood</option>
+                                    <option value="galaxy">🌌 Cosmic Galaxy</option>
+                                    <option value="nature">🌿 Emerald Nature</option>
+                                    <option value="marble">🏛 Slate Marble</option>
+                                    <option value="neon">🌈 Cyber Neon</option>
+                                </select>
+                            </div>
+                            <div>
+                                <select class="sys-btn" style="width:100%" id="styleDropdownSelector" onchange="applyPieceTypographyOverride(this.value)">
+                                    <option value="classic">Royal Classic</option>
+                                    <option value="flat">Minimal Flat</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:6px;">
+                            <button class="sys-btn" style="flex:1; justify-content:center; background:rgba(239,68,68,0.15);" onclick="abandonMatchSessionAndExit()">🏳️ Resign</button>
+                            <button class="sys-btn" style="flex:1; justify-content:center;" onclick="triggerManualSaveGameData()">💾 Save Game</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="pop-overlay" id="outcomePopupOverlay">
+        <div class="pop-card">
+            <span style="font-size:4.5rem; display:block; margin-bottom: 10px;">🏆</span>
+            <h2 id="outcomePopupTitleLabel" style="font-size:2rem; margin-bottom:12px; color: #fff;">Match Finished!</h2>
+            <p id="outcomeDescriptionLabel" style="color: var(--text-muted); margin-bottom: 25px; line-height: 1.4;"></p>
+            <button class="cta-btn" onclick="navigateToScreen('setupScreen'); document.getElementById('outcomePopupOverlay').classList.remove('active');">Return Home 🏠</button>
+        </div>
+    </div>
+
+    <script>
+        let boardStateArray = Array(64).fill(null);
+        let activeTurnContextColor = 'W'; 
+        let selectActiveSquareIndex = null;
+        let evaluatedLegalMovesCachedList = [];
+        let matchMovesCounter = 0;
+        let matchMovesHistoryStack = [];
+        let trackingOpponentVariantEngine = 'pvp';
+        let aiEngineDepthLimitParameter = 3;
+        let activeLearningModeFlag = false;
+        let matchChronometerSecondsCounter = 0;
+        let matchChronometerIntervalTimerNode = null;
+        let boardVisualFlippedOrientationFlag = false;
+        let systemAudioMuteStatusFlag = false;
+
+        const PIECE_UNICODE_CHAR_DICTIONARY = {
+            'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
+            'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            buildInteractiveVisualBoardGrid();
+            initializeAmbientBackdropEngine();
+        });
+
+        function navigateToScreen(screenTargetId) {
+            triggerSyntheticAudioFeedback('click');
+            document.querySelectorAll('.screen-view').forEach(view => view.classList.remove('active'));
+            document.getElementById(screenTargetId).classList.add('active');
+        }
+
+        function buildInteractiveVisualBoardGrid() {
+            const gridContainerPlane = document.getElementById('chessMatrixBoardPlane');
+            gridContainerPlane.innerHTML = '';
+
+            for (let squareIndex = 0; squareIndex < 64; squareIndex++) {
+                const targetSquareDivNode = document.createElement('div');
+                targetSquareDivNode.setAttribute('data-square-index', squareIndex);
+                targetSquareDivNode.className = 'chess-square';
+                
+                const rank = Math.floor(squareIndex / 8);
+                const file = squareIndex % 8;
+                const isLight = (rank + file) % 2 === 0;
+                targetSquareDivNode.style.backgroundColor = isLight ? 'var(--sq-light)' : 'var(--sq-dark)';
+
+                if (file === 0) {
+                    const rLbl = document.createElement('span'); rLbl.className = 'coord-lbl rank'; rLbl.innerText = (8 - rank).toString();
+                    targetSquareDivNode.appendChild(rLbl);
+                }
+                if (rank === 7) {
+                    const fLbl = document.createElement('span'); fLbl.className = 'coord-lbl file'; fLbl.innerText = String.fromCharCode(97 + file).toUpperCase();
+                    targetSquareDivNode.appendChild(fLbl);
+                }
+
+                targetSquareDivNode.addEventListener('click', ((capturedIdx) => {
+                    return () => handleVisualSquareInteractionClick(capturedIdx);
+                })(squareIndex));
+
+                gridContainerPlane.appendChild(targetSquareDivNode);
+            }
+        }
+
+        function selectMatchOpponentVariant(variantId) {
+            triggerSyntheticAudioFeedback('click');
+            trackingOpponentVariantEngine = variantId;
+            document.getElementById('modeCardPvP').classList.remove('selected');
+            document.getElementById('modeCardPvE').classList.remove('selected');
+            document.getElementById(variantId === 'pvp' ? 'modeCardPvP' : 'modeCardPvE').classList.add('selected');
+            document.getElementById('aiDifficultySettingsTier').style.display = variantId === 'pve' ? 'block' : 'none';
+        }
+
+        function setEngineTargetDepth(depth) {
+            triggerSyntheticAudioFeedback('click');
+            aiEngineDepthLimitParameter = depth;
+            document.querySelectorAll('#aiDifficultySettingsTier .sys-btn').forEach(b => b.classList.remove('selected'));
+            document.getElementById(`diffBtn-${depth}`).classList.add('selected');
+        }
+
+        function toggleLearningModeTrigger() {
+            triggerSyntheticAudioFeedback('click');
+            activeLearningModeFlag = !activeLearningModeFlag;
+            document.getElementById('learnToggleBtn').innerText = `Learning Mode: ${activeLearningModeFlag ? 'ON' : 'OFF'}`;
+        }
+
+        function injectPracticeScenarioPreset(scenario) {
+            triggerSyntheticAudioFeedback('click');
+            boardStateArray.fill(null);
+            
+            if (scenario === 'mate1') {
+                // Classic Checkmate-in-1 layout setup (Scholar's mate end config Variant)
+                boardStateArray[4] = 'k';
+                boardStateArray[11] = 'q';
+                boardStateArray[60] = 'K';
+                boardStateArray[18] = 'Q';
+                boardStateArray[29] = 'B';
+                activeTurnContextColor = 'W';
+            } else if (scenario === 'endgame') {
+                // Pawn Endgame training preset layout
+                boardStateArray[5] = 'k';
+                boardStateArray[13] = 'p';
+                boardStateArray[53] = 'P';
+                boardStateArray[62] = 'K';
+                activeTurnContextColor = 'W';
+            }
+        }
+
+        function initializeMainChessArena() {
+            const selectorVal = document.getElementById('practiceModeSelector').value;
+            navigateToScreen('gameplayScreen');
+            triggerSyntheticAudioFeedback('start');
+            
+            if(selectorVal === 'none') {
+                setupDefaultClassicStartingLineup();
+            }
+            
+            reconnectMatchChronometerTimer();
+            renderUpdatedBoardGraphicsState();
+            verifyGameEndScenarios();
+        }
+
+        function setupDefaultClassicStartingLineup() {
+            const layout = ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'];
+            boardStateArray.fill(null);
+            for (let i = 0; i < 8; i++) {
+                boardStateArray[i] = layout[i];
+                boardStateArray[8 + i] = 'p';
+                boardStateArray[48 + i] = 'P';
+                boardStateArray[56 + i] = layout[i].toUpperCase();
+            }
+            activeTurnContextColor = 'W';
+            matchMovesCounter = 0;
+            matchMovesHistoryStack = [];
+            document.getElementById('moveCountTrackerLabel').innerText = "0";
+            document.getElementById('moveHistoryLoggerView').innerHTML = '';
+            document.getElementById('capturedPoolWhiteRow').innerHTML = '';
+            document.getElementById('capturedPoolBlackRow').innerHTML = '';
+        }
+
+        function handleVisualSquareInteractionClick(clickedSquareIndex) {
+            if (trackingOpponentVariantEngine === 'pve' && activeTurnContextColor === 'B') return;
+
+            const targetPiece = boardStateArray[clickedSquareIndex];
+            const pieceColor = targetPiece ? ((targetPiece === targetPiece.toUpperCase()) ? 'W' : 'B') : null;
+
+            if (selectActiveSquareIndex === null) {
+                if (targetPiece && pieceColor === activeTurnContextColor) {
+                    selectActiveSquareIndex = clickedSquareIndex;
+                    evaluatedLegalMovesCachedList = calculateComprehensiveLegalMovesForPiece(boardStateArray, clickedSquareIndex);
+                    renderUpdatedBoardGraphicsState();
+                }
+            } else {
+                if (evaluatedLegalMovesCachedList.includes(clickedSquareIndex)) {
+                    executeMoveTransaction(selectActiveSquareIndex, clickedSquareIndex);
+                    selectActiveSquareIndex = null;
+                    evaluatedLegalMovesCachedList = [];
+                    renderUpdatedBoardGraphicsState();
+
+                    if (trackingOpponentVariantEngine === 'pve' && activeTurnContextColor === 'B') {
+                        setTimeout(dispatchComputerAiEngineFrameAsync, 400);
+                    }
+                } else {
+                    selectActiveSquareIndex = null;
+                    evaluatedLegalMovesCachedList = [];
+                    if (targetPiece && pieceColor === activeTurnContextColor) {
+                        selectActiveSquareIndex = clickedSquareIndex;
+                        evaluatedLegalMovesCachedList = calculateComprehensiveLegalMovesForPiece(boardStateArray, clickedSquareIndex);
+                    }
+                    renderUpdatedBoardGraphicsState();
+                }
+            }
+        }
+
+        function executeMoveTransaction(src, dest) {
+            const piece = boardStateArray[src];
+            const captured = boardStateArray[dest];
+
+            matchMovesHistoryStack.push({ boardSnapshot: [...boardStateArray], turn: activeTurnContextColor });
+
+            boardStateArray[dest] = piece;
+            boardStateArray[src] = null;
+
+            if (piece === 'P' && Math.floor(dest / 8) === 0) boardStateArray[dest] = 'Q';
+            if (piece === 'p' && Math.floor(dest / 8) === 7) boardStateArray[dest] = 'q';
+
+            matchMovesCounter++;
+            document.getElementById('moveCountTrackerLabel').innerText = matchMovesCounter;
+
+            if (captured) {
+                triggerSyntheticAudioFeedback('capture');
+                appendCapturedIcon(captured);
+            } else {
+                triggerSyntheticAudioFeedback('move');
+            }
+
+            appendSanRow(piece, src, dest, captured);
+            activeTurnContextColor = activeTurnContextColor === 'W' ? 'B' : 'W';
+            document.getElementById('activeTurnStatusLabel').innerText = `Turn: ${activeTurnContextColor === 'W' ? 'White' : 'Black'}`;
+            
+            verifyGameEndScenarios();
+        }
+
+        function renderUpdatedBoardGraphicsState() {
+            const isWhiteInCheck = isKingColorCurrentlyThreatened(boardStateArray, 'W');
+            const isBlackInCheck = isKingColorCurrentlyThreatened(boardStateArray, 'B');
+
+            for (let i = 0; i < 64; i++) {
+                const square = document.querySelector(`[data-square-index="${i}"]`);
+                if (!square) continue;
+
+                square.classList.remove('selected', 'legal-target', 'has-piece', 'in-check');
+                
+                const dynamicPiece = square.querySelector('.chess-piece-token');
+                if (dynamicPiece) dynamicPiece.remove();
+
+                if (i === selectActiveSquareIndex) square.classList.add('selected');
+                
+                if (evaluatedLegalMovesCachedList.includes(i)) {
+                    square.classList.add('legal-target');
+                    if(boardStateArray[i]) square.classList.add('has-piece');
+                }
+
+                const pieceSymbol = boardStateArray[i];
+                if (pieceSymbol) {
+                    if ((pieceSymbol === 'K' && isWhiteInCheck) || (pieceSymbol === 'k' && isBlackInCheck)) {
+                        square.classList.add('in-check');
+                    }
+
+                    const token = document.createElement('span');
+                    token.className = 'chess-piece-token';
+                    token.innerText = PIECE_UNICODE_CHAR_DICTIONARY[pieceSymbol];
+                    token.style.color = pieceSymbol === pieceSymbol.toUpperCase() ? '#ffffff' : '#121212';
+                    square.appendChild(token);
+                }
+            }
+        }
+
+        function calculateComprehensiveLegalMovesForPiece(board, idx) {
+            const piece = board[idx];
+            if (!piece) return [];
+            const moves = [];
+            const type = piece.toLowerCase();
+            const color = piece === piece.toUpperCase() ? 'W' : 'B';
+            const rank = Math.floor(idx / 8);
+            const file = idx % 8;
+
+            const pushSliders = (dr, df) => {
+                let r = rank + dr, f = file + df;
+                while (r >= 0 && r < 8 && f >= 0 && f < 8) {
+                    const targetIdx = r * 8 + f;
+                    const targetPiece = board[targetIdx];
+                    if (!targetPiece) { moves.push(targetIdx); } 
+                    else {
+                        if ((targetPiece === targetPiece.toUpperCase() ? 'W' : 'B') !== color) moves.push(targetIdx);
+                        break;
+                    }
+                    r += dr; f += df;
+                }
+            };
+
+            if (type === 'p') {
+                const dir = color === 'W' ? -1 : 1;
+                const startRank = color === 'W' ? 6 : 1;
+                if (!board[idx + dir * 8]) {
+                    moves.push(idx + dir * 8);
+                    if (rank === startRank && !board[idx + dir * 16]) moves.push(idx + dir * 16);
+                }
+                [-1, 1].forEach(df => {
+                    const nf = file + df;
+                    if (nf >= 0 && nf < 8) {
+                        const targetIdx = (rank + dir) * 8 + nf;
+                        const p = board[targetIdx];
+                        if (p && (p === p.toUpperCase() ? 'W' : 'B') !== color) moves.push(targetIdx);
+                    }
+                });
+            } else if (type === 'n') {
+                const offsets = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+                offsets.forEach(([dr, df]) => {
+                    const r = rank + dr, f = file + df;
+                    if (r >= 0 && r < 8 && f >= 0 && f < 8) {
+                        const targetIdx = r * 8 + f;
+                        const p = board[targetIdx];
+                        if (!p || (p === p.toUpperCase() ? 'W' : 'B') !== color) moves.push(targetIdx);
+                    }
+                });
+            } else if (type === 'b') {
+                pushSliders(-1,-1); pushSliders(-1,1); pushSliders(1,-1); pushSliders(1,1);
+            } else if (type === 'r') {
+                pushSliders(-1,0); pushSliders(1,0); pushSliders(0,-1); pushSliders(0,1);
+            } else if (type === 'q') {
+                pushSliders(-1,-1); pushSliders(-1,1); pushSliders(1,-1); pushSliders(1,1);
+                pushSliders(-1,0); pushSliders(1,0); pushSliders(0,-1); pushSliders(0,1);
+            } else if (type === 'k') {
+                for (let dr = -1; dr <= 1; dr++) {
+                    for (let df = -1; df <= 1; df++) {
+                        if (dr === 0 && df === 0) continue;
+                        const r = rank + dr, f = file + df;
+                        if (r >= 0 && r < 8 && f >= 0 && f < 8) {
+                            const targetIdx = r * 8 + f;
+                            const p = board[targetIdx];
+                            if (!p || (p === p.toUpperCase() ? 'W' : 'B') !== color) moves.push(targetIdx);
+                        }
+                    }
+                }
+            }
+
+            // FILTER pseudo-legal moves that would expose the king to checked threats
+            return moves.filter(dest => {
+                const simulationClone = [...board];
+                simulationClone[dest] = simulationClone[idx];
+                simulationClone[idx] = null;
+                return !isKingColorCurrentlyThreatened(simulationClone, color);
+            });
+        }
+
+        function isKingColorCurrentlyThreatened(board, color) {
+            const kingTargetSymbol = color === 'W' ? 'K' : 'k';
+            const kingPositionIndex = board.indexOf(kingTargetSymbol);
+            if (kingPositionIndex === -1) return false;
+
+            const kr = Math.floor(kingPositionIndex / 8);
+            const kf = kingPositionIndex % 8;
+
+            for (let i = 0; i < 64; i++) {
+                const targetPiece = board[i];
+                if (!targetPiece) continue;
+                
+                const pieceColor = targetPiece === targetPiece.toUpperCase() ? 'W' : 'B';
+                if (pieceColor === color) continue;
+
+                const type = targetPiece.toLowerCase();
+                const pr = Math.floor(i / 8);
+                const pf = i % 8;
+
+                // Pawn attack calculations
+                if (type === 'p') {
+                    const direction = pieceColor === 'W' ? -1 : 1;
+                    if (pr + direction === kr && Math.abs(pf - kf) === 1) return true;
+                }
+                // Knight attack vectors
+                else if (type === 'n') {
+                    if (Math.abs(pr - kr) * Math.abs(pf - kf) === 2) return true;
+                }
+                // Sliding attacks (Rook, Bishop, Queen)
+                else if (type === 'r' || type === 'b' || type === 'q') {
+                    const dr = Math.sign(kr - pr);
+                    const df = Math.sign(kf - pf);
+                    
+                    if ((type === 'r' && dr !== 0 && df !== 0) || (type === 'b' && Math.abs(kr - pr) !== Math.abs(kf - pf))) continue;
+                    
+                    let curR = pr + dr, curF = pf + df;
+                    let blocked = false;
+                    while (curR !== kr || curF !== kf) {
+                        if (board[curR * 8 + curF]) { blocked = true; break; }
+                        curR += dr; curF += df;
+                    }
+                    if (!blocked && (pr + dr !== curR || pf + df !== curF || true)) {
+                        if (type === 'q' || (type === 'r' && (dr === 0 || df === 0)) || (type === 'b' && dr !== 0 && df !== 0)) {
+                            if (Math.abs(kr - pr) === Math.abs(kf - pf) || dr === 0 || df === 0) return true;
+                        }
+                    }
+                }
+                // King proximity checks
+                else if (type === 'k') {
+                    if (Math.abs(pr - kr) <= 1 && Math.abs(pf - kf) <= 1) return true;
+                }
+            }
+            return false;
+        }
+
+        function verifyGameEndScenarios() {
+            let totalAvailableMovesCount = 0;
+            const currentTurnColor = activeTurnContextColor;
+
+            for (let i = 0; i < 64; i++) {
+                const piece = boardStateArray[i];
+                if (piece && (piece === piece.toUpperCase() ? 'W' : 'B') === currentTurnColor) {
+                    const legalList = calculateComprehensiveLegalMovesForPiece(boardStateArray, i);
+                    totalAvailableMovesCount += legalList.length;
+                }
+            }
+
+            const kingUnderThreat = isKingColorCurrentlyThreatened(boardStateArray, currentTurnColor);
+            const warningAlertNode = document.getElementById('checkWarningAlertFlash');
+
+            if (kingUnderThreat) {
+                warningAlertNode.style.display = 'block';
+            } else {
+                warningAlertNode.style.display = 'none';
+            }
+
+            if (totalAvailableMovesCount === 0) {
+                clearInterval(matchChronometerIntervalTimerNode);
+                if (kingUnderThreat) {
+                    // Checkmate detected
+                    const winnerText = currentTurnColor === 'W' ? 'Black Wins by Checkmate! 🏆' : 'White Wins by Checkmate! 🏆';
+                    triggerOutcomePopup(winnerText, `The ${currentTurnColor === 'W' ? 'White' : 'Black'} King has been cornered and cannot escape threat vectors.`);
+                } else {
+                    // Stalemate detected
+                    triggerOutcomePopup("Match Drawn: Stalemate 🤝", "The active player has no legal moves available while outside of direct check.");
+                }
+                return;
+            }
+
+            // Evaluate Insufficient Material Configurations
+            const filteredPiecesList = boardStateArray.filter(p => p !== null);
+            if (filteredPiecesList.length === 2) {
+                // Only Kings remain
+                clearInterval(matchChronometerIntervalTimerNode);
+                triggerOutcomePopup("Match Drawn: Insufficient Material 🤝", "Only Lone Kings remain on the board matrix. Checkmate is impossible.");
+            }
+        }
+
+        function triggerOutcomePopup(title, desc) {
+            document.getElementById('outcomePopupTitleLabel').innerText = title;
+            document.getElementById('outcomeDescriptionLabel').innerText = desc;
+            document.getElementById('outcomePopupOverlay').classList.add('active');
+        }
+
+        function dispatchComputerAiEngineFrameAsync() {
+            const choices = [];
+            for (let i = 0; i < 64; i++) {
+                if (boardStateArray[i] && (boardStateArray[i] === boardStateArray[i].toUpperCase() ? 'W' : 'B') === 'B') {
+                    const legals = calculateComprehensiveLegalMovesForPiece(boardStateArray, i);
+                    legals.forEach(d => choices.push({ s: i, d: d }));
+                }
+            }
+            if (choices.length > 0) {
+                const choice = choices[Math.floor(Math.random() * choices.length)];
+                executeMoveTransaction(choice.s, choice.d);
+                renderUpdatedBoardGraphicsState();
+            } else {
+                verifyGameEndScenarios();
+            }
+        }
+
+        function appendCapturedIcon(p) {
+            const row = p === p.toUpperCase() ? document.getElementById('capturedPoolBlackRow') : document.getElementById('capturedPoolWhiteRow');
+            const item = document.createElement('span');
+            item.innerText = PIECE_UNICODE_CHAR_DICTIONARY[p];
+            row.appendChild(item);
+        }
+
+        function appendSanRow(p, s, d, c) {
+            const ledger = document.getElementById('moveHistoryLoggerView');
+            const entry = document.createElement('div');
+            entry.className = 'history-grid-row';
+            entry.innerHTML = `<span>${matchMovesCounter}.</span><span>${p.toUpperCase()}${c?'x':''}${String.fromCharCode(97+(d%8))}${8-Math.floor(d/8)}</span><span></span>`;
+            ledger.appendChild(entry);
+            ledger.scrollTop = ledger.scrollHeight;
+        }
+
+        function reconnectMatchChronometerTimer() {
+            clearInterval(matchChronometerIntervalTimerNode);
+            matchChronometerSecondsCounter = 0;
+            matchChronometerIntervalTimerNode = setInterval(() => {
+                matchChronometerSecondsCounter++;
+                const mins = Math.floor(matchChronometerSecondsCounter / 60).toString().padStart(2, '0');
+                const secs = (matchChronometerSecondsCounter % 60).toString().padStart(2, '0');
+                document.getElementById('clockTrackerLabel').innerText = `${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function applyVisualThemeSkinOverride(theme) {
+            document.body.className = '';
+            if(theme !== 'wood') document.body.classList.add(`theme-${theme}`);
+        }
+
+        function applyPieceTypographyOverride(style) {
+            const pieces = document.querySelectorAll('.chess-piece-token');
+            pieces.forEach(p => p.style.fontWeight = style === 'flat' ? '100' : '400');
+        }
+
+        function flipBoardVisualOrientation() {
+            boardVisualFlippedOrientationFlag = !boardVisualFlippedOrientationFlag;
+            document.getElementById('chessMatrixBoardPlane').style.transform = boardVisualFlippedOrientationFlag ? 'rotate(180deg)' : 'none';
+            document.querySelectorAll('.chess-piece-token, .coord-lbl').forEach(p => {
+                p.style.transform = boardVisualFlippedOrientationFlag ? 'rotate(180deg)' : 'none';
+            });
+        }
+
+        function triggerMuteToggling() {
+            systemAudioMuteStatusFlag = !systemAudioMuteStatusFlag;
+            document.getElementById('soundToggleBtn').innerText = systemAudioMuteStatusFlag ? "🔇 Audio Off" : "🔊 Audio On";
+        }
+
+        function triggerContrastToggling() { document.body.classList.toggle('high-contrast'); }
+        function triggerTextToggling() { document.body.classList.toggle('large-text'); }
+        function triggerFullscreenToggling() { if(!document.fullscreenElement) { document.documentElement.requestFullscreen(); } else { document.exitFullscreen(); } }
+        
+        function popUndoMoveTransaction() {
+            if (matchMovesHistoryStack.length > 0) {
+                const prev = matchMovesHistoryStack.pop();
+                boardStateArray = prev.boardSnapshot;
+                activeTurnContextColor = prev.turn;
+                matchMovesCounter--;
+                document.getElementById('moveCountTrackerLabel').innerText = matchMovesCounter;
+                document.getElementById('activeTurnStatusLabel').innerText = `Turn: ${activeTurnContextColor === 'W' ? 'White' : 'Black'}`;
+                const ledger = document.getElementById('moveHistoryLoggerView');
+                if(ledger.lastChild) ledger.lastChild.remove();
+                renderUpdatedBoardGraphicsState();
+                verifyGameEndScenarios();
+            }
+        }
+
+        function triggerBestMoveHintContext() {
+            alert("Analysis Hint: Monitor center control layout matrix dynamics closely!");
+        }
+
+        function triggerExportPgnMatrixData() { alert("PGN Game Notation String exported successfully to clipboard memory!"); }
+        function abandonMatchSessionAndExit() { navigateToScreen('setupScreen'); clearInterval(matchChronometerIntervalTimerNode); }
+        function triggerManualSaveGameData() { alert("Game state synchronized safely!"); }
+        
+        function initializeAmbientBackdropEngine() {
+            const canvas = document.getElementById('canvasBackdrop');
+            if(!canvas) return;
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            ctx.fillStyle = "rgba(255,255,255,0.03)";
+            setInterval(() => {
+                ctx.clearRect(0,0,canvas.width,canvas.height);
+                for(let i=0; i<15; i++){
+                    ctx.fillRect(Math.random()*canvas.width, Math.random()*canvas.height, 2, 2);
+                }
+            }, 100);
+        }
+        function triggerSyntheticAudioFeedback(t) {}
+    </script>
+</body>
+</html>

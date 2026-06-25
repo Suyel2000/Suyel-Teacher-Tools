@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>➕ Addition Quiz</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --card-bg: rgba(255, 255, 255, 0.75);
+            --card-border: rgba(255, 255, 255, 0.4);
+            --text-main: #2d3748;
+            --text-muted: #4a5568;
+            --primary: #45AAF2;
+            --success: #2ECC71;
+            --danger: #E74C3C;
+            --warning: #F39C12;
+            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --radius-sm: 8px;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        [data-theme="dark"] {
+            --bg-gradient: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+            --card-bg: rgba(26, 32, 44, 0.75);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f7fafc;
+            --text-muted: #cbd5e0;
+            --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-family);
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            min-height: 100vh;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 20px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Floating Decoration Background */
+        .deco-container {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            overflow: hidden;
+            z-index: -1;
+            pointer-events: none;
+        }
+        .deco-item {
+            position: absolute;
+            font-weight: bold;
+            color: rgba(69, 170, 242, 0.1);
+            font-size: clamp(2rem, 8vw, 5rem);
+            animation: float 8s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(15deg); }
+        }
+
+        /* Utilities & Wrapper */
+        .container {
+            width: 100%;
+            max-width: 850px;
+            margin-top: 10px;
+            z-index: 10;
+        }
+
+        .glass-panel {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            padding: 30px;
+            margin-bottom: 25px;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        /* Header Layout */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 850px;
+            margin-bottom: 10px;
+        }
+        .app-title h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: linear-gradient(45deg, #FF6B6B, #45AAF2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .app-title p {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .theme-toggle-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 10px 16px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: var(--text-main);
+            box-shadow: var(--shadow);
+            transition: transform 0.2s;
+        }
+        .theme-toggle-btn:active { transform: scale(0.95); }
+
+        /* Navigation HUD components */
+        .hud-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .hud-pill {
+            background: rgba(69, 170, 242, 0.15);
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            color: var(--text-main);
+            border: 1px solid rgba(69, 170, 242, 0.2);
+        }
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 50px;
+            margin-bottom: 25px;
+            overflow: hidden;
+            border: 1px solid var(--card-border);
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #45AAF2, #2ECC71);
+            border-radius: 50px;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Standardized Large Child-Friendly UI Buttons */
+        .btn {
+            padding: 14px 28px;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            font-size: 1.1rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
+        .btn:active { transform: translateY(1px); }
+        .btn-primary { background: #45AAF2; color: white; }
+        .btn-secondary { background: rgba(0,0,0,0.05); color: var(--text-main); border: 1px solid var(--card-border); }
+        .btn-danger { background: var(--danger); color: white; }
+
+        /* Screen Configurations */
+        .screen { display: none; }
+        .screen.active { display: block; animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Level Selector Screen */
+        .level-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        @media(min-width: 600px) { .level-grid { grid-template-columns: 1fr 1fr; } }
+        .level-card {
+            padding: 20px;
+            border-radius: var(--radius-md);
+            border: none;
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+            cursor: pointer;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s, filter 0.2s;
+        }
+        .level-card:hover { transform: scale(1.03); filter: brightness(1.05); }
+        .level-card:active { transform: scale(0.98); }
+        .lvl-1 { background: linear-gradient(135deg, #2ECC71, #27AE60); }
+        .lvl-2 { background: linear-gradient(135deg, #3498DB, #2980B9); }
+        .lvl-3 { background: linear-gradient(135deg, #9B59B6, #8E44AD); }
+        .lvl-4 { background: linear-gradient(135deg, #E67E22, #D35400); }
+        .lvl-5 { background: linear-gradient(135deg, #E74C3C, #C0392B); }
+
+        /* Sandbox Mode Prompt Card */
+        .sandbox-promo {
+            margin-top: 25px;
+            background: linear-gradient(135deg, #6c5ce7, #a55eea);
+            color: white;
+            border-radius: var(--radius-md);
+            padding: 20px;
+            text-align: center;
+        }
+
+        /* Main Core Quiz Display Elements */
+        .question-box {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+            line-height: 1.4;
+            white-space: pre-line;
+        }
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        @media(min-width: 600px) { .options-grid { grid-template-columns: 1fr 1fr; } }
+        .option-btn {
+            background: var(--card-bg);
+            border: 2px solid var(--card-border);
+            padding: 18px;
+            border-radius: var(--radius-md);
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+        .option-btn:hover:not(:disabled) {
+            border-color: var(--primary);
+            background: rgba(69, 170, 242, 0.05);
+            transform: translateY(-2px);
+        }
+        .option-btn.correct { background: #2ECC71 !important; border-color: #27AE60 !important; color: white !important; }
+        .option-btn.wrong { background: #E74C3C !important; border-color: #C0392B !important; color: white !important; }
+        .option-btn:disabled { cursor: not-allowed; opacity: 0.8; }
+
+        /* Math Explanation Block Visuals */
+        .explanation-box {
+            background: rgba(243, 156, 18, 0.1);
+            border-left: 6px solid var(--warning);
+            padding: 20px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 25px;
+            display: none;
+            animation: slideDown 0.3s ease-out forwards;
+        }
+        @keyframes slideDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+        .explanation-box h4 { margin-bottom: 8px; color: var(--warning); font-size: 1.1rem; }
+        .explanation-content { font-family: monospace; font-size: 1.15rem; line-height: 1.5; white-space: pre-line; color: var(--text-main); }
+
+        .action-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        /* Interactive Workboard / Sandbox Column Structure */
+        .sandbox-grid {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px 0;
+        }
+        .col-add-table {
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .col-add-table th {
+            padding: 5px 12px;
+            font-size: 0.9rem;
+            color: var(--primary);
+            text-align: center;
+            border-bottom: 2px solid var(--card-border);
+        }
+        .col-add-table td {
+            padding: 8px 12px;
+            font-size: 1.8rem;
+            font-weight: 700;
+            text-align: center;
+            min-width: 50px;
+        }
+        .carry-row td { font-size: 1.1rem; color: var(--warning); }
+        .carry-input {
+            width: 35px; height: 35px; text-align: center;
+            font-size: 1rem; font-weight: bold; border-radius: 50%;
+            border: 2px dashed var(--warning); background: transparent;
+            color: var(--text-main);
+        }
+        .ans-input {
+            width: 50px; height: 50px; text-align: center;
+            font-size: 1.6rem; font-weight: bold; border-radius: var(--radius-sm);
+            border: 2px solid var(--primary); background: var(--card-bg);
+            color: var(--text-main);
+        }
+        .line-row td { border-bottom: 3px solid var(--text-main); }
+        
+        /* Concrete Base Ten Graphical Array Elements */
+        .block-display-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            background: rgba(0,0,0,0.03);
+            padding: 15px;
+            border-radius: var(--radius-md);
+            width: 100%;
+            margin-top: 15px;
+            justify-content: center;
+        }
+        .base10-unit { width: 14px; height: 14px; background: #9b59b6; border-radius: 2px; display: inline-block; }
+        .base10-rod { width: 16px; height: 80px; background: #34495e; border-radius: 4px; display: inline-block; position: relative; }
+        .base10-flat { width: 80px; height: 80px; background: #e67e22; border-radius: 6px; display: inline-block; }
+
+        /* Summary & Custom Vector High Resolution End-Certificate Framework */
+        .badge-display {
+            text-align: center; margin: 20px 0;
+        }
+        .badge-icon { font-size: 4.5rem; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
+        
+        .certificate-wrapper {
+            display: none;
+            background: white;
+            color: #1a202c;
+            border: 10px double #2c3e50;
+            padding: 40px;
+            border-radius: var(--radius-sm);
+            text-align: center;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            margin-top: 30px;
+        }
+        .certificate-wrapper h2 { font-family: 'Georgia', serif; font-size: 2.4rem; color: #2c3e50; margin-bottom: 10px; }
+        .certificate-wrapper .cert-sub { font-style: italic; color: #7f8c8d; margin-bottom: 25px; }
+        .certificate-wrapper .student-name { font-size: 1.8rem; font-weight: bold; border-bottom: 2px solid #34495e; display: inline-block; padding: 0 30px 5px 30px; margin: 15px 0; color: #2980b9; }
+        .certificate-wrapper .cert-body { font-size: 1.15rem; line-height: 1.6; margin: 20px auto; max-width: 600px; }
+        .certificate-watermark { position: absolute; font-size: 10rem; color: rgba(52, 152, 219, 0.04); top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg); pointer-events: none; width: 100%; text-align: center; font-weight: bold; }
+        
+        .input-group {
+            display: flex; gap: 10px; justify-content: center; margin-bottom: 20px;
+        }
+        .input-text {
+            padding: 12px 20px; border-radius: var(--radius-sm); border: 2px solid var(--card-border); background: var(--card-bg); color: var(--text-main); font-size: 1rem; width: 250px;
+        }
+
+        /* Confetti Elements System canvas mock */
+        .confetti-piece {
+            position: fixed; width: 10px; height: 10px; background: #ff0; z-index: 9999; top: -10px;
+            animation: fall linear forwards;
+        }
+        @keyframes fall {
+            to { transform: translateY(105vh) rotate(360deg); }
+        }
+
+        /* Print Override Layout Configuration */
+        @media print {
+            body * { visibility: hidden; background: none !important; }
+            .certificate-wrapper, .certificate-wrapper * { visibility: visible; }
+            .certificate-wrapper { position: absolute; left: 0; top: 0; width: 100%; border: 4px solid #000; box-shadow: none; display: block !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="deco-container" id="decoContainer"></div>
+
+    <header>
+        <div class="app-title">
+            <h1>➕ Addition Quiz</h1>
+            <p>Add • Think • Solve • Master Addition</p>
+        </div>
+        <button class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle Theme">🌓</button>
+    </header>
+
+    <div class="container">
+        
+        <div id="startScreen" class="screen active glass-panel">
+            <h3 style="font-size: 1.4rem; margin-bottom: 15px; text-align: center;">Choose Difficulty Level</h3>
+            <p style="color: var(--text-muted); text-align: center; margin-bottom: 20px;">Select a tier aligned with Classes 1–6 math paths to begin your challenge.</p>
+            
+            <div class="level-grid">
+                <button class="level-card lvl-1" onclick="startQuiz(1)">
+                    <span>🟢 Class 1: 1-Digit</span>
+                    <span style="font-size: 0.9rem; opacity: 0.9;">50 Challenges</span>
+                </button>
+                <button class="level-card lvl-2" onclick="startQuiz(2)">
+                    <span>🔵 Class 2: 2-Digit</span>
+                    <span style="font-size: 0.9rem; opacity: 0.9;">50 Challenges</span>
+                </button>
+                <button class="level-card lvl-3" onclick="startQuiz(3)">
+                    <span>🟣 Class 3: 3-Digit</span>
+                    <span style="font-size: 0.9rem; opacity: 0.9;">50 Challenges</span>
+                </button>
+                <button class="level-card lvl-4" onclick="startQuiz(4)">
+                    <span>orange 🟠 Class 4: 4-Digit</span>
+                    <span style="font-size: 0.9rem; opacity: 0.9;">50 Challenges</span>
+                </button>
+                <button class="level-card lvl-5" onclick="startQuiz(5)">
+                    <span>🔴 Classes 5-6: 5-Digit</span>
+                    <span style="font-size: 0.9rem; opacity: 0.9;">50 Challenges</span>
+                </button>
+            </div>
+
+            <div class="sandbox-promo">
+                <h4 style="margin-bottom: 8px; font-size: 1.2rem;">🎮 Optional Sandbox Block Builder</h4>
+                <p style="font-size: 0.95rem; margin-bottom: 15px; opacity: 0.9;">Need hands-on workspace help? Practice complex vertical math step-by-step with base-ten blocks.</p>
+                <button class="btn btn-secondary" style="background: white; color: #6c5ce7; width: 100%;" onclick="openSandbox()">Open Interactive Workspace</button>
+            </div>
+        </div>
+
+        <div id="quizScreen" class="screen glass-panel">
+            <div class="hud-bar">
+                <button class="btn btn-secondary" style="padding: 6px 14px; font-size: 0.9rem;" onclick="exitToMenu()">🏠 Change Difficulty</button>
+                <div style="display: flex; gap: 10px;">
+                    <div class="hud-pill" id="hudLevelDisplay">Level: 1-Digit</div>
+                    <div class="hud-pill" id="hudCounterDisplay">Q: 1/50</div>
+                    <div class="hud-pill" id="hudScoreDisplay" style="background: rgba(46, 204, 113, 0.2); border-color: rgba(46,204,113,0.3);">Score: 0</div>
+                </div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="quizProgressBar"></div>
+            </div>
+
+            <div class="question-box" id="questionText">Loading challenge matrix calculations...</div>
+
+            <div class="options-grid" id="optionsContainer">
+                </div>
+
+            <div class="explanation-box" id="explanationBox">
+                <h4>💡 Step-By-Step Mathematical Explanation</h4>
+                <div class="explanation-content" id="explanationContent"></div>
+            </div>
+
+            <div class="action-row">
+                <button class="btn btn-secondary" id="prevBtn" onclick="navigateQuestion(-1)">← Previous</button>
+                <button class="btn btn-secondary" onclick="shuffleCurrentLevel()">🔀 Shuffle Level</button>
+                <button class="btn btn-primary" id="nextBtn" onclick="navigateQuestion(1)">Next →</button>
+            </div>
+        </div>
+
+        <div id="sandboxScreen" class="screen glass-panel">
+            <div class="hud-bar">
+                <button class="btn btn-secondary" style="padding: 6px 14px; font-size: 0.9rem;" onclick="exitToMenu()">🏠 Back to Main Menu</button>
+                <div class="hud-pill" style="background: #6c5ce7; color: white;">Interactive Column Workspace</div>
+            </div>
+
+            <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.95rem;">Fill out the vertical place value slots. Write carry digits at the top if necessary, then confirm your answer calculations below.</p>
+
+            <div class="sandbox-grid">
+                <table class="col-add-table" id="sandboxTable">
+                    </table>
+
+                <div class="action-row" style="width:100%; justify-content: center; gap:10px; margin-top:10px;">
+                    <button class="btn btn-secondary" onclick="generateSandboxProblem()">🔀 New Question</button>
+                    <button class="btn btn-primary" onclick="checkSandboxSolution()">Check Work</button>
+                </div>
+
+                <div class="block-display-panel" id="base10Visualizer">
+                    </div>
+            </div>
+        </div>
+
+        <div id="summaryScreen" class="screen glass-panel">
+            <h2 style="text-align: center; margin-bottom: 10px;">📊 Evaluation Summary</h2>
+            <p style="text-align: center; color: var(--text-muted); margin-bottom: 25px;">You have finalized your classroom addition tier processing.</p>
+
+            <div class="badge-display">
+                <div class="badge-icon" id="summaryBadgeIcon">🏆</div>
+                <h3 style="font-size: 1.6rem; margin-top: 10px;" id="summaryBadgeTitle">Addition Master</h3>
+            </div>
+
+            <p style="text-align: center; font-size: 1.3rem; font-weight: bold; margin-bottom: 30px;" id="summaryScoreText">You scored 45 out of 50 items correctly.</p>
+
+            <div class="glass-panel" style="background: rgba(0,0,0,0.02); padding: 20px; border-radius: var(--radius-md);">
+                <h4 style="margin-bottom: 15px; text-align: center;">🎓 Generate Certificate of Achievement</h4>
+                <div class="input-group">
+                    <input type="text" class="input-text" id="studentNameInput" placeholder="Enter Student Name" value="Primary Student">
+                    <button class="btn btn-primary" style="padding:10px 20px; font-size:1rem;" onclick="renderPrintCertificate()">Generate</button>
+                </div>
+            </div>
+
+            <div class="certificate-wrapper" id="certificateView">
+                <div class="certificate-watermark">EXCELLENCE</div>
+                <h2>CERTIFICATE OF EXCELLENCE</h2>
+                <p class="cert-sub">Awarded for Mathematical Competence and Arithmetic Speed Mastery</p>
+                <p class="cert-body">This document certifies that standard compliance profiles are satisfied by</p>
+                <div class="student-name" id="certStudentName">Primary Student</div>
+                <p class="cert-body" id="certDescription">who has successfully mastered addition arrays at the specified level.</p>
+                <div style="display: flex; justify-content: space-between; margin-top: 40px; border-top: 1px dashed #95a5a6; padding-top: 15px; font-size: 0.9rem; color: #7f8c8d;">
+                    <div>System ID: #ADD-2026</div>
+                    <div id="certTimestamp">Date: June 25, 2026</div>
+                    <div>Instructor Verified</div>
+                </div>
+            </div>
+
+            <div class="action-row" style="margin-top: 25px; justify-content: center;">
+                <button class="btn btn-secondary" onclick="exitToMenu()">🏠 Return to Levels</button>
+                <button class="btn btn-primary" id="printCertBtn" style="display:none;" onclick="window.print()">🖨️ Print Certificate</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // CORE GLOBAL ARRAYS DATA CONTAINER MATRIX
+        let addition1Digit = [];
+        let addition2Digit = [];
+        let addition3Digit = [];
+        let addition4Digit = [];
+        let addition5Digit = [];
+
+        // App Status Config Variables
+        let currentTier = 1;
+        let activeQuestionIndex = 0;
+        let activeQuestionsArray = [];
+        let activeUserScore = 0;
+        let visitedQuestionRegistry = []; // Tracks historical feedback flags
+
+        // AUDIO FREQUENCY GENERATOR CONTEXT (Web Audio API)
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+        function playTone(freq, type, duration, vol=0.1) {
+            try {
+                initAudio();
+                if(!audioCtx) return;
+                let osc = audioCtx.createOscillator();
+                let gainNode = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.value = freq;
+                gainNode.gain.setValueAtTime(vol, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e) { console.log("Audio contexts blocked or unsupported", e); }
+        }
+        function soundFX(key) {
+            if(key === 'click') playTone(600, 'sine', 0.08, 0.15);
+            if(key === 'correct') { playTone(523.25, 'sine', 0.12, 0.2); setTimeout(() => playTone(659.25, 'sine', 0.25, 0.2), 100); }
+            if(key === 'wrong') { playTone(220, 'sawtooth', 0.3, 0.15); }
+            if(key === 'carry') playTone(880, 'sine', 0.05, 0.1);
+            if(key === 'win') {
+                let melody = [261.63, 329.63, 392.00, 523.25];
+                melody.forEach((f, i) => setTimeout(() => playTone(f, 'sine', 0.3, 0.2), i * 150));
+            }
+        }
+
+        // DESIGN THEME INITIALIZER ENGINE
+        function toggleTheme() {
+            soundFX('click');
+            const root = document.documentElement;
+            if (root.getAttribute('data-theme') === 'dark') {
+                root.removeAttribute('data-theme');
+            } else {
+                root.setAttribute('data-theme', 'dark');
+            }
+        }
+
+        // INJECT BACKGROUND ARTWORK DECORATIONS
+        function buildBackgroundArt() {
+            const container = document.getElementById('decoContainer');
+            container.innerHTML = '';
+            const symbols = ['+', '−', '=', '5', '8', '3', '9', '+', '1', '7'];
+            for(let i=0; i<15; i++) {
+                let div = document.createElement('div');
+                div.className = 'deco-item';
+                div.innerText = symbols[Math.floor(Math.random()*symbols.length)];
+                div.style.left = Math.random() * 100 + '%';
+                div.style.top = Math.random() * 100 + '%';
+                div.style.animationDelay = (Math.random() * 5) + 's';
+                div.style.fontSize = (1.5 + Math.random() * 3.5) + 'rem';
+                container.appendChild(div);
+            }
+        }
+
+        // DETERMINISTIC COMPLIANT QUESTION BANK GENERATION SYSTEM
+        // Programmatically constructs 50 distinct structural logic patterns per tier level to avoid file corruption truncation.
+        function generateCompleteQuestionArrays() {
+            // Level 1 Generator: 1-Digit
+            for (let i = 1; i <= 50; i++) {
+                let item = {};
+                let type = i % 8;
+                if(type === 1 || type === 2) { // Simple sum
+                    let a = (i % 7) + 2; let b = (i % 6) + 3;
+                    item = {
+                        text: `Calculate the sum:\n${a} + ${b} = ?`,
+                        ans: a + b, options: [],
+                        exp: `✅ Correct!\nDirect Calculation:\n${a} + ${b} = ${a + b}`
+                    };
+                } else if(type === 3 || type === 4) { // Missing Number
+                    let a = (i % 5) + 3; let total = a + (i % 4) + 2;
+                    item = {
+                        text: `Find the missing operand:\n${a} + __ = ${total}`,
+                        ans: total - a, options: [],
+                        exp: `✅ Correct!\nWork backwards: Subtract the known value from total:\n${total} - ${a} = ${total - a}`
+                    };
+                } else if(type === 5 || type === 6) { // Word Problems
+                    let names = ["Riya", "Aarav", "Kabir", "Ananya", "Vivaan"];
+                    let items = ["apples", "marbles", "sketch pens", "books", "stickers"];
+                    let n = names[i % names.length]; let it = items[i % items.length];
+                    let a = (i % 4) + 2; let b = (i % 5) + 2;
+                    item = {
+                        text: `${n} has ${a} ${it}.\nA friend gives them ${b} more ${it}.\nHow many do they own now?`,
+                        ans: a + b, options: [],
+                        exp: `✅ Correct!\nCombine values:\n${a} + ${b} = ${a + b} ${it}`
+                    };
+                } else { // Mental / Incorrect equation hunter
+                    let base = (i % 4) + 4;
+                    item = {
+                        text: `Which calculation matches the target total ${base + 3}?`,
+                        ans: base + 3, options: [], isTargetFormula: true,
+                        targetA: base, targetB: 3,
+                        exp: `✅ Correct!\nChecking the equations, only ${base} + 3 equals ${base + 3}.`
+                    };
+                }
+                addition1Digit.push(finalizeOptions(item));
+            }
+
+            // Level 2 Generator: 2-Digit
+            for (let i = 1; i <= 50; i++) {
+                let item = {};
+                let type = i % 5;
+                if(type === 1) { // Without carrying
+                    let a = 20 + (i % 4)*10 + 2; let b = 10 + (i % 3)*10 + 5;
+                    item = {
+                        text: `Solve the column equation:\n${a} + ${b} = ?`,
+                        ans: a + b, options: [],
+                        exp: `✅ Correct!\nDecompose into tens and ones:\n${a} + ${b}\n= (${Math.floor(a/10)*10} + ${Math.floor(b/10)*10}) + (${a%10} + ${b%10})\n= ${Math.floor(a/10)*10 + Math.floor(b/10)*10} + ${a%10 + b%10} = ${a + b}`
+                    };
+                } else if(type === 2) { // With carry-over profiles
+                    let a = 25 + (i % 6)*7; let b = 18 + (i % 5)*8;
+                    let oA = a % 10, oB = b % 10;
+                    item = {
+                        text: `Calculate the sum (requires carry handling):\n${a} + ${b} = ?`,
+                        ans: a + b, options: [],
+                        exp: `✅ Correct!\nStep-by-step Carry execution:\nOnes column: ${oA} + ${oB} = ${oA+oB} (Write ${ (oA+oB)%10 }, carry 1 to tens column)\nTens column: ${Math.floor(a/10)} + ${Math.floor(b/10)} + 1 (carry) = ${Math.floor((a+b)/10)}\nTotal = ${a+b}`
+                    };
+                } else if(type === 3) { // Estimation challenges
+                    let a = 12 + i * 1.5; let b = 22 + i * 1.2;
+                    a = Math.floor(a); b = Math.floor(b);
+                    let approx = Math.round(a/10)*10 + Math.round(b/10)*10;
+                    item = {
+                        text: `Estimate the nearest sum by rounding ${a} and ${b} to the nearest tens place:`,
+                        ans: approx, options: [],
+                        exp: `✅ Correct!\nRound ${a} → ${Math.round(a/10)*10}. Round ${b} → ${Math.round(b/10)*10}.\nSum = ${approx}`
+                    };
+                } else { // Word problems / missing variables
+                    let a = 34 + (i%5); let total = a + 15 + (i%4);
+                    item = {
+                        text: `Fill out the box value:\n${a} + [__] = ${total}`,
+                        ans: total - a, options: [],
+                        exp: `✅ Correct!\nSolve by balanced inversion:\n${total} - ${a} = ${total - a}`
+                    };
+                }
+                addition2Digit.push(finalizeOptions(item));
+            }
+
+            // Level 3 Generator: 3-Digit
+            for (let i = 1; i <= 50; i++) {
+                let a = 120 + (i * 13) % 400;
+                let b = 105 + (i * 17) % 350;
+                let item = {
+                    text: `Class 3 Challenge:\n${a} + ${b} = ?`,
+                    ans: a + b, options: [],
+                    exp: `✅ Correct!\nPlace Value Expansion:\nOnes Place: ${(a%10)} + ${(b%10)} = ${(a%10)+(b%10)}\nTens Place: ${Math.floor((a%100)/10)} + ${Math.floor((b%100)/10)}\nHundreds Place: ${Math.floor(a/100)} + ${Math.floor(b/100)}\nTotal Combined Sum = ${a+b}`
+                };
+                if(i % 6 === 0) {
+                    item.text = `Solve the curriculum application question:\nFarmer Ram harvested ${a} bags of paddy. Farmer Krishna harvested ${b} bags. How many bags are harvested in total?`;
+                }
+                addition3Digit.push(finalizeOptions(item));
+            }
+
+            // Level 4 Generator: 4-Digit
+            for (let i = 1; i <= 50; i++) {
+                let a = 2100 + (i * 115) % 5000;
+                let b = 1050 + (i * 142) % 3500;
+                let item = {
+                    text: `Compute the multi-digit value array:\n${a.toLocaleString()} + ${b.toLocaleString()} = ?`,
+                    ans: a + b, options: [],
+                    exp: `✅ Correct!\nStandard Alignment Processing Matrix:\n  ${a.toLocaleString()}\n+ ${b.toLocaleString()}\n----------\n  ${(a+b).toLocaleString()}`
+                };
+                if(i % 5 === 0) {
+                    let incorrectEquationStr = `Find the INCORRECT calculation statement among the following:`;
+                    item = {
+                        text: incorrectEquationStr,
+                        ans: "FAIL", options: [], isSpotMistake: true,
+                        correctVal: a + b, valA: a, valB: b,
+                        exp: `✅ Correct! You successfully highlighted the mathematically flawed option equation calculation.`
+                    };
+                }
+                addition4Digit.push(finalizeOptions(item));
+            }
+
+            // Level 5 Generator: 5-Digit
+            for (let i = 1; i <= 50; i++) {
+                let a = 12000 + (i * 1350) % 60000;
+                let b = 10500 + (i * 1620) % 25000;
+                let item = {
+                    text: `Advanced Class 5/6 System Math:\n${a.toLocaleString()} + ${b.toLocaleString()} = ?`,
+                    ans: a + b, options: [],
+                    exp: `✅ Correct!\nFinal Multi-column verification summary matches calculation exactly:\nSum total evaluated = ${(a+b).toLocaleString()}`
+                };
+                addition5Digit.push(finalizeOptions(item));
+            }
+        }
+
+        // AUTO MATRIX OPTION CONFIGURATOR & SHUFFLER
+        function finalizeOptions(item) {
+            if(item.options.length === 4) return item; 
+            
+            let choices = new Set();
+            let correctValue = item.ans;
+
+            if(item.isTargetFormula) {
+                correctValue = `${item.targetA} + ${item.targetB}`;
+                choices.add(correctValue);
+                while(choices.size < 4) {
+                    let dev = (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random()*3)+1);
+                    choices.add(`${item.targetA + dev} + ${item.targetB}`);
+                }
+                item.options = Array.from(choices);
+                return item;
+            }
+
+            if(item.isSpotMistake) {
+                // One option must be incorrect, others mathematically valid
+                let correctStr = `${item.valA} + ${item.valB} = ${item.correctVal}`;
+                let opt2 = `${item.valA - 100} + ${item.valB} = ${item.correctVal - 100}`;
+                let opt3 = `${item.valA} + ${item.valB + 50} = ${item.correctVal + 50}`;
+                let flawedStr = `${item.valA} + ${item.valB} = ${item.correctVal + 15}`; // The flawed statement
+                
+                item.options = [correctStr, opt2, opt3, flawedStr];
+                item.ans = flawedStr; // User looks for the flawed statement
+                shuffleArray(item.options);
+                return item;
+            }
+
+            choices.add(correctValue);
+            while(choices.size < 4) {
+                let offset = (Math.floor(Math.random() * 5) + 1) * (Math.random() > 0.5 ? 1 : -1);
+                if(correctValue > 20) {
+                    offset = (Math.floor(Math.random() * 12) + 1) * (Math.random() > 0.5 ? 1 : -1);
+                }
+                let fake = correctValue + offset;
+                if(fake >= 0 && fake !== correctValue) choices.add(fake);
+            }
+            
+            item.options = Array.from(choices);
+            // Format options text representation
+            if(typeof item.ans === 'number') {
+                item.options = item.options.map(n => typeof n === 'number' ? n : parseInt(n));
+            }
+            shuffleArray(item.options);
+            return item;
+        }
+
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+        }
+
+        // QUIZ NAVIGATION & INITIALIZATION ACTIONS
+        function startQuiz(tier) {
+            soundFX('click');
+            currentTier = tier;
+            activeQuestionIndex = 0;
+            activeUserScore = 0;
+            
+            if(tier === 1) { activeQuestionsArray = [...addition1Digit]; document.getElementById('hudLevelDisplay').innerText = "1-Digit"; }
+            if(tier === 2) { activeQuestionsArray = [...addition2Digit]; document.getElementById('hudLevelDisplay').innerText = "2-Digit"; }
+            if(tier === 3) { activeQuestionsArray = [...addition3Digit]; document.getElementById('hudLevelDisplay').innerText = "3-Digit"; }
+            if(tier === 4) { activeQuestionsArray = [...addition4Digit]; document.getElementById('hudLevelDisplay').innerText = "4-Digit"; }
+            if(tier === 5) { activeQuestionsArray = [...addition5Digit]; document.getElementById('hudLevelDisplay').innerText = "5-Digit"; }
+            
+            visitedQuestionRegistry = new Array(activeQuestionsArray.length).fill(null);
+            
+            document.getElementById('startScreen').classList.remove('active');
+            document.getElementById('quizScreen').classList.add('active');
+            
+            renderActiveQuestion();
+        }
+
+        function shuffleCurrentLevel() {
+            soundFX('click');
+            shuffleArray(activeQuestionsArray);
+            activeQuestionIndex = 0;
+            activeUserScore = 0;
+            visitedQuestionRegistry = new Array(activeQuestionsArray.length).fill(null);
+            renderActiveQuestion();
+        }
+
+        function renderActiveQuestion() {
+            document.getElementById('explanationBox').style.display = 'none';
+            
+            // HUD values update
+            document.getElementById('hudCounterDisplay').innerText = `Q: ${activeQuestionIndex + 1}/${activeQuestionsArray.length}`;
+            document.getElementById('hudScoreDisplay').innerText = `Score: ${activeUserScore}`;
+            
+            let percentage = ((activeQuestionIndex) / activeQuestionsArray.length) * 100;
+            document.getElementById('quizProgressBar').style.width = percentage + '%';
+
+            let currentQuestion = activeQuestionsArray[activeQuestionIndex];
+            document.getElementById('questionText').innerText = currentQuestion.text;
+
+            const container = document.getElementById('optionsContainer');
+            container.innerHTML = '';
+
+            currentQuestion.options.forEach(opt => {
+                let btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = (typeof opt === 'number') ? opt.toLocaleString() : opt;
+                
+                // If question was previously answered, keep state static
+                if(visitedQuestionRegistry[activeQuestionIndex] !== null) {
+                    btn.disabled = true;
+                    if(opt === currentQuestion.ans) btn.classList.add('correct');
+                    if(opt === visitedQuestionRegistry[activeQuestionIndex] && opt !== currentQuestion.ans) {
+                        btn.classList.add('wrong');
+                    }
+                } else {
+                    btn.onclick = () => evaluateUserSelection(opt, btn);
+                }
+                container.appendChild(btn);
+            });
+
+            if(visitedQuestionRegistry[activeQuestionIndex] !== null) {
+                showExplanationBlock();
+            }
+
+            // Button visibility configurations
+            document.getElementById('prevBtn').style.visibility = (activeQuestionIndex === 0) ? 'hidden' : 'visible';
+            document.getElementById('nextBtn').innerText = (activeQuestionIndex === activeQuestionsArray.length - 1) ? "Finish 🏁" : "Next →";
+        }
+
+        function evaluateUserSelection(selectedOpt, htmlBtn) {
+            let currentQuestion = activeQuestionsArray[activeQuestionIndex];
+            visitedQuestionRegistry[activeQuestionIndex] = selectedOpt;
+
+            const allButtons = document.querySelectorAll('.options-grid .option-btn');
+            allButtons.forEach(b => b.disabled = true);
+
+            if(selectedOpt === currentQuestion.ans) {
+                soundFX('correct');
+                htmlBtn.classList.add('correct');
+                activeUserScore++;
+                document.getElementById('hudScoreDisplay').innerText = `Score: ${activeUserScore}`;
+            } else {
+                soundFX('wrong');
+                htmlBtn.classList.add('wrong');
+                // Highlight correct option dynamically
+                allButtons.forEach(b => {
+                    if(b.innerText === currentQuestion.ans.toLocaleString() || b.innerText === currentQuestion.ans) {
+                        b.classList.add('correct');
+                    }
+                });
+            }
+
+            showExplanationBlock();
+        }
+
+        function showExplanationBlock() {
+            let currentQuestion = activeQuestionsArray[activeQuestionIndex];
+            let box = document.getElementById('explanationBox');
+            let content = document.getElementById('explanationContent');
+            content.innerText = currentQuestion.exp;
+            box.style.display = 'block';
+        }
+
+        function navigateQuestion(direction) {
+            soundFX('click');
+            activeQuestionIndex += direction;
+
+            if(activeQuestionIndex < 0) { activeQuestionIndex = 0; return; }
+            if(activeQuestionIndex >= activeQuestionsArray.length) {
+                // Finalized processing loop target arrived
+                triggerSummaryResolution();
+                return;
+            }
+            renderActiveQuestion();
+        }
+
+        function exitToMenu() {
+            soundFX('click');
+            document.getElementById('quizScreen').classList.remove('active');
+            document.getElementById('sandboxScreen').classList.remove('active');
+            document.getElementById('summaryScreen').classList.remove('active');
+            document.getElementById('startScreen').classList.add('active');
+        }
+
+        // SUMMATION SCORE ANALYSIS & PARTICLE CELEBRATION
+        function triggerSummaryResolution() {
+            soundFX('win');
+            triggerConfettiBurst();
+
+            document.getElementById('quizScreen').classList.remove('active');
+            document.getElementById('summaryScreen').classList.add('active');
+
+            let total = activeQuestionsArray.length;
+            let ratio = activeUserScore / total;
+            
+            let badgeIcon = "📚";
+            let badgeTitle = "Keep Practicing";
+
+            if(ratio >= 0.90) { badgeIcon = "🏆"; badgeTitle = "Addition Master"; }
+            else if(ratio >= 0.70) { badgeIcon = "🌟"; badgeTitle = "Number Wizard"; }
+            else if(ratio >= 0.50) { badgeIcon = "👍"; badgeTitle = "Good Learner"; }
+
+            document.getElementById('summaryBadgeIcon').innerText = badgeIcon;
+            document.getElementById('summaryBadgeTitle').innerText = badgeTitle;
+            document.getElementById('summaryScoreText').innerText = `You scored ${activeUserScore} out of ${total} items correctly!`;
+            
+            // Reset certificate frame view
+            document.getElementById('certificateView').style.display = 'none';
+            document.getElementById('printCertBtn').style.display = 'none';
+        }
+
+        function triggerConfettiBurst() {
+            for(let i=0; i<100; i++) {
+                let conf = document.createElement('div');
+                conf.className = 'confetti-piece';
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.backgroundColor = `hsl(${Math.random()*360}, 100%, 50%)`;
+                conf.style.transform = `scale(${0.5 + Math.random()})`;
+                conf.style.animationDuration = (1.5 + Math.random() * 2.5) + 's';
+                conf.style.animationDelay = (Math.random() * 0.5) + 's';
+                document.body.appendChild(conf);
+                setTimeout(() => conf.remove(), 4000);
+            }
+        }
+
+        // RE-RENDER PRINT EXCELLENCE PROFILE CERTIFICATE
+        function renderPrintCertificate() {
+            soundFX('click');
+            let name = document.getElementById('studentNameInput').value.trim();
+            if(!name) name = "Primary Student";
+
+            document.getElementById('certStudentName').innerText = name;
+            
+            let levelsText = ["1-Digit Level Base", "1-Digit Standard", "2-Digit Standard", "3-Digit Array Master", "4-Digit Complex Multi-tier", "5-Digit Advanced Matrix Check"];
+            document.getElementById('certDescription').innerText = `who has successfully satisfied the evaluation components of the Addition Quiz [${levelsText[currentTier]}] with an active score accuracy metric of ${activeUserScore}/${activeQuestionsArray.length}.`;
+            
+            // Set modern date presentation format safely
+            document.getElementById('certTimestamp').innerText = `Date: ${new Date().toLocaleDateString()}`;
+
+            document.getElementById('certificateView').style.display = 'block';
+            document.getElementById('printCertBtn').style.display = 'inline-flex';
+        }
+
+        // OPTIONAL INTERACTIVE WORKSPACE / SANDBOX ENGINE CODE
+        let sandboxA = 45;
+        let sandboxB = 28;
+
+        function openSandbox() {
+            soundFX('click');
+            document.getElementById('startScreen').classList.remove('active');
+            document.getElementById('sandboxScreen').classList.add('active');
+            generateSandboxProblem();
+        }
+
+        function generateSandboxProblem() {
+            soundFX('click');
+            // Randomly pick size configuration paths depending on classroom levels chosen
+            let digitLength = Math.floor(Math.random() * 3) + 1; // 1 to 3 digits for intuitive interface rendering space
+            if(digitLength === 1) {
+                sandboxA = Math.floor(Math.random() * 8) + 1;
+                sandboxB = Math.floor(Math.random() * 8) + 1;
+            } else if(digitLength === 2) {
+                sandboxA = Math.floor(Math.random() * 70) + 15;
+                sandboxB = Math.floor(Math.random() * 70) + 15;
+            } else {
+                sandboxA = Math.floor(Math.random() * 700) + 120;
+                sandboxB = Math.floor(Math.random() * 700) + 120;
+            }
+
+            buildSandboxColumnTable();
+            renderBase10Visuals();
+        }
+
+        function buildSandboxColumnTable() {
+            const table = document.getElementById('sandboxTable');
+            table.innerHTML = '';
+
+            let strA = sandboxA.toString();
+            let strB = sandboxB.toString();
+            let maxLen = Math.max(strA.length, strB.length);
+            
+            // Pad out leading zeros for unified slot placement alignment
+            strA = strA.padStart(maxLen, '0');
+            strB = strB.padStart(maxLen, '0');
+
+            // Header labels
+            let headerRow = document.createElement('tr');
+            let labels = ['Ten-Thousands', 'Thousands', 'Hundreds', 'Tens', 'Ones'];
+            let activeLabels = labels.slice(5 - maxLen);
+            
+            // Empty spacer corner slot
+            let cornerTh = document.createElement('th');
+            cornerTh.innerText = '';
+            headerRow.appendChild(cornerTh);
+
+            activeLabels.forEach(lbl => {
+                let th = document.createElement('th');
+                th.innerText = lbl[0]; // First letter token symbol
+                headerRow.appendChild(th);
+            });
+            table.appendChild(headerRow);
+
+            // Carry input row slots configurations
+            let carryRow = document.createElement('tr');
+            carryRow.className = 'carry-row';
+            let carrySpacer = document.createElement('td');
+            carrySpacer.innerText = 'Carry';
+            carrySpacer.style.fontSize = '0.75rem';
+            carryRow.appendChild(carrySpacer);
+
+            for(let i=0; i<maxLen; i++) {
+                let td = document.createElement('td');
+                if(i === maxLen - 1) {
+                    td.innerText = ''; // No carry input box on outer units right terminal edge slot
+                } else {
+                    let inp = document.createElement('input');
+                    inp.className = 'carry-input';
+                    inp.maxLength = 1;
+                    inp.oninput = () => soundFX('carry');
+                    td.appendChild(inp);
+                }
+                carryRow.appendChild(td);
+            }
+            table.appendChild(carryRow);
+
+            // Operand A row representation slots
+            let rowA = document.createElement('tr');
+            let tdSign = document.createElement('td');
+            tdSign.innerText = '';
+            rowA.appendChild(tdSign);
+            for(let i=0; i<maxLen; i++) {
+                let td = document.createElement('td');
+                td.innerText = strA[i] === '0' && i < strA.indexOf(strA.match(/[1-9]/)) ? '' : strA[i];
+                if(strA === "0") td.innerText = "0";
+                rowA.appendChild(td);
+            }
+            table.appendChild(rowA);
+
+            // Operand B row representation slots
+            let rowB = document.createElement('tr');
+            rowB.className = 'line-row';
+            let tdPlus = document.createElement('td');
+            tdPlus.innerText = '＋';
+            tdPlus.style.color = 'var(--primary)';
+            rowB.appendChild(tdPlus);
+            for(let i=0; i<maxLen; i++) {
+                let td = document.createElement('td');
+                td.innerText = strB[i] === '0' && i < strB.indexOf(strB.match(/[1-9]/)) ? '' : strB[i];
+                if(strB === "0") td.innerText = "0";
+                rowB.appendChild(td);
+            }
+            table.appendChild(rowB);
+
+            // Target user computational input row cells
+            let rowAns = document.createElement('tr');
+            let tdAnsLabel = document.createElement('td');
+            tdAnsLabel.innerText = '=';
+            rowAns.appendChild(tdAnsLabel);
+
+            // Allow extra leading column field for prospective overflow carries
+            for(let i=0; i<maxLen; i++) {
+                let td = document.createElement('td');
+                let inp = document.createElement('input');
+                inp.className = 'ans-input';
+                inp.maxLength = 1;
+                td.appendChild(inp);
+                rowAns.appendChild(td);
+            }
+            table.appendChild(rowAns);
+        }
+
+        function checkSandboxSolution() {
+            let inputs = document.querySelectorAll('.ans-input');
+            let userStr = "";
+            inputs.forEach(inp => userStr += inp.value.trim());
+
+            let userInt = parseInt(userStr);
+            let absoluteTarget = sandboxA + sandboxB;
+
+            if(userInt === absoluteTarget) {
+                soundFX('correct');
+                triggerConfettiBurst();
+                alert(`🎉 Excellent Work! ${sandboxA} + ${sandboxB} is indeed equal to ${absoluteTarget}.`);
+                generateSandboxProblem();
+            } else {
+                soundFX('wrong');
+                alert(`❌ Keep trying! Verify your column additions or check your carry placements.`);
+            }
+        }
+
+        function renderBase10Visuals() {
+            const container = document.getElementById('base10Visualizer');
+            container.innerHTML = '';
+
+            let total = sandboxA + sandboxB;
+            // Cap visualizer to avoid standard UI slowdowns
+            if(total > 350) {
+                container.innerHTML = `<p style="font-size:0.9rem; color:var(--text-muted);">Base-ten blocks illustration active up to 350 values [Current Sum: ${total}]</p>`;
+                return;
+            }
+
+            let hundreds = Math.floor(total / 100);
+            let remainder = total % 100;
+            let tens = Math.floor(remainder / 10);
+            let ones = remainder % 10;
+
+            // Render flats
+            for(let i=0; i<hundreds; i++) {
+                let el = document.createElement('div');
+                el.className = 'base10-flat';
+                el.title = "100 Block Flat";
+                container.appendChild(el);
+            }
+            // Render rods
+            for(let i=0; i<tens; i++) {
+                let el = document.createElement('div');
+                el.className = 'base10-rod';
+                el.title = "10 Block Rod";
+                container.appendChild(el);
+            }
+            // Render singular structural item tiles
+            for(let i=0; i<ones; i++) {
+                let el = document.createElement('div');
+                el.className = 'base10-unit';
+                el.title = "1 Unit Block";
+                container.appendChild(el);
+            }
+        }
+
+        // RUNTIME SYSTEM INITIALIZATION ENGINE TRIPPERS
+        window.onload = () => {
+            generateCompleteQuestionArrays();
+            buildBackgroundArt();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✖️ Multiplication Quiz</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #e0f2fe 0%, #fef08a 50%, #fbcfe8 100%);
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --card-border: rgba(255, 255, 255, 0.6);
+            --text-main: #0f172a;
+            --text-muted: #334155;
+            --primary: #d97706;
+            --primary-hover: #b45309;
+            --accent-blue: #2563eb;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.08);
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --radius-sm: 8px;
+        }
+
+        [data-theme="dark"] {
+            --bg-gradient: linear-gradient(135deg, #020617 0%, #1e1b4b 50%, #311042 100%);
+            --card-bg: rgba(15, 23, 42, 0.85);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-muted: #cbd5e1;
+            --shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            background-size: 400% 400%;
+            animation: backgroundShift 25s ease infinite;
+            min-height: 100vh;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        @keyframes backgroundShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .decorations-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            overflow: hidden;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .floating-symbol {
+            position: absolute;
+            font-weight: bold;
+            color: rgba(217, 119, 6, 0.06);
+            animation: wiggleFloat 16s ease-in-out infinite;
+        }
+        [data-theme="dark"] .floating-symbol {
+            color: rgba(251, 191, 36, 0.04);
+        }
+        @keyframes wiggleFloat {
+            0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+            50% { transform: translateY(-50px) rotate(25deg) scale(1.2); }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            z-index: 10;
+            margin-top: 10px;
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            padding: 35px;
+            margin-bottom: 25px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 900px;
+            margin-bottom: 15px;
+            z-index: 10;
+        }
+        .brand h1 {
+            font-size: 2.4rem;
+            font-weight: 800;
+            background: linear-gradient(45deg, #b45309, #db2777, #2563eb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .brand p {
+            font-size: 1.05rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            font-weight: 600;
+        }
+        .circle-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.25rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s;
+        }
+        .circle-btn:active { transform: scale(0.9); }
+
+        .hud-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .hud-pill {
+            background: rgba(217, 119, 6, 0.1);
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: var(--text-main);
+            border: 1px solid rgba(217, 119, 6, 0.15);
+        }
+        .progress-bar-container {
+            width: 100%;
+            height: 14px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 50px;
+            margin-bottom: 25px;
+            overflow: hidden;
+            border: 1px solid var(--card-border);
+        }
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #f59e0b, #db2777, #3b82f6);
+            border-radius: 50px;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            font-size: 1.05rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.06); }
+        .btn:active { transform: translateY(1px); }
+        .btn-primary { background: linear-gradient(45deg, #d97706, #dd1c72); color: white; }
+        .btn-secondary { background: rgba(0, 0, 0, 0.04); color: var(--text-main); border: 1px solid var(--card-border); }
+        [data-theme="dark"] .btn-secondary { background: rgba(255,255,255,0.06); }
+
+        .screen { display: none; }
+        .screen.active { display: block; animation: slideFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes slideFadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .level-selection-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            margin-top: 25px;
+        }
+        @media(min-width: 650px) { .level-selection-grid { grid-template-columns: 1fr 1fr; } }
+        
+        .lvl-card-btn {
+            padding: 26px;
+            border-radius: var(--radius-md);
+            border: none;
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+            cursor: pointer;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s, filter 0.2s;
+        }
+        .lvl-card-btn:hover { transform: scale(1.02); filter: brightness(1.08); }
+        .lvl-card-btn:active { transform: scale(0.98); }
+        .l-1 { background: linear-gradient(135deg, #16a34a, #15803d); }
+        .l-2 { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+        .l-3 { background: linear-gradient(135deg, #9333ea, #6b21a8); }
+        .l-4 { background: linear-gradient(135deg, #ea580c, #c2410c); }
+        .l-5 { background: linear-gradient(135deg, #e11d48, #9f1239); }
+
+        .sandbox-promo-card {
+            margin-top: 30px;
+            background: linear-gradient(135deg, #0d9488, #0f766e);
+            color: white;
+            border-radius: var(--radius-md);
+            padding: 25px;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+
+        .question-text-box {
+            font-size: 1.55rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+            line-height: 1.45;
+            white-space: pre-line;
+        }
+
+        .options-vertical-stack {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 14px;
+            margin-bottom: 35px;
+        }
+        @media(min-width: 600px) { .options-vertical-stack { grid-template-columns: 1fr 1fr; } }
+
+        .option-item-btn {
+            background: var(--card-bg);
+            border: 2px solid var(--card-border);
+            padding: 18px 22px;
+            border-radius: var(--radius-md);
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+        .option-item-btn:hover:not(:disabled) {
+            border-color: var(--primary);
+            background: rgba(217, 119, 6, 0.05);
+            transform: translateY(-2px);
+        }
+        .option-item-btn.is-correct { background: #22c55e !important; border-color: #16a34a !important; color: white !important; }
+        .option-item-btn.is-wrong { background: #ef4444 !important; border-color: #dc2626 !important; color: white !important; }
+        .option-item-btn:disabled { cursor: not-allowed; opacity: 0.95; }
+
+        .explanation-drawer {
+            background: rgba(22, 163, 74, 0.08);
+            border-left: 6px solid var(--success);
+            padding: 22px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 30px;
+            display: none;
+        }
+        .explanation-drawer h4 { color: var(--success); margin-bottom: 8px; font-size: 1.2rem; }
+        .explanation-drawer p { font-size: 1.1rem; line-height: 1.55; white-space: pre-line; font-family: monospace, sans-serif; }
+
+        .navigation-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        /* INTERACTIVE BUILDER (SANDBOX) STYLING */
+        .sandbox-workspace-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            width: 100%;
+        }
+        .sandbox-controls-box {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            background: rgba(0,0,0,0.02);
+            padding: 20px;
+            border-radius: var(--radius-md);
+        }
+        @media(min-width: 600px) { .sandbox-controls-box { grid-template-columns: 1fr 1fr; } }
+        
+        .control-widget {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .control-widget label { font-weight: 700; font-size: 0.95rem; color: var(--text-muted); }
+        
+        .visual-array-stage {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            padding: 20px;
+            background: rgba(255,255,255,0.5);
+            border-radius: var(--radius-md);
+            align-items: center;
+            justify-content: center;
+            overflow-x: auto;
+            min-height: 120px;
+            border: 2px dashed var(--card-border);
+        }
+        [data-theme="dark"] .visual-array-stage { background: rgba(0,0,0,0.2); }
+        .array-row { display: flex; gap: 5px; }
+        .array-dot { width: 14px; height: 14px; background: #d97706; border-radius: 50%; display: inline-block; }
+
+        .vertical-math-block {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.8rem;
+            font-weight: 700;
+            line-height: 1.4;
+            text-align: right;
+            margin: 0 auto;
+            padding: 20px 40px;
+            background: var(--card-bg);
+            border: 2px solid var(--card-border);
+            border-radius: var(--radius-md);
+            display: inline-block;
+        }
+        .math-line-step { min-height: 2.5rem; transition: color 0.3s; }
+        .math-line-step.highlight-step { color: #2563eb; background: rgba(37,99,235,0.08); }
+
+        .badge-showcase-center { text-align: center; margin: 25px 0; }
+        .badge-pop-icon { font-size: 5.5rem; animation: popBounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes popBounce { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* CERTIFICATE THEME */
+        .certificate-print-sheet {
+            display: none;
+            background: #ffffff;
+            color: #0f172a;
+            border: 12px double #b45309;
+            padding: 45px;
+            border-radius: 4px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            margin-top: 30px;
+        }
+        .certificate-print-sheet h2 { font-family: 'Georgia', serif; font-size: 2.5rem; color: #1e293b; margin-bottom: 6px; }
+        .certificate-print-sheet .sub { font-style: italic; color: #475569; margin-bottom: 25px; }
+        .certificate-print-sheet .recipient { font-size: 2.2rem; font-weight: 800; border-bottom: 2px solid #b45309; display: inline-block; padding: 0 40px 6px 40px; margin: 15px 0; color: #d97706; }
+        .certificate-print-sheet .body-text { font-size: 1.2rem; line-height: 1.6; margin: 20px auto; max-width: 650px; }
+        .cert-watermark-stamp { position: absolute; font-size: 10rem; color: rgba(217, 119, 6, 0.03); top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg); font-weight: 900; width: 100%; text-align: center; pointer-events: none; }
+
+        .input-text-field {
+            padding: 12px 18px; border-radius: var(--radius-sm); border: 2px solid var(--card-border); background: var(--card-bg); color: var(--text-main); font-size: 1.05rem; width: 280px;
+        }
+        .confetti-piece {
+            position: fixed; width: 10px; height: 10px; z-index: 9999; top: -12px;
+            animation: fallAnimation linear forwards;
+        }
+        @keyframes fallAnimation { to { transform: translateY(105vh) rotate(360deg); } }
+
+        @media print {
+            body * { visibility: hidden; background: none !important; }
+            .certificate-print-sheet, .certificate-print-sheet * { visibility: visible; }
+            .certificate-print-sheet { position: absolute; left: 0; top: 0; width: 100%; border: 5px solid #b45309; box-shadow: none; display: block !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="decorations-layer" id="decorationsLayer"></div>
+
+    <header>
+        <div class="brand">
+            <h1>✖️ Multiplication Quiz</h1>
+            <p>Multiply • Think • Solve • Master Multiplication</p>
+        </div>
+        <button class="circle-btn" onclick="toggleThemeMode()" title="Toggle Theme">🌓</button>
+    </header>
+
+    <div class="container">
+        
+        <div id="startScreen" class="screen active glass-card">
+            <h3 style="font-size: 1.4rem; margin-bottom: 10px; text-align: center;">Choose Difficulty Level</h3>
+            <p style="color: var(--text-muted); text-align: center; margin-bottom: 25px;">Each level loads exactly 50 curriculum questions to master precision and core arithmetic logic.</p>
+            
+            <div class="level-selection-grid">
+                <button class="lvl-card-btn l-1" onclick="initializeQuizTrack(1)">
+                    <span>🟢 1-Digit Multiplication</span>
+                    <span style="font-size: 0.95rem; opacity: 0.9;">50 Tasks</span>
+                </button>
+                <button class="lvl-card-btn l-2" onclick="initializeQuizTrack(2)">
+                    <span>🔵 2-Digit Multiplication</span>
+                    <span style="font-size: 0.95rem; opacity: 0.9;">50 Tasks</span>
+                </button>
+                <button class="lvl-card-btn l-3" onclick="initializeQuizTrack(3)">
+                    <span>🟣 3-Digit Multiplication</span>
+                    <span style="font-size: 0.95rem; opacity: 0.9;">50 Tasks</span>
+                </button>
+                <button class="lvl-card-btn l-4" onclick="initializeQuizTrack(4)">
+                    <span>🟠 4-Digit Multiplication</span>
+                    <span style="font-size: 0.95rem; opacity: 0.9;">50 Tasks</span>
+                </button>
+                <button class="lvl-card-btn l-5" onclick="initializeQuizTrack(5)">
+                    <span>🔴 5-Digit Multiplication</span>
+                    <span style="font-size: 0.95rem; opacity: 0.9;">50 Tasks</span>
+                </button>
+            </div>
+
+            <div class="sandbox-promo-card">
+                <h4 style="margin-bottom: 6px; font-size: 1.3rem;">🎮 Interactive Multiplication Builder</h4>
+                <p style="font-size: 0.98rem; margin-bottom: 16px; opacity: 0.95;">Visualize beginner arrays, track partial products, and watch long multiplication run step-by-step.</p>
+                <button class="btn btn-secondary" style="background: #ffffff; color: #0f766e; border: none; width: 100%;" onclick="launchSandboxWorkspace()">Open Practice Builder Playground</button>
+            </div>
+        </div>
+
+        <div id="quizScreen" class="screen glass-card">
+            <div class="hud-row">
+                <button class="btn btn-secondary" style="padding: 7px 14px; font-size: 0.9rem;" onclick="exitToMainMenu()">🏠 Change Difficulty</button>
+                <div style="display: flex; gap: 8px;">
+                    <div class="hud-pill" id="hudLevelLabel">Level</div>
+                    <div class="hud-pill" id="hudCounterLabel">Task: 1/50</div>
+                    <div class="hud-pill" id="hudScoreLabel" style="background: rgba(22,163,74,0.12); border-color: rgba(22,163,74,0.2);">Score: 0</div>
+                </div>
+            </div>
+
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="quizProgressBarFill"></div>
+            </div>
+
+            <div class="question-text-box" id="questionTextBox">Compiling dataset...</div>
+
+            <div class="options-vertical-stack" id="optionsMatrixGrid"></div>
+
+            <div class="explanation-drawer" id="explanationDrawer">
+                <h4>💡 Mathematical Guide</h4>
+                <p id="explanationTextContainer"></p>
+            </div>
+
+            <div class="navigation-row">
+                <button class="btn btn-secondary" id="actionBtnPrev" onclick="stepProblemIndex(-1)">← Previous</button>
+                <button class="btn btn-secondary" onclick="shuffleActiveDatasetBank()">🔀 Shuffle Questions</button>
+                <button class="btn btn-primary" id="actionBtnNext" onclick="stepProblemIndex(1)">Next →</button>
+            </div>
+        </div>
+
+        <div id="sandboxScreen" class="screen glass-card">
+            <div class="hud-row">
+                <button class="btn btn-secondary" style="padding: 7px 14px; font-size: 0.9rem;" onclick="exitToMainMenu()">🏠 Main Menu</button>
+                <div class="hud-pill" style="background: #0d9488; color: white;">Multiplication Sandbox Tool</div>
+            </div>
+
+            <div class="sandbox-workspace-panel">
+                <div class="sandbox-controls-box">
+                    <div class="control-widget">
+                        <label>Factor A (Rows / Top Number):</label>
+                        <input type="number" id="sandboxFactorA" class="input-text-field" value="6" min="1" max="99" style="width:100%;" oninput="renderSandboxPracticeState()">
+                    </div>
+                    <div class="control-widget">
+                        <label>Factor B (Cols / Bottom Number):</label>
+                        <input type="number" id="sandboxFactorB" class="input-text-field" value="4" min="1" max="9" style="width:100%;" oninput="renderSandboxPracticeState()">
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin: 10px 0;">
+                    <button class="btn btn-primary" style="padding:8px 16px; font-size:0.95rem;" onclick="animateSandboxStepByStep()">🎬 Step-by-Step Breakdown</button>
+                    <button class="btn btn-secondary" style="padding:8px 16px; font-size:0.95rem;" onclick="randomizeSandboxInputs()">🎲 Random Challenge</button>
+                </div>
+
+                <div id="sandboxVisualArrayWrapper" style="display:none;">
+                    <h5 style="margin-bottom:8px; font-weight:700; color:var(--text-muted);">Visual Array Model:</h5>
+                    <div class="visual-array-stage" id="sandboxVisualArrayStage"></div>
+                </div>
+
+                <div id="sandboxVerticalMathWrapper" style="display:flex; flex-direction:column; align-items:center;">
+                    <h5 style="margin-bottom:8px; font-weight:700; color:var(--text-muted);">Vertical Step Pipeline:</h5>
+                    <div class="vertical-math-block" id="sandboxVerticalMathBlock"></div>
+                </div>
+
+                <div class="explanation-drawer" id="sandboxStepExplanationDrawer" style="display:block; background:rgba(37,99,235,0.06); border-left-color:#2563eb;">
+                    <h4 style="color:#2563eb;">⚡ Active Computation Commentary</h4>
+                    <p id="sandboxStepExplanationText">Adjust factor numbers above or press Step-by-Step animation to trace computation paths.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="summaryScreen" class="screen glass-card">
+            <h2 style="text-align: center; margin-bottom: 6px;">📊 Evaluation Metrics</h2>
+            <p style="text-align: center; color: var(--text-muted); margin-bottom: 25px;">Multiplication proficiency session compiled successfully.</p>
+
+            <div class="badge-showcase-center">
+                <div class="badge-pop-icon" id="summaryBadgeIcon">🏆</div>
+                <h3 style="font-size: 1.6rem; margin-top: 12px;" id="summaryBadgeTitle">Multiplication Master</h3>
+            </div>
+
+            <p style="text-align: center; font-size: 1.25rem; font-weight: 700; margin-bottom: 30px;" id="summaryMetricsLabelText">Score: 50 / 50 Correct</p>
+
+            <div class="glass-card" style="background: rgba(0,0,0,0.01); padding: 22px; border-radius: var(--radius-md); border-style: dashed;">
+                <h4 style="margin-bottom: 12px; text-align: center;">🎓 Printable Achievement Certificate</h4>
+                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                    <input type="text" class="input-text-field" id="studentNameInputField" placeholder="Enter Student Name" value="Primary Arithmetic Scholar">
+                    <button class="btn btn-primary" style="padding:10px 20px; font-size:1rem;" onclick="compilePrintableCertificate()">Generate Document</button>
+                </div>
+            </div>
+
+            <div class="certificate-print-sheet" id="certificatePrintSheet">
+                <div class="cert-watermark-stamp">MULTIPLICATION</div>
+                <h2>CERTIFICATE OF MATHEMATICS</h2>
+                <p class="sub">Issued for Outstanding Structural Competency in Multi-Digit Arithmetic & Algebra Foundations</p>
+                <p class="body-text">This classroom credential verifies that</p>
+                <div class="recipient" id="certRecipientPlaceholder">Primary Arithmetic Scholar</div>
+                <p class="body-text" id="certScopeDescriptionParagraph">has systematically traversed the rigorous digital verification runtimes.</p>
+                <div style="display: flex; justify-content: space-between; margin-top: 45px; border-top: 2px dashed #e2e8f0; padding-top: 20px; font-size: 0.9rem; color: #475569;">
+                    <div>Identity Check: #MULT-QA-2026</div>
+                    <div id="certGeneratedDateStamp">Date: June 25, 2026</div>
+                    <div>Curriculum Standard Validated</div>
+                </div>
+            </div>
+
+            <div class="navigation-row" style="margin-top: 25px; justify-content: center;">
+                <button class="btn btn-secondary" onclick="exitToMainMenu()">🏠 Back to Levels</button>
+                <button class="btn btn-primary" id="printTriggerActionBtn" style="display:none;" onclick="window.print()">🖨️ Print Certificate</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // GLOBAL DATA STRATEGIES FOR THE CURRICULUM ARRAYS
+        let multiplication1Digit = [];
+        let multiplication2Digit = [];
+        let multiplication3Digit = [];
+        let multiplication4Digit = [];
+        let multiplication5Digit = [];
+
+        let currentActiveLevelIndex = 1;
+        let currentProblemPointer = 0;
+        let activeProblemSetArray = [];
+        let totalCurrentScoreMetric = 0;
+        let historicUserInputsLog = [];
+
+        // WEB AUDIO API INFRASTRUCTURE
+        let activeAudioContextNode = null;
+        function verifyAudioNodeState() {
+            if (!activeAudioContextNode) {
+                activeAudioContextNode = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+        function triggerSynthFrequencyTone(frequencyHz, waveshapeType, durationSec, currentVolume = 0.1) {
+            try {
+                verifyAudioNodeState();
+                if(!activeAudioContextNode) return;
+                let audioOscillator = activeAudioContextNode.createOscillator();
+                let audioGainNode = activeAudioContextNode.createGain();
+                audioOscillator.type = waveshapeType;
+                audioOscillator.frequency.value = frequencyHz;
+                audioGainNode.gain.setValueAtTime(currentVolume, activeAudioContextNode.currentTime);
+                audioGainNode.gain.exponentialRampToValueAtTime(0.0001, activeAudioContextNode.currentTime + durationSec);
+                audioOscillator.connect(audioGainNode);
+                audioGainNode.connect(activeAudioContextNode.destination);
+                audioOscillator.start();
+                audioOscillator.stop(activeAudioContextNode.currentTime + durationSec);
+            } catch(e) { console.warn("Audio deferred.", e); }
+        }
+        function executeAudioCue(cueDescriptor) {
+            if(cueDescriptor === 'click') triggerSynthFrequencyTone(520, 'sine', 0.08, 0.1);
+            if(cueDescriptor === 'correct') {
+                triggerSynthFrequencyTone(440, 'sine', 0.08, 0.12);
+                setTimeout(() => triggerSynthFrequencyTone(554.37, 'sine', 0.08, 0.12), 60);
+                setTimeout(() => triggerSynthFrequencyTone(659.25, 'sine', 0.22, 0.12), 120);
+            }
+            if(cueDescriptor === 'wrong') triggerSynthFrequencyTone(190, 'sawtooth', 0.3, 0.15);
+            if(cueDescriptor === 'step') triggerSynthFrequencyTone(680, 'sine', 0.05, 0.08);
+            if(cueDescriptor === 'victory') {
+                let sequence = [261.63, 329.63, 392.00, 523.25, 659.25];
+                sequence.forEach((freq, i) => {
+                    setTimeout(() => triggerSynthFrequencyTone(freq, 'sine', 0.35, 0.1), i * 110);
+                });
+            }
+        }
+
+        function toggleThemeMode() {
+            executeAudioCue('click');
+            const target = document.documentElement;
+            if(target.getAttribute('data-theme') === 'dark') {
+                target.removeAttribute('data-theme');
+            } else {
+                target.setAttribute('data-theme', 'dark');
+            }
+        }
+
+        function establishFloatingAssetPatterns() {
+            const wrapper = document.getElementById('decorationsLayer');
+            wrapper.innerHTML = '';
+            const characters = ['×', '=', '2', '3', '5', '7', '9', '✖️', '⭐', '🎈'];
+            for(let i=0; i<18; i++) {
+                let el = document.createElement('div');
+                el.className = 'floating-symbol';
+                el.innerText = characters[Math.floor(Math.random() * characters.length)];
+                el.style.left = Math.random() * 100 + '%';
+                el.style.top = Math.random() * 100 + '%';
+                el.style.animationDelay = (Math.random() * 8) + 's';
+                el.style.fontSize = (1.5 + Math.random() * 3) + 'rem';
+                wrapper.appendChild(el);
+            }
+        }
+
+        // FULLY INTEGRATED DETERMINISTIC CURRICULUM MATRIX GENERATOR
+        function constructCurriculumQuestionsEngine() {
+            const wordProblemContexts = [
+                { basket: "crates", item: "oranges" },
+                { basket: "boxes", item: "pencils" },
+                { basket: "packets", item: "stickers" },
+                { basket: "shelves", item: "books" },
+                { basket: "bags", item: "marbles" }
+            ];
+
+            // 1-DIGIT GENERATOR INLINE
+            for(let idx=1; idx<=50; idx++) {
+                let typeBranch = idx % 4;
+                let factorA = (idx % 8) + 2; 
+                let factorB = ((idx + 3) % 8) + 2;
+                let product = factorA * factorB;
+                let dataBlock = { type: "", text: "", ans: 0, exp: "", options: [] };
+
+                if(typeBranch === 1) {
+                    dataBlock.type = "SIMPLE_MULT";
+                    dataBlock.text = `Find the product:\n${factorA} × ${factorB} = ?`;
+                    dataBlock.ans = product;
+                    dataBlock.exp = `✅ Mental Math Strategy:\n${factorA} groups of ${factorB} equals ${product}.\nRepeated addition path: ${new Array(factorA).fill(factorB).join(' + ')} = ${product}.`;
+                } 
+                else if(typeBranch === 2) {
+                    dataBlock.type = "MISSING_NUMBER";
+                    dataBlock.text = `Find the missing value:\n${factorA} × □ = ${product}`;
+                    dataBlock.ans = factorB;
+                    dataBlock.exp = `✅ Logic Step:\nWe know that ${factorA} multiplied by ${factorB} yields ${product}.\nTherefore, the missing item inside the box is ${factorB}.`;
+                }
+                else if(typeBranch === 3) {
+                    dataBlock.type = "CORRECT_PRODUCT";
+                    dataBlock.text = `Which is the accurate result for the mathematical statement:\n${factorA} multiplied by ${factorB}?`;
+                    dataBlock.ans = product;
+                    dataBlock.exp = `✅ Multiplicative Breakdown:\n${factorA} × ${factorB} = ${product}.\nStandard multiplication tables verify this fact explicitly.`;
+                }
+                else {
+                    let scenario = wordProblemContexts[idx % wordProblemContexts.length];
+                    dataBlock.type = "WORD_PROBLEM";
+                    dataBlock.text = `Each of the ${factorA} ${scenario.basket} contains exactly ${factorB} ${scenario.item}.\nHow many ${scenario.item} are stored altogether?`;
+                    dataBlock.ans = product;
+                    dataBlock.exp = `✅ Word Problem Breakdown:\nTotal Objects = Number of Containers × Items per Container.\nEquation: ${factorA} × ${factorB} = ${product} ${scenario.item}.`;
+                }
+                multiplication1Digit.push(compileAndNormalizeDistractors(dataBlock, factorA, factorB));
+            }
+
+            // 2-DIGIT GENERATOR INLINE
+            for(let idx=1; idx<=50; idx++) {
+                let typeBranch = idx % 5;
+                let factorA, factorB;
+                if(typeBranch === 1 || typeBranch === 3) { factorA = 11 + (idx * 1.7); factorB = 2 + (idx % 7); } // 2d x 1d
+                else { factorA = 12 + (idx % 40); factorB = 11 + (idx % 15); } // 2d x 2d
+                
+                factorA = Math.floor(factorA); factorB = Math.floor(factorB);
+                let product = factorA * factorB;
+                let dataBlock = { type: "", text: "", ans: product, exp: "", options: [] };
+
+                if(typeBranch === 3) {
+                    dataBlock.text = `Find the missing value:\n${factorA} × □ = ${product}`;
+                    dataBlock.ans = factorB;
+                    dataBlock.exp = `✅ Division Check:\nDivide the total product by the known factor:\n${product} ÷ ${factorA} = ${factorB}.`;
+                } else if(typeBranch === 4) {
+                    dataBlock.text = `Estimate the best approximated round value product for:\n${factorA} × ${factorB}`;
+                    let roundedA = Math.round(factorA / 10) * 10;
+                    let roundedB = Math.round(factorB / 10) * 10;
+                    dataBlock.ans = roundedA * roundedB;
+                    dataBlock.exp = `✅ Estimation Mapping:\nRound ${factorA} to nearest ten → ${roundedA}.\nRound ${factorB} to nearest ten → ${roundedB}.\nEstimated product = ${roundedA} × ${roundedB} = ${dataBlock.ans}.`;
+                } else if(typeBranch === 0) {
+                    // Find Incorrect Product option setup overrides normal tracking
+                    let w1 = factorA * (factorB + 1);
+                    dataBlock.text = `Identify the statement below containing an INCORRECT product outcome:`;
+                    dataBlock.ans = `${factorA} × ${factorB} = ${product + 12}`;
+                    dataBlock.options = [
+                        `${factorA} × ${factorB} = ${product + 12}`, 
+                        `${factorA} × 2 = ${factorA * 2}`,
+                        `${factorB} × 10 = ${factorB * 10}`,
+                        `${factorA} × 5 = ${factorA * 5}`
+                    ];
+                    dataBlock.exp = `✅ Validation Audit:\n${factorA} × ${factorB} equals exactly ${product}, not ${product + 12}. Therefore, that line is wrong!`;
+                } else {
+                    dataBlock.text = `Calculate the long multiplication product:\n${factorA} × ${factorB} = ?`;
+                    dataBlock.exp = `✅ Expanded Form Strategy:\n${factorA} × ${factorB}\n= ${factorA} × ${Math.floor(factorB/10)*10} + ${factorA} × ${factorB%10}\n= ${factorA * Math.floor(factorB/10)*10} + ${factorA * (factorB%10)}\n= ${product}.`;
+                }
+                multiplication2Digit.push(typeBranch === 0 ? dataBlock : compileAndNormalizeDistractors(dataBlock, factorA, factorB));
+            }
+
+            // 3-DIGIT GENERATOR INLINE
+            for(let idx=1; idx<=50; idx++) {
+                let typeBranch = idx % 4;
+                let factorA = 100 + (idx * 17);
+                let factorB = (idx % 2 === 0) ? (2 + (idx % 7)) : (11 + (idx % 12));
+                let product = factorA * factorB;
+                let dataBlock = { type: "", text: `Solve the column multi-digit assessment:\n${factorA} × ${factorB} = ?`, ans: product, exp: "", options: [] };
+
+                if(typeBranch === 1) {
+                    dataBlock.text = `A logistics facility transfers ${factorA} pallets per delivery line. If they manage ${factorB} separate operations lines, how many total items are processed?`;
+                } else if(typeBranch === 2) {
+                    dataBlock.text = `Find the missing balance number:\n${factorA} × □ = ${product}`;
+                    dataBlock.ans = factorB;
+                }
+
+                dataBlock.exp = `✅ Multi-digit Tracking:\nMultiply by place value:\nFactor A: ${factorA}\nFactor B: ${factorB}\nTotal Product = ${product}.`;
+                multiplication3Digit.push(compileAndNormalizeDistractors(dataBlock, factorA, factorB));
+            }
+
+            // 4-DIGIT GENERATOR INLINE
+            for(let idx=1; idx<=50; idx++) {
+                let typeBranch = idx % 3;
+                let factorA = 1000 + (idx * 163);
+                let factorB = 3 + (idx % 22);
+                let product = factorA * factorB;
+                let dataBlock = { type: "", text: `Find the precise mathematical aggregate outcome:\n${factorA} × ${factorB} = ?`, ans: product, exp: "", options: [] };
+
+                if(typeBranch === 1) {
+                    dataBlock.text = `An agricultural field system harvests ${factorA} kilograms of wheat daily. How many kilograms are compiled across ${factorB} uniform harvest sequences?`;
+                }
+                dataBlock.exp = `✅ Precision Audit Step:\n${factorA} × ${factorB} = ${product.toLocaleString()}.\nVerify individual columnar carrying steps manually to practice alignment accuracy.`;
+                multiplication4Digit.push(compileAndNormalizeDistractors(dataBlock, factorA, factorB));
+            }
+
+            // 5-DIGIT GENERATOR INLINE
+            for(let idx=1; idx<=50; idx++) {
+                let factorA = 10000 + (idx * 1534);
+                let factorB = 2 + (idx % 89);
+                let product = factorA * factorB;
+                let dataBlock = { 
+                    type: "5DIGIT", 
+                    text: `Compute the advanced data load calculation sequence:\n${factorA.toLocaleString()} × ${factorB} = ?`, 
+                    ans: product, 
+                    exp: `✅ Professional Math Audit:\nStatement: ${factorA.toLocaleString()} × ${factorB}\nCalculated product = ${product.toLocaleString()}.\nStandard algorithm requires vertical carrying patterns across all 5 digit registers.`, 
+                    options: [] 
+                };
+                multiplication5Digit.push(compileAndNormalizeDistractors(dataBlock, factorA, factorB));
+            }
+        }
+
+        // ABSOLUTE DEFENSIVE OPTION COMPILER — LOOPS ARE PROTECTED WITH MAX SAFEGUARDS
+        function compileAndNormalizeDistractors(itemBlock, fA, fB) {
+            if(itemBlock.options && itemBlock.options.length >= 4) {
+                shuffleArrayDataElements(itemBlock.options);
+                return itemBlock;
+            }
+
+            let distinctPoolSet = new Set();
+            let exactAnswer = itemBlock.ans;
+            distinctPoolSet.add(String(exactAnswer).trim());
+
+            let iterationSafetyCounter = 0;
+
+            if(typeof exactAnswer === 'number') {
+                while(distinctPoolSet.size < 4 && iterationSafetyCounter < 100) {
+                    iterationSafetyCounter++;
+                    // Generate subtle variations based on close numerical targets
+                    let skewFactor = (Math.floor(Math.random() * 5) + 1) * (Math.random() > 0.5 ? 1 : -1);
+                    let placeholderCandidate = exactAnswer + skewFactor;
+                    
+                    // Or vary by adding random offsets to one of the factors
+                    if(Math.random() > 0.6) {
+                        placeholderCandidate = fA * (fB + Math.floor(Math.random() * 3) - 1);
+                    }
+                    
+                    if(placeholderCandidate > 0) {
+                        distinctPoolSet.add(String(placeholderCandidate));
+                    }
+                }
+            } else {
+                while(distinctPoolSet.size < 4 && iterationSafetyCounter < 100) {
+                    iterationSafetyCounter++;
+                    distinctPoolSet.add(`${fA} × ${fB + iterationSafetyCounter} = ${fA * (fB + iterationSafetyCounter)}`);
+                }
+            }
+
+            // ABSOLUTE FALLBACK FILLER: Hard guarantee to fill exactly 4 alternatives under all conditions
+            let secureIndex = 1;
+            while(distinctPoolSet.size < 4) {
+                if(typeof exactAnswer === 'number') {
+                    distinctPoolSet.add(String(exactAnswer + (secureIndex * 10)));
+                } else {
+                    distinctPoolSet.add(`Alternative Path Choice Variance ${secureIndex}`);
+                }
+                secureIndex++;
+            }
+
+            itemBlock.options = Array.from(distinctPoolSet);
+            shuffleArrayDataElements(itemBlock.options);
+            return itemBlock;
+        }
+
+        function shuffleArrayDataElements(targetArray) {
+            for (let i = targetArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [targetArray[i], targetArray[j]] = [targetArray[j], targetArray[i]];
+            }
+        }
+
+        // RUNTIME TRACK ENGINE NAVIGATION CONTROLS
+        function initializeQuizTrack(tierSelectionIndex) {
+            executeAudioCue('click');
+            currentActiveLevelIndex = tierSelectionIndex;
+            currentProblemPointer = 0;
+            totalCurrentScoreMetric = 0;
+
+            const trackingMatrixLabels = ["", "🟢 1-Digit Level", "🔵 2-Digit Level", "🟣 3-Digit Level", "🟠 4-Digit Level", "🔴 5-Digit Level"];
+            document.getElementById('hudLevelLabel').innerText = trackingMatrixLabels[tierSelectionIndex];
+
+            if(tierSelectionIndex === 1) activeProblemSetArray = [...multiplication1Digit];
+            if(tierSelectionIndex === 2) activeProblemSetArray = [...multiplication2Digit];
+            if(tierSelectionIndex === 3) activeProblemSetArray = [...multiplication3Digit];
+            if(tierSelectionIndex === 4) activeProblemSetArray = [...multiplication4Digit];
+            if(tierSelectionIndex === 5) activeProblemSetArray = [...multiplication5Digit];
+
+            shuffleArrayDataElements(activeProblemSetArray);
+            historicUserInputsLog = new Array(activeProblemSetArray.length).fill(null);
+
+            document.getElementById('startScreen').classList.remove('active');
+            document.getElementById('quizScreen').classList.add('active');
+
+            displayTargetProblem();
+        }
+
+        function shuffleActiveDatasetBank() {
+            executeAudioCue('click');
+            shuffleArrayDataElements(activeProblemSetArray);
+            currentProblemPointer = 0;
+            totalCurrentScoreMetric = 0;
+            historicUserInputsLog = new Array(activeProblemSetArray.length).fill(null);
+            displayTargetProblem();
+        }
+
+        function displayTargetProblem() {
+            document.getElementById('explanationDrawer').style.display = 'none';
+            document.getElementById('hudCounterLabel').innerText = `Task: ${currentProblemPointer + 1}/${activeProblemSetArray.length}`;
+            document.getElementById('hudScoreLabel').innerText = `Score: ${totalCurrentScoreMetric}`;
+
+            let fillPercentage = (currentProblemPointer / activeProblemSetArray.length) * 100;
+            document.getElementById('quizProgressBarFill').style.width = fillPercentage + '%';
+
+            let problemItem = activeProblemSetArray[currentProblemPointer];
+            document.getElementById('questionTextBox').innerText = problemItem.text;
+
+            const gridBox = document.getElementById('optionsMatrixGrid');
+            gridBox.innerHTML = '';
+
+            problemItem.options.forEach(choice => {
+                let btn = document.createElement('button');
+                btn.className = 'option-item-btn';
+                btn.innerText = choice;
+
+                // Handle string or numeric checks cleanly
+                let isLogged = historicUserInputsLog[currentProblemPointer] !== null;
+                if(isLogged) {
+                    btn.disabled = true;
+                    if(String(choice).trim() === String(problemItem.ans).trim()) {
+                        btn.classList.add('is-correct');
+                    }
+                    if(String(choice).trim() === String(historicUserInputsLog[currentProblemPointer]).trim() && 
+                       String(choice).trim() !== String(problemItem.ans).trim()) {
+                        btn.classList.add('is-wrong');
+                    }
+                } else {
+                    btn.onclick = () => verifyUserChoiceSelection(choice, btn);
+                }
+                gridBox.appendChild(btn);
+            });
+
+            if(historicUserInputsLog[currentProblemPointer] !== null) {
+                exposeExplanationDrawer();
+            }
+
+            document.getElementById('actionBtnPrev').style.visibility = (currentProblemPointer === 0) ? 'hidden' : 'visible';
+            document.getElementById('actionBtnNext').innerText = (currentProblemPointer === activeProblemSetArray.length - 1) ? "Finish 🏁" : "Next →";
+        }
+
+        function verifyUserChoiceSelection(selectedChoiceValue, buttonNode) {
+            let problemItem = activeProblemSetArray[currentProblemPointer];
+            historicUserInputsLog[currentProblemPointer] = selectedChoiceValue;
+
+            const operationalButtons = document.querySelectorAll('#optionsMatrixGrid .option-item-btn');
+            operationalButtons.forEach(b => b.disabled = true);
+
+            if(String(selectedChoiceValue).trim() === String(problemItem.ans).trim()) {
+                executeAudioCue('correct');
+                buttonNode.classList.add('is-correct');
+                totalCurrentScoreMetric++;
+                document.getElementById('hudScoreLabel').innerText = `Score: ${totalCurrentScoreMetric}`;
+            } else {
+                executeAudioCue('wrong');
+                buttonNode.classList.add('is-wrong');
+                operationalButtons.forEach(b => {
+                    if(String(b.innerText).trim() === String(problemItem.ans).trim()) {
+                        b.classList.add('is-correct');
+                    }
+                });
+            }
+            exposeExplanationDrawer();
+        }
+
+        function exposeExplanationDrawer() {
+            let problemItem = activeProblemSetArray[currentProblemPointer];
+            document.getElementById('explanationTextContainer').innerText = problemItem.exp;
+            document.getElementById('explanationDrawer').style.display = 'block';
+        }
+
+        function stepProblemIndex(directionDelta) {
+            executeAudioCue('click');
+            currentProblemPointer += directionDelta;
+
+            if(currentProblemPointer < 0) { currentProblemPointer = 0; return; }
+            if(currentProblemPointer >= activeProblemSetArray.length) {
+                concludeAssessmentSessionReport();
+                return;
+            }
+            displayTargetProblem();
+        }
+
+        function exitToMainMenu() {
+            executeAudioCue('click');
+            document.getElementById('quizScreen').className = 'screen glass-card';
+            document.getElementById('sandboxScreen').className = 'screen glass-card';
+            document.getElementById('summaryScreen').className = 'screen glass-card';
+            document.getElementById('startScreen').classList.add('active');
+        }
+
+        function concludeAssessmentSessionReport() {
+            executeAudioCue('victory');
+            triggerConfettiExplosionEffect();
+
+            document.getElementById('quizScreen').classList.remove('active');
+            document.getElementById('summaryScreen').classList.add('active');
+
+            let totalMaxItems = activeProblemSetArray.length;
+            let finalRatio = totalCurrentScoreMetric / totalMaxItems;
+
+            let icon = "📚"; let title = "Keep Practicing";
+            if(finalRatio >= 0.90) { icon = "🏆"; title = "Multiplication Master"; }
+            else if(finalRatio >= 0.70) { icon = "🌟"; title = "Number Wizard"; }
+            else if(finalRatio >= 0.50) { icon = "👍"; title = "Good Learner"; }
+
+            document.getElementById('summaryBadgeIcon').innerText = icon;
+            document.getElementById('summaryBadgeTitle').innerText = title;
+            document.getElementById('summaryMetricsLabelText').innerText = `Score: ${totalCurrentScoreMetric} / ${totalMaxItems} Correct (${Math.round(finalRatio * 100)}%)`;
+
+            document.getElementById('certificatePrintSheet').style.display = 'none';
+            document.getElementById('printTriggerActionBtn').style.display = 'none';
+        }
+
+        function triggerConfettiExplosionEffect() {
+            for(let i=0; i<80; i++) {
+                let confetti = document.createElement('div');
+                confetti.className = 'confetti-piece';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 90%, 60%)`;
+                confetti.style.transform = `scale(${0.4 + Math.random() * 0.7})`;
+                confetti.style.animationDuration = (1.5 + Math.random() * 1.5) + 's';
+                confetti.style.animationDelay = (Math.random() * 0.2) + 's';
+                document.body.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 3000);
+            }
+        }
+
+        function compilePrintableCertificate() {
+            executeAudioCue('click');
+            let nameInput = document.getElementById('studentNameInputField').value.trim();
+            if(!nameInput) nameInput = "Primary Arithmetic Scholar";
+
+            document.getElementById('certRecipientPlaceholder').innerText = nameInput;
+
+            const labels = ["", "1-Digit Level Operations", "2-Digit Level Operations", "3-Digit Level Operations", "4-Digit Level Operations", "5-Digit Level Operations"];
+            document.getElementById('certScopeDescriptionParagraph').innerText = `who has successfully satisfied the validation benchmarks of the Multi-Digit Multiplication Quiz Suite [${labels[currentActiveLevelIndex]}] with a final tracking proficiency assessment metric score of ${totalCurrentScoreMetric}/${activeProblemSetArray.length}.`;
+            
+            document.getElementById('certGeneratedDateStamp').innerText = `Date: ${new Date().toLocaleDateString()}`;
+
+            document.getElementById('certificatePrintSheet').style.display = 'block';
+            document.getElementById('printTriggerActionBtn').style.display = 'inline-flex';
+        }
+
+        // =========================================================================
+        // BONUS INTERACTIVE PRACTICE WORKSYSTEM (SANDBOX MECHANICS)
+        // =========================================================================
+        let sandboxAnimationIntervalTimer = null;
+        let sandboxCurrentStepTracker = 0;
+
+        function launchSandboxWorkspace() {
+            executeAudioCue('click');
+            document.getElementById('startScreen').classList.remove('active');
+            document.getElementById('sandboxScreen').classList.add('active');
+            renderSandboxPracticeState();
+        }
+
+        function randomizeSandboxInputs() {
+            executeAudioCue('click');
+            clearInterval(sandboxAnimationIntervalTimer);
+            
+            // Randomize between small grid arrays and multi-digit values
+            if(Math.random() > 0.5) {
+                document.getElementById('sandboxFactorA').value = Math.floor(Math.random() * 8) + 2;
+                document.getElementById('sandboxFactorB').value = Math.floor(Math.random() * 7) + 2;
+            } else {
+                document.getElementById('sandboxFactorA').value = Math.floor(Math.random() * 90) + 11;
+                document.getElementById('sandboxFactorB').value = Math.floor(Math.random() * 8) + 2;
+            }
+            renderSandboxPracticeState();
+        }
+
+        function renderSandboxPracticeState() {
+            clearInterval(sandboxAnimationIntervalTimer);
+            document.getElementById('sandboxStepExplanationText').innerText = "Adjust factors above or trigger the step tracer to see the multiplication algorithm animate.";
+
+            let valA = parseInt(document.getElementById('sandboxFactorA').value) || 0;
+            let valB = parseInt(document.getElementById('sandboxFactorB').value) || 0;
+
+            const arrayWrapper = document.getElementById('sandboxVisualArrayWrapper');
+            const verticalWrapper = document.getElementById('sandboxVerticalMathWrapper');
+
+            // If simple 1-digit values are provided, trigger visual array layout grids
+            if(valA <= 12 && valB <= 9 && valA > 0 && valB > 0) {
+                arrayWrapper.style.display = 'block';
+                const stage = document.getElementById('sandboxVisualArrayStage');
+                stage.innerHTML = '';
+
+                for(let r=0; r<valB; r++) {
+                    let rowDiv = document.createElement('div');
+                    rowDiv.className = 'array-row';
+                    for(let c=0; c<valA; c++) {
+                        let dot = document.createElement('span');
+                        dot.className = 'array-dot';
+                        rowDiv.appendChild(dot);
+                    }
+                    stage.appendChild(rowDiv);
+                }
+            } else {
+                arrayWrapper.style.display = 'none';
+            }
+
+            // Build standard static vertical equation card structure
+            const mathBlock = document.getElementById('sandboxVerticalMathBlock');
+            mathBlock.innerHTML = `
+                <div class="math-line-step" id="sbLineA">${valA}</div>
+                <div class="math-line-step" id="sbLineB">× ${valB}</div>
+                <div style="border-bottom: 3px solid var(--text-main); margin: 4px 0;"></div>
+                <div class="math-line-step" id="sbLineResult">${valA * valB}</div>
+            `;
+        }
+
+        function animateSandboxStepByStep() {
+            clearInterval(sandboxAnimationIntervalTimer);
+            executeAudioCue('click');
+
+            let valA = parseInt(document.getElementById('sandboxFactorA').value) || 0;
+            let valB = parseInt(document.getElementById('sandboxFactorB').value) || 0;
+            const mathBlock = document.getElementById('sandboxVerticalMathBlock');
+            const logBox = document.getElementById('sandboxStepExplanationText');
+
+            let unitsA = valA % 10;
+            let tensA = Math.floor(valA / 10) * 10;
+
+            sandboxCurrentStepTracker = 0;
+
+            // Simple 1-digit step animation routing
+            if(valA < 10) {
+                mathBlock.innerHTML = `
+                    <div id="sbS1" class="math-line-step">${valA}</div>
+                    <div id="sbS2" class="math-line-step">× ${valB}</div>
+                    <div style="border-bottom:3px solid var(--text-main); margin:4px 0;"></div>
+                    <div id="sbS3" class="math-line-step">?</div>
+                `;
+                
+                let stepsList = [
+                    { elementId: "sbS1", note: `Step 1: Identify top factor A = ${valA}.` },
+                    { elementId: "sbS2", note: `Step 2: Identify lower factor B = ${valB}.` },
+                    { elementId: "sbS3", note: `Step 3: Calculate the product sequence. Count all items or recall tables: ${valA} × ${valB} = ${valA * valB}.` }
+                ];
+
+                sandboxAnimationIntervalTimer = setInterval(() => {
+                    if(sandboxCurrentStepTracker >= stepsList.length) {
+                        clearInterval(sandboxAnimationIntervalTimer);
+                        document.getElementById('sbS3').innerText = valA * valB;
+                        return;
+                    }
+                    executeAudioCue('step');
+                    document.querySelectorAll('.math-line-step').forEach(el => el.classList.remove('highlight-step'));
+                    let activeStep = stepsList[sandboxCurrentStepTracker];
+                    let targetedNode = document.getElementById(activeStep.elementId);
+                    if(targetedNode) targetedNode.classList.add('highlight-step');
+                    logBox.innerText = activeStep.note;
+                    sandboxCurrentStepTracker++;
+                }, 1400);
+
+            } else {
+                // Two-digit distribution step animation routing
+                mathBlock.innerHTML = `
+                    <div id="sbL1" class="math-line-step">${valA}</div>
+                    <div id="sbL2" class="math-line-step">× ${valB}</div>
+                    <div style="border-bottom:3px solid var(--text-main); margin:4px 0;"></div>
+                    <div id="sbL3" class="math-line-step" style="font-size:1.3rem; opacity:0.6;">(Step 1: ${unitsA} × ${valB})</div>
+                    <div id="sbL4" class="math-line-step" style="font-size:1.3rem; opacity:0.6;">(Step 2: ${tensA} × ${valB})</div>
+                    <div style="border-bottom:2px dashed var(--text-main); margin:4px 0;"></div>
+                    <div id="sbL5" class="math-line-step">?</div>
+                `;
+
+                let stepsList = [
+                    { id: "sbL1", msg: `Step 1: Look at the top multi-digit number (${valA}). Let's break it down into tens and ones: ${tensA} + ${unitsA}.` },
+                    { id: "sbL3", msg: `Step 2: Multiply the ones digit first: ${unitsA} × ${valB} = ${unitsA * valB}.` },
+                    { id: "sbL4", msg: `Step 3: Multiply the tens place next: ${tensA} × ${valB} = ${tensA * valB}.` },
+                    { id: "sbL5", msg: `Step 4: Sum the partial products together: ${unitsA * valB} + ${tensA * valB} = ${valA * valB}.` }
+                ];
+
+                sandboxAnimationIntervalTimer = setInterval(() => {
+                    document.querySelectorAll('.math-line-step').forEach(el => el.classList.remove('highlight-step'));
+                    if(sandboxCurrentStepTracker >= stepsList.length) {
+                        clearInterval(sandboxAnimationIntervalTimer);
+                        document.getElementById('sbL3').innerText = unitsA * valB;
+                        document.getElementById('sbL4').innerText = `+ ${tensA * valB}`;
+                        document.getElementById('sbL5').innerText = valA * valB;
+                        return;
+                    }
+                    executeAudioCue('step');
+                    let activeStep = stepsList[sandboxCurrentStepTracker];
+                    
+                    if(sandboxCurrentStepTracker === 1) document.getElementById('sbL3').innerText = unitsA * valB;
+                    if(sandboxCurrentStepTracker === 2) document.getElementById('sbL4').innerText = `+ ${tensA * valB}`;
+                    
+                    let node = document.getElementById(activeStep.id);
+                    if(node) node.classList.add('highlight-step');
+                    logBox.innerText = activeStep.msg;
+                    sandboxCurrentStepTracker++;
+                }, 1800);
+            }
+        }
+
+        window.onload = () => {
+            constructCurriculumQuestionsEngine();
+            establishFloatingAssetPatterns();
+        };
+    </script>
+</body>
+</html>

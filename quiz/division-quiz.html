@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>➗ Division Quiz</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #e0e7ff 0%, #fce7f3 50%, #dcfce7 100%);
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --card-border: rgba(255, 255, 255, 0.6);
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --accent-pink: #ec4899;
+            --success: #10b981;
+            --danger: #ef4444;
+            --shadow: 0 10px 35px -5px rgba(15, 23, 42, 0.1);
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --radius-sm: 8px;
+        }
+
+        [data-theme="dark"] {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #312e81 50%, #064e3b 100%);
+            --card-bg: rgba(15, 23, 42, 0.85);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-muted: #cbd5e1;
+            --shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            background-size: 400% 400%;
+            animation: gradientShift 25s ease infinite;
+            min-height: 100vh;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .decorations-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            overflow: hidden;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .floating-symbol {
+            position: absolute;
+            font-weight: 800;
+            color: rgba(99, 102, 241, 0.08);
+            animation: floatAnim 18s ease-in-out infinite;
+        }
+        [data-theme="dark"] .floating-symbol { color: rgba(255, 255, 255, 0.04); }
+
+        @keyframes floatAnim {
+            0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+            50% { transform: translateY(-60px) rotate(30deg) scale(1.1); }
+        }
+
+        .container { width: 100%; max-width: 900px; z-index: 10; margin-top: 10px; }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            padding: 35px;
+            margin-bottom: 25px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            width: 100%; max-width: 900px; margin-bottom: 15px; z-index: 10;
+        }
+        .brand h1 {
+            font-size: 2.5rem; font-weight: 800;
+            background: linear-gradient(45deg, #6366f1, #ec4899, #10b981);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .brand p { font-size: 1.1rem; color: var(--text-muted); margin-top: 4px; font-weight: 600; }
+        
+        .circle-btn {
+            background: var(--card-bg); border: 1px solid var(--card-border);
+            width: 50px; height: 50px; border-radius: 50%; cursor: pointer;
+            font-size: 1.3rem; display: flex; align-items: center; justify-content: center;
+            box-shadow: var(--shadow); transition: transform 0.2s; color: var(--text-main);
+        }
+        .circle-btn:active { transform: scale(0.9); }
+
+        .hud-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+        .hud-pill {
+            background: rgba(99, 102, 241, 0.1); padding: 8px 16px; border-radius: 50px;
+            font-weight: 700; font-size: 0.95rem; color: var(--text-main); border: 1px solid rgba(99, 102, 241, 0.15);
+        }
+        .progress-bar-container {
+            width: 100%; height: 14px; background: rgba(0, 0, 0, 0.05);
+            border-radius: 50px; margin-bottom: 25px; overflow: hidden; border: 1px solid var(--card-border);
+        }
+        .progress-bar-fill {
+            height: 100%; width: 0%; background: linear-gradient(90deg, #6366f1, #ec4899, #10b981);
+            border-radius: 50px; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn {
+            padding: 14px 28px; border-radius: var(--radius-md); font-weight: 700; font-size: 1.05rem;
+            border: none; cursor: pointer; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
+        .btn:active { transform: translateY(1px); }
+        .btn-primary { background: linear-gradient(45deg, #6366f1, #a855f7); color: white; }
+        .btn-secondary { background: rgba(0, 0, 0, 0.04); color: var(--text-main); border: 1px solid var(--card-border); }
+        [data-theme="dark"] .btn-secondary { background: rgba(255,255,255,0.06); }
+
+        .screen { display: none; }
+        .screen.active { display: block; animation: slideFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes slideFadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .level-selection-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 25px; }
+        @media(min-width: 650px) { .level-selection-grid { grid-template-columns: 1fr 1fr; } }
+        
+        .lvl-card-btn {
+            padding: 26px; border-radius: var(--radius-md); border: none; color: white;
+            font-weight: 700; font-size: 1.2rem; cursor: pointer; text-align: left;
+            display: flex; align-items: center; justify-content: space-between; box-shadow: var(--shadow);
+            transition: transform 0.2s, filter 0.2s;
+        }
+        .lvl-card-btn:hover { transform: scale(1.02); filter: brightness(1.08); }
+        .lvl-card-btn:active { transform: scale(0.98); }
+        .l-1 { background: linear-gradient(135deg, #10b981, #047857); }
+        .l-2 { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+        .l-3 { background: linear-gradient(135deg, #8b5cf6, #5b21b6); }
+        .l-4 { background: linear-gradient(135deg, #f59e0b, #b45309); }
+        .l-5 { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+
+        .sandbox-promo-card {
+            margin-top: 30px; background: linear-gradient(135deg, #14b8a6, #0f766e);
+            color: white; border-radius: var(--radius-md); padding: 25px; text-align: center; box-shadow: var(--shadow);
+        }
+
+        .question-text-box { font-size: 1.6rem; font-weight: 700; margin-bottom: 25px; line-height: 1.45; white-space: pre-line; }
+
+        .options-vertical-stack { display: grid; grid-template-columns: 1fr; gap: 14px; margin-bottom: 35px; }
+        @media(min-width: 600px) { .options-vertical-stack { grid-template-columns: 1fr 1fr; } }
+
+        .option-item-btn {
+            background: var(--card-bg); border: 2px solid var(--card-border); padding: 18px 22px;
+            border-radius: var(--radius-md); font-size: 1.25rem; font-weight: 600; color: var(--text-main);
+            cursor: pointer; transition: all 0.2s; text-align: left;
+        }
+        .option-item-btn:hover:not(:disabled) { border-color: var(--primary); background: rgba(99, 102, 241, 0.05); transform: translateY(-2px); }
+        .option-item-btn.is-correct { background: #10b981 !important; border-color: #059669 !important; color: white !important; }
+        .option-item-btn.is-wrong { background: #ef4444 !important; border-color: #dc2626 !important; color: white !important; }
+        .option-item-btn:disabled { cursor: not-allowed; opacity: 0.95; }
+
+        .explanation-drawer {
+            background: rgba(16, 185, 129, 0.08); border-left: 6px solid var(--success);
+            padding: 22px; border-radius: var(--radius-sm); margin-bottom: 30px; display: none;
+        }
+        .explanation-drawer h4 { color: var(--success); margin-bottom: 8px; font-size: 1.2rem; }
+        .explanation-drawer p { font-size: 1.1rem; line-height: 1.55; white-space: pre-line; font-family: monospace, sans-serif; }
+
+        .navigation-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+        /* SANDBOX / INTERACTIVE BUILDER STYLES */
+        .sandbox-workspace-panel { display: flex; flex-direction: column; gap: 20px; width: 100%; }
+        .sandbox-controls-box {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background: rgba(0,0,0,0.02);
+            padding: 20px; border-radius: var(--radius-md);
+        }
+        .control-widget { display: flex; flex-direction: column; gap: 8px; }
+        .control-widget label { font-weight: 700; font-size: 0.95rem; color: var(--text-muted); }
+        .input-text-field {
+            padding: 12px 18px; border-radius: var(--radius-sm); border: 2px solid var(--card-border);
+            background: var(--card-bg); color: var(--text-main); font-size: 1.1rem; width: 100%; font-weight: 600;
+        }
+
+        .long-div-container {
+            font-family: 'Courier New', Courier, monospace; font-size: 1.5rem; font-weight: 700;
+            display: flex; justify-content: center; margin: 20px 0; background: var(--card-bg);
+            border: 2px dashed var(--card-border); padding: 30px; border-radius: var(--radius-md); overflow-x: auto;
+        }
+        .ld-wrapper { display: inline-grid; grid-template-columns: auto auto; grid-column-gap: 8px; align-items: start; }
+        .ld-divisor { text-align: right; padding-right: 5px; margin-top: 1.6rem; }
+        .ld-body { display: flex; flex-direction: column; }
+        .ld-quotient { letter-spacing: 4px; padding-bottom: 4px; border-bottom: 2px solid var(--text-main); text-align: left; margin-left: 2px; min-height: 1.8rem; color: #ec4899; }
+        .ld-dividend { letter-spacing: 4px; text-align: left; padding-top: 2px; padding-left: 4px; border-left: 2px solid var(--text-main); border-bottom-left-radius: 8px; }
+        .ld-work-row { letter-spacing: 4px; text-align: left; padding-left: 4px; color: var(--text-muted); opacity: 0; transition: opacity 0.4s, transform 0.4s; transform: translateY(-5px); }
+        .ld-work-row.visible { opacity: 1; transform: translateY(0); }
+        .ld-sub-line { border-bottom: 2px solid var(--text-muted); width: max-content; }
+        .ld-remainder { letter-spacing: 4px; text-align: left; padding-left: 4px; color: var(--primary); font-weight: 800; }
+
+        .badge-showcase-center { text-align: center; margin: 25px 0; }
+        .badge-pop-icon { font-size: 5.5rem; animation: popBounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes popBounce { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .certificate-print-sheet {
+            display: none; background: #ffffff; color: #0f172a; border: 12px double #4f46e5;
+            padding: 45px; border-radius: 4px; text-align: center; position: relative;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-top: 30px;
+        }
+        .certificate-print-sheet h2 { font-family: 'Georgia', serif; font-size: 2.5rem; color: #1e293b; margin-bottom: 6px; }
+        .certificate-print-sheet .sub { font-style: italic; color: #475569; margin-bottom: 25px; }
+        .certificate-print-sheet .recipient { font-size: 2.2rem; font-weight: 800; border-bottom: 2px solid #4f46e5; display: inline-block; padding: 0 40px 6px 40px; margin: 15px 0; color: #6366f1; }
+        .certificate-print-sheet .body-text { font-size: 1.2rem; line-height: 1.6; margin: 20px auto; max-width: 650px; }
+        .cert-watermark-stamp { position: absolute; font-size: 9rem; color: rgba(99, 102, 241, 0.03); top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg); font-weight: 900; width: 100%; text-align: center; pointer-events: none; }
+
+        .confetti-piece { position: fixed; width: 10px; height: 10px; z-index: 9999; top: -12px; animation: fallAnimation linear forwards; }
+        @keyframes fallAnimation { to { transform: translateY(105vh) rotate(360deg); } }
+
+        @media print {
+            body * { visibility: hidden; background: none !important; }
+            .certificate-print-sheet, .certificate-print-sheet * { visibility: visible; }
+            .certificate-print-sheet { position: absolute; left: 0; top: 0; width: 100%; border: 5px solid #4f46e5; box-shadow: none; display: block !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="decorations-layer" id="decorationsLayer"></div>
+
+    <header>
+        <div class="brand">
+            <h1>➗ Division Quiz</h1>
+            <p>Divide • Think • Solve • Master Division</p>
+        </div>
+        <button class="circle-btn" onclick="toggleThemeMode()" title="Toggle Dark/Light Mode">🌓</button>
+    </header>
+
+    <div class="container">
+        
+        <div id="startScreen" class="screen active glass-card">
+            <h3 style="font-size: 1.5rem; margin-bottom: 10px; text-align: center;">Choose Difficulty Level</h3>
+            <p style="color: var(--text-muted); text-align: center; margin-bottom: 25px;">Each level provides 50 exact whole-number division challenges.</p>
+            
+            <div class="level-selection-grid">
+                <button class="lvl-card-btn l-1" onclick="initiateQuizTrack(1)">
+                    <span>🟢 1-Digit Division</span><span style="font-size: 0.95rem; opacity: 0.9;">50 Qs</span>
+                </button>
+                <button class="lvl-card-btn l-2" onclick="initiateQuizTrack(2)">
+                    <span>🔵 2-Digit Division</span><span style="font-size: 0.95rem; opacity: 0.9;">50 Qs</span>
+                </button>
+                <button class="lvl-card-btn l-3" onclick="initiateQuizTrack(3)">
+                    <span>🟣 3-Digit Division</span><span style="font-size: 0.95rem; opacity: 0.9;">50 Qs</span>
+                </button>
+                <button class="lvl-card-btn l-4" onclick="initiateQuizTrack(4)">
+                    <span>🟠 4-Digit Division</span><span style="font-size: 0.95rem; opacity: 0.9;">50 Qs</span>
+                </button>
+                <button class="lvl-card-btn l-5" onclick="initiateQuizTrack(5)">
+                    <span>🔴 5-Digit Division</span><span style="font-size: 0.95rem; opacity: 0.9;">50 Qs</span>
+                </button>
+            </div>
+
+            <div class="sandbox-promo-card">
+                <h4 style="margin-bottom: 8px; font-size: 1.4rem;">🎮 Interactive Long Division Builder</h4>
+                <p style="font-size: 1rem; margin-bottom: 18px; opacity: 0.95;">Visualize and trace the exact steps of standard algorithm long division dynamically.</p>
+                <button class="btn btn-secondary" style="background: #ffffff; color: #0f766e; border: none; width: 100%;" onclick="openSandboxTool()">Open Practice Sandbox</button>
+            </div>
+        </div>
+
+        <div id="quizScreen" class="screen glass-card">
+            <div class="hud-row">
+                <button class="btn btn-secondary" style="padding: 7px 14px; font-size: 0.9rem;" onclick="returnToMainMenu()">🏠 Change Difficulty</button>
+                <div style="display: flex; gap: 8px;">
+                    <div class="hud-pill" id="hudLevelLabel">Level</div>
+                    <div class="hud-pill" id="hudCounterLabel">Task: 1/50</div>
+                    <div class="hud-pill" id="hudScoreLabel" style="background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.2);">Score: 0</div>
+                </div>
+            </div>
+
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="quizProgressBarFill"></div>
+            </div>
+
+            <div class="question-text-box" id="questionTextBox">Generating questions...</div>
+            <div class="options-vertical-stack" id="optionsMatrixGrid"></div>
+
+            <div class="explanation-drawer" id="explanationDrawer">
+                <h4>💡 Division Logic Breakdown</h4>
+                <p id="explanationTextContainer"></p>
+            </div>
+
+            <div class="navigation-row">
+                <button class="btn btn-secondary" id="actionBtnPrev" onclick="navigateProblem(-1)">← Previous</button>
+                <button class="btn btn-secondary" onclick="shuffleActiveQuiz()">🔀 Shuffle Questions</button>
+                <button class="btn btn-primary" id="actionBtnNext" onclick="navigateProblem(1)">Next →</button>
+            </div>
+        </div>
+
+        <div id="sandboxScreen" class="screen glass-card">
+            <div class="hud-row">
+                <button class="btn btn-secondary" style="padding: 7px 14px; font-size: 0.9rem;" onclick="returnToMainMenu()">🏠 Main Menu</button>
+                <div class="hud-pill" style="background: #14b8a6; color: white;">Long Division Trace Tool</div>
+            </div>
+
+            <div class="sandbox-workspace-panel">
+                <div class="sandbox-controls-box">
+                    <div class="control-widget">
+                        <label>Dividend (Inside Number):</label>
+                        <input type="number" id="sbDividend" class="input-text-field" value="936" min="1" max="99999" oninput="resetSandboxView()">
+                    </div>
+                    <div class="control-widget">
+                        <label>Divisor (Outside Number):</label>
+                        <input type="number" id="sbDivisor" class="input-text-field" value="12" min="1" max="999" oninput="resetSandboxView()">
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin: 10px 0; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="animateLongDivision()">🎬 Step-by-Step Solve</button>
+                    <button class="btn btn-secondary" onclick="randomizeSandboxVals()">🎲 Random Question</button>
+                </div>
+
+                <div class="long-div-container" id="longDivisionStage">
+                    <p style="color: var(--text-muted); font-size: 1.1rem; font-family: sans-serif; font-weight: 500;">Enter numbers above and click 'Step-by-Step Solve'</p>
+                </div>
+
+                <div class="explanation-drawer" id="sandboxExplanationDrawer" style="display:block; background:rgba(99,102,241,0.06); border-left-color:#6366f1;">
+                    <h4 style="color:#6366f1;">⚡ Action Log</h4>
+                    <p id="sbActionLog">Waiting to start computation...</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="summaryScreen" class="screen glass-card">
+            <h2 style="text-align: center; margin-bottom: 6px;">📊 Evaluation Metrics</h2>
+            <p style="text-align: center; color: var(--text-muted); margin-bottom: 25px;">Session complete.</p>
+
+            <div class="badge-showcase-center">
+                <div class="badge-pop-icon" id="summaryBadgeIcon">🏆</div>
+                <h3 style="font-size: 1.6rem; margin-top: 12px;" id="summaryBadgeTitle">Division Master</h3>
+            </div>
+
+            <p style="text-align: center; font-size: 1.25rem; font-weight: 700; margin-bottom: 30px;" id="summaryMetricsLabelText">Score: 50 / 50 Correct</p>
+
+            <div class="glass-card" style="background: rgba(0,0,0,0.01); padding: 22px; border-radius: var(--radius-md); border-style: dashed;">
+                <h4 style="margin-bottom: 12px; text-align: center;">🎓 Printable Achievement Certificate</h4>
+                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                    <input type="text" class="input-text-field" id="studentNameInput" placeholder="Enter Student Name" value="Math Scholar" style="width:250px;">
+                    <button class="btn btn-primary" onclick="generateCertificate()">Issue Document</button>
+                </div>
+            </div>
+
+            <div class="certificate-print-sheet" id="certificatePrintSheet">
+                <div class="cert-watermark-stamp">DIVISION</div>
+                <h2>CERTIFICATE OF MATHEMATICS</h2>
+                <p class="sub">Awarded for Mastery in Exact Arithmetic Division Logic</p>
+                <p class="body-text">This credential officially certifies that</p>
+                <div class="recipient" id="certRecipient">Math Scholar</div>
+                <p class="body-text" id="certScopeDescription">has completed the rigorous Division Assessment.</p>
+                <div style="display: flex; justify-content: space-between; margin-top: 45px; border-top: 2px dashed #cbd5e1; padding-top: 20px; font-size: 0.9rem; color: #64748b;">
+                    <div>Verification Code: #DIV-QA-2026</div>
+                    <div id="certDate">Date: --</div>
+                    <div>Curriculum Standard Met</div>
+                </div>
+            </div>
+
+            <div class="navigation-row" style="margin-top: 25px; justify-content: center;">
+                <button class="btn btn-secondary" onclick="returnToMainMenu()">🏠 Back to Levels</button>
+                <button class="btn btn-primary" id="printBtn" style="display:none;" onclick="window.print()">🖨️ Print Certificate</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- 1. CORE DATA STRUCTURES ---
+        const Q_BANKS = {
+            1: [], 2: [], 3: [], 4: [], 5: []
+        };
+        
+        let currentLevel = 1;
+        let currentProblemIndex = 0;
+        let activeBank = [];
+        let score = 0;
+        let userAnswersLog = [];
+
+        // --- 2. PROCEDURAL QUESTION GENERATION (Strictly Exact Whole Numbers) ---
+        function generateAllQuestions() {
+            const wordContexts = [
+                { items: "apples", container: "baskets" },
+                { items: "marbles", container: "bags" },
+                { items: "books", container: "shelves" },
+                { items: "candies", container: "jars" },
+                { items: "students", container: "groups" }
+            ];
+
+            // Helper to create options
+            function generateOptionsSet(correctAns) {
+                let opts = new Set([String(correctAns)]);
+                let safety = 0;
+                while (opts.size < 4 && safety < 50) {
+                    safety++;
+                    // Generate logical distractors
+                    let shift = Math.floor(Math.random() * 5) + 1;
+                    let sign = Math.random() > 0.5 ? 1 : -1;
+                    let distractor = correctAns + (shift * sign);
+                    
+                    if (Math.random() > 0.7) distractor = correctAns * 10;
+                    if (Math.random() > 0.8 && correctAns > 10) distractor = Math.floor(correctAns / 10);
+                    
+                    if (distractor > 0) opts.add(String(distractor));
+                }
+                // Fallback
+                let fallback = 1;
+                while(opts.size < 4) { opts.add(String(correctAns + fallback)); fallback++; }
+                return Array.from(opts).sort(() => Math.random() - 0.5);
+            }
+
+            for (let level = 1; level <= 5; level++) {
+                Q_BANKS[level] = [];
+                for (let i = 1; i <= 50; i++) {
+                    let divisor, quotient, dividend;
+
+                    // Mathematics logic boundaries per level ensuring absolute exact division
+                    if (level === 1) { // 1-Digit
+                        divisor = Math.floor(Math.random() * 8) + 2; // 2 to 9
+                        quotient = Math.floor(Math.random() * 11) + 2; // 2 to 12
+                    } else if (level === 2) { // 2-Digit
+                        divisor = Math.floor(Math.random() * 14) + 2; // 2 to 15
+                        quotient = Math.floor(Math.random() * 40) + 5;
+                        // Ensure dividend is strictly 2-digits most of the time
+                        if(divisor * quotient > 99) quotient = Math.floor(90 / divisor);
+                        if(quotient < 2) quotient = 2;
+                    } else if (level === 3) { // 3-Digit
+                        divisor = Math.floor(Math.random() * 24) + 2; 
+                        quotient = Math.floor(Math.random() * 40) + 12;
+                        // Force 3-digit dividend
+                        dividend = divisor * quotient;
+                        if(dividend < 100) { quotient += 10; }
+                        if(dividend > 999) { quotient = Math.floor(900 / divisor); }
+                    } else if (level === 4) { // 4-Digit
+                        divisor = Math.floor(Math.random() * 45) + 3;
+                        quotient = Math.floor(Math.random() * 200) + 50;
+                        dividend = divisor * quotient;
+                        if(dividend < 1000) quotient += 50;
+                        if(dividend > 9999) quotient = Math.floor(9500 / divisor);
+                    } else if (level === 5) { // 5-Digit
+                        divisor = Math.floor(Math.random() * 120) + 5;
+                        quotient = Math.floor(Math.random() * 1500) + 200;
+                        dividend = divisor * quotient;
+                        if(dividend < 10000) quotient += 500;
+                    }
+
+                    dividend = divisor * quotient;
+                    
+                    let qObj = { type: "", text: "", ans: quotient, exp: "", options: [] };
+                    let typeMod = i % 5;
+
+                    // Question Archetypes Mix
+                    if (typeMod === 0) {
+                        qObj.type = "SIMPLE";
+                        qObj.text = `Solve the exact division:\n${dividend.toLocaleString()} ÷ ${divisor} = ?`;
+                        qObj.exp = `✅ Mental Math / Direct Calculation:\n${dividend.toLocaleString()} divided by ${divisor} is exactly ${quotient.toLocaleString()}.\nInverse Check: ${divisor} × ${quotient.toLocaleString()} = ${dividend.toLocaleString()}`;
+                    } else if (typeMod === 1) {
+                        qObj.type = "MISSING";
+                        qObj.text = `Find the missing dividend value:\n□ ÷ ${divisor} = ${quotient.toLocaleString()}`;
+                        qObj.ans = dividend;
+                        qObj.exp = `✅ Algebra Step:\nMultiply the quotient by the divisor to find the missing dividend:\n${quotient.toLocaleString()} × ${divisor} = ${dividend.toLocaleString()}`;
+                    } else if (typeMod === 2) {
+                        qObj.type = "CORRECT_QUOTIENT";
+                        qObj.text = `Identify the correct quotient for:\n${dividend.toLocaleString()} divided by ${divisor}`;
+                        qObj.exp = `✅ Long Division Concept:\nWhen you divide ${dividend.toLocaleString()} into ${divisor} equal parts, each part contains exactly ${quotient.toLocaleString()}.`;
+                    } else if (typeMod === 3) {
+                        let ctx = wordContexts[i % wordContexts.length];
+                        qObj.type = "WORD";
+                        qObj.text = `There are ${dividend.toLocaleString()} ${ctx.items} distributed equally among ${divisor} ${ctx.container}.\nHow many ${ctx.items} are in each container?`;
+                        qObj.exp = `✅ Word Problem Logic:\nTotal items (${dividend.toLocaleString()}) ÷ Number of groups (${divisor}) = Items per group (${quotient.toLocaleString()}).`;
+                    } else {
+                        // Find incorrect statement (Mental Math Challenge)
+                        qObj.type = "INCORRECT_FINDER";
+                        let wrongQuotient = quotient + 2;
+                        qObj.text = `Which division statement is mathematically INCORRECT?`;
+                        qObj.ans = `${dividend.toLocaleString()} ÷ ${divisor} = ${wrongQuotient.toLocaleString()}`;
+                        
+                        let baseOptions = new Set();
+                        baseOptions.add(qObj.ans); // The wrong one (the "correct" answer to click)
+                        baseOptions.add(`${dividend.toLocaleString()} ÷ ${divisor} = ${quotient.toLocaleString()}`); // True
+                        baseOptions.add(`${(divisor*2)} ÷ ${divisor} = 2`); // True
+                        if(divisor > 2) baseOptions.add(`${(divisor*3)} ÷ ${divisor} = 3`); // True
+                        else baseOptions.add(`${(quotient*10)} ÷ 10 = ${quotient}`); // True
+
+                        while(baseOptions.size < 4) { baseOptions.add(`100 ÷ 10 = 10`); }
+                        qObj.options = Array.from(baseOptions).sort(() => Math.random() - 0.5);
+                        qObj.exp = `✅ Validation Audit:\n${dividend.toLocaleString()} ÷ ${divisor} is actually ${quotient.toLocaleString()}, not ${wrongQuotient.toLocaleString()}. Therefore, that specific statement is incorrect!`;
+                    }
+
+                    if(!qObj.options.length) {
+                        qObj.options = generateOptionsSet(qObj.ans);
+                    }
+                    
+                    Q_BANKS[level].push(qObj);
+                }
+            }
+        }
+
+        // --- 3. AUDIO SYSTEM (Web Audio API) ---
+        let actx = null;
+        function initAudio() { if(!actx) actx = new (window.AudioContext || window.webkitAudioContext)(); }
+        function playTone(freq, type, dur, vol) {
+            try {
+                initAudio(); if(!actx) return;
+                let osc = actx.createOscillator(); let gn = actx.createGain();
+                osc.type = type; osc.frequency.value = freq;
+                gn.gain.setValueAtTime(vol, actx.currentTime);
+                gn.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + dur);
+                osc.connect(gn); gn.connect(actx.destination);
+                osc.start(); osc.stop(actx.currentTime + dur);
+            } catch(e) {}
+        }
+        function playSound(snd) {
+            if(snd === 'click') playTone(600, 'sine', 0.1, 0.1);
+            if(snd === 'correct') { playTone(500, 'sine', 0.1, 0.1); setTimeout(()=>playTone(700,'sine',0.2,0.1), 100); }
+            if(snd === 'wrong') playTone(200, 'sawtooth', 0.3, 0.15);
+            if(snd === 'step') playTone(800, 'triangle', 0.05, 0.05);
+            if(snd === 'victory') { [300, 400, 500, 600, 800].forEach((f, i) => setTimeout(() => playTone(f, 'sine', 0.3, 0.1), i*100)); }
+        }
+
+        // --- 4. UI INTERACTIONS & FLOW ---
+        function toggleThemeMode() {
+            playSound('click');
+            const root = document.documentElement;
+            root.getAttribute('data-theme') === 'dark' ? root.removeAttribute('data-theme') : root.setAttribute('data-theme', 'dark');
+        }
+
+        function createDecorations() {
+            const layer = document.getElementById('decorationsLayer');
+            layer.innerHTML = '';
+            const sym = ['÷', '=', '➗', '2', '5', '8', '✨'];
+            for(let i=0; i<15; i++) {
+                let el = document.createElement('div');
+                el.className = 'floating-symbol';
+                el.innerText = sym[Math.floor(Math.random() * sym.length)];
+                el.style.left = `${Math.random() * 100}%`; el.style.top = `${Math.random() * 100}%`;
+                el.style.animationDelay = `${Math.random() * 5}s`; el.style.fontSize = `${2 + Math.random() * 3}rem`;
+                layer.appendChild(el);
+            }
+        }
+
+        function initiateQuizTrack(level) {
+            playSound('click');
+            currentLevel = level;
+            currentProblemIndex = 0;
+            score = 0;
+            activeBank = [...Q_BANKS[level]].sort(() => Math.random() - 0.5); // Shuffle bank
+            userAnswersLog = new Array(50).fill(null);
+
+            const lvlNames = ["", "🟢 1-Digit Level", "🔵 2-Digit Level", "🟣 3-Digit Level", "🟠 4-Digit Level", "🔴 5-Digit Level"];
+            document.getElementById('hudLevelLabel').innerText = lvlNames[level];
+
+            switchScreen('startScreen', 'quizScreen');
+            renderQuestion();
+        }
+
+        function shuffleActiveQuiz() {
+            playSound('click');
+            activeBank.sort(() => Math.random() - 0.5);
+            currentProblemIndex = 0; score = 0;
+            userAnswersLog = new Array(50).fill(null);
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            document.getElementById('explanationDrawer').style.display = 'none';
+            document.getElementById('hudCounterLabel').innerText = `Task: ${currentProblemIndex + 1}/50`;
+            document.getElementById('hudScoreLabel').innerText = `Score: ${score}`;
+            document.getElementById('quizProgressBarFill').style.width = `${(currentProblemIndex / 50) * 100}%`;
+
+            let q = activeBank[currentProblemIndex];
+            document.getElementById('questionTextBox').innerText = q.text;
+
+            const grid = document.getElementById('optionsMatrixGrid');
+            grid.innerHTML = '';
+
+            q.options.forEach(opt => {
+                let btn = document.createElement('button');
+                btn.className = 'option-item-btn';
+                btn.innerText = opt;
+                
+                let isAnswered = userAnswersLog[currentProblemIndex] !== null;
+                if (isAnswered) {
+                    btn.disabled = true;
+                    if (String(opt) === String(q.ans)) btn.classList.add('is-correct');
+                    if (String(opt) === String(userAnswersLog[currentProblemIndex]) && String(opt) !== String(q.ans)) btn.classList.add('is-wrong');
+                } else {
+                    btn.onclick = () => handleAnswer(opt, btn, q);
+                }
+                grid.appendChild(btn);
+            });
+
+            if (userAnswersLog[currentProblemIndex] !== null) showExplanation(q.exp);
+
+            document.getElementById('actionBtnPrev').style.visibility = currentProblemIndex === 0 ? 'hidden' : 'visible';
+            document.getElementById('actionBtnNext').innerText = currentProblemIndex === 49 ? "Finish 🏁" : "Next →";
+        }
+
+        function handleAnswer(selected, btnElement, qObj) {
+            userAnswersLog[currentProblemIndex] = selected;
+            const btns = document.querySelectorAll('.option-item-btn');
+            btns.forEach(b => b.disabled = true);
+
+            if (String(selected) === String(qObj.ans)) {
+                playSound('correct'); btnElement.classList.add('is-correct');
+                score++; document.getElementById('hudScoreLabel').innerText = `Score: ${score}`;
+            } else {
+                playSound('wrong'); btnElement.classList.add('is-wrong');
+                btns.forEach(b => { if (String(b.innerText) === String(qObj.ans)) b.classList.add('is-correct'); });
+            }
+            showExplanation(qObj.exp);
+        }
+
+        function showExplanation(text) {
+            document.getElementById('explanationTextContainer').innerText = text;
+            document.getElementById('explanationDrawer').style.display = 'block';
+        }
+
+        function navigateProblem(dir) {
+            playSound('click');
+            currentProblemIndex += dir;
+            if (currentProblemIndex < 0) currentProblemIndex = 0;
+            if (currentProblemIndex > 49) { endQuiz(); return; }
+            renderQuestion();
+        }
+
+        function endQuiz() {
+            playSound('victory');
+            triggerConfetti();
+            switchScreen('quizScreen', 'summaryScreen');
+
+            let ratio = score / 50;
+            let icon = "📚", title = "Keep Practicing";
+            if (ratio >= 0.9) { icon = "🏆"; title = "Division Master"; }
+            else if (ratio >= 0.7) { icon = "🌟"; title = "Quotient Champion"; }
+            else if (ratio >= 0.5) { icon = "👍"; title = "Good Learner"; }
+
+            document.getElementById('summaryBadgeIcon').innerText = icon;
+            document.getElementById('summaryBadgeTitle').innerText = title;
+            document.getElementById('summaryMetricsLabelText').innerText = `Score: ${score} / 50 Correct (${Math.round(ratio*100)}%)`;
+            
+            document.getElementById('certificatePrintSheet').style.display = 'none';
+            document.getElementById('printBtn').style.display = 'none';
+        }
+
+        function generateCertificate() {
+            playSound('click');
+            let name = document.getElementById('studentNameInput').value.trim() || "Math Scholar";
+            document.getElementById('certRecipient').innerText = name;
+            
+            const lvlNames = ["", "1-Digit", "2-Digit", "3-Digit", "4-Digit", "5-Digit"];
+            document.getElementById('certScopeDescription').innerText = `has systematically executed and passed the rigorous ${lvlNames[currentLevel]} Division structural runtime with a final verified metric score of ${score}/50.`;
+            document.getElementById('certDate').innerText = `Date: ${new Date().toLocaleDateString()}`;
+
+            document.getElementById('certificatePrintSheet').style.display = 'block';
+            document.getElementById('printBtn').style.display = 'inline-flex';
+        }
+
+        // --- 5. SANDBOX / LONG DIVISION TRACER ---
+        let sbAnimTimer = null;
+        
+        function openSandboxTool() {
+            playSound('click');
+            switchScreen('startScreen', 'sandboxScreen');
+            resetSandboxView();
+        }
+
+        function randomizeSandboxVals() {
+            playSound('click');
+            let d = Math.floor(Math.random() * 12) + 2;
+            let q = Math.floor(Math.random() * 90) + 11;
+            document.getElementById('sbDivisor').value = d;
+            document.getElementById('sbDividend').value = d * q;
+            resetSandboxView();
+        }
+
+        function resetSandboxView() {
+            clearInterval(sbAnimTimer);
+            document.getElementById('sbActionLog').innerText = "Adjust values and click 'Step-by-Step Solve'.";
+            document.getElementById('longDivisionStage').innerHTML = `<p style="color:var(--text-muted);">Ready to process mathematical trace.</p>`;
+        }
+
+        function animateLongDivision() {
+            playSound('click');
+            clearInterval(sbAnimTimer);
+            
+            let dividend = parseInt(document.getElementById('sbDividend').value);
+            let divisor = parseInt(document.getElementById('sbDivisor').value);
+            let log = document.getElementById('sbActionLog');
+
+            if (!dividend || !divisor || divisor === 0) {
+                log.innerText = "⚠️ Invalid arithmetic inputs. Divisor cannot be zero.";
+                return;
+            }
+
+            // Generate Step-by-Step Data
+            let steps = [];
+            let divStr = dividend.toString();
+            let currentVal = 0;
+            let quotientStr = "";
+
+            for(let i=0; i<divStr.length; i++) {
+                currentVal = currentVal * 10 + parseInt(divStr[i]);
+                let qDigit = Math.floor(currentVal / divisor);
+                let subVal = qDigit * divisor;
+                let rem = currentVal - subVal;
+                
+                quotientStr += qDigit.toString();
+                
+                // Only log significant steps or if it's the last digit
+                if (qDigit > 0 || i === divStr.length - 1 || currentVal > 0) {
+                    steps.push({
+                        digitIn: divStr[i],
+                        curr: currentVal,
+                        qDig: qDigit,
+                        sub: subVal,
+                        rem: rem,
+                        fullQ: quotientStr,
+                        msg: `Drop down '${divStr[i]}' to make ${currentVal}.\n${divisor} goes into ${currentVal} exactly ${qDigit} times.\nSubtract: ${currentVal} - ${subVal} = ${rem}.`
+                    });
+                } else {
+                    steps.push({
+                        digitIn: divStr[i],
+                        curr: currentVal,
+                        qDig: qDigit,
+                        sub: 0,
+                        rem: rem,
+                        fullQ: quotientStr,
+                        msg: `Drop down '${divStr[i]}'. Current value is ${currentVal}. 0 times.`
+                    });
+                }
+                currentVal = rem;
+            }
+
+            // Build Initial Stage UI
+            const stage = document.getElementById('longDivisionStage');
+            stage.innerHTML = `
+                <div class="ld-wrapper">
+                    <div class="ld-divisor">${divisor}</div>
+                    <div class="ld-body">
+                        <div class="ld-quotient" id="ldQOut"></div>
+                        <div class="ld-dividend">${dividend}</div>
+                        <div id="ldWorkArea"></div>
+                    </div>
+                </div>
+            `;
+
+            let stepIdx = 0;
+            let workArea = document.getElementById('ldWorkArea');
+
+            // Animation Loop
+            sbAnimTimer = setInterval(() => {
+                if (stepIdx >= steps.length) {
+                    clearInterval(sbAnimTimer);
+                    playSound('victory');
+                    log.innerText = `✅ Trace Complete. Final Quotient: ${parseInt(quotientStr)}. Remainder: ${currentVal}.`;
+                    
+                    // Final formatting cleanup
+                    let finalQNode = document.getElementById('ldQOut');
+                    if(finalQNode) {
+                         // Strip leading zeros if the actual dividend is larger than divisor initially
+                        finalQNode.innerText = parseInt(quotientStr).toString();
+                    }
+                    return;
+                }
+                
+                playSound('step');
+                let s = steps[stepIdx];
+                
+                // Update Quotient Display
+                document.getElementById('ldQOut').innerText = s.fullQ;
+                
+                // Add Work Steps visually if it involved a subtraction
+                if (s.curr > 0 || s.qDig > 0 || stepIdx === steps.length -1) {
+                    let wDiv = document.createElement('div');
+                    wDiv.className = 'ld-work-row';
+                    // Indent logic based on string length diff
+                    let pad = "&nbsp;".repeat(stepIdx);
+                    wDiv.innerHTML = `${pad}-${s.sub}<br><div class="ld-sub-line" style="margin-left:${stepIdx*12}px;"></div>${pad}&nbsp;${s.rem}`;
+                    workArea.appendChild(wDiv);
+                    
+                    // trigger reflow for animation
+                    void wDiv.offsetWidth;
+                    wDiv.classList.add('visible');
+                }
+
+                log.innerText = `Step ${stepIdx + 1}:\n${s.msg}`;
+                stepIdx++;
+            }, 1800);
+        }
+
+        // --- UTILS ---
+        function switchScreen(hideId, showId) {
+            document.getElementById(hideId).classList.remove('active');
+            document.getElementById(showId).classList.add('active');
+        }
+        function returnToMainMenu() {
+            playSound('click');
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('startScreen').classList.add('active');
+        }
+        function triggerConfetti() {
+            for(let i=0; i<60; i++) {
+                let c = document.createElement('div');
+                c.className = 'confetti-piece';
+                c.style.left = `${Math.random() * 100}vw`;
+                c.style.backgroundColor = `hsl(${Math.random() * 360}, 90%, 60%)`;
+                c.style.transform = `scale(${0.5 + Math.random() * 0.5})`;
+                c.style.animationDuration = `${1.5 + Math.random() * 2}s`;
+                document.body.appendChild(c);
+                setTimeout(() => c.remove(), 4000);
+            }
+        }
+
+        // Boot
+        window.onload = () => {
+            generateAllQuestions();
+            createDecorations();
+        };
+    </script>
+</body>
+</html>

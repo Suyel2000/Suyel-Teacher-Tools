@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>➕ Repeated Addition Quiz</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #fef08a 0%, #bbf7d0 50%, #bfdbfe 100%);
+            --card-bg: rgba(255, 255, 255, 0.88);
+            --card-border: rgba(255, 255, 255, 0.6);
+            --text-main: #1e293b;
+            --text-muted: #475569;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --warning: #ca8a04;
+            --shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --radius-sm: 8px;
+        }
+
+        [data-theme="dark"] {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #1e293b 100%);
+            --card-bg: rgba(15, 23, 42, 0.85);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            background-size: 400% 400%;
+            animation: backgroundShift 20s ease infinite;
+            min-height: 100vh;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        @keyframes backgroundShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .decorations-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            overflow: hidden;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .floating-symbol {
+            position: absolute;
+            font-weight: bold;
+            color: rgba(37, 99, 235, 0.05);
+            animation: wiggleFloat 14s ease-in-out infinite;
+        }
+        @keyframes wiggleFloat {
+            0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+            50% { transform: translateY(-40px) rotate(20deg) scale(1.15); }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 850px;
+            z-index: 10;
+            margin-top: 10px;
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            padding: 35px;
+            margin-bottom: 25px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 850px;
+            margin-bottom: 15px;
+            z-index: 10;
+        }
+        .brand h1 {
+            font-size: 2.3rem;
+            font-weight: 800;
+            background: linear-gradient(45deg, #2563eb, #db2777);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .brand p {
+            font-size: 1.05rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            font-weight: 600;
+        }
+        .controls-row {
+            display: flex;
+            gap: 12px;
+        }
+        .circle-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s;
+        }
+        .circle-btn:active { transform: scale(0.92); }
+
+        .hud-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .hud-pill {
+            background: rgba(37, 99, 235, 0.1);
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: var(--text-main);
+            border: 1px solid rgba(37, 99, 235, 0.15);
+        }
+        .progress-bar-container {
+            width: 100%;
+            height: 12px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 50px;
+            margin-bottom: 25px;
+            overflow: hidden;
+            border: 1px solid var(--card-border);
+        }
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #2563eb, #db2777);
+            border-radius: 50px;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            font-size: 1.05rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
+        .btn:active { transform: translateY(1px); }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-secondary { background: rgba(0, 0, 0, 0.04); color: var(--text-main); border: 1px solid var(--card-border); }
+        [data-theme="dark"] .btn-secondary { background: rgba(255,255,255,0.06); }
+
+        .screen { display: none; }
+        .screen.active { display: block; animation: slideFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes slideFadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .level-selection-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            margin-top: 20px;
+        }
+        @media(min-width: 600px) { .level-selection-grid { grid-template-columns: 1fr 1fr; } }
+        
+        .lvl-card-btn {
+            padding: 24px;
+            border-radius: var(--radius-md);
+            border: none;
+            color: white;
+            font-weight: 700;
+            font-size: 1.15rem;
+            cursor: pointer;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s, filter 0.2s;
+        }
+        .lvl-card-btn:hover { transform: scale(1.02); filter: brightness(1.06); }
+        .lvl-card-btn:active { transform: scale(0.98); }
+        .l-green { background: linear-gradient(135deg, #22c55e, #15803d); }
+        .l-blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+        .l-purple { background: linear-gradient(135deg, #a855f7, #6b21a8); }
+        .l-orange { background: linear-gradient(135deg, #f97316, #c2410c); }
+        .l-mixed { background: linear-gradient(135deg, #ec4899, #be185d); }
+
+        .sandbox-promo-card {
+            margin-top: 25px;
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            color: white;
+            border-radius: var(--radius-md);
+            padding: 25px;
+            text-align: center;
+        }
+
+        .question-text-box {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+            line-height: 1.4;
+        }
+        .visual-groups-stage {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 30px;
+            justify-content: center;
+            background: rgba(0,0,0,0.02);
+            padding: 20px;
+            border-radius: var(--radius-md);
+            border: 1px dashed var(--card-border);
+        }
+        .visual-group-basket {
+            background: var(--card-bg);
+            border: 2px solid var(--primary);
+            border-radius: var(--radius-md);
+            padding: 15px;
+            display: inline-flex;
+            gap: 6px;
+            font-size: 1.8rem;
+            min-width: 100px;
+            min-height: 70px;
+            justify-content: center;
+            align-items: center;
+            box-shadow: var(--shadow);
+            position: relative;
+            transition: background-color 0.2s, transform 0.2s;
+            animation: elementPopIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        .visual-group-basket.drag-over {
+            background-color: rgba(37, 99, 235, 0.15);
+            transform: scale(1.04);
+        }
+        @keyframes elementPopIn { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .options-vertical-stack {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 14px;
+            margin-bottom: 35px;
+        }
+        @media(min-width: 600px) { .options-vertical-stack { grid-template-columns: 1fr 1fr; } }
+
+        .option-item-btn {
+            background: var(--card-bg);
+            border: 2px solid var(--card-border);
+            padding: 18px 22px;
+            border-radius: var(--radius-md);
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+        .option-item-btn:hover:not(:disabled) {
+            border-color: var(--primary);
+            background: rgba(37, 99, 235, 0.05);
+            transform: translateY(-2px);
+        }
+        .option-item-btn.is-correct { background: #22c55e !important; border-color: #16a34a !important; color: white !important; }
+        .option-item-btn.is-wrong { background: #ef4444 !important; border-color: #dc2626 !important; color: white !important; }
+        .option-item-btn:disabled { cursor: not-allowed; opacity: 0.95; }
+
+        .explanation-drawer {
+            background: rgba(22, 163, 74, 0.08);
+            border-left: 6px solid var(--success);
+            padding: 22px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 30px;
+            display: none;
+        }
+        .explanation-drawer h4 { color: var(--success); margin-bottom: 6px; font-size: 1.15rem; }
+        .explanation-drawer p { font-size: 1.1rem; line-height: 1.5; white-space: pre-line; }
+
+        .navigation-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .sandbox-workspace-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+            width: 100%;
+        }
+        .sandbox-controls-box {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            width: 100%;
+            background: rgba(0,0,0,0.02);
+            padding: 20px;
+            border-radius: var(--radius-md);
+        }
+        @media(min-width: 600px) { .sandbox-controls-box { grid-template-columns: 1fr 1fr; } }
+        
+        .control-widget {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .control-widget label { font-weight: 700; font-size: 0.95rem; color: var(--text-muted); }
+        .counter-row-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .counter-display-digit {
+            font-size: 1.4rem; font-weight: 800; min-width: 40px; text-align: center;
+        }
+
+        .sandbox-item-bank {
+            display: flex;
+            gap: 15px;
+            background: rgba(37, 99, 235, 0.05);
+            padding: 15px;
+            border-radius: var(--radius-md);
+            width: 100%;
+            justify-content: center;
+            align-items: center;
+            border: 2px dashed rgba(37, 99, 235, 0.2);
+        }
+        .draggable-token {
+            font-size: 2.2rem;
+            padding: 10px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-sm);
+            cursor: grab;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s;
+            touch-action: none;
+        }
+        .draggable-token:active { cursor: grabbing; transform: scale(1.1); }
+
+        .sandbox-live-equation-banner {
+            font-size: 1.6rem;
+            font-weight: 800;
+            background: rgba(37, 99, 235, 0.08);
+            padding: 15px 25px;
+            border-radius: var(--radius-md);
+            text-align: center;
+            width: 100%;
+            color: var(--primary);
+            border: 1px solid rgba(37, 99, 235, 0.15);
+        }
+
+        .badge-showcase-center {
+            text-align: center; margin: 25px 0;
+        }
+        .badge-pop-icon { font-size: 5rem; animation: popBounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes popBounce { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .certificate-print-sheet {
+            display: none;
+            background: #ffffff;
+            color: #0f172a;
+            border: 12px double #475569;
+            padding: 45px;
+            border-radius: 4px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            margin-top: 30px;
+        }
+        .certificate-print-sheet h2 { font-family: 'Georgia', serif; font-size: 2.4rem; color: #1e293b; margin-bottom: 6px; }
+        .certificate-print-sheet .sub { font-style: italic; color: #64748b; margin-bottom: 25px; }
+        .certificate-print-sheet .recipient { font-size: 2.1rem; font-weight: 800; border-bottom: 2px solid #94a3b8; display: inline-block; padding: 0 40px 6px 40px; margin: 15px 0; color: #2563eb; }
+        .certificate-print-sheet .body-text { font-size: 1.15rem; line-height: 1.6; margin: 20px auto; max-width: 600px; }
+        .cert-watermark-stamp { position: absolute; font-size: 9rem; color: rgba(37, 99, 235, 0.02); top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-12deg); font-weight: 900; width: 100%; text-align: center; pointer-events: none; }
+
+        .form-inline-group {
+            display: flex; gap: 10px; justify-content: center; margin-bottom: 20px;
+        }
+        .input-text-field {
+            padding: 12px 18px; border-radius: var(--radius-sm); border: 2px solid var(--card-border); background: var(--card-bg); color: var(--text-main); font-size: 1.05rem; width: 260px;
+        }
+
+        .confetti-piece {
+            position: fixed; width: 10px; height: 10px; z-index: 9999; top: -12px;
+            animation: fallAnimation linear forwards;
+        }
+        @keyframes fallAnimation { to { transform: translateY(105vh) rotate(360deg); } }
+
+        @media print {
+            body * { visibility: hidden; background: none !important; }
+            .certificate-print-sheet, .certificate-print-sheet * { visibility: visible; }
+            .certificate-print-sheet { position: absolute; left: 0; top: 0; width: 100%; border: 5px solid #000; box-shadow: none; display: block !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="decorations-layer" id="decorationsLayer"></div>
+
+    <header>
+        <div class="brand">
+            <h1>➕ Repeated Addition Quiz</h1>
+            <p>Add Equal Groups • Discover Multiplication</p>
+        </div>
+        <div class="controls-row">
+            <button class="circle-btn" onclick="toggleThemeMode()" title="Toggle Dark/Light Mode">🌓</button>
+        </div>
+    </header>
+
+    <div class="container">
+        
+        <div id="startScreen" class="screen active glass-card">
+            <h3 style="font-size: 1.4rem; margin-bottom: 10px; text-align: center;">Choose Difficulty Level</h3>
+            <p style="color: var(--text-muted); text-align: center; margin-bottom: 25px;">Each level loads 50 core foundational mathematics tasks mapping concrete items into equations.</p>
+            
+            <div class="level-selection-grid">
+                <button class="lvl-card-btn l-green" onclick="initializeQuizTrack(1)">
+                    <span>🟢 Level 1 – Groups of 2</span>
+                    <span style="font-size: 0.9rem; opacity: 0.9;">50 Tasks</span>
+                </button>
+                <button class="lvl-card-btn l-blue" onclick="initializeQuizTrack(2)">
+                    <span>🔵 Level 2 – Groups of 3</span>
+                    <span style="font-size: 0.9rem; opacity: 0.9;">50 Tasks</span>
+                </button>
+                <button class="lvl-card-btn l-purple" onclick="initializeQuizTrack(3)">
+                    <span>🟣 Level 3 – Groups of 4</span>
+                    <span style="font-size: 0.9rem; opacity: 0.9;">50 Tasks</span>
+                </button>
+                <button class="lvl-card-btn l-orange" onclick="initializeQuizTrack(4)">
+                    <span>🟠 Level 4 – Groups of 5</span>
+                    <span style="font-size: 0.9rem; opacity: 0.9;">50 Tasks</span>
+                </button>
+                <button class="lvl-card-btn l-mixed" onclick="initializeQuizTrack(5)">
+                    <span>🔴 Mixed Challenge</span>
+                    <span style="font-size: 0.9rem; opacity: 0.9;">50 Tasks</span>
+                </button>
+            </div>
+
+            <div class="sandbox-promo-card">
+                <h4 style="margin-bottom: 6px; font-size: 1.25rem;">🎮 Visual Equal Groups Builder Playground</h4>
+                <p style="font-size: 0.95rem; margin-bottom: 15px; opacity: 0.95;">Construct custom sets, drag items dynamically, and discover equivalent multiplication matching strings.</p>
+                <button class="btn btn-secondary" style="background: #ffffff; color: #0891b2; border: none; width: 100%;" onclick="launchSandboxWorkspace()">Open Visual Practice Sandbox</button>
+            </div>
+        </div>
+
+        <div id="quizScreen" class="screen glass-card">
+            <div class="hud-row">
+                <button class="btn btn-secondary" style="padding: 7px 14px; font-size: 0.9rem;" onclick="exitToMainMenu()">🏠 Change Difficulty</button>
+                <div style="display: flex; gap: 8px;">
+                    <div class="hud-pill" id="hudLevelLabel">Level</div>
+                    <div class="hud-pill" id="hudCounterLabel">Task: 1/50</div>
+                    <div class="hud-pill" id="hudScoreLabel" style="background: rgba(22,163,74,0.12); border-color: rgba(22,163,74,0.2);">Score: 0</div>
+                </div>
+            </div>
+
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="quizProgressBarFill"></div>
+            </div>
+
+            <div class="question-text-box" id="questionTextBox">Evaluating data...</div>
+
+            <div class="visual-groups-stage" id="visualGroupsStage"></div>
+
+            <div class="options-vertical-stack" id="optionsMatrixGrid"></div>
+
+            <div class="explanation-drawer" id="explanationDrawer">
+                <h4>💡 Mathematical Guide</h4>
+                <p id="explanationTextContainer"></p>
+            </div>
+
+            <div class="navigation-row">
+                <button class="btn btn-secondary" id="actionBtnPrev" onclick="stepProblemIndex(-1)">← Previous</button>
+                <button class="btn btn-secondary" onclick="shuffleActiveDatasetBank()">🔀 Shuffle Questions</button>
+                <button class="btn btn-primary" id="actionBtnNext" onclick="stepProblemIndex(1)">Next →</button>
+            </div>
+        </div>
+
+        <div id="sandboxScreen" class="screen glass-card">
+            <div class="hud-row">
+                <button class="btn btn-secondary" style="padding: 7px 14px; font-size: 0.9rem;" onclick="exitToMainMenu()">🏠 Main Menu</button>
+                <div class="hud-pill" style="background: #06b6d4; color: white;">Interactive Equal Groups Builder</div>
+            </div>
+
+            <div class="sandbox-workspace-panel">
+                <p style="color: var(--text-muted); text-align: center; font-size: 0.95rem;">
+                    Drag an item from the bank below and drop it into any container basket to build equal groups! Or tap the basket directly.
+                </p>
+
+                <div class="sandbox-controls-box">
+                    <div class="control-widget">
+                        <label>Number of Groups:</label>
+                        <div class="counter-row-input">
+                            <button class="btn btn-secondary" style="padding:6px 14px;" onclick="modifySandboxGroupsCount(-1)">−</button>
+                            <span class="counter-display-digit" id="sbGroupsCountLabel">3</span>
+                            <button class="btn btn-secondary" style="padding:6px 14px;" onclick="modifySandboxGroupsCount(1)">+</button>
+                        </div>
+                    </div>
+                    <div class="control-widget">
+                        <label>Active Item Token:</label>
+                        <div class="counter-row-input" style="justify-content: center;">
+                            <span style="font-size: 1.1rem; font-weight: 600;" id="activeSandboxObjectLabel">Apples (🍎)</span>
+                            <button class="btn btn-secondary" style="padding:6px 12px; font-size: 0.85rem;" onclick="rotateSandboxEmojiAsset()">Change Item</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sandbox-item-bank">
+                    <span style="font-weight: 700; font-size: 0.9rem; color: var(--text-muted);">DRAG ITEM:</span>
+                    <div class="draggable-token" id="sandboxDraggableToken" draggable="true">🍎</div>
+                    <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;" onclick="clearAllSandboxItems()">Clear Items</button>
+                </div>
+
+                <div class="visual-groups-stage" id="sandboxVisualOutputStage" style="width: 100%; min-height: 160px;"></div>
+
+                <div class="sandbox-live-equation-banner" id="sandboxLiveEquationOutput">0 = 0</div>
+                
+                <p style="font-size: 1.1rem; color: var(--text-muted); font-weight: 600; text-align: center;" id="sandboxEquivalentMultiplicationLabel">
+                    Add items to build groups!
+                </p>
+            </div>
+        </div>
+
+        <div id="summaryScreen" class="screen glass-card">
+            <h2 style="text-align: center; margin-bottom: 6px;">📊 Evaluation Metrics</h2>
+            <p style="text-align: center; color: var(--text-muted); margin-bottom: 25px;">Repeated addition assessment session completed successfully.</p>
+
+            <div class="badge-showcase-center">
+                <div class="badge-pop-icon" id="summaryBadgeIcon">🏆</div>
+                <h3 style="font-size: 1.6rem; margin-top: 12px;" id="summaryBadgeTitle">Repeated Addition Master</h3>
+            </div>
+
+            <p style="text-align: center; font-size: 1.25rem; font-weight: 700; margin-bottom: 30px;" id="summaryMetricsLabelText">Score: 50 / 50 Correct</p>
+
+            <div class="glass-card" style="background: rgba(0,0,0,0.01); padding: 22px; border-radius: var(--radius-md);">
+                <h4 style="margin-bottom: 12px; text-align: center;">🎓 Printable Achievement Certificate</h4>
+                <div class="form-inline-group">
+                    <input type="text" class="input-text-field" id="studentNameInputField" placeholder="Student Name" value="Primary Scholar Student">
+                    <button class="btn btn-primary" style="padding:10px 20px; font-size:1rem;" onclick="compilePrintableCertificate()">Build Document</button>
+                </div>
+            </div>
+
+            <div class="certificate-print-sheet" id="certificatePrintSheet">
+                <div class="cert-watermark-stamp">ARITHMETIC</div>
+                <h2>CERTIFICATE OF MATHEMATICS</h2>
+                <p class="sub">Issued for Conceptual Mastery of Repeated Addition & Equal Group Multiplication Fundamentals</p>
+                <p class="body-text">This classroom validation voucher serves to confirm that</p>
+                <div class="recipient" id="certRecipientPlaceholder">Primary Scholar Student</div>
+                <p class="body-text" id="certScopeDescriptionParagraph">has systematically completed the foundational numerical evaluation runtime benchmarks.</p>
+                <div style="display: flex; justify-content: space-between; margin-top: 45px; border-top: 2px dashed #cbd5e1; padding-top: 20px; font-size: 0.9rem; color: #64748b;">
+                    <div>Framework ID: #REP-ADD-2026</div>
+                    <div id="certGeneratedDateStamp">Date: June 25, 2026</div>
+                    <div>Classroom Standards Verified</div>
+                </div>
+            </div>
+
+            <div class="navigation-row" style="margin-top: 25px; justify-content: center;">
+                <button class="btn btn-secondary" onclick="exitToMainMenu()">🏠 Back to Levels</button>
+                <button class="btn btn-primary" id="printTriggerActionBtn" style="display:none;" onclick="window.print()">🖨️ Print Certificate</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let repeatedAdditionLevel1 = [];
+        let repeatedAdditionLevel2 = [];
+        let repeatedAdditionLevel3 = [];
+        let repeatedAdditionLevel4 = [];
+        let repeatedAdditionMixed = [];
+
+        let currentActiveLevelIndex = 1;
+        let currentProblemPointer = 0;
+        let activeProblemSetArray = [];
+        let totalCurrentScoreMetric = 0;
+        let historicUserInputsLog = [];
+
+        // NATIVE WEB AUDIO API SYNTHESIS
+        let activeAudioContextNode = null;
+        function verifyAudioNodeState() {
+            if (!activeAudioContextNode) {
+                activeAudioContextNode = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+        function triggerSynthFrequencyTone(frequencyHz, waveshapeType, durationSec, currentVolume = 0.1) {
+            try {
+                verifyAudioNodeState();
+                if(!activeAudioContextNode) return;
+                let audioOscillator = activeAudioContextNode.createOscillator();
+                let audioGainNode = activeAudioContextNode.createGain();
+                audioOscillator.type = waveshapeType;
+                audioOscillator.frequency.value = frequencyHz;
+                audioGainNode.gain.setValueAtTime(currentVolume, activeAudioContextNode.currentTime);
+                audioGainNode.gain.exponentialRampToValueAtTime(0.0001, activeAudioContextNode.currentTime + durationSec);
+                audioOscillator.connect(audioGainNode);
+                audioGainNode.connect(activeAudioContextNode.destination);
+                audioOscillator.start();
+                audioOscillator.stop(activeAudioContextNode.currentTime + durationSec);
+            } catch(error) { console.warn("Audio Context deferred.", error); }
+        }
+        function executeAudioCue(cueDescriptor) {
+            if(cueDescriptor === 'click') triggerSynthFrequencyTone(580, 'sine', 0.07, 0.12);
+            if(cueDescriptor === 'correct') {
+                triggerSynthFrequencyTone(523.25, 'sine', 0.1, 0.15);
+                setTimeout(() => triggerSynthFrequencyTone(659.25, 'sine', 0.22, 0.15), 90);
+            }
+            if(cueDescriptor === 'wrong') triggerSynthFrequencyTone(210, 'triangle', 0.32, 0.18);
+            if(cueDescriptor === 'drag') triggerSynthFrequencyTone(740, 'sine', 0.04, 0.06);
+            if(cueDescriptor === 'victory') {
+                let notePitches = [293.66, 349.23, 440.00, 587.33];
+                notePitches.forEach((pitch, offsetTime) => {
+                    setTimeout(() => triggerSynthFrequencyTone(pitch, 'sine', 0.28, 0.12), offsetTime * 120);
+                });
+            }
+        }
+
+        function toggleThemeMode() {
+            executeAudioCue('click');
+            const documentElementRoot = document.documentElement;
+            if (documentElementRoot.getAttribute('data-theme') === 'dark') {
+                documentElementRoot.removeAttribute('data-theme');
+            } else {
+                documentElementRoot.setAttribute('data-theme', 'dark');
+            }
+        }
+
+        function establishFloatingAssetPatterns() {
+            const backgroundTargetCanvas = document.getElementById('decorationsLayer');
+            backgroundTargetCanvas.innerHTML = '';
+            const structuralPoolSymbols = ['+', '=', '➕', '2', '3', '4', '5', '⭐', '🍎', '🌸'];
+            for(let step=0; step<16; step++) {
+                let textAsset = document.createElement('div');
+                textAsset.className = 'floating-symbol';
+                textAsset.innerText = structuralPoolSymbols[Math.floor(Math.random() * structuralPoolSymbols.length)];
+                textAsset.style.left = Math.random() * 100 + '%';
+                textAsset.style.top = Math.random() * 100 + '%';
+                textAsset.style.animationDelay = (Math.random() * 6) + 's';
+                textAsset.style.fontSize = (1.8 + Math.random() * 3.5) + 'rem';
+                backgroundTargetCanvas.appendChild(textAsset);
+            }
+        }
+
+        // AUTOMATED CURRICULUM QUESTIONS ENGINE
+        function constructCurriculumQuestionsEngine() {
+            const visualEmojiRegistry = [
+                ['🍎', 'Apples'], ['⭐', 'Stars'], ['🌸', 'Flowers'], ['🟢', 'Counters'],
+                ['🍋', 'Lemons'], ['🎈', 'Balloons'], ['🦊', 'Foxes'], ['🐟', 'Fish']
+            ];
+
+            function executeBuildLoop(targetDataArray, staticGroupSizeValue) {
+                for(let keyIndex=1; keyIndex<=50; keyIndex++) {
+                    let questionTemplateObject = {};
+                    let evaluatedGroupsCount = (keyIndex % 4) + 2; 
+                    let totalItemsSumOutcome = evaluatedGroupsCount * staticGroupSizeValue;
+                    
+                    let activeEmojiSet = visualEmojiRegistry[keyIndex % visualEmojiRegistry.length];
+                    let chosenEmojiCharacter = activeEmojiSet[0];
+                    let verbalNounLabel = activeEmojiSet[1];
+
+                    let executionBranchSelector = keyIndex % 4;
+
+                    if(executionBranchSelector === 1) { 
+                        let repeatedSumString = new Array(evaluatedGroupsCount).fill(staticGroupSizeValue).join(' + ');
+                        questionTemplateObject = {
+                            type: "STANDARD_SUM_HUNT",
+                            text: `Find the total sum for the matching equal groups equation below:\n${repeatedSumString} = ?`,
+                            groupSize: staticGroupSizeValue,
+                            groupCount: evaluatedGroupsCount,
+                            emoji: chosenEmojiCharacter,
+                            ans: totalItemsSumOutcome,
+                            options: [],
+                            exp: `✅ Explanation:\nThere are ${evaluatedGroupsCount} groups.\nEach group has ${staticGroupSizeValue} objects.\nRepeated Addition:\n${repeatedSumString} = ${totalItemsSumOutcome}.\nThis is also ${evaluatedGroupsCount} × ${staticGroupSizeValue} = ${totalItemsSumOutcome}`
+                        };
+                    } 
+                    else if(executionBranchSelector === 2) { 
+                        let correctAdditionString = new Array(evaluatedGroupsCount).fill(staticGroupSizeValue).join(' + ');
+                        questionTemplateObject = {
+                            type: "EQUATION_STRING_HUNT",
+                            text: `Which repeated addition sentence correctly matches the visual group representation displayed on the stage?`,
+                            groupSize: staticGroupSizeValue,
+                            groupCount: evaluatedGroupsCount,
+                            emoji: chosenEmojiCharacter,
+                            ans: correctAdditionString,
+                            options: [],
+                            exp: `✅ Explanation:\nThere are ${evaluatedGroupsCount} groups.\nEach group has ${staticGroupSizeValue} objects.\nRepeated Addition setup:\n${correctAdditionString}\nThis is also ${evaluatedGroupsCount} × ${staticGroupSizeValue} = ${totalItemsSumOutcome}`
+                        };
+                    }
+                    else if(executionBranchSelector === 3) { 
+                        questionTemplateObject = {
+                            type: "TOTAL_COUNT_HUNT",
+                            text: `How many ${verbalNounLabel} are there altogether in these equal groups?`,
+                            groupSize: staticGroupSizeValue,
+                            groupCount: evaluatedGroupsCount,
+                            emoji: chosenEmojiCharacter,
+                            ans: totalItemsSumOutcome,
+                            options: [],
+                            exp: `✅ Explanation:\nThere are ${evaluatedGroupsCount} groups.\nEach group has ${staticGroupSizeValue} objects.\nRepeated Addition:\n${new Array(evaluatedGroupsCount).fill(staticGroupSizeValue).join(' + ')} = ${totalItemsSumOutcome}.\nThis is also ${evaluatedGroupsCount} × ${staticGroupSizeValue} = ${totalItemsSumOutcome}`
+                        };
+                    }
+                    else { 
+                        let hypotheticalNames = ["Ananya", "Kabir", "Aarav", "Meera", "Riya"];
+                        let structuralName = hypotheticalNames[keyIndex % hypotheticalNames.length];
+                        questionTemplateObject = {
+                            type: "WORD_PROBLEM",
+                            text: `There are ${staticGroupSizeValue} ${verbalNounLabel} in each box.\nThere are ${evaluatedGroupsCount} boxes.\nHow many ${verbalNounLabel} altogether?`,
+                            groupSize: staticGroupSizeValue,
+                            groupCount: evaluatedGroupsCount,
+                            emoji: chosenEmojiCharacter,
+                            ans: totalItemsSumOutcome,
+                            options: [],
+                            exp: `✅ Explanation:\nThere are ${evaluatedGroupsCount} boxes (groups).\nEach box has ${staticGroupSizeValue} ${verbalNounLabel}.\nRepeated Addition:\n${new Array(evaluatedGroupsCount).fill(staticGroupSizeValue).join(' + ')} = ${totalItemsSumOutcome}.\nThis is also ${evaluatedGroupsCount} × ${staticGroupSizeValue} = ${totalItemsSumOutcome}`
+                        };
+                    }
+                    targetDataArray.push(compileAndNormalizeDistractors(questionTemplateObject));
+                }
+            }
+
+            executeBuildLoop(repeatedAdditionLevel1, 2);
+            executeBuildLoop(repeatedAdditionLevel2, 3);
+            executeBuildLoop(repeatedAdditionLevel3, 4);
+            executeBuildLoop(repeatedAdditionLevel4, 5);
+
+            for(let stepIdx=1; stepIdx<=50; stepIdx++) {
+                let questionTemplateObject = {};
+                let localizedGroupSize = (stepIdx % 4) + 2; 
+                let localizedGroupCount = ((stepIdx + 2) % 4) + 2;
+                let calculatedProduct = localizedGroupCount * localizedGroupSize;
+                let sampleEmoji = visualEmojiRegistry[stepIdx % visualEmojiRegistry.length][0];
+
+                let mixBranchType = stepIdx % 5;
+
+                if(mixBranchType === 1) { 
+                    let repeatedStringForm = new Array(localizedGroupCount).fill(localizedGroupSize).join(' + ');
+                    let equivalentMultiplicationString = `${localizedGroupCount} × ${localizedGroupSize}`;
+                    questionTemplateObject = {
+                        type: "MIXED_MULT_MATCH",
+                        text: `Which multiplication sentence matches this repeated addition string?\n${repeatedStringForm}`,
+                        groupSize: localizedGroupSize, groupCount: localizedGroupCount, emoji: "",
+                        ans: equivalentMultiplicationString, options: [],
+                        exp: `✅ Explanation:\nThe number ${localizedGroupSize} is repeated ${localizedGroupCount} times.\nThis matches exactly ${localizedGroupCount} × ${localizedGroupSize} = ${calculatedProduct}.`
+                    };
+                }
+                else if(mixBranchType === 2) { 
+                    let sourceMultString = `${localizedGroupCount} × ${localizedGroupSize}`;
+                    let expectedRepeatedString = new Array(localizedGroupCount).fill(localizedGroupSize).join(' + ');
+                    questionTemplateObject = {
+                        type: "MIXED_ADD_MATCH",
+                        text: `Which repeated addition sentence represents ${sourceMultString} ?`,
+                        groupSize: localizedGroupSize, groupCount: localizedGroupCount, emoji: "",
+                        ans: expectedRepeatedString, options: [],
+                        exp: `✅ Explanation:\n${sourceMultString} means adding ${localizedGroupSize} exactly ${localizedGroupCount} times:\n${expectedRepeatedString} = ${calculatedProduct}`
+                    };
+                }
+                else if(mixBranchType === 3) { 
+                    let validAdditionForm = new Array(localizedGroupCount).fill(localizedGroupSize).join(' + ');
+                    let brokenAdditionForm = new Array(localizedGroupCount).fill(localizedGroupSize).join(' + ') + ` + ${localizedGroupSize + 1}`;
+                    questionTemplateObject = {
+                        type: "MIXED_ERROR_HUNT",
+                        text: `Choose the INCORRECT repeated addition expression line for a total target value of ${calculatedProduct}:`,
+                        groupSize: localizedGroupSize, groupCount: localizedGroupCount, emoji: "",
+                        ans: `${brokenAdditionForm} = ${calculatedProduct}`,
+                        options: [
+                            `${validAdditionForm} = ${calculatedProduct}`,
+                            `${localizedGroupCount} × ${localizedGroupSize} = ${calculatedProduct}`,
+                            `${brokenAdditionForm} = ${calculatedProduct}`
+                        ],
+                        exp: `✅ Explanation:\nMultiplication requires completely equal groups. Adding a mismatched number makes the expression incorrect.`
+                    };
+                }
+                else if(mixBranchType === 4) { 
+                    let visibleCount = localizedGroupCount - 1;
+                    let visualChainPrefix = new Array(visibleCount).fill(localizedGroupSize).join(' + ');
+                    questionTemplateObject = {
+                        type: "MIXED_MISSING_BLANK",
+                        text: `Fill in the missing number to complete the repeated addition balance equation:\n${visualChainPrefix} + __ = ${calculatedProduct}`,
+                        groupSize: localizedGroupSize, groupCount: localizedGroupCount, emoji: "",
+                        ans: localizedGroupSize, options: [],
+                        exp: `✅ Explanation:\nTo make uniform equal groups that sum up to ${calculatedProduct}, the missing addend must be ${localizedGroupSize}.`
+                    };
+                }
+                else { 
+                    questionTemplateObject = {
+                        type: "TOTAL_COUNT_HUNT",
+                        text: `There are ${localizedGroupCount} rows of benches. Each row has ${localizedGroupSize} children. How many children altogether?`,
+                        groupSize: localizedGroupSize, groupCount: localizedGroupCount, emoji: sampleEmoji,
+                        ans: calculatedProduct, options: [],
+                        exp: `✅ Explanation:\n${localizedGroupCount} groups of ${localizedGroupSize} is written as:\n${new Array(localizedGroupCount).fill(localizedGroupSize).join(' + ')} = ${calculatedProduct}.\nThis is also ${localizedGroupCount} × ${localizedGroupSize} = ${calculatedProduct}`
+                    };
+                }
+                repeatedAdditionMixed.push(compileAndNormalizeDistractors(questionTemplateObject));
+            }
+        }
+
+        // FIXED: ADDED SAFETY COUNTER AND EXTENDED VARIANCE TRACKING TO ABSOLUTELY PREVENT LOOPS
+        function compileAndNormalizeDistractors(itemBlock) {
+            if(itemBlock.options.length >= 3) {
+                if(itemBlock.options.length === 3) {
+                    itemBlock.options.push("None of these");
+                }
+                shuffleArrayDataElements(itemBlock.options);
+                return itemBlock;
+            }
+
+            let structuralSetTracker = new Set();
+            let exactCorrectValue = itemBlock.ans;
+            structuralSetTracker.add(String(exactCorrectValue).trim());
+
+            let safetyLoopCounter = 0;
+
+            if(typeof exactCorrectValue === 'string') {
+                if(exactCorrectValue.includes('×')) { 
+                    while(structuralSetTracker.size < 4 && safetyLoopCounter < 100) {
+                        safetyLoopCounter++;
+                        let randomOffset = Math.floor(Math.random() * 5) - 2; // Range: -2 to +2
+                        let skewedCount = itemBlock.groupCount + randomOffset;
+                        if(skewedCount < 1) skewedCount = Math.floor(Math.random() * 4) + 2;
+                        
+                        if(Math.random() > 0.5) {
+                            structuralSetTracker.add(`${skewedCount} × ${itemBlock.groupSize}`);
+                        } else {
+                            structuralSetTracker.add(`${itemBlock.groupSize} × ${skewedCount}`);
+                        }
+                    }
+                } else { 
+                    while(structuralSetTracker.size < 4 && safetyLoopCounter < 100) {
+                        safetyLoopCounter++;
+                        let randomOffset = Math.floor(Math.random() * 5) - 2; // Range: -2 to +2
+                        let varianceLength = itemBlock.groupCount + randomOffset;
+                        if(varianceLength < 1) varianceLength = Math.floor(Math.random() * 3) + 2;
+                        
+                        // Fallback change for unique items matching sizes
+                        let stepValue = (Math.random() > 0.5) ? itemBlock.groupSize : (itemBlock.groupSize + 1);
+                        let dummyAlternativeString = new Array(varianceLength).fill(stepValue).join(' + ');
+                        if(dummyAlternativeString) structuralSetTracker.add(dummyAlternativeString);
+                    }
+                }
+            } 
+            else {
+                while(structuralSetTracker.size < 4 && safetyLoopCounter < 100) {
+                    safetyLoopCounter++;
+                    let randomSkewFactor = (Math.floor(Math.random() * 4) + 1) * (Math.random() > 0.5 ? 1 : -1);
+                    let alternativeIntCandidate = exactCorrectValue + randomSkewFactor;
+                    if(alternativeIntCandidate > 0) structuralSetTracker.add(String(alternativeIntCandidate));
+                }
+            }
+
+            // Absolute Safe Backup: ensure it hits 4 options without infinite-loop blocks
+            let safeBackupIndex = 1;
+            while(structuralSetTracker.size < 4) {
+                if(typeof exactCorrectValue === 'number') {
+                    structuralSetTracker.add(String(exactCorrectValue + safeBackupIndex));
+                } else {
+                    结构SetTracker.add(`Choice Variant ${safeBackupIndex}`);
+                }
+                safeBackupIndex++;
+            }
+
+            itemBlock.options = Array.from(structuralSetTracker);
+            shuffleArrayDataElements(itemBlock.options);
+            return itemBlock;
+        }
+
+        function shuffleArrayDataElements(targetArray) {
+            for (let pointer = targetArray.length - 1; pointer > 0; pointer--) {
+                const swappingIndex = Math.floor(Math.random() * (pointer + 1));
+                [targetArray[pointer], targetArray[swappingIndex]] = [targetArray[swappingIndex], targetArray[pointer]];
+            }
+        }
+
+        // QUIZ NAVIGATION WORKFLOWS
+        function initializeQuizTrack(selectedLevelTier) {
+            executeAudioCue('click');
+            currentActiveLevelIndex = selectedLevelTier;
+            currentProblemPointer = 0;
+            totalCurrentScoreMetric = 0;
+
+            const categoryLabelsMap = ["", "🟢 Level 1 – Groups of 2", "🔵 Level 2 – Groups of 3", "🟣 Level 3 – Groups of 4", "🟠 Level 4 – Groups of 5", "🔴 Mixed Challenge"];
+            document.getElementById('hudLevelLabel').innerText = categoryLabelsMap[selectedLevelTier];
+
+            if(selectedLevelTier === 1) activeProblemSetArray = [...repeatedAdditionLevel1];
+            if(selectedLevelTier === 2) activeProblemSetArray = [...repeatedAdditionLevel2];
+            if(selectedLevelTier === 3) activeProblemSetArray = [...repeatedAdditionLevel3];
+            if(selectedLevelTier === 4) activeProblemSetArray = [...repeatedAdditionLevel4];
+            if(selectedLevelTier === 5) activeProblemSetArray = [...repeatedAdditionMixed];
+
+            shuffleArrayDataElements(activeProblemSetArray);
+            historicUserInputsLog = new Array(activeProblemSetArray.length).fill(null);
+
+            document.getElementById('startScreen').classList.remove('active');
+            document.getElementById('quizScreen').classList.add('active');
+
+            displayTargetProblem();
+        }
+
+        function shuffleActiveDatasetBank() {
+            executeAudioCue('click');
+            shuffleArrayDataElements(activeProblemSetArray);
+            currentProblemPointer = 0;
+            totalCurrentScoreMetric = 0;
+            historicUserInputsLog = new Array(activeProblemSetArray.length).fill(null);
+            displayTargetProblem();
+        }
+
+        function displayTargetProblem() {
+            document.getElementById('explanationDrawer').style.display = 'none';
+            document.getElementById('hudCounterLabel').innerText = `Question: ${currentProblemPointer + 1}/${activeProblemSetArray.length}`;
+            document.getElementById('hudScoreLabel').innerText = `Score: ${totalCurrentScoreMetric}`;
+
+            let calculatedPercentage = (currentProblemPointer / activeProblemSetArray.length) * 100;
+            document.getElementById('quizProgressBarFill').style.width = calculatedPercentage + '%';
+
+            let activeProblemItem = activeProblemSetArray[currentProblemPointer];
+            document.getElementById('questionTextBox').innerText = activeProblemItem.text;
+
+            const stageContainerNode = document.getElementById('visualGroupsStage');
+            stageContainerNode.innerHTML = '';
+
+            if (activeProblemItem.groupCount > 0 && activeProblemItem.groupSize > 0) {
+                stageContainerNode.style.display = 'flex';
+                for(let g=0; g<activeProblemItem.groupCount; g++) {
+                    let basketDiv = document.createElement('div');
+                    basketDiv.className = 'visual-group-basket';
+                    basketDiv.style.animationDelay = (g * 0.04) + 's';
+                    
+                    let emojisString = "";
+                    for(let o=0; o<activeProblemItem.groupSize; o++) {
+                        emojisString += activeProblemItem.emoji;
+                    }
+                    basketDiv.innerText = emojisString;
+                    stageContainerNode.appendChild(basketDiv);
+                }
+            } else {
+                stageContainerNode.style.display = 'none';
+            }
+
+            const buttonsGridBox = document.getElementById('optionsMatrixGrid');
+            buttonsGridBox.innerHTML = '';
+
+            activeProblemItem.options.forEach(choiceString => {
+                let buttonWidget = document.createElement('button');
+                buttonWidget.className = 'option-item-btn';
+                buttonWidget.innerText = choiceString;
+
+                if(historicUserInputsLog[currentProblemPointer] !== null) {
+                    buttonWidget.disabled = true;
+                    if(String(choiceString).trim() === String(activeProblemItem.ans).trim()) {
+                        buttonWidget.classList.add('is-correct');
+                    }
+                    if(String(choiceString).trim() === String(historicUserInputsLog[currentProblemPointer]).trim() && 
+                       String(choiceString).trim() !== String(activeProblemItem.ans).trim()) {
+                        buttonWidget.classList.add('is-wrong');
+                    }
+                } else {
+                    buttonWidget.onclick = () => evaluateChoiceInteraction(choiceString, buttonWidget);
+                }
+                buttonsGridBox.appendChild(buttonWidget);
+            });
+
+            if(historicUserInputsLog[currentProblemPointer] !== null) {
+                exposeExplanationDrawer();
+            }
+
+            document.getElementById('actionBtnPrev').style.visibility = (currentProblemPointer === 0) ? 'hidden' : 'visible';
+            document.getElementById('actionBtnNext').innerText = (currentProblemPointer === activeProblemSetArray.length - 1) ? "Finish Quiz 🏁" : "Next →";
+        }
+
+        function evaluateChoiceInteraction(clickedValueString, selectedButtonNode) {
+            let activeProblemItem = activeProblemSetArray[currentProblemPointer];
+            historicUserInputsLog[currentProblemPointer] = clickedValueString;
+
+            const totalOptionsButtons = document.querySelectorAll('#optionsMatrixGrid .option-item-btn');
+            totalOptionsButtons.forEach(btn => btn.disabled = true);
+
+            if(String(clickedValueString).trim() === String(activeProblemItem.ans).trim()) {
+                executeAudioCue('correct');
+                selectedButtonNode.classList.add('is-correct');
+                totalCurrentScoreMetric++;
+                document.getElementById('hudScoreLabel').innerText = `Score: ${totalCurrentScoreMetric}`;
+            } else {
+                executeAudioCue('wrong');
+                selectedButtonNode.classList.add('is-wrong');
+                totalOptionsButtons.forEach(btn => {
+                    if(String(btn.innerText).trim() === String(activeProblemItem.ans).trim()) {
+                        btn.classList.add('is-correct');
+                    }
+                });
+            }
+            exposeExplanationDrawer();
+        }
+
+        function exposeExplanationDrawer() {
+            let activeProblemItem = activeProblemSetArray[currentProblemPointer];
+            document.getElementById('explanationTextContainer').innerText = activeProblemItem.exp;
+            document.getElementById('explanationDrawer').style.display = 'block';
+        }
+
+        function stepProblemIndex(incrementStepValue) {
+            executeAudioScalar = 1;
+            executeAudioCue('click');
+            currentProblemPointer += incrementStepValue;
+
+            if(currentProblemPointer < 0) { currentProblemPointer = 0; return; }
+            if(currentProblemPointer >= activeProblemSetArray.length) {
+                concludeAssessmentReportSummary();
+                return;
+            }
+            displayTargetProblem();
+        }
+
+        function exitToMainMenu() {
+            executeAudioCue('click');
+            document.getElementById('quizScreen').className = 'screen glass-card';
+            document.getElementById('sandboxScreen').className = 'screen glass-card';
+            document.getElementById('summaryScreen').className = 'screen glass-card';
+            document.getElementById('startScreen').classList.add('active');
+        }
+
+        function concludeAssessmentReportSummary() {
+            executeAudioCue('victory');
+            triggerConfettiExplosion();
+
+            document.getElementById('quizScreen').classList.remove('active');
+            document.getElementById('summaryScreen').classList.add('active');
+
+            let maxItemsCount = activeProblemSetArray.length;
+            let successRatio = totalCurrentScoreMetric / maxItemsCount;
+
+            let chosenBadgeSymbol = "📚";
+            let chosenBadgeTitle = "Keep Practicing";
+
+            if(successRatio >= 0.90) { chosenBadgeSymbol = "🏆"; chosenBadgeTitle = "Repeated Addition Master"; }
+            else if(successRatio >= 0.70) { chosenBadgeSymbol = "🌟"; chosenBadgeTitle = "Equal Groups Explorer"; }
+            else if(successRatio >= 0.50) { chosenBadgeSymbol = "👍"; chosenBadgeTitle = "Good Learner"; }
+
+            document.getElementById('summaryBadgeIcon').innerText = chosenBadgeSymbol;
+            document.getElementById('summaryBadgeTitle').innerText = chosenBadgeTitle;
+            document.getElementById('summaryMetricsLabelText').innerText = `Score: ${totalCurrentScoreMetric} / ${maxItemsCount} Correct (${Math.round(successRatio*100)}%)`;
+
+            document.getElementById('certificatePrintSheet').style.display = 'none';
+            document.getElementById('printTriggerActionBtn').style.display = 'none';
+        }
+
+        function triggerConfettiExplosion() {
+            for(let step=0; step<75; step++) {
+                let confettiNode = document.createElement('div');
+                confettiNode.className = 'confetti-piece';
+                confettiNode.style.left = Math.random() * 100 + 'vw';
+                confettiNode.style.backgroundColor = `hsl(${Math.random() * 360}, 95%, 60%)`;
+                confettiNode.style.transform = `scale(${0.4 + Math.random() * 0.7})`;
+                confettiNode.style.animationDuration = (1.4 + Math.random() * 1.8) + 's';
+                confettiNode.style.animationDelay = (Math.random() * 0.25) + 's';
+                document.body.appendChild(confettiNode);
+                setTimeout(() => confettiNode.remove(), 3200);
+            }
+        }
+
+        function compilePrintableCertificate() {
+            executeAudioCue('click');
+            let inputStringName = document.getElementById('studentNameInputField').value.trim();
+            if(!inputStringName) inputStringName = "Primary Scholar Student";
+
+            document.getElementById('certRecipientPlaceholder').innerText = inputStringName;
+
+            const categoryLabelsMap = ["", "Level 1 (Groups of 2)", "Level 2 (Groups of 3)", "Level 3 (Groups of 4)", "Level 4 (Groups of 5)", "Mixed Challenge"];
+            document.getElementById('certScopeDescriptionParagraph').innerText = `who has successfully satisfied the validation parameters of the Repeated Addition Quiz [${categoryLabelsMap[currentActiveLevelIndex]}] with a baseline performance score of ${totalCurrentScoreMetric}/${activeProblemSetArray.length}.`;
+            
+            document.getElementById('certGeneratedDateStamp').innerText = `Date: ${new Date().toLocaleDateString()}`;
+
+            document.getElementById('certificatePrintSheet').style.display = 'block';
+            document.getElementById('printTriggerActionBtn').style.display = 'inline-flex';
+        }
+
+        // SANDBOX WORKSPACE ENGINE
+        let activeSandboxGroupsCount = 3;
+        const sandboxEmojiRegistry = [
+            ['🍎', 'Apples'], ['⭐', 'Stars'], ['🌸', 'Flowers'], ['🎈', 'Balloons'], ['🍋', 'Lemons']
+        ];
+        let sandboxEmojiIndex = 0;
+        let sandboxGroupsDataMap = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0 };
+
+        function launchSandboxWorkspace() {
+            executeAudioCue('click');
+            document.getElementById('startScreen').classList.remove('active');
+            document.getElementById('sandboxScreen').classList.add('active');
+            
+            clearAllSandboxItems();
+            initializeDragAndDropHandlers();
+        }
+
+        function rotateSandboxEmojiAsset() {
+            executeAudioCue('click');
+            sandboxEmojiIndex = (sandboxEmojiIndex + 1) % sandboxEmojiRegistry.length;
+            document.getElementById('sandboxDraggableToken').innerText = sandboxEmojiRegistry[sandboxEmojiIndex][0];
+            document.getElementById('activeSandboxObjectLabel').innerText = `${sandboxEmojiRegistry[sandboxEmojiIndex][1]} (${sandboxEmojiRegistry[sandboxEmojiIndex][0]})`;
+            syncSandboxVisualsAndText();
+        }
+
+        function modifySandboxGroupsCount(directionalDeltaValue) {
+            executeAudioCue('click');
+            activeSandboxGroupsCount += directionalDeltaValue;
+            if(activeSandboxGroupsCount < 1) activeSandboxGroupsCount = 1;
+            if(activeSandboxGroupsCount > 8) activeSandboxGroupsCount = 8; 
+            syncSandboxVisualsAndText();
+        }
+
+        function clearAllSandboxItems() {
+            for(let i=0; i<8; i++) {
+                sandboxGroupsDataMap[i] = 0;
+            }
+            syncSandboxVisualsAndText();
+        }
+
+        function initializeDragAndDropHandlers() {
+            const dragSourceNode = document.getElementById('sandboxDraggableToken');
+            
+            dragSourceNode.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', 'token_trigger');
+                dragSourceNode.style.opacity = '0.5';
+            });
+
+            dragSourceNode.addEventListener('dragend', () => {
+                dragSourceNode.style.opacity = '1.0';
+            });
+        }
+
+        function syncSandboxVisualsAndText() {
+            document.getElementById('sbGroupsCountLabel').innerText = activeSandboxGroupsCount;
+            const workspaceVisualOutputStage = document.getElementById('sandboxVisualOutputStage');
+            workspaceVisualOutputStage.innerHTML = '';
+
+            let targetActiveEmoji = sandboxEmojiRegistry[sandboxEmojiIndex][0];
+
+            for(let g=0; g<activeSandboxGroupsCount; g++) {
+                let containerBasket = document.createElement('div');
+                containerBasket.className = 'visual-group-basket';
+                containerBasket.setAttribute('data-basket-idx', g);
+                containerBasket.title = "Drag items here or tap directly!";
+                
+                if(sandboxGroupsDataMap[g] > 6) sandboxGroupsDataMap[g] = 6;
+
+                let emojiSequenceString = "";
+                for(let o=0; o<sandboxGroupsDataMap[g]; o++) {
+                    emojiSequenceString += targetActiveEmoji;
+                }
+                
+                if(emojiSequenceString === "") {
+                    containerBasket.innerHTML = `<span style="font-size:0.9rem; opacity:0.35; font-weight:700;">Empty Basket</span>`;
+                } else {
+                    containerBasket.innerText = emojiSequenceString;
+                }
+
+                containerBasket.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    containerBasket.classList.add('drag-over');
+                });
+
+                containerBasket.addEventListener('dragleave', () => {
+                    containerBasket.classList.remove('drag-over');
+                });
+
+                containerBasket.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    containerBasket.classList.remove('drag-over');
+                    executeAudioCue('drag');
+                    sandboxGroupsDataMap[g]++;
+                    syncSandboxVisualsAndText();
+                });
+
+                containerBasket.addEventListener('click', () => {
+                    executeAudioCue('drag');
+                    sandboxGroupsDataMap[g]++;
+                    if(sandboxGroupsDataMap[g] > 6) sandboxGroupsDataMap[g] = 0; 
+                    syncSandboxVisualsAndText();
+                });
+
+                workspaceVisualOutputStage.appendChild(containerBasket);
+            }
+
+            let elementsValueArray = [];
+            let checkUniformDistribution = true;
+            let referenceBaseValue = sandboxGroupsDataMap[0];
+
+            for(let k=0; k<activeSandboxGroupsCount; k++) {
+                elementsValueArray.push(sandboxGroupsDataMap[k]);
+                if(sandboxGroupsDataMap[k] !== referenceBaseValue) {
+                    checkUniformDistribution = false;
+                }
+            }
+
+            let additionChainString = elementsValueArray.join(' + ');
+            let grandCalculatedTotalValue = elementsValueArray.reduce((acc, curr) => acc + curr, 0);
+
+            document.getElementById('sandboxLiveEquationOutput').innerText = `${additionChainString} = ${grandCalculatedTotalValue}`;
+            
+            const labelOutputWidget = document.getElementById('sandboxEquivalentMultiplicationLabel');
+            if(grandCalculatedTotalValue === 0) {
+                labelOutputWidget.innerText = "Add items into the baskets to build groups!";
+            } else if(checkUniformDistribution) {
+                labelOutputWidget.innerText = `This means exactly ${activeSandboxGroupsCount} groups of ${referenceBaseValue}, which matches the multiplication fact: ${activeSandboxGroupsCount} × ${referenceBaseValue} = ${grandCalculatedTotalValue}`;
+            } else {
+                labelOutputWidget.innerText = "Make sure all baskets have the SAME number of items to turn it into a multiplication sentence! 💡";
+            }
+        }
+
+        window.onload = () => {
+            constructCurriculumQuestionsEngine();
+            establishFloatingAssetPatterns();
+        };
+    </script>
+</body>
+</html>

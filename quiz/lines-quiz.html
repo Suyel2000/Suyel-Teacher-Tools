@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📏 Lines and Line Segments Quiz</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --card-border: rgba(255, 255, 255, 0.4);
+            --primary: #4a0e4e;
+            --secondary: #ff7675;
+            --success: #2ecc71;
+            --error: #e74c3c;
+            --text-main: #2d3436;
+            --text-muted: #636e72;
+            --accent-yellow: #f1c40f;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Floating Background Elements */
+        .bg-element {
+            position: absolute;
+            font-size: 2rem;
+            opacity: 0.15;
+            pointer-events: none;
+            animation: float 8s infinite ease-in-out;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(15deg); }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.3);
+            z-index: 10;
+            transition: all 0.3s ease;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 5px;
+            font-weight: 800;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        /* Progress Metrics */
+        .metrics-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        .progress-container {
+            background: rgba(0,0,0,0.1);
+            border-radius: 10px;
+            height: 14px;
+            width: 100%;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #ff7675, #f1c40f, #2ecc71);
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        /* Workspace & Canvas View */
+        .quiz-body {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .visual-display {
+            background: white;
+            border-radius: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+            min-height: 180px;
+        }
+
+        .visual-display svg {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .question-text {
+            font-size: 1.3rem;
+            color: var(--text-main);
+            font-weight: 700;
+            line-height: 1.4;
+        }
+
+        /* Option Buttons */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        @media (min-width: 600px) {
+            .options-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .btn-option {
+            background: white;
+            border: 2px solid rgba(0,0,0,0.08);
+            border-radius: 14px;
+            padding: 16px 20px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-main);
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            display: flex;
+            align-items: center;
+        }
+
+        .btn-option:hover:not(:disabled) {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+            background-color: rgba(118, 75, 162, 0.05);
+        }
+
+        .btn-option:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+
+        .btn-option.correct {
+            background-color: var(--success) !important;
+            border-color: var(--success) !important;
+            color: white !important;
+        }
+
+        .btn-option.wrong {
+            background-color: var(--error) !important;
+            border-color: var(--error) !important;
+            color: white !important;
+        }
+
+        /* Explanation Panel */
+        .explanation-panel {
+            background: rgba(255,255,255,0.95);
+            border-left: 6px solid var(--primary);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .explanation-panel h4 {
+            margin-bottom: 5px;
+            color: var(--primary);
+        }
+
+        /* Controls Footer */
+        .controls-footer {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+            gap: 15px;
+        }
+
+        .btn-nav {
+            padding: 12px 24px;
+            border-radius: 12px;
+            border: none;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-prev {
+            background: #dfe6e9;
+            color: var(--text-main);
+        }
+        .btn-next {
+            background: var(--primary);
+            color: white;
+            margin-left: auto;
+        }
+        .btn-nav:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* End View / Certificate Area */
+        .end-screen {
+            display: none;
+            text-align: center;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .badge-display {
+            font-size: 5rem;
+            margin: 15px 0;
+            animation: pop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes pop {
+            0% { transform: scale(0); }
+            100% { transform: scale(1); }
+        }
+
+        .certificate-box {
+            background: #fff;
+            border: 8px double var(--primary);
+            padding: 30px;
+            margin: 25px 0;
+            border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        /* Utilities */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            z-index: 999;
+            animation: fall linear forwards;
+        }
+        @keyframes fall {
+            to { transform: translateY(105vh) rotate(360deg); }
+        }
+
+        /* Responsive adaptations for Smartboards/Tablets */
+        @media (max-width: 600px) {
+            h1 { font-size: 1.8rem; }
+            .container { padding: 15px; }
+            .btn-option { padding: 12px 15px; font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-element" style="top: 10%; left: 5%; animation-delay: 0s;">📏</div>
+    <div class="bg-element" style="top: 15%; right: 8%; animation-delay: 2s;">✏️</div>
+    <div class="bg-element" style="bottom: 12%; left: 8%; animation-delay: 4s;">📐</div>
+    <div class="bg-element" style="bottom: 15%; right: 10%; animation-delay: 1s;">🔄</div>
+    <div class="bg-element" style="top: 45%; left: 3%; animation-delay: 3s;">➕</div>
+
+    <div class="container">
+        <div id="quiz-window">
+            <header>
+                <h1>📏 Lines and Line Segments Quiz</h1>
+                <div class="subtitle">Observe • Identify • Compare • Master Lines</div>
+            </header>
+
+            <div class="metrics-bar">
+                <span id="q-counter">Question: 1/50</span>
+                <span id="score-counter">Score: 0</span>
+            </div>
+
+            <div class="progress-container">
+                <div id="progress" class="progress-bar"></div>
+            </div>
+
+            <div class="quiz-body">
+                <div class="visual-display" id="visual-container">
+                    </div>
+
+                <div class="question-text" id="question-text">
+                    Loading awesome geometry question...
+                </div>
+
+                <div class="options-grid" id="options-space">
+                    </div>
+
+                <div class="explanation-panel" id="explanation-space">
+                    <h4 id="expl-title">Correct!</h4>
+                    <p id="expl-text">Explanation content.</p>
+                </div>
+            </div>
+
+            <div class="controls-footer">
+                <button class="btn-nav btn-prev" id="btn-prev" onclick="handlePrev()">⬅️ Back</button>
+                <button class="btn-nav btn-next" id="btn-next" onclick="handleNext()">Next ➡️</button>
+            </div>
+        </div>
+
+        <div id="end-window" class="end-screen">
+            <h2>🎉 Quiz Completed! 🎉</h2>
+            <p>You have completed the entire Geometry Lines challenge.</p>
+            
+            <div class="badge-display" id="badge-icon">🏆</div>
+            <h3 id="badge-title" style="color: var(--primary); font-size: 1.8rem; margin-bottom: 15px;">Line Master</h3>
+
+            <div class="certificate-box" id="certificate">
+                <h2 style="font-family: 'Georgia', serif; color: #2c3e50; margin-bottom: 10px;">CERTIFICATE OF ACHIEVEMENT</h2>
+                <p style="font-size: 1.1rem; italic; margin-bottom: 20px;">This proudly certifies mastery in elementary geometry to:</p>
+                <h1 style="font-family: 'Georgia', serif; color: var(--primary); border-bottom: 2px dashed #ccc; display:inline-block; padding: 0 30px; margin-bottom: 20px;">Super Star Learner</h1>
+                <p style="font-size: 1.2rem; font-weight: bold;" id="cert-score">Score: 50 / 50 (100%)</p>
+                <p style="margin-top: 15px; font-size: 0.9rem; color: var(--text-muted);">Topic: Lines, Line Segments, Rays, Parallel & Perpendicular Forms</p>
+            </div>
+
+            <button class="btn-nav btn-next" style="margin: 0 auto; display: block; float: none;" onclick="restartQuiz()">🔄 Restart Quiz</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Web Audio API Synth Engine ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'click') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(400, now);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            } else if (type === 'correct') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, now); // A3
+                osc.frequency.linearRampToValueAtTime(110, now + 0.2);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } else if (type === 'complete') {
+                // Happy chord progression
+                const freqs = [261.63, 329.63, 392.00, 523.25];
+                freqs.forEach((f, index) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.connect(g); g.connect(audioCtx.destination);
+                    o.frequency.setValueAtTime(f, now + (index * 0.08));
+                    g.gain.setValueAtTime(0.1, now + (index * 0.08));
+                    g.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+                    o.start(now + (index * 0.08));
+                    o.stop(now + 0.6);
+                });
+            }
+        }
+
+        // --- SVG Drawing Database ---
+        const SVG_DATA = {
+            line: `<svg width="200" height="120"><defs><marker id="arr" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4a0e4e"/></marker></defs><line x1="30" y1="60" x2="170" y2="60" stroke="#4a0e4e" stroke-width="4" marker-start="url(#arr)" marker-end="url(#arr)"/><circle cx="60" cy="60" r="4" fill="#333"/><circle cx="140" cy="60" r="4" fill="#333"/><text x="55" y="45" font-weight="bold">A</text><text x="135" y="45" font-weight="bold">B</text></svg>`,
+            segment: `<svg width="200" height="120"><line x1="40" y1="60" x2="160" y2="60" stroke="#4a0e4e" stroke-width="4"/><circle cx="40" cy="60" r="6" fill="#ff7675"/><circle cx="160" cy="60" r="6" fill="#ff7675"/><text x="35" y="45" font-weight="bold">X</text><text x="155" y="45" font-weight="bold">Y</text></svg>`,
+            ray: `<svg width="200" height="120"><defs><marker id="arr" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4a0e4e"/></marker></defs><line x1="40" y1="60" x2="170" y2="60" stroke="#4a0e4e" stroke-width="4" marker-end="url(#arr)"/><circle cx="40" cy="60" r="6" fill="#4a0e4e"/><circle cx="120" cy="60" r="4" fill="#333"/><text x="35" y="45" font-weight="bold">P</text><text x="115" y="45" font-weight="bold">Q</text></svg>`,
+            horizontal: `<svg width="200" height="120"><line x1="20" y1="60" x2="180" y2="60" stroke="#2ecc71" stroke-width="5" stroke-dasharray="none"/></svg>`,
+            vertical: `<svg width="200" height="120"><line x1="100" y1="15" x2="100" y2="105" stroke="#9b59b6" stroke-width="5"/></svg>`,
+            slanting: `<svg width="200" height="120"><line x1="30" y1="100" x2="170" y2="20" stroke="#e67e22" stroke-width="5"/></svg>`,
+            parallel: `<svg width="200" height="120"><line x1="30" y1="40" x2="170" y2="40" stroke="#3498db" stroke-width="4"/><line x1="30" y1="80" x2="170" y2="80" stroke="#3498db" stroke-width="4"/></svg>`,
+            intersecting: `<svg width="200" height="120"><line x1="30" y1="20" x2="170" y2="100" stroke="#e74c3c" stroke-width="4"/><line x1="30" y1="100" x2="170" y2="20" stroke="#e74c3c" stroke-width="4"/><circle cx="100" cy="60" r="5" fill="#2c3e50"/></svg>`,
+            perpendicular: `<svg width="200" height="120"><line x1="20" y1="90" x2="180" y2="90" stroke="#27ae60" stroke-width="4"/><line x1="100" y1="15" x2="100" y2="105" stroke="#27ae60" stroke-width="4"/><rect x="100" y="75" width="15" height="15" fill="none" stroke="#27ae60" stroke-width="2"/></svg>`,
+            textIcon: `<svg width="200" height="120"><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-size="50">❓</text></svg>`
+        };
+
+        // --- Explanations Shared Pool ---
+        const EXPLANATIONS = {
+            line: "A Line has no endpoints! It extends forever dynamically in both left and right directions.",
+            segment: "A Line Segment is a fixed path between exactly 2 distinct endpoints. It can be measured.",
+            ray: "A Ray starts perfectly at 1 single endpoint and shoots onward forever in the other direction.",
+            horizontal: "Horizontal lines travel completely flat side-to-side, just like the level horizon or floor.",
+            vertical: "Vertical lines stand completely straight up and down, like a structural wall or flagpole.",
+            slanting: "Slanting (oblique) lines lean at an angle; they are neither perfectly horizontal nor vertical.",
+            parallel: "Parallel lines always stay equal distances apart and can never touch or cross each other.",
+            intersecting: "Intersecting lines seamlessly cross path networks and meet at exactly 1 common point.",
+            perpendicular: "Perpendicular lines meet at a perfect 90° right angle, forming an L or T cross square shape."
+        };
+
+        // --- 50 Questions Full Definition Array ---
+        const RAW_QUESTIONS = [
+            // Section A: Identify Figure (1-15)
+            { type: "line", q: "What mathematical geometry element is shown in this figure?", options: ["Line", "Line Segment", "Ray", "Parallel Lines"], answer: "Line" },
+            { type: "segment", q: "Identify the figure containing two clear measurable endpoints.", options: ["Line", "Line Segment", "Ray", "Perpendicular Lines"], answer: "Line Segment" },
+            { type: "ray", q: "What structural design type is shown with exactly one terminal origin point?", options: ["Line", "Ray", "Line Segment", "Intersecting Lines"], answer: "Ray" },
+            { type: "horizontal", q: "Identify the path format style of this drawn line element.", options: ["Horizontal Line", "Vertical Line", "Slanting Line", "Perpendicular Lines"], answer: "Horizontal Line" },
+            { type: "vertical", q: "Which format best describes this perfectly upright vector line orientation?", options: ["Vertical Line", "Horizontal Line", "Parallel Lines", "Ray"], answer: "Vertical Line" },
+            { type: "slanting", q: "What form classification matches this sloping, tilted setup path?", options: ["Slanting Line", "Horizontal Line", "Vertical Line", "Line Segment"], answer: "Slanting Line" },
+            { type: "parallel", q: "Identify the shared relationship state between these two lines.", options: ["Parallel Lines", "Intersecting Lines", "Perpendicular Lines", "Line Segments"], answer: "Parallel Lines" },
+            { type: "intersecting", q: "What configuration are these active straight tracks building up?", options: ["Intersecting Lines", "Parallel Lines", "Vertical Lines", "Rays"], answer: "Intersecting Lines" },
+            { type: "perpendicular", q: "What special relationship matches these lines that intersect forming a square corner?", options: ["Perpendicular Lines", "Parallel Lines", "Slanting Lines", "Horizontal Lines"], answer: "Perpendicular Lines" },
+            { type: "line", q: "This system path with double arrowheads represents which structural geometry entity?", options: ["Line", "Ray", "Segment", "Oblique"], answer: "Line" },
+            { type: "segment", q: "This perfectly bounded track segment is structurally categorized as a:", options: ["Line Segment", "Infinite Line", "Ray Vector", "Parallel Axis"], answer: "Line Segment" },
+            { type: "ray", q: "Look closely at the single direction arrow guide. This item shows a:", options: ["Ray", "Line", "Segment", "Vertical Set"], answer: "Ray" },
+            { type: "parallel", q: "These paths run perfectly alongside each other without crossing. They are:", options: ["Parallel Lines", "Perpendicular Lines", "Intersecting Lines", "Slanting Lines"], answer: "Parallel Lines" },
+            { type: "perpendicular", q: "The exact 90-degree cross profile layout seen here proves they are:", options: ["Perpendicular Lines", "Intersecting but not Perpendicular", "Parallel Lines", "Horizontal"], answer: "Perpendicular Lines" },
+            { type: "intersecting", q: "These lines cross over at a single shared center point. They are:", options: ["Intersecting Lines", "Parallel Lines", "Vertical Lines", "Line Segments"], answer: "Intersecting Lines" },
+
+            // Section B: Properties (16-25)
+            { type: "segment", q: "Which geometrical figure has exactly two distinct endpoints?", options: ["Line Segment", "Line", "Ray", "Parallel Lines"], answer: "Line Segment" },
+            { type: "ray", q: "Which geometric figure has exactly one terminal endpoint and travels forever in one direction?", options: ["Ray", "Line Segment", "Line", "Horizontal Line"], answer: "Ray" },
+            { type: "line", q: "Which figure extends endlessly in both opposite directions without stopping?", options: ["Line", "Line Segment", "Ray", "Perpendicular Lines"], answer: "Line" },
+            { type: "line", q: "Which item type has absolutely zero endpoints along its dynamic path length?", options: ["Line", "Line Segment", "Ray", "Slanting Line"], answer: "Line" },
+            { type: "segment", q: "What element type has a fixed measurable length using a standard school ruler?", options: ["Line Segment", "Line", "Ray", "Parallel Lines"], answer: "Line Segment" },
+            { type: "ray", q: "If a geometric object starts at point A and travels through B forever, it is called a:", options: ["Ray", "Line", "Line Segment", "Intersection"], answer: "Ray" },
+            { type: "line", q: "True or False feature logic: A straight line contains infinite available points.", options: ["True", "False", "Only if vertical", "Only if parallel"], answer: "True" },
+            { type: "segment", q: "The absolute shortest distance connecting two distinct stable dots forms a:", options: ["Line Segment", "Ray", "Infinite Line", "Curved Arch"], answer: "Line Segment" },
+            { type: "ray", q: "A torch light beam that shines outwards into dark space acts conceptually like a:", options: ["Ray", "Line Segment", "Complete Line", "Parallel Beam"], answer: "Ray" },
+            { type: "line", q: "Arrows on both sides of a geometric path drawing indicate:", options: ["It continues without stopping both ways", "It has two end limits", "It is broken", "It is parallel"], answer: "It continues without stopping both ways" },
+
+            // Section C: Types of Lines (26-35)
+            { type: "parallel", q: "Which specific types of lines will never, ever cross or touch each other?", options: ["Parallel Lines", "Intersecting Lines", "Perpendicular Lines", "Slanting Lines"], answer: "Parallel Lines" },
+            { type: "intersecting", q: "Which lines meet or cross at exactly one single common point?", options: ["Intersecting Lines", "Parallel Lines", "Horizontal Lines", "Vertical Lines"], answer: "Intersecting Lines" },
+            { type: "perpendicular", q: "Which lines meet specifically to form an exact 90-degree right angle?", options: ["Perpendicular Lines", "Parallel Lines", "Slanting Lines", "Horizontal Lines"], answer: "Perpendicular Lines" },
+            { type: "horizontal", q: "Which line configuration runs flat and perfectly parallel to the room floor?", options: ["Horizontal Line", "Vertical Line", "Slanting Line", "Perpendicular Lines"], answer: "Horizontal Line" },
+            { type: "vertical", q: "Which type of line profile runs straight up and down matching a structural building column?", options: ["Vertical Line", "Horizontal Line", "Slanting Line", "Parallel Lines"], answer: "Vertical Line" },
+            { type: "slanting", q: "What do we call a straight line that is leaning, tilted, or slanted sideways?", options: ["Slanting Line", "Horizontal Line", "Vertical Line", "Perpendicular Line"], answer: "Slanting Line" },
+            { type: "parallel", q: "If two lines are drawn on a page and stay exactly 4cm apart everywhere, they are:", options: ["Parallel Lines", "Perpendicular Lines", "Intersecting Lines", "Vertical Lines"], answer: "Parallel Lines" },
+            { type: "perpendicular", q: "Every corner of a square contains two line steps that are relative to each other:", options: ["Perpendicular", "Parallel", "Slanting", "Independent"], answer: "Perpendicular" },
+            { type: "horizontal", q: "The surface of calm pool water perfectly models which line orientation format?", options: ["Horizontal Line", "Vertical Line", "Slanting Line", "Ray"], answer: "Horizontal Line" },
+            { type: "slanting", q: "The side steps of a typical leaning playground ladder represent which line model?", options: ["Slanting Line", "Vertical Line", "Horizontal Line", "Perpendicular Lines"], answer: "Slanting Line" },
+
+            // Section D: Real-Life Application (36-45)
+            { type: "parallel", q: "A pair of straight train track rails side-by-side perfectly represent:", options: ["Parallel Lines", "Intersecting Lines", "Perpendicular Lines", "Vertical Lines"], answer: "Parallel Lines" },
+            { type: "perpendicular", q: "The two meeting edges at the corner of your classroom notebook represent:", options: ["Perpendicular Lines", "Parallel Lines", "Slanting Lines", "Rays"], answer: "Perpendicular Lines" },
+            { type: "segment", q: "A tightly stretched dynamic skipping rope held by two children represents a:", options: ["Line Segment", "Line", "Ray", "Parallel Grid"], answer: "Line Segment" },
+            { type: "ray", q: "Bright light beams travelling out from the Sun down towards Earth represent:", options: ["Rays", "Line Segments", "Full Lines", "Parallel Anchors"], answer: "Rays" },
+            { type: "vertical", q: "A straight flagpole standing tall in the center of the playground represents a:", options: ["Vertical Line", "Horizontal Line", "Slanting Line", "Ray"], answer: "Vertical Line" },
+            { type: "horizontal", q: "The flat, straight line where the sea meets the sky in the distance is called the:", options: ["Horizontal Line", "Vertical Line", "Perpendicular Line", "Ray"], answer: "Horizontal Line" },
+            { type: "slanting", q: "A steep slide on the school playground playground represents which line shape variant?", options: ["Slanting Line", "Horizontal Line", "Vertical Line", "Perpendicular Line"], answer: "Slanting Line" },
+            { type: "perpendicular", q: "The structural cross beams of a giant capital letter 'T' show lines that are:", options: ["Perpendicular Lines", "Parallel Lines", "Slanting Lines", "Rays"], answer: "Perpendicular Lines" },
+            { type: "parallel", q: "The lined rows printed across your writing paper sheet are examples of:", options: ["Parallel Lines", "Perpendicular Lines", "Intersecting Lines", "Vertical Lines"], answer: "Parallel Lines" },
+            { type: "segment", q: "A fresh piece of straight, uncooked spaghetti stick represents a:", options: ["Line Segment", "Line", "Ray", "Perpendicular Line"], answer: "Line Segment" },
+
+            // Section E: Mixed Challenge (46-50)
+            { type: "textIcon", q: "Choose the odd one out from the following options:", options: ["Line (extends forever both ways)", "Ray (extends forever one way)", "Line Segment (has two endpoints)", "Ruler (has infinite arrows)"], answer: "Ruler (has infinite arrows)" },
+            { type: "textIcon", q: "Identify the incorrect statement regarding basic structural geometry shapes:", options: ["A line segment can turn into a ray with zero endpoints.", "A ray has exactly one endpoint.", "Parallel lines never intersect.", "A straight line has infinite length."], answer: "A line segment can turn into a ray with zero endpoints." },
+            { type: "textIcon", q: "Which geometric asset contains exactly one terminal boundary spot?", options: ["A Ray", "A Line", "A Line Segment", "Parallel Lines"], answer: "A Ray" },
+            { type: "textIcon", q: "Which pair of paths will never cross even if you draw them forward forever?", options: ["Parallel Lines", "Intersecting Lines", "Perpendicular Lines", "Oblique Lines"], answer: "Parallel Lines" },
+            { type: "textIcon", q: "Order these figures by number of endpoints: Line, Ray, Line Segment.", options: ["Line (0), Ray (1), Segment (2)", "Segment (0), Ray (1), Line (2)", "Ray (1), Line (0), Segment (1)", "Line (2), Ray (1), Segment (0)"], answer: "Line (0), Ray (1), Segment (2)" }
+        ];
+
+        // --- State Management ---
+        let questions = [];
+        let currentIndex = 0;
+        let score = 0;
+        let selectedAnswers = {}; // Keeps track of progress history for Prev/Next support
+
+        // --- Shuffle Utility Function ---
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // --- Initialize Engine ---
+        function initQuiz() {
+            // Deep clone master list
+            questions = RAW_QUESTIONS.map(q => {
+                let opts = [...q.options];
+                shuffleArray(opts);
+                return { ...q, options: opts };
+            });
+            // Shuffle whole question pool sequence
+            shuffleArray(questions);
+
+            currentIndex = 0;
+            score = 0;
+            selectedAnswers = {};
+            
+            document.getElementById('quiz-window').style.display = "block";
+            document.getElementById('end-window').style.display = "none";
+            
+            loadQuestion(currentIndex);
+        }
+
+        // --- Render Question into View ---
+        function loadQuestion(index) {
+            const currentQ = questions[index];
+            
+            // UI elements update
+            document.getElementById('q-counter').innerText = `Question: ${index + 1}/${questions.length}`;
+            document.getElementById('score-counter').innerText = `Score: ${score}`;
+            
+            // Progress percentage calculation
+            const progressPercent = ((index) / questions.length) * 100;
+            document.getElementById('progress').style.width = `${progressPercent}%`;
+
+            // Setup Question text and Visual Artwork
+            document.getElementById('question-text').innerText = currentQ.q;
+            document.getElementById('visual-container').innerHTML = SVG_DATA[currentQ.type] || SVG_DATA.textIcon;
+
+            // Clear & Setup Options
+            const optionsSpace = document.getElementById('options-space');
+            optionsSpace.innerHTML = "";
+
+            const explSpace = document.getElementById('explanation-space');
+            explSpace.style.display = "none";
+
+            currentQ.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "btn-option";
+                btn.innerText = opt;
+                btn.onclick = () => selectOption(opt, btn);
+                optionsSpace.appendChild(btn);
+            });
+
+            // Handle Navigation Button States
+            document.getElementById('btn-prev').disabled = index === 0;
+            
+            // Lock inputs if already answered previously
+            if (selectedAnswers[index] !== undefined) {
+                restoreAnswerState(index);
+            }
+        }
+
+        // --- Answer Actions ---
+        function selectOption(chosenOption, buttonElement) {
+            playSound('click');
+            const currentQ = questions[currentIndex];
+            
+            // Stop multi-clicks on same question
+            if (selectedAnswers[currentIndex] !== undefined) return;
+
+            selectedAnswers[currentIndex] = chosenOption;
+            const optionsSpace = document.getElementById('options-space');
+            const buttons = optionsSpace.getElementsByClassName('btn-option');
+
+            if (chosenOption === currentQ.answer) {
+                buttonElement.classList.add('correct');
+                score++;
+                document.getElementById('score-counter').innerText = `Score: ${score}`;
+                showExplanation(true, EXPLANATIONS[currentQ.type] || "Great work identifying this math rule!");
+                playSound('correct');
+            } else {
+                buttonElement.classList.add('wrong');
+                // Highlight correct option answer
+                Array.from(buttons).forEach(btn => {
+                    if (btn.innerText === currentQ.answer) {
+                        btn.classList.add('correct');
+                    }
+                });
+                showExplanation(false, EXPLANATIONS[currentQ.type] || "Let's learn this geometric property concept.");
+                playSound('wrong');
+            }
+        }
+
+        // --- Show Explanation Panel ---
+        function showExplanation(isCorrect, text) {
+            const panel = document.getElementById('explanation-space');
+            const title = document.getElementById('expl-title');
+            const desc = document.getElementById('expl-text');
+
+            title.innerText = isCorrect ? "✅ Excellent Concept!" : "💡 Geometry Tip:";
+            desc.innerText = text;
+            panel.style.display = "block";
+        }
+
+        // --- Restore Previous Selection for Navigating ---
+        function restoreAnswerState(index) {
+            const chosen = selectedAnswers[index];
+            const currentQ = questions[index];
+            const optionsSpace = document.getElementById('options-space');
+            const buttons = optionsSpace.getElementsByClassName('btn-option');
+
+            Array.from(buttons).forEach(btn => {
+                if (btn.innerText === currentQ.answer) {
+                    btn.classList.add('correct');
+                } else if (btn.innerText === chosen) {
+                    btn.classList.add('wrong');
+                }
+            });
+
+            showExplanation(chosen === currentQ.answer, EXPLANATIONS[currentQ.type] || "Reviewing this answered item layout.");
+        }
+
+        // --- Navigation Handlers ---
+        function handlePrev() {
+            if (currentIndex > 0) {
+                playSound('click');
+                currentIndex--;
+                loadQuestion(currentIndex);
+            }
+        }
+
+        function handleNext() {
+            playSound('click');
+            if (selectedAnswers[currentIndex] === undefined) {
+                alert("Please answer the current question first before moving forward! 🤔");
+                return;
+            }
+
+            if (currentIndex < questions.length - 1) {
+                currentIndex++;
+                loadQuestion(currentIndex);
+            } else {
+                showEndScreen();
+            }
+        }
+
+        // --- Finish Screen and Badges ---
+        function showEndScreen() {
+            playSound('complete');
+            document.getElementById('quiz-window').style.display = "none";
+            document.getElementById('end-window').style.display = "block";
+
+            const percent = Math.round((score / questions.length) * 100);
+            document.getElementById('cert-score').innerText = `Final Score: ${score} / ${questions.length} (${percent}%)`;
+
+            let badge = "📚";
+            let title = "Keep Practising";
+
+            if (percent >= 90) {
+                badge = "🏆"; title = "Line Master";
+                launchConfetti();
+            } else if (percent >= 70) {
+                badge = "🌟"; title = "Geometry Explorer";
+                launchConfetti();
+            } else if (percent >= 50) {
+                badge = "👍"; title = "Good Learner";
+            }
+
+            document.getElementById('badge-icon').innerText = badge;
+            document.getElementById('badge-title').innerText = title;
+        }
+
+        function restartQuiz() {
+            playSound('click');
+            initQuiz();
+        }
+
+        // --- Lightweight Celebratory Confetti Simulation ---
+        function launchConfetti() {
+            const colors = ['#ff7675', '#fdcb6e', '#00cec9', '#6c5ce7', '#e84393'];
+            for (let i = 0; i < 80; i++) {
+                const conf = document.createElement('div');
+                conf.className = 'confetti';
+                conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.top = -10 + 'px';
+                conf.style.transform = `scale(${Math.random() * 1.2})`;
+                conf.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                conf.style.animationDelay = Math.random() * 1 + 's';
+                document.body.appendChild(conf);
+
+                // Auto clear confetti nodes
+                setTimeout(() => { conf.remove(); }, 5000);
+            }
+        }
+
+        // Run application on load sequence
+        window.onload = () => {
+            initQuiz();
+        };
+    </script>
+</body>
+</html>

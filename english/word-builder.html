@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📝 Interactive Word Builder Learning Lab</title>
+    <style>
+        /* --- CONFIGURATION & CSS VARIABLES --- */
+        :root {
+            --bg-gradient: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+            --primary: #4a90e2;
+            --primary-dark: #357abd;
+            --secondary: #ff7675;
+            --success: #2ecc71;
+            --warning: #f1c40f;
+            --accent: #9b59b6;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --text-main: #2d3436;
+            --tile-shadow: 0 8px 0 #b2bec3;
+            --tile-shadow-active: 0 2px 0 #b2bec3;
+            --font-family: 'Comic Sans MS', 'Chalkboard SE', 'Ubuntu', sans-serif;
+            --text-scale: 1;
+        }
+
+        .high-contrast {
+            --bg-gradient: linear-gradient(135deg, #000000 0%, #111111 100%);
+            --glass-bg: rgba(0, 0, 0, 0.95);
+            --glass-border: #ffffff;
+            --text-main: #ffffff;
+            --primary: #00ff00;
+            --secondary: #ff00ff;
+            --success: #00ffff;
+            --warning: #ffff00;
+            --tile-shadow: 0 6px 0 #ffffff;
+        }
+
+        /* --- RESET & BASIC STYLES --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body {
+            font-family: var(--font-family);
+            background: var(--bg-gradient);
+            background-size: 400% 400%;
+            animation: gradientBG 20s ease infinite;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            font-size: calc(16px * var(--text-scale));
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        *:focus-visible { outline: 4px solid var(--primary); outline-offset: 4px; }
+
+        /* --- DECORATIVE FLOATING ELEMENTS --- */
+        .floating-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1; overflow: hidden;
+        }
+        .floater {
+            position: absolute; font-size: 3rem; opacity: 0.12; animation: floatUp 14s linear infinite; bottom: -10%;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.25; }
+            90% { opacity: 0.25; }
+            100% { transform: translateY(-120vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* --- GLASS INTERFACE CONTAINER --- */
+        .glass-panel {
+            background: var(--glass-bg);
+            border: 2px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 25px;
+            margin: 20px auto;
+            width: 92%;
+            max-width: 1300px;
+            transition: all 0.3s ease;
+        }
+
+        /* --- HEADER & TOP CONTROLS --- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 4%;
+            background: rgba(255,255,255,0.7);
+            border-bottom: 2px solid var(--glass-border);
+        }
+        .brand-title { font-size: 1.6rem; font-weight: bold; color: #2c3e50; display: flex; align-items: center; gap: 10px; }
+        .top-utils { display: flex; gap: 10px; align-items: center; }
+        .btn-util {
+            background: white; border: 2px solid #ddd; padding: 8px 12px; border-radius: 12px; cursor: pointer;
+            font-size: 1.1rem; display: flex; align-items: center; gap: 5px; transition: 0.2s;
+        }
+        .btn-util:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+
+        /* --- APP STATES / SCREENS --- */
+        .app-screen { display: none; width: 100%; min-height: 75vh; flex-direction: column; align-items: center; justify-content: center; }
+        .app-screen.active { display: flex; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- WELCOME SCREEN --- */
+        #welcome-screen { text-align: center; }
+        .welcome-title { font-size: 3.5rem; margin-bottom: 10px; text-shadow: 2px 2px 0px white; color: #2980b9; }
+        .welcome-sub { font-size: 1.8rem; margin-bottom: 30px; color: #555; font-weight: bold; }
+        .emoji-banner { font-size: 4rem; margin-bottom: 35px; animation: bounce 3s ease infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        .btn-main {
+            font-family: var(--font-family); font-size: 2rem; padding: 15px 45px; border: none; border-radius: 50px;
+            background: linear-gradient(to right, #ff7675, #ffeaa7); color: #2d3436; font-weight: bold; cursor: pointer;
+            box-shadow: 0 10px 0 #e17055, 0 15px 25px rgba(0,0,0,0.15); transition: 0.1s;
+        }
+        .btn-main:active { transform: translateY(8px); box-shadow: 0 2px 0 #e17055, 0 5px 10px rgba(0,0,0,0.15); }
+
+        /* --- MAIN MENU --- */
+        .menu-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; width: 100%; padding: 20px 0;
+        }
+        .menu-card {
+            background: white; border-radius: 20px; padding: 25px; text-align: center; cursor: pointer;
+            border: 3px solid #f1f2f6; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.05);
+        }
+        .menu-card:hover { transform: translateY(-8px); box-shadow: 0 16px 32px rgba(0,0,0,0.15); }
+        .menu-card .icon { font-size: 3.5rem; margin-bottom: 15px; display: inline-block; }
+        .menu-card h3 { font-size: 1.4rem; margin-bottom: 8px; }
+        .menu-card p { font-size: 0.95rem; color: #666; }
+
+        /* --- LETTER TILES & BOARDS --- */
+        .board-zone {
+            min-height: 120px; width: 100%; background: rgba(255,255,255,0.6); border: 4px dashed #bdc3c7;
+            border-radius: 18px; margin: 20px 0; display: flex; flex-wrap: wrap; justify-content: center;
+            align-items: center; gap: 12px; padding: 15px; position: relative;
+        }
+        .board-zone::before {
+            content: 'Drop Tiles / Build Words Here'; position: absolute; font-size: 1.2rem; color: #bdc3c7; font-weight: bold; pointer-events: none; z-index: 0;
+        }
+        .tile-bank {
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 15px; width: 100%;
+        }
+        .tile {
+            width: 60px; height: 60px; background: white; border-radius: 12px; display: flex; align-items: center;
+            justify-content: center; font-size: 1.8rem; font-weight: bold; cursor: grab;
+            box-shadow: var(--tile-shadow); border: 2px solid #dcdde1; transition: transform 0.1s;
+            position: relative; z-index: 2; touch-action: none;
+        }
+        .tile:active { cursor: grabbing; }
+        .tile.vowel { background: #ffeaa7; }
+        .tile.consonant { background: #fab1a0; }
+        .tile.digraph { background: #a8ff78; width: auto; padding: 0 15px; }
+
+        /* --- MODULE SPECIFIC INTERFACES --- */
+        .cvc-boxes { display: flex; gap: 20px; margin: 20px; }
+        .cvc-box {
+            width: 90px; height: 90px; border: 4px solid var(--primary); border-radius: 16px;
+            display: flex; align-items: center; justify-content: center; font-size: 2.5rem; background: white;
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.05);
+        }
+        .house-container { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 20px; }
+        .family-house {
+            background: white; border-radius: 20px 20px 10px 10px; width: 240px; min-height: 320px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05); border: 3px solid #ffeaa7; overflow: hidden;
+        }
+        .house-roof { background: var(--secondary); color: white; text-align: center; padding: 10px; font-size: 1.4rem; font-weight: bold; }
+        .house-slots { padding: 15px; display: flex; flex-direction: column; gap: 8px; align-items: center; min-height: 240px; background: #fafafa; }
+
+        /* --- WORD TREE --- */
+        .tree-layout { display: flex; flex-direction: column; align-items: center; margin: 20px 0; }
+        .tree-crown {
+            background: #2ecc71; width: 340px; height: 220px; border-radius: 50% 50% 45% 45%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; padding: 20px; color: white; box-shadow: 0 10px 0 #27ae60;
+        }
+        .tree-trunk { width: 45px; height: 100px; background: #795548; box-shadow: 0 5px 0 #5d4037; position: relative; }
+        .tree-roots { display: flex; gap: 15px; margin-top: 10px; flex-wrap: wrap; justify-content: center; }
+
+        /* --- PICTURE BUILDER & FEEDBACK --- */
+        .picture-box { font-size: 6rem; margin: 15px 0; filter: drop-shadow(0 8px 4px rgba(0,0,0,0.15)); }
+        .feedback-box { font-size: 1.5rem; font-weight: bold; margin: 15px; min-height: 40px; color: var(--success); text-align: center; }
+        .word-definition-card {
+            background: #fff; border-radius: 16px; padding: 15px; margin-top: 15px; border-left: 6px solid var(--success);
+            display: none; width: 100%; max-width: 500px; animation: fadeIn 0.3s ease;
+        }
+
+        /* --- SENTENCE STRIPS --- */
+        .sentence-strip { min-height: 80px; border-bottom: 4px dashed #bdc3c7; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        .word-token { background: #e0f7fa; padding: 10px 20px; border-radius: 30px; font-weight: bold; border: 2px solid #b2ebf2; cursor: pointer; margin: 4px; }
+
+        /* --- TEACHER CONTROL MODE --- */
+        .teacher-panel { background: #dfe6e9; border-radius: 16px; padding: 15px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; width: 100%; }
+        .teacher-only { display: none; }
+        body.teacher-mode-active .teacher-only { display: flex; }
+        .annotation-canvas { position: fixed; top:0; left:0; width:100vw; height:100vh; pointer-events: none; z-index: 9999; }
+
+        /* --- PROGRESS & NOTIFICATIONS --- */
+        .dashboard { display: flex; gap: 15px; background: white; padding: 15px; border-radius: 16px; margin-bottom: 15px; flex-wrap: wrap; }
+        .stat-capsule { background: #f1f2f6; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; }
+        .toast {
+            position: fixed; bottom: 20px; right: 20px; background: #2d3436; color: white; padding: 15px 25px;
+            border-radius: 12px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); z-index: 1000; transform: translateY(100px); opacity: 0; transition: 0.3s;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+
+        /* --- SYSTEM UTILITIES --- */
+        .action-row { display: flex; gap: 10px; margin: 15px 0; flex-wrap: wrap; }
+        .btn-action {
+            background: white; border: 2px solid var(--primary); color: var(--primary); padding: 10px 20px;
+            border-radius: 12px; cursor: pointer; font-family: var(--font-family); font-weight: bold; transition: 0.2s;
+        }
+        .btn-action:hover { background: var(--primary); color: white; }
+        .back-nav { align-self: flex-start; margin-bottom: 15px; cursor: pointer; font-size: 1.1rem; font-weight: bold; color: var(--primary); }
+
+        /* --- RESPONSIVE ADJUSTMENTS --- */
+        @media (max-width: 768px) {
+            .welcome-title { font-size: 2.2rem; }
+            .welcome-sub { font-size: 1.2rem; }
+            .tile { width: 48px; height: 48px; font-size: 1.4rem; box-shadow: 0 4px 0 #b2bec3; }
+            .cvc-box { width: 70px; height: 70px; font-size: 1.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="paintCanvas" class="annotation-canvas"></canvas>
+
+    <header>
+        <div class="brand-title" onclick="router.home()" style="cursor:pointer">
+            <span>📝</span>
+            <span>Word Builder Lab</span>
+        </div>
+        <div class="top-utils">
+            <button class="btn-util" id="btn-high-contrast" onclick="system.toggleContrast()" aria-label="Toggle High Contrast">👁️</button>
+            <button class="btn-util" id="btn-text-size" onclick="system.toggleTextSize()" aria-label="Toggle Text Size">A+</button>
+            <button class="btn-util" id="btn-teacher-toggle" onclick="system.toggleTeacherMode()">👨‍🏫 Teacher Mode</button>
+            <button class="btn-util" id="score-badge">⭐ <span id="saved-stars">0</span></button>
+        </div>
+    </header>
+
+    <div class="floating-bg" id="floating-bg"></div>
+
+    <main class="glass-panel">
+        
+        <div class="dashboard">
+            <div class="stat-capsule">Built: <span id="stat-count">0</span></div>
+            <div class="stat-capsule">Rank: <span id="stat-rank">Word Novice</span></div>
+            <div id="teacher-indicator" class="stat-capsule teacher-only" style="background:#ffeaa7; color:#d63031;">Presentation Mode Active</div>
+        </div>
+
+        <div id="welcome-screen" class="app-screen active">
+            <h1 class="welcome-title">Interactive Word Builder</h1>
+            <p class="welcome-sub">Build • Blend • Read • Spell</p>
+            <div class="emoji-banner">🔤 📖 ✏️ 🎈 ⭐ 🌈</div>
+            <button class="btn-main" onclick="router.go('main-menu')">▶ Start Learning</button>
+        </div>
+
+        <div id="main-menu" class="app-screen">
+            <h2 style="margin-bottom:20px;">Choose Your Word Adventure!</h2>
+            <div class="menu-grid">
+                <div class="menu-card" onclick="router.go('letter-builder')">
+                    <span class="icon">🔤</span>
+                    <h3>Letter Builder</h3>
+                    <p>Freeform build board covering thousands of vocabulary words.</p>
+                </div>
+                <div class="menu-card" onclick="router.go('phonics-builder')">
+                    <span class="icon">🔊</span>
+                    <h3>Phonics Builder</h3>
+                    <p>Work with advanced blends, digraphs, and phonics sets.</p>
+                </div>
+                <div class="menu-card" onclick="router.go('cvc-builder')">
+                    <span class="icon">🧩</span>
+                    <h3>CVC Builder</h3>
+                    <p>Master Three-Letter Consonant-Vowel-Consonant structures.</p>
+                </div>
+                <div class="menu-card" onclick="router.go('word-families')">
+                    <span class="icon">📖</span>
+                    <h3>Word Families</h3>
+                    <p>Sort dynamic variations into 24 distinct rhyming houses.</p>
+                </div>
+                <div class="menu-card" onclick="router.go('word-tree')">
+                    <span class="icon">🌳</span>
+                    <h3>Word Tree</h3>
+                    <p>Grow fundamental stems into advanced tenses and suffixes.</p>
+                </div>
+                <div class="menu-card" onclick="router.go('picture-builder')">
+                    <span class="icon">🔍</span>
+                    <h3>Picture Builder</h3>
+                    <p>Decode high-resolution illustration patterns into words.</p>
+                </div>
+                <div class="menu-card" onclick="router.go('missing-letter')">
+                    <span class="icon">✍</span>
+                    <h3>Missing Letter</h3>
+                    <p>Identify missing sounds and drop the correction.</p>
+                </div>
+                <div class="menu-card" onclick="router.go('sentence-builder')">
+                    <span class="icon">🎨</span>
+                    <h3>Sentence Builder</h3>
+                    <p>Arrange structured syntax modules into whole ideas.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="letter-builder" class="app-screen">
+            <div class="back-nav" onclick="router.go('main-menu')">⬅ Back to Menu</div>
+            <h2>Freeform Letter Builder</h2>
+            <div class="action-row">
+                <button class="btn-action" onclick="modules.letterBuilder.toggleCase()">Toggle Case (Aa)</button>
+                <button class="btn-action" onclick="modules.letterBuilder.shuffle()">Shuffle Bank</button>
+                <button class="btn-action" onclick="modules.letterBuilder.reset()">Reset Board</button>
+            </div>
+            <div class="board-zone" id="lb-dropzone" ondragover="event.preventDefault()" ondrop="modules.letterBuilder.handleDrop(event)"></div>
+            <div class="tile-bank" id="lb-bank"></div>
+            <div class="word-definition-card" id="lb-def"></div>
+        </div>
+
+        <div id="phonics-builder" class="app-screen">
+            <div class="back-nav" onclick="router.go('main-menu')">⬅ Back to Menu</div>
+            <h2>Phonics Digraph Lab</h2>
+            <p style="margin-bottom:10px; text-align:center;">Combine phonics digraphs to assemble complex words.</p>
+            <div class="board-zone" id="pb-dropzone" ondragover="event.preventDefault()" ondrop="modules.phonicsBuilder.handleDrop(event)"></div>
+            <div class="tile-bank" id="pb-bank"></div>
+            <div class="word-definition-card" id="pb-def"></div>
+        </div>
+
+        <div id="cvc-builder" class="app-screen">
+            <div class="back-nav" onclick="router.go('main-menu')">⬅ Back to Menu</div>
+            <h2>CVC Sandbox</h2>
+            <div class="cvc-boxes">
+                <div class="cvc-box" id="cvc-1" ondragover="event.preventDefault()" ondrop="modules.cvcBuilder.drop(event, 0)">C</div>
+                <div class="cvc-box" id="cvc-2" ondragover="event.preventDefault()" ondrop="modules.cvcBuilder.drop(event, 1)">V</div>
+                <div class="cvc-box" id="cvc-3" ondragover="event.preventDefault()" ondrop="modules.cvcBuilder.drop(event, 2)">C</div>
+            </div>
+            <div class="action-row">
+                <button class="btn-action" onclick="modules.cvcBuilder.check()">Verify Match</button>
+                <button class="btn-action" onclick="modules.cvcBuilder.reset()">Clear Slots</button>
+            </div>
+            <div class="feedback-box" id="cvc-feedback"></div>
+            <div class="tile-bank" id="cvc-bank"></div>
+        </div>
+
+        <div id="word-families" class="app-screen">
+            <div class="back-nav" onclick="router.go('main-menu')">⬅ Back to Menu</div>
+            <h2>Word Family Neighborhood</h2>
+            <p>Sort the target words below into their rhyming homes. Houses cycle automatically!</p>
+            <div class="house-container" id="houses-wrapper"></div>
+            <div class="tile-bank" id="wf-bank" style="margin-top:30px;"></div>
+        </div>
+
+        <div id="word-tree" class="app-screen">
+            <div class="back-nav" onclick="router.go('main-menu')">⬅ Back to Menu</div>
+            <h2>Inflection Word Tree</h2>
+            <div class="tree-layout">
+                <div class="tree-crown">
+                    <h3 id="tree-root-display" style="font-size:2rem;">Root</h3>
+                    <div id="tree-branches" style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center;"></div>
+                </div>
+                <div class="tree-trunk"></div>
+                <div class="tree-roots" id="tree-roots-bank"></div>
+            </div>
+        </div>
+
+        <div id="picture-builder" class="app-screen">
+            <div class="back-nav" onclick="router.go('main-menu')">⬅ Back to Menu</div>
+            <h2>Picture Builder Challenge</h2>
+            <div class="picture-box" id="pic-graphic">🍎</div>
+            <div class="board-zone" id="pic-dropzone" ondragover="event.preventDefault()" ondrop="modules.pictureBuilder.handleDrop(event)"></div>
+            <div class="tile-bank" id="pic-bank"></div>
+            <div class="feedback-box" id="pic-feedback"></div>
+        </div>
+
+        <div id="missing-letter" class="app-screen">
+            <div class="back-nav" onclick="router.go('main-menu')">⬅ Back to Menu</div>
+            <h2>Fill the Missing Gap</h2>
+            <div id="ml-prompt-container" style="font-size:3.5rem; letter-spacing:10px; margin:20px; font-weight:bold;"></div>
+            <div class="tile-bank" id="ml-bank"></div>
+            <div class="feedback-box" id="ml-feedback"></div>
+        </div>
+
+        <div id="sentence-builder" class="app-screen">
+            <div class="back-nav" onclick="router.go('main-menu')">⬅ Back to Menu</div>
+            <h2>Sentence Construction Strip</h2>
+            <p style="margin-bottom:15px;">Arrange words below to complete a meaningful thought.</p>
+            <div class="sentence-strip" id="sb-target" ondragover="event.preventDefault()" ondrop="modules.sentenceBuilder.handleDrop(event)"></div>
+            <div class="tile-bank" id="sb-bank" style="margin-top:30px;"></div>
+            <div class="feedback-box" id="sb-feedback"></div>
+        </div>
+
+        <div class="teacher-panel teacher-only" style="margin-top:30px; flex-direction:column; gap:10px;">
+            <h3>👨‍🏫 Teacher Presentation Toolkit</h3>
+            <div style="display:flex; flex-wrap:wrap; gap:10px;">
+                <button class="btn-action" onclick="system.teacherActions.speakSlow()">🐢 Slow Pronounce</button>
+                <button class="btn-action" onclick="system.teacherActions.toggleAnnotation()">🖌️ Draw / Pointer Mode</button>
+                <button class="btn-action" onclick="system.teacherActions.clearCanvas()">🧼 Clear Marks</button>
+                <button class="btn-action" onclick="system.teacherActions.toggleFullscreen()">🖥️ Fullscreen View</button>
+            </div>
+        </div>
+
+    </main>
+
+    <footer style="margin:auto 0 15px 0; text-align:center; font-size:0.9rem; opacity:0.7;">
+        <p>Interactive Word Builder Learning Lab • Build Words • Read Better • Spell Better</p>
+    </footer>
+
+    <div class="toast" id="toast-notif">Spelling Star Unlocked! ⭐</div>
+
+    <script>
+        /* --- MASSIVE SYSTEM DATA DICTIONARY GENERATOR --- */
+        const dictionary = {};
+        const wordFamiliesMap = {};
+        
+        // Define key syllable configurations for procedural structural extraction
+        const linguisticAssets = {
+            at: ["cat","bat","hat","rat","mat","pat","sat","fat","vat","flat"],
+            an: ["fan","man","pan","can","van","ran","tan","plan","scan","span"],
+            op: ["top","hop","mop","pop","shop","drop","crop","stop","flop","chop"],
+            in: ["pin","tin","bin","fin","win","shin","chin","twin","spin","skin"],
+            et: ["net","pet","wet","bet","get","set","met","let","vett","jet"],
+            ig: ["pig","dig","big","wig","fig","jig","rig","twig","swig","brig"],
+            og: ["dog","log","fog","hog","jog","frog","clog","blog","smog","trot"],
+            un: ["sun","run","bun","fun","gun","nun","spun","stun","shun","runn"],
+            ag: ["bag","rag","tag","wag","nag","flag","brag","drag","stag","sag"],
+            ap: ["cap","map","tap","lap","nap","gap","trap","clap","snap","wrap"],
+            en: ["hen","pen","ten","men","den","glen","when"],
+            ip: ["ship","chip","clip","drip","flip","grip","slip","trip","skip","whip"],
+            ot: ["hot","pot","not","dot","lot","got","shot","spot","knot","plot"],
+            ug: ["bug","jug","hug","mug","rug","tug","plug","slug","snug","shrug"],
+            ay: ["day","say","play","may","way","clay","tray","gray","pray","stay"],
+            ill: ["will","mill","hill","pill","fill","bill","chill","drill","skill","spill"],
+            all: ["ball","wall","tall","call","fall","hall","small","stall"],
+            ell: ["bell","well","sell","tell","yell","shell","smell","spell"],
+            ing: ["king","ring","sing","wing","bring","cling","fling","sling","string"],
+            ick: ["kick","pick","sick","tick","brick","chick","click","trick","stick"],
+            ock: ["lock","rock","sock","dock","clock","block","flock","shock","stock"],
+            unk: ["junk","bunk","sunk","dunk","hunk","trunk","skunk","plunk"],
+            ack: ["pack","sack","tack","back","black","clack","crack","shack","track"],
+            est: ["best","vest","nest","west","rest","test","chest","guest","crest"]
+        };
+
+        // Procedurally inflate standard lexical database to support full sandbox searching
+        Object.keys(linguisticAssets).forEach(family => {
+            linguisticAssets[family].forEach(word => {
+                dictionary[word] = {
+                    meaning: `A fundamental phonetic word belonging to the -${family} rhyme group.`,
+                    sentence: `Can you build the word "${word}" using letter cards?`
+                };
+                if (!wordFamiliesMap[family]) wordFamiliesMap[family] = [];
+                wordFamiliesMap[family].push(word);
+            });
+        });
+
+        // Add core bespoke targets requested explicitly in design benchmarks
+        const masterBespoke = {
+            "thin": { meaning: "Having a very narrow or slender shape.", sentence: "This paper page feels thin." },
+            "oat": { meaning: "A wholesome grain used for morning porridge.", sentence: "Oat cereal makes a delicious healthy breakfast." },
+            "eel": { meaning: "A long, slippery fish that looks like a snake.", sentence: "The green eel hid inside the ocean cave." }
+        };
+        Object.assign(dictionary, masterBespoke);
+
+        const pictureWords = [
+            { word: "APPLE", emoji: "🍎", meaning: "A crisp round sweet fruit.", sentence: "She took a bite of the red apple." },
+            { word: "BALL", emoji: "⚽", meaning: "A round object used for bouncing games.", sentence: "Kick the ball into the net." },
+            { word: "BIRD", emoji: "🐦", meaning: "A winged creature that flies and sings.", sentence: "A blue bird built a tiny nest." },
+            { word: "FISH", emoji: "🐟", meaning: "An animal living entirely under water.", sentence: "The gold fish swam around its tank." },
+            { word: "FROG", emoji: "🐸", meaning: "A jumping green amphibian that croaks.", sentence: "The spotted frog jumped into the pond." },
+            { word: "CAKE", emoji: "🎂", meaning: "A sweet baked food for celebrations.", sentence: "Blow out the candles on the birthday cake." },
+            { word: "STAR", emoji: "⭐", meaning: "A glowing cosmic body in the night sky.", sentence: "The bright star twinkles over the horizon." },
+            { word: "BOAT", emoji: "⛵", meaning: "A small watercraft for navigating lakes.", sentence: "We rowed our wooden boat across the water." },
+            { word: "TREE", emoji: "🌳", meaning: "A tall perennial plant with branches and leaves.", sentence: "Birds build their homes inside the green tree." }
+        ];
+
+        const treeWords = [
+            { root: "play", derivatives: ["playing", "played", "player", "playful"] },
+            { root: "jump", derivatives: ["jumping", "jumped", "jumper", "jumps"] },
+            { root: "help", derivatives: ["helping", "helped", "helper", "helpful"] },
+            { root: "walk", derivatives: ["walking", "walked", "walker", "walks"] },
+            { root: "read", derivatives: ["reading", "reader", "reads", "readability"] }
+        ];
+
+        const gapWords = [
+            { display: "C _ T", missing: "A", full: "CAT" },
+            { display: "B A _", missing: "G", full: "BAG" },
+            { display: "F _ X", missing: "O", full: "FOX" },
+            { display: "P I _", missing: "G", full: "PIG" },
+            { display: "S _ N", missing: "U", full: "SUN" },
+            { display: "N E _", missing: "T", full: "NET" }
+        ];
+
+        const sentenceData = [
+            { scrambled: ["cat", "The", "sleeping.", "is"], correct: "The cat is sleeping." },
+            { scrambled: ["sun", "hot.", "is", "The"], correct: "The sun is hot." },
+            { scrambled: ["dog", "can", "run.", "My"], correct: "My dog can run." },
+            { scrambled: ["birds", "fly", "high.", "The"], correct: "The birds fly high." },
+            { scrambled: ["apple", "is", "sweet.", "This"], correct: "This apple is sweet." }
+        ];
+
+        /* --- AUDIO SYNTH SUITE --- */
+        const audio = {
+            ctx: null,
+            init() { if(!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+            playTone(freq, type, duration) {
+                this.init();
+                try {
+                    let osc = this.ctx.createOscillator();
+                    let gain = this.ctx.createGain();
+                    osc.type = type; osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+                    osc.connect(gain); gain.connect(this.ctx.destination);
+                    osc.start(); osc.stop(this.ctx.currentTime + duration);
+                } catch(e){}
+            },
+            click() { this.playTone(600, 'sine', 0.08); },
+            success() { this.playTone(523.25, 'triangle', 0.15); setTimeout(() => this.playTone(659.25, 'triangle', 0.25), 100); },
+            fail() { this.playTone(180, 'sawtooth', 0.3); },
+            speak(text, slow = false) {
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                    let utter = new SpeechSynthesisUtterance(text);
+                    utter.rate = slow ? 0.45 : 0.85;
+                    utter.pitch = 1.15; 
+                    window.speechSynthesis.speak(utter);
+                }
+            }
+        };
+
+        /* --- ROUTER ENGINE --- */
+        const router = {
+            home() { this.go('welcome-screen'); },
+            go(screenId) {
+                audio.click();
+                document.querySelectorAll('.app-screen').forEach(s => s.classList.remove('active'));
+                const activeScreen = document.getElementById(screenId);
+                if(activeScreen) {
+                    activeScreen.classList.add('active');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    if(modules[this.camelCase(screenId)]?.init) {
+                        modules[this.camelCase(screenId)].init();
+                    }
+                }
+            },
+            camelCase(str) { return str.replace(/-([a-z])/g, (g) => g[1].toUpperCase()); }
+        };
+
+        /* --- LOCAL STORAGE TRACKING --- */
+        const state = {
+            stars: parseInt(localStorage.getItem('wb_stars')) || 0,
+            builtCount: parseInt(localStorage.getItem('wb_built')) || 0,
+            addStars(amt) { 
+                this.stars += amt; localStorage.setItem('wb_stars', this.stars); this.renderStats(); 
+                if(this.stars % 15 === 0) system.showToast("🌟 Elite Achievement Banner Unlocked!");
+            },
+            incrementBuilt() { this.builtCount++; localStorage.setItem('wb_built', this.builtCount); this.renderStats(); },
+            renderStats() {
+                document.getElementById('saved-stars').innerText = this.stars;
+                document.getElementById('stat-count').innerText = this.builtCount;
+                let rank = "Word Novice 🔤";
+                if(this.builtCount >= 10) rank = "Syllable Builder 🧩";
+                if(this.builtCount >= 30) rank = "Sentence Master 👑";
+                document.getElementById('stat-rank').innerText = rank;
+            }
+        };
+
+        /* --- MODULE ENGINES --- */
+        const modules = {
+            letterBuilder: {
+                isUpper: true,
+                init() {
+                    this.renderBank();
+                    document.getElementById('lb-dropzone').innerHTML = '';
+                    document.getElementById('lb-def').style.display = 'none';
+                },
+                renderBank() {
+                    const bank = document.getElementById('lb-bank'); bank.innerHTML = '';
+                    "abcdefghijklmnopqrstuvwxyz".split('').forEach(l => {
+                        let char = this.isUpper ? l.toUpperCase() : l;
+                        let tile = document.createElement('div');
+                        tile.className = `tile ${'aeiou'.includes(l)?'vowel':'consonant'}`;
+                        tile.innerText = char; tile.draggable = true;
+                        tile.ondragstart = (e) => { e.dataTransfer.setData('text', char); audio.click(); };
+                        tile.onclick = () => this.appendTile(char);
+                        bank.appendChild(tile);
+                    });
+                },
+                toggleCase() { audio.click(); this.isUpper = !this.isUpper; this.renderBank(); },
+                shuffle() {
+                    audio.click(); const bank = document.getElementById('lb-bank');
+                    for (let i = bank.children.length; i >= 0; i--) { bank.appendChild(bank.children[Math.random() * i | 0]); }
+                },
+                reset() { this.init(); audio.playTone(300, 'sine', 0.1); },
+                appendTile(char) {
+                    let dz = document.getElementById('lb-dropzone');
+                    let tile = document.createElement('div'); tile.className = "tile"; tile.innerText = char;
+                    tile.onclick = () => { audio.click(); tile.remove(); this.checkWord(); };
+                    dz.appendChild(tile); this.checkWord();
+                },
+                handleDrop(e) { e.preventDefault(); let data = e.dataTransfer.getData('text'); if(data.length === 1) this.appendTile(data); },
+                checkWord() {
+                    let word = Array.from(document.getElementById('lb-dropzone').children).map(t => t.innerText).join('').toLowerCase();
+                    let defBox = document.getElementById('lb-def');
+                    if(dictionary[word]) {
+                        audio.success(); state.incrementBuilt(); state.addStars(2);
+                        defBox.style.display = 'block';
+                        defBox.innerHTML = `<h3>✅ ${word.toUpperCase()}</h3><p><b>Meaning:</b> ${dictionary[word].meaning}</p><p style="font-style:italic;">"${dictionary[word].sentence}"</p>`;
+                        audio.speak(word);
+                    } else { defBox.style.display = 'none'; }
+                }
+            },
+            phonicsBuilder: {
+                sounds: ["sh", "ch", "th", "oa", "ee", "ai", "oo", "p", "i", "g", "t", "n", "l", "ar", "or", "ck", "ing"],
+                init() {
+                    const bank = document.getElementById('pb-bank'); bank.innerHTML = '';
+                    document.getElementById('pb-dropzone').innerHTML = '';
+                    document.getElementById('pb-def').style.display = 'none';
+                    this.sounds.forEach(s => {
+                        let tile = document.createElement('div');
+                        tile.className = "tile digraph"; tile.innerText = s; tile.draggable = true;
+                        tile.ondragstart = (e) => { e.dataTransfer.setData('text', s); audio.click(); };
+                        tile.onclick = () => this.appendTile(s);
+                        bank.appendChild(tile);
+                    });
+                },
+                appendTile(sound) {
+                    let dz = document.getElementById('pb-dropzone');
+                    let tile = document.createElement('div'); tile.className = "tile digraph"; tile.innerText = sound;
+                    tile.onclick = () => { audio.click(); tile.remove(); this.checkWord(); };
+                    dz.appendChild(tile); audio.speak(sound); this.checkWord();
+                },
+                handleDrop(e) { e.preventDefault(); this.appendTile(e.dataTransfer.getData('text')); },
+                checkWord() {
+                    let word = Array.from(document.getElementById('pb-dropzone').children).map(t => t.innerText).join('').toLowerCase();
+                    let defBox = document.getElementById('pb-def');
+                    if(dictionary[word]) {
+                        audio.success(); state.incrementBuilt(); state.addStars(3);
+                        defBox.style.display = 'block';
+                        defBox.innerHTML = `<h3>🔊 ${word.toUpperCase()}</h3><p><b>Phonics Match:</b> ${dictionary[word].meaning}</p>`;
+                        setTimeout(() => audio.speak(word), 400);
+                    } else { defBox.style.display = 'none'; }
+                }
+            },
+            cvcBuilder: {
+                currentSlots: ["", "", ""],
+                init() {
+                    this.reset(); const bank = document.getElementById('cvc-bank'); bank.innerHTML = '';
+                    ["c","d","p","h","s","t","g","n","m","b","a","e","i","o","u"].forEach(l => {
+                        let tile = document.createElement('div');
+                        tile.className = `tile ${'aeiou'.includes(l)?'vowel':'consonant'}`; tile.innerText = l.toUpperCase();
+                        tile.draggable = true; tile.ondragstart = (e) => e.dataTransfer.setData('text', l.toUpperCase());
+                        bank.appendChild(tile);
+                    });
+                },
+                drop(e, slotIdx) {
+                    e.preventDefault(); let letter = e.dataTransfer.getData('text');
+                    if(letter.length === 1) {
+                        this.currentSlots[slotIdx] = letter;
+                        document.getElementById(`cvc-${slotIdx+1}`).innerText = letter;
+                        audio.speak(letter);
+                    }
+                },
+                check() {
+                    let constructed = this.currentSlots.join('').toLowerCase();
+                    let fb = document.getElementById('cvc-feedback');
+                    if(dictionary[constructed]) {
+                        fb.style.color = "var(--success)"; fb.innerText = `Great! "${constructed.toUpperCase()}" matches a valid system CVC word.`;
+                        audio.success(); audio.speak(constructed); state.incrementBuilt(); state.addStars(2);
+                    } else { fb.style.color = "var(--secondary)"; fb.innerText = "Try matching Consonant + Vowel + Consonant."; audio.fail(); }
+                },
+                reset() {
+                    this.currentSlots = ["", "", ""];
+                    document.getElementById('cvc-1').innerText = "C"; document.getElementById('cvc-2').innerText = "V"; document.getElementById('cvc-3').innerText = "C";
+                    document.getElementById('cvc-feedback').innerText = "";
+                }
+            },
+            wordFamilies: {
+                init() {
+                    const wrapper = document.getElementById('houses-wrapper'); wrapper.innerHTML = '';
+                    const bank = document.getElementById('wf-bank'); bank.innerHTML = '';
+                    
+                    // Pick 3 random dynamic families out of our 24 groups to create balanced variety
+                    const families = Object.keys(wordFamiliesMap);
+                    const chosen = families.sort(() => Math.random() - 0.5).slice(0, 3);
+                    
+                    chosen.forEach(fam => {
+                        let house = document.createElement('div'); house.className = "family-house";
+                        house.innerHTML = `<div class="house-roof">-${fam} Family</div><div class="house-slots" id="house-${fam}" ondragover="event.preventDefault()" ondrop="modules.wordFamilies.drop(event, '${fam}')"></div>`;
+                        wrapper.appendChild(house);
+                    });
+
+                    let pool = [];
+                    chosen.forEach(fam => {
+                        wordFamiliesMap[fam].slice(0, 3).forEach(w => pool.push({ word: w, family: fam }));
+                    });
+                    pool.sort(() => Math.random() - 0.5).forEach(item => {
+                        let tk = document.createElement('div'); tk.className = "word-token"; tk.innerText = item.word; tk.draggable = true;
+                        tk.id = `wf-${item.word}-${Math.random().toString(36).substr(2,4)}`;
+                        tk.ondragstart = (e) => { e.dataTransfer.setData('wordId', tk.id); e.dataTransfer.setData('family', item.family); };
+                        bank.appendChild(tk);
+                    });
+                },
+                drop(e, targetFamily) {
+                    e.preventDefault();
+                    let wordId = e.dataTransfer.getData('wordId'); let sourceFamily = e.dataTransfer.getData('family');
+                    if(sourceFamily === targetFamily) {
+                        audio.success(); let match = document.getElementById(wordId);
+                        document.getElementById(`house-${targetFamily}`).appendChild(match);
+                        match.draggable = false; audio.speak(match.innerText); state.addStars(1);
+                        this.checkAdvance();
+                    } else { audio.fail(); system.showToast("Rhyming ending mismatch!"); }
+                },
+                checkAdvance() {
+                    if (document.getElementById('wf-bank').children.length === 0) {
+                        system.showToast("🏘️ Neighborhood Completed! Loading new rhyme families...");
+                        setTimeout(() => this.init(), 1800);
+                    }
+                }
+            },
+            wordTree: {
+                activeIdx: 0,
+                init() {
+                    let rootItem = treeWords[this.activeIdx];
+                    document.getElementById('tree-root-display').innerText = `Stem: ${rootItem.root.toUpperCase()}`;
+                    let branchZone = document.getElementById('tree-branches'); branchZone.innerHTML = '';
+                    let rootBank = document.getElementById('tree-roots-bank'); rootBank.innerHTML = '';
+                    
+                    rootItem.derivatives.forEach(() => {
+                        let leaf = document.createElement('div'); leaf.className = "tile digraph"; leaf.style.opacity = '0.3'; leaf.innerText = "?";
+                        branchZone.appendChild(leaf);
+                    });
+
+                    rootItem.derivatives.forEach((deriv, i) => {
+                        let block = document.createElement('button'); block.className = "btn-action"; block.innerText = deriv;
+                        block.onclick = () => {
+                            audio.success(); audio.speak(deriv);
+                            branchZone.children[i].innerText = deriv; branchZone.children[i].style.opacity = '1';
+                            block.disabled = true; state.addStars(1); this.checkAdvance();
+                        };
+                        rootBank.appendChild(block);
+                    });
+                },
+                checkAdvance() {
+                    let finished = Array.from(document.getElementById('tree-branches').children).every(l => l.innerText !== "?");
+                    if(finished) {
+                        system.showToast("🌴 Suffix branch array populated successfully!");
+                        this.activeIdx = (this.activeIdx + 1) % treeWords.length;
+                        setTimeout(() => this.init(), 1500);
+                    }
+                }
+            },
+            pictureBuilder: {
+                currentIdx: 0,
+                init() {
+                    let target = pictureWords[this.currentIdx];
+                    document.getElementById('pic-graphic').innerText = target.emoji;
+                    document.getElementById('pic-feedback').innerText = '';
+                    document.getElementById('pic-dropzone').innerHTML = '';
+                    let bank = document.getElementById('pic-bank'); bank.innerHTML = '';
+                    
+                    target.word.split('').sort(() => Math.random() - 0.5).forEach(char => {
+                        let t = document.createElement('div'); t.className = "tile vowel"; t.innerText = char; t.draggable = true;
+                        t.ondragstart = (e) => e.dataTransfer.setData('text', char);
+                        t.onclick = () => this.appendTile(char);
+                        bank.appendChild(t);
+                    });
+                },
+                appendTile(char) {
+                    let dz = document.getElementById('pic-dropzone');
+                    let tile = document.createElement('div'); tile.className = "tile"; tile.innerText = char;
+                    tile.onclick = () => { tile.remove(); this.verify(); };
+                    dz.appendChild(tile); this.verify();
+                },
+                handleDrop(e) { e.preventDefault(); this.appendTile(e.dataTransfer.getData('text')); },
+                verify() {
+                    let guess = Array.from(document.getElementById('pic-dropzone').children).map(t => t.innerText).join('');
+                    let target = pictureWords[this.currentIdx];
+                    let fb = document.getElementById('pic-feedback');
+                    if(guess === target.word) {
+                        fb.style.color = "var(--success)"; fb.innerText = `Perfect! ${target.word} - ${target.meaning}`;
+                        audio.success(); audio.speak(guess.toLowerCase());
+                        state.incrementBuilt(); state.addStars(4);
+                        this.currentIdx = (this.currentIdx + 1) % pictureWords.length;
+                        setTimeout(() => this.init(), 2200);
+                    }
+                }
+            },
+            missingLetter: {
+                currentIdx: 0,
+                init() {
+                    let item = gapWords[this.currentIdx];
+                    document.getElementById('ml-prompt-container').innerText = item.display;
+                    document.getElementById('ml-feedback').innerText = '';
+                    let bank = document.getElementById('ml-bank'); bank.innerHTML = '';
+                    
+                    let options = [item.missing, "P", "S", "R", "E", "O"].slice(0, 3).sort(() => Math.random() - 0.5);
+                    options.forEach(char => {
+                        let t = document.createElement('div'); t.className = "tile consonant"; t.innerText = char;
+                        t.onclick = () => this.guess(char);
+                        bank.appendChild(t);
+                    });
+                },
+                guess(char) {
+                    let item = gapWords[this.currentIdx]; let fb = document.getElementById('ml-feedback');
+                    if(char === item.missing) {
+                        document.getElementById('ml-prompt-container').innerText = item.full;
+                        fb.style.color = "var(--success)"; fb.innerText = `Awesome! Spelled ${item.full}!`;
+                        audio.success(); audio.speak(item.full.toLowerCase());
+                        state.addStars(2); state.incrementBuilt();
+                        this.currentIdx = (this.currentIdx + 1) % gapWords.length;
+                        setTimeout(() => this.init(), 1800);
+                    } else { fb.style.color = "var(--secondary)"; fb.innerText = "Try another card choice."; audio.fail(); }
+                }
+            },
+            sentenceBuilder: {
+                currentIdx: 0,
+                init() {
+                    let data = sentenceData[this.currentIdx];
+                    document.getElementById('sb-target').innerHTML = ''; document.getElementById('sb-feedback').innerText = '';
+                    let bank = document.getElementById('sb-bank'); bank.innerHTML = '';
+                    
+                    data.scrambled.forEach((word, idx) => {
+                        let tk = document.createElement('div'); tk.className = "word-token"; tk.innerText = word; tk.draggable = true;
+                        tk.id = `sb-token-${idx}`;
+                        tk.ondragstart = (e) => e.dataTransfer.setData('text', tk.id);
+                        tk.onclick = () => this.appendWord(tk.id);
+                        bank.appendChild(tk);
+                    });
+                },
+                appendWord(id) {
+                    let target = document.getElementById('sb-target'); let element = document.getElementById(id);
+                    if(element) { target.appendChild(element); audio.click(); this.verify(); }
+                },
+                handleDrop(e) { e.preventDefault(); this.appendWord(e.dataTransfer.getData('text')); },
+                verify() {
+                    let builtStr = Array.from(document.getElementById('sb-target').children).map(t => t.innerText).join(' ');
+                    if(builtStr === sentenceData[this.currentIdx].correct) {
+                        document.getElementById('sb-feedback').style.color = "var(--success)";
+                        document.getElementById('sb-feedback').innerText = "Excellent structural syntax alignment!";
+                        audio.success(); audio.speak(builtStr); state.addStars(5);
+                        this.currentIdx = (this.currentIdx + 1) % sentenceData.length;
+                        setTimeout(() => this.init(), 2200);
+                    }
+                }
+            }
+        };
+
+        /* --- ACCESSIBILITY & PRESENTATION HUD --- */
+        const system = {
+            contrastActive: false, textSizeLevel: 1, teacherMode: false, drawing: false,
+            init() {
+                state.renderStats(); this.buildFloatingBg(); this.setupCanvas();
+            },
+            buildFloatingBg() {
+                const zone = document.getElementById('floating-bg'); const pool = ["A","B","C","🍎","🎈","⭐","🌈","📖"];
+                for(let i=0; i<15; i++) {
+                    let d = document.createElement('div'); d.className = "floater";
+                    d.innerText = pool[Math.floor(Math.random()*pool.length)];
+                    d.style.left = `${Math.random()*95}%`; d.style.animationDelay = `${Math.random()*8}s`;
+                    zone.appendChild(d);
+                }
+            },
+            toggleContrast() {
+                this.contrastActive = !this.contrastActive;
+                document.body.classList.toggle('high-contrast', this.contrastActive); audio.click();
+            },
+            toggleTextSize() {
+                audio.click(); this.textSizeLevel = this.textSizeLevel >= 1.3 ? 1 : this.textSizeLevel + 0.15;
+                document.documentElement.style.setProperty('--text-scale', this.textSizeLevel);
+            },
+            toggleTeacherMode() {
+                audio.click(); this.teacherMode = !this.teacherMode;
+                document.body.classList.toggle('teacher-mode-active', this.teacherMode);
+                this.showToast(this.teacherMode ? "Teacher HUD Live" : "Student View Restored");
+            },
+            showToast(txt) {
+                let node = document.getElementById('toast-notif'); node.innerText = txt; node.classList.add('show');
+                setTimeout(() => node.classList.remove('show'), 3000);
+            },
+            setupCanvas() {
+                const canvas = document.getElementById('paintCanvas'); const ctx = canvas.getContext('2d');
+                const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+                window.addEventListener('resize', resize); resize();
+
+                let activeDraw = false;
+                window.addEventListener('mousedown', (e) => {
+                    if(!this.drawing || !this.teacherMode) return;
+                    activeDraw = true; ctx.beginPath(); ctx.moveTo(e.clientX, e.clientY);
+                });
+                window.addEventListener('mousemove', (e) => {
+                    if(!activeDraw || !this.drawing) return;
+                    ctx.lineTo(e.clientX, e.clientY); ctx.strokeStyle = '#d63031'; ctx.lineWidth = 4; ctx.stroke();
+                });
+                window.addEventListener('mouseup', () => activeDraw = false);
+            },
+            teacherActions: {
+                speakSlow() {
+                    let activeSection = document.querySelector('.app-screen.active').id;
+                    let lastWord = "Phonics";
+                    if(activeSection === 'letter-builder') {
+                        let w = Array.from(document.getElementById('lb-dropzone').children).map(t => t.innerText).join('');
+                        if(w) lastWord = w;
+                    }
+                    audio.speak(lastWord, true);
+                },
+                toggleAnnotation() {
+                    audio.click(); system.drawing = !system.drawing;
+                    document.getElementById('paintCanvas').style.pointerEvents = system.drawing ? 'auto' : 'none';
+                    system.showToast(system.drawing ? "Canvas Free-Draw Engaged" : "Pointer Control Mode Active");
+                },
+                clearCanvas() { audio.click(); let canvas = document.getElementById('paintCanvas'); canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height); },
+                toggleFullscreen() { audio.click(); if (!document.fullscreenElement) { document.documentElement.requestFullscreen(); } else { document.exitFullscreen(); } }
+            }
+        };
+
+        window.onload = () => system.init();
+    </script>
+</body>
+</html>

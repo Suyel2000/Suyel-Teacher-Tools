@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📖 Interactive Vocabulary Learning Lab</title>
+    <style>
+        :root {
+            --primary: #FF6B6B;
+            --secondary: #4ECDC4;
+            --accent: #FFE66D;
+            --bg-gradient-1: #A8E6CF;
+            --bg-gradient-2: #DCEDC1;
+            --bg-gradient-3: #FFD3B6;
+            --bg-gradient-4: #FFAAA5;
+            --text-dark: #2D3436;
+            --text-light: #FFFFFF;
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background: linear-gradient(45deg, var(--bg-gradient-1), var(--bg-gradient-2), var(--bg-gradient-3), var(--bg-gradient-4));
+            background-size: 400% 400%;
+            animation: gradientBG 20s ease infinite;
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 2px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        header {
+            padding: 1.2rem 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 1.5rem;
+        }
+
+        .header-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .stat-badge {
+            background: rgba(255,255,255,0.6);
+            padding: 0.5rem 1.2rem;
+            border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.8);
+        }
+
+        .screen {
+            display: none;
+            flex: 1;
+            padding: 2rem;
+            animation: fadeIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .screen.active {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Welcome Screen Styling */
+        #screen-welcome {
+            justify-content: center;
+            text-align: center;
+            min-height: 70vh;
+        }
+
+        .floating-icons {
+            font-size: 4.5rem;
+            margin-bottom: 2rem;
+            animation: float 4s ease-in-out infinite;
+            letter-spacing: 15px;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-25px) rotate(3deg); }
+        }
+
+        .btn-large {
+            background: linear-gradient(135deg, var(--primary), #FF8E53);
+            color: white;
+            border: none;
+            padding: 1.5rem 4rem;
+            font-size: 2.2rem;
+            font-weight: bold;
+            border-radius: 60px;
+            cursor: pointer;
+            box-shadow: 0 12px 24px rgba(255, 107, 107, 0.4);
+            transition: all 0.3s ease;
+            margin-top: 2.5rem;
+        }
+
+        .btn-large:hover {
+            transform: scale(1.08);
+            box-shadow: 0 18px 30px rgba(255, 107, 107, 0.6);
+        }
+
+        /* Dashboard Screen Categories Grid */
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            width: 100%;
+            padding: 1rem;
+        }
+
+        .category-card {
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: rgba(255,255,255,0.65);
+        }
+
+        .category-card:hover {
+            transform: translateY(-12px) scale(1.03);
+            background: rgba(255,255,255,0.9);
+            border-color: var(--primary);
+        }
+
+        .category-icon {
+            font-size: 5.5rem;
+            margin-bottom: 1.2rem;
+            filter: drop-shadow(0 8px 8px rgba(0,0,0,0.1));
+        }
+
+        .category-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #2D3436;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Learning & Flashcard Arena */
+        .flashcard-container {
+            perspective: 1200px;
+            width: 100%;
+            max-width: 650px;
+            height: 450px;
+            margin: 2rem auto;
+        }
+
+        .flashcard {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+
+        .flashcard.is-flipped {
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 28px;
+            padding: 2.5rem;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+
+        .flashcard-front {
+            background: linear-gradient(135deg, #FFFFFF, #F5F7FA);
+            border: 6px solid var(--secondary);
+        }
+
+        .flashcard-back {
+            background: linear-gradient(135deg, var(--accent), #FFF3B0);
+            transform: rotateY(180deg);
+            border: 6px solid var(--primary);
+        }
+
+        .word-image { font-size: 10rem; filter: drop-shadow(0 10px 12px rgba(0,0,0,0.12)); }
+        .word-text { font-size: 4.5rem; font-weight: 800; color: var(--primary); margin: 0.8rem 0; letter-spacing: 1px; }
+        .word-sentence { font-size: 1.8rem; font-weight: 500; color: #333333; line-height: 1.4; margin-top: 1rem; }
+
+        /* Control Framework */
+        .controls {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 2rem;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 1rem 2.2rem;
+            border: none;
+            border-radius: 18px;
+            font-size: 1.3rem;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .btn:active { transform: scale(0.95); }
+        .btn-primary { background: var(--secondary); color: white; }
+        .btn-primary:hover { background: #3dbcb3; }
+        
+        .btn-audio { 
+            background: var(--primary); 
+            color: white; 
+            border-radius: 50%; 
+            width: 70px; 
+            height: 70px; 
+            padding: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            font-size: 1.8rem; 
+        }
+        .btn-audio:hover { background: #ff5252; transform: scale(1.05); }
+
+        /* Word Builder Gameplay Arena */
+        #word-builder {
+            margin-top: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        .letter-slots {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 2.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .slot {
+            width: 70px;
+            height: 70px;
+            border: 4px dashed var(--primary);
+            border-radius: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: rgba(255,255,255,0.7);
+            transition: all 0.3s ease;
+        }
+
+        .letter-bank {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 800px;
+            background: rgba(255,255,255,0.4);
+            padding: 1.5rem;
+            border-radius: 20px;
+        }
+
+        .letter-btn {
+            width: 65px;
+            height: 65px;
+            background: linear-gradient(135deg, var(--secondary), #3BA99F);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 2.2rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            transition: all 0.2s ease;
+        }
+
+        .letter-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+
+        .letter-btn:disabled {
+            opacity: 0.25;
+            transform: none;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        .nav-bar {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            background: rgba(255,255,255,0.5);
+            padding: 1rem;
+            border-radius: 20px;
+        }
+
+        /* Responsive UI Adjustments */
+        @media(max-width: 768px) {
+            .flashcard-container { height: 380px; }
+            .word-image { font-size: 7rem; }
+            .word-text { font-size: 3.2rem; }
+            .word-sentence { font-size: 1.4rem; }
+            .slot, .letter-btn { width: 50px; height: 50px; font-size: 1.6rem; }
+            header { flex-direction: column; gap: 10px; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="glass">
+        <div class="header-title">
+            <span>📖</span> Interactive Vocabulary Learning Lab
+        </div>
+        <div class="stats">
+            <div class="stat-badge" id="stars-display">⭐ 0 Stars</div>
+            <div class="stat-badge" id="words-display">📚 0 Learned</div>
+        </div>
+    </header>
+
+    <div id="screen-welcome" class="screen active">
+        <div class="floating-icons">🎈 🍎 🌈 🦁 ⚡ 🚀 🎨</div>
+        <h1 style="font-size: 3.5rem; color: var(--primary); margin-bottom: 1rem; font-weight:900;">Vocabulary Explorer</h1>
+        <h2 style="color: var(--text-dark); margin-bottom: 2rem; font-size:1.6rem;">See • Hear • Speak • Learn • Play</h2>
+        <button class="btn-large" onclick="app.showScreen('dashboard')">▶ Start Adventure</button>
+    </div>
+
+    <div id="screen-dashboard" class="screen">
+        <h1 style="margin-bottom: 2rem; font-size: 2.5rem; color: var(--text-dark); font-weight:800; text-align:center;">Select Your Vocabulary Deck</h1>
+        <div class="category-grid" id="category-grid"></div>
+    </div>
+
+    <div id="screen-learning" class="screen">
+        <div class="nav-bar glass">
+            <button class="btn btn-primary" onclick="app.showScreen('dashboard')">⬅ Main Menu</button>
+            <h2 id="current-category-title" style="color: var(--text-dark); font-weight:800; font-size:1.8rem;">Category</h2>
+            <button class="btn btn-primary" id="mode-toggle-btn" onclick="app.toggleMode()" style="background:var(--primary);">🎮 Play Spelling Match</button>
+        </div>
+
+        <div id="flashcard-mode" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+            <div class="flashcard-container" onclick="app.flipCard()">
+                <div class="flashcard" id="active-flashcard">
+                    <div class="flashcard-face flashcard-front">
+                        <div class="word-image" id="fc-image">🍎</div>
+                        <p style="margin-top: 2.5rem; color: #7f8c8d; font-weight:bold; font-size:1.2rem;">👉 TAP CARD TO DISCOVER WORD 👈</p>
+                    </div>
+                    <div class="flashcard-face flashcard-back">
+                        <div class="word-text" id="fc-word">Apple</div>
+                        <div class="word-sentence" id="fc-sentence">I eat an apple every day.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-primary" onclick="app.prevWord()">⬅ Back</button>
+                <button class="btn btn-audio" onclick="app.speakWord(false)" title="Normal Pronunciation">🔊</button>
+                <button class="btn btn-audio" style="background: var(--secondary);" onclick="app.speakWord(true)" title="Slow Spelling Speed">🐢</button>
+                <button class="btn btn-primary" onclick="app.nextWord()">Next ➡</button>
+            </div>
+        </div>
+
+        <div id="game-mode" style="display: none; width: 100%;">
+            <h2 style="text-align: center; margin-bottom: 1rem; font-size:2rem; color:var(--text-dark);">Construct the Word!</h2>
+            <div style="text-align: center; font-size: 6.5rem;" id="game-image">🍎</div>
+            <div class="controls" style="justify-content: center; margin-bottom:1.5rem;">
+                <button class="btn btn-audio" onclick="app.speakWord(false)">🔊 Pronounce</button>
+            </div>
+            <div id="word-builder">
+                <div class="letter-slots" id="letter-slots"></div>
+                <div class="letter-bank" id="letter-bank"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Massive educational content array optimization across 25 master primary education modules
+        const vocabularyData = {
+            fruits: {
+                title: "🍎 Fresh Fruits", icon: "🍎",
+                words: [
+                    { word: "Apple", icon: "🍎", sentence: "An apple is crispy and sweet." },
+                    { word: "Banana", icon: "🍌", sentence: "Peel the banana before you eat it." },
+                    { word: "Grapes", icon: "🍇", sentence: "Grapes grow in beautiful bunches on vines." },
+                    { word: "Orange", icon: "🍊", sentence: "An orange is full of juicy sweet juice." },
+                    { word: "Watermelon", icon: "🍉", sentence: "Watermelon keeps us cool in summer hot days." },
+                    { word: "Mango", icon: "🥭", sentence: "Mango is known as the king of fruits." },
+                    { word: "Strawberry", icon: "🍓", sentence: "The strawberry has tiny small seeds on the outside." },
+                    { word: "Pineapple", icon: "🍍", sentence: "A pineapple has a prickly thorny skin." },
+                    { word: "Peach", icon: "🍑", sentence: "The peach skin feels soft like velvet fabric." },
+                    { word: "Cherry", icon: "🍒", sentence: "A bright red cherry looks pretty on top of a cake." },
+                    { word: "Lemon", icon: "🍋", sentence: "Sour lemon juice makes refreshing lemonade." },
+                    { word: "Pear", icon: "🍐", sentence: "The sweet pear is shaped like a bell." },
+                    { word: "Papaya", icon: "🥭", sentence: "Papaya has many small black round seeds inside." },
+                    { word: "Kiwi", icon: "🥝", sentence: "A kiwi is fuzzy brown outside and green inside." },
+                    { word: "Plum", icon: "🍑", sentence: "Plums are sweet juicy fruits with smooth purple skin." },
+                    { word: "Coconut", icon: "🥥", sentence: "Coconut water is sweet and very healthy to drink." },
+                    { word: "Fig", icon: "🫒", sentence: "Figs are sweet soft fruits filled with crunchy seeds." },
+                    { word: "Guava", icon: "🍏", sentence: "Guava has a unique sweet fragrance and pink center." },
+                    { word: "Pomegranate", icon: "🍎", sentence: "A pomegranate is full of juicy ruby red seeds." },
+                    { word: "Avocado", icon: "🥑", sentence: "Avocado is creamy and perfect to spread on toast." }
+                ]
+            },
+            vegetables: {
+                title: "🥦 Green Vegetables", icon: "🥦",
+                words: [
+                    { word: "Potato", icon: "🥔", sentence: "We make crispy golden french fries from a potato." },
+                    { word: "Tomato", icon: "🍅", sentence: "A red tomato is wonderful in salads and soup." },
+                    { word: "Broccoli", icon: "🥦", sentence: "Broccoli looks like a beautiful tiny green tree." },
+                    { word: "Carrot", icon: "🥕", sentence: "Crunchy orange carrots help keep our eyes healthy." },
+                    { word: "Corn", icon: "🌽", sentence: "Sweet yellow corn grows on a tall stalk green field." },
+                    { word: "Cucumber", icon: "🥒", sentence: "Cucumber slices are cool, fresh and very crispy." },
+                    { word: "Onion", icon: "🧅", sentence: "Chopping an onion can sometimes bring a little tear." },
+                    { word: "Garlic", icon: "🧄", sentence: "Garlic adds a wonderful strong flavor to our food." },
+                    { word: "Pepper", icon: "🫑", sentence: "Bell peppers can be green, bright red, or yellow." },
+                    { word: "Spinach", icon: "🥬", sentence: "Spinach leaves make us very strong and healthy." },
+                    { word: "Pumpkin", icon: "🎃", sentence: "We carve funny big glowing faces into pumpkins." },
+                    { word: "Peas", icon: "🫛", sentence: "Sweet green peas live together cozy inside a pod." },
+                    { word: "Mushroom", icon: "🍄", sentence: "Mushrooms grow in damp places and look like tiny umbrellas." },
+                    { word: "Eggplant", icon: "🍆", sentence: "An eggplant has a glossy, shiny dark purple skin." },
+                    { word: "Cabbage", icon: "🥬", sentence: "Cabbage has many layers of tightly wrapped green leaves." },
+                    { word: "Radish", icon: "🌶️", sentence: "Radishes are crisp root vegetables with a spicy bite." },
+                    { word: "Lettuce", icon: "🥬", sentence: "Fresh crisp lettuce forms the base of a healthy salad." },
+                    { word: "Sweetpotato", icon: "🥔", sentence: "Sweet potato tastes warm and sweet when baked well." },
+                    { word: "Zucchini", icon: "🥒", sentence: "Zucchini looks like a cucumber but is soft inside." },
+                    { word: "Celery", icon: "🥬", sentence: "Celery stalks are crunchy and full of healthy water." }
+                ]
+            },
+            animals: {
+                title: "🦁 Wild & Domestic Animals", icon: "🐶",
+                words: [
+                    { word: "Dog", icon: "🐶", sentence: "The loyal dog wagged its tail happily." },
+                    { word: "Cat", icon: "🐱", sentence: "The furry cat purrs softly when it is happy." },
+                    { word: "Lion", icon: "🦁", sentence: "The proud lion roars loudly across the wild plains." },
+                    { word: "Elephant", icon: "🐘", sentence: "The huge elephant sprayed water with its trunk." },
+                    { word: "Monkey", icon: "🐒", sentence: "The funny monkey loves swinging between jungle branches." },
+                    { word: "Tiger", icon: "🐯", sentence: "A tiger has beautiful black stripes on orange fur." },
+                    { word: "Giraffe", icon: "🦒", sentence: "The tall giraffe stretches its neck to reach high leaves." },
+                    { word: "Zebra", icon: "🦓", sentence: "A zebra looks like a horse wearing black and white stripes." },
+                    { word: "Bear", icon: "🐻", sentence: "The big fluffy bear loves catching sweet wild honey." },
+                    { word: "Rabbit", icon: "🐰", sentence: "The little rabbit hopped across the green grass field." },
+                    { word: "Cow", icon: "🐮", sentence: "The cow gives us fresh healthy milk every day." },
+                    { word: "Horse", icon: "🐴", sentence: "The strong horse gallops very fast around the track." },
+                    { word: "Sheep", icon: "🐑", sentence: "Sheep give us warm wool to make winter coats." },
+                    { word: "Pig", icon: "🐷", sentence: "The happy little pig played in the cool mud puddle." },
+                    { word: "Fox", icon: "🦊", sentence: "The clever red fox has a big bushy tail." },
+                    { word: "Wolf", icon: "🐺", sentence: "The wild wolf howls loudly under the bright full moon." },
+                    { word: "Deer", icon: " deer ", icon:"🦌", sentence: "The gentle deer leaped gracefully over the fallen log." },
+                    { word: "Kangaroo", icon: "🦘", sentence: "The kangaroo carries her small baby safely in her pouch." },
+                    { word: "Panda", icon: "🐼", sentence: "The giant panda loves munching on green bamboo stalks." },
+                    { word: "Hippo", icon: "🦛", sentence: "The heavy hippo loves bathing in cool river water." }
+                ]
+            },
+            birds: {
+                title: "🐦 Our Feathered Birds", icon: "🐦",
+                words: [
+                    { word: "Parrot", icon: "🦜", sentence: "The colourful parrot can copy the words we say." },
+                    { word: "Eagle", icon: "🦅", sentence: "The majestic eagle flies high up in the blue sky." },
+                    { word: "Owl", icon: "🦉", sentence: "The wise old owl stays awake hunting all night." },
+                    { word: "Duck", icon: "🦆", sentence: "The duck splished and splashed around the blue pond." },
+                    { word: "Penguin", icon: "🐧", sentence: "The penguin waddles across the cold white snow." },
+                    { word: "Peacock", icon: "🦚", sentence: "The peacock opened its spectacular colorful tail feathers." },
+                    { word: "Flamingo", icon: "🦩", sentence: "The pink flamingo loves standing gracefully on one long leg." },
+                    { word: "Swan", icon: "🦢", sentence: "The beautiful white swan glides smoothly across the lake." },
+                    { word: "Pigeon", icon: "🐦", sentence: "Pigeons love hunting for small breadcrumbs on city paths." },
+                    { word: "Rooster", icon: "🐓", sentence: "The loud rooster wakes the whole farm at sunrise." },
+                    { word: "Hen", icon: "🐔", sentence: "The busy hen laid a fresh round egg today." },
+                    { word: "Crow", icon: "🐦", sentence: "The clever black crow collected small shiny pebbles." },
+                    { word: "Sparrow", icon: "🐦", sentence: "The tiny sparrow built a cozy nest in the bush." },
+                    { word: "Turkey", icon: "🦃", sentence: "The big turkey makes a funny gobble sound." },
+                    { word: "Woodpecker", icon: " woodpecker ", icon:"🐦", sentence: "The woodpecker taps fast on the tree bark." },
+                    { word: "Ostrich", icon: "🦩", sentence: "An ostrich cannot fly but can run incredibly fast." },
+                    { word: "Falcon", icon: "🦅", sentence: "The fast falcon dives down quickly through the air." },
+                    { word: "Seagull", icon: "🐦", sentence: "The loud seagull flies over the ocean waves." },
+                    { word: "Hummingbird", icon: "🐦", sentence: "The hummingbird beats its wings faster than anyone." },
+                    { word: "Pelican", icon: "🐦", sentence: "The big pelican scoops fish up in its giant beak." }
+                ]
+            },
+            seaanimals: {
+                title: "🐠 Deep Sea Creatures", icon: "🐠",
+                words: [
+                    { word: "Fish", icon: "🐟", sentence: "The little golden fish swims around its bowl." },
+                    { word: "Shark", icon: "🦈", sentence: "The ocean shark has rows of sharp pointed teeth." },
+                    { word: "Whale", icon: "🐋", sentence: "The blue whale is the largest animal in the world." },
+                    { word: "Dolphin", icon: "🐬", sentence: "The friendly dolphin jumped high out of the sea water." },
+                    { word: "Octopus", icon: "🐙", sentence: "An octopus has eight long wiggling arms to swim." },
+                    { word: "Crab", icon: "🦀", sentence: "The little crab walks sideways across sandy beaches." },
+                    { word: "Turtle", icon: "🐢", sentence: "The sea turtle swims thousands of miles across oceans." },
+                    { word: "Starfish", icon: "⭐", sentence: "The colorful starfish lives on the sandy ocean floor." },
+                    { word: "Seahorse", icon: "🫏", sentence: "The tiny seahorse holds onto coral with its tail." },
+                    { word: "Jellyfish", icon: "🪼", sentence: "The glowing jellyfish looks like a floating umbrella." },
+                    { word: "Lobster", icon: "🦞", sentence: "The lobster has large strong claws to protect itself." },
+                    { word: "Squid", icon: "🦑", sentence: "The fast squid shoots dark black ink to hide safely." },
+                    { word: "Walrus", icon: "🦭", sentence: "The big walrus has two long white ivory tusks." },
+                    { word: "Seal", icon: "🦭", sentence: "The playful seal balances a colourful ball on its nose." },
+                    { word: "Otter", icon: "🦦", sentence: "Sea otters love floating on their backs together." },
+                    { word: "Stingray", icon: "🪼", sentence: "The flat stingray glides like a bird through water." },
+                    { word: "Eel", icon: "🐍", sentence: "The long slippery eel hides deep inside rocky caves." },
+                    { word: "Clam", icon: "🦪", sentence: "The shiny pearl grows inside a safe hard clam shell." },
+                    { word: "Coral", icon: "🪸", sentence: "Beautiful colorful coral reefs give fish safe homes." },
+                    { word: "Shrimp", icon: "🦐", sentence: "The little shrimp swims backward when it gets scared." }
+                ]
+            },
+            insects: {
+                title: "🐞 Little Insects", icon: "🐞",
+                words: [
+                    { word: "Bee", icon: "🐝", sentence: "The busy bee buzzes around gathering sweet flower nectar." },
+                    { word: "Butterfly", icon: "🦋", sentence: "A beautiful butterfly landed softly on the flower petals." },
+                    { word: "Ant", icon: "🐜", sentence: "The tiny ant carried a heavy green leaf home." },
+                    { word: "Ladybug", icon: "🐞", sentence: "The shiny red ladybug has pretty black dots." },
+                    { word: "Mosquito", icon: "🦟", sentence: "A buzzing mosquito can give you an itchy red bite." },
+                    { word: "Fly", icon: "🪰", sentence: "The annoying housefly buzzes around the dinner table." },
+                    { word: "Caterpillar", icon: "🐛", sentence: "The fuzzy caterpillar crawls slowly up the branch." },
+                    { word: "Dragonfly", icon: "🦋", sentence: "The fast dragonfly zips past like a mini helicopter." },
+                    { word: "Grasshopper", icon: "🦗", sentence: "The green grasshopper can jump incredibly high." },
+                    { word: "Spider", icon: "🕷️", sentence: "The busy spider spun a magnificent silver web." },
+                    { word: "Snail", icon: "🐌", sentence: "The slow snail carries its spiral home on its back." },
+                    { word: "Worm", icon: "🪱", sentence: "The earthworm helps keep our garden soil healthy." },
+                    { word: "Beetle", icon: "🪲", sentence: "The strong beetle has a hard protective outer shield." },
+                    { word: "Moth", icon: "🦋", sentence: "The brown night moth flies toward bright porch lights." },
+                    { word: "Cricket", icon: "🦗", sentence: "The little cricket chirps merrily all through the night." },
+                    { word: "Centipede", icon: "🪱", sentence: "The long centipede has many pairs of walking legs." },
+                    { word: "Scorpion", icon: "🦂", sentence: "A desert scorpion carries a sharp sting in its tail." },
+                    { word: "Wasp", icon: "🐝", sentence: "A yellow wasp builds paper nests under tree branches." },
+                    { word: "Termite", icon: "🐜", sentence: "Termites work together eating old wooden logs." },
+                    { word: "Flea", icon: "🪰", sentence: "A tiny flea can leap onto a dog's furry coat." }
+                ]
+            },
+            flowers: {
+                title: "🌸 Beautiful Flowers", icon: "🌸",
+                words: [
+                    { word: "Rose", icon: "🌹", sentence: "The sweet red rose grows on a thorny stem." },
+                    { word: "Sunflower", icon: "🌻", sentence: "The tall yellow sunflower turns to follow the sun." },
+                    { word: "Tulip", icon: "🌷", sentence: "The colorful tulip looks like a pretty tea cup." },
+                    { word: "Daisy", icon: "🌼", sentence: "A daisy has bright white petals around a yellow center." },
+                    { word: "Lily", icon: "🪻", sentence: "The beautiful white lily floats peacefully on the pond." },
+                    { word: "Lotus", icon: "🪷", sentence: "The gorgeous lotus flower grows out of calm muddy water." },
+                    { word: "Orchid", icon: "🌸", sentence: "An exotic orchid flower grows in warm tropical rainforests." },
+                    { word: "Lavender", icon: "🪻", sentence: "Sweet purple lavender fields smell absolutely wonderful." },
+                    { word: "Marigold", icon: "🌼", sentence: "Bright orange marigolds bloom beautifully in the autumn." },
+                    { word: "Hibiscus", icon: "🌺", sentence: "The red hibiscus flower has long pretty stamens." },
+                    { word: "Jasmine", icon: "💮", sentence: "White jasmine flowers fill the night air with sweetness." },
+                    { word: "Violet", icon: "🪻", sentence: "The tiny purple violet grows low to the ground." },
+                    { word: "Daffodil", icon: "🌼", sentence: "Yellow daffodils welcome the warm bright spring weather." },
+                    { word: "Poppy", icon: "🌹", sentence: "Bright red poppies dance gently in the summer breeze." },
+                    { word: "Dandelion", icon: "🌼", sentence: "Blow a white fuzzy dandelion to make a secret wish." },
+                    { word: "Clover", icon: "☘️", sentence: "Finding a four-leaf clover brings very good luck." },
+                    { word: "Iris", icon: "🪻", sentence: "The purple iris flower looks like a royal crown." },
+                    { word: "Magnolia", icon: "🌸", sentence: "Magnolia trees have big, beautiful sweet-scented blossoms." },
+                    { word: "Camellia", icon: "🌹", sentence: "Camellia bushes have stunning, perfectly layered pink petals." },
+                    { word: "Bluebell", icon: "🪻", sentence: "Bluebell flowers look like tiny hanging fairy bells." }
+                ]
+            },
+            weather: {
+                title: "🌦 Dynamic Weather", icon: "🌤",
+                words: [
+                    { word: "Sun", icon: "☀️", sentence: "The bright yellow sun warms up our whole planet." },
+                    { word: "Rain", icon: "🌧", sentence: "Cool raindrops water the thirsty flowers outside." },
+                    { word: "Cloud", icon: "☁️", sentence: "A fluffy white cloud floated across the blue sky." },
+                    { word: "Wind", icon: "💨", sentence: "The powerful wind flew my colorful kite high up." },
+                    { word: "Snow", icon: "❄️", sentence: "Beautiful white snow covers the winter landscape." },
+                    { word: "Storm", icon: "⛈️", sentence: "The loud electrical storm brought dark gray clouds." },
+                    { word: "Lightning", icon: "⚡", sentence: "A flash of bright lightning lit up the night sky." },
+                    { word: "Thunder", icon: "⚡", sentence: "Loud crashing thunder boomed after the lightning flash." },
+                    { word: "Rainbow", icon: "🌈", sentence: "A beautiful colorful rainbow appeared after the rain stopped." },
+                    { word: "Fog", icon: "🌫️", sentence: "Thick gray fog makes it very hard to see ahead." },
+                    { word: "Ice", icon: "🧊", sentence: "Slippery cold ice formed on top of the winter puddle." },
+                    { word: "Hail", icon: "❄️", sentence: "Frozen balls of ice called hail fell from the sky." },
+                    { word: "Tornado", icon: "🌪️", sentence: "A spinning tornado looks like a giant funnel cloud." },
+                    { word: "Hurricane", icon: "🌀", sentence: "A huge ocean hurricane brings very strong wind and rain." },
+                    { word: "Frost", icon: "❄️", sentence: "Crunchy white frost covered the green grass this morning." },
+                    { word: "Gale", icon: "💨", sentence: "A powerful gale wind blew down old tree branches." },
+                    { word: "Mist", icon: "🌫️", sentence: "Gentle morning mist rises slowly off the quiet lake." },
+                    { word: "Blizzard", icon: "🌨️", sentence: "A heavy snow blizzard makes everything look completely white." },
+                    { word: "Drizzle", icon: "🌧️", sentence: "Light afternoon drizzle means we only need small umbrellas." },
+                    { word: "Heatwave", icon: "☀️", sentence: "A summer heatwave makes us want cold ice cream." }
+                ]
+            },
+            house: {
+                title: "🏠 Around the House", icon: "🏠",
+                words: [
+                    { word: "Door", icon: "🚪", sentence: "Please close the front door to keep it warm." },
+                    { word: "Window", icon: "🪟", sentence: "Look out the clean glass window to see birds." },
+                    { word: "Bed", icon: "🛏️", sentence: "I sleep cozily in my soft warm bed tonight." },
+                    { word: "Chair", icon: "🪑", sentence: "Sit down comfortably on this wooden kitchen chair." },
+                    { word: "Table", icon: "🪵", sentence: "We gather around the big dinner table to eat." },
+                    { word: "Clock", icon: "🕰️", sentence: "The ticking clock tells us when it is lunchtime." },
+                    { word: "Lamp", icon: "💡", sentence: "Turn on the bright desk lamp to read books." },
+                    { word: "Sofa", icon: "🛋️", sentence: "The big comfortable sofa is perfect for family movies." },
+                    { word: "Mirror", icon: "🪞", sentence: "Look into the shiny mirror to brush your hair." },
+                    { word: "Key", icon: "🔑", sentence: "Use the shiny brass key to unlock the heavy door." },
+                    { word: "Rug", icon: "🪵", sentence: "The colorful fluffy rug keeps our bare feet warm." },
+                    { word: "Pillow", icon: "🛏️", sentence: "Rest your sleepy head on this fluffy white pillow." },
+                    { word: "Blanket", icon: "🛏️", sentence: "Pull up the warm woolen blanket when it freezes." },
+                    { word: "Curtain", icon: "🪟", sentence: "Draw the thick window curtains to block morning light." },
+                    { word: "Shelf", icon: "🗄️", sentence: "Put your favorite storybooks back on the high shelf." },
+                    { word: "Stairs", icon: "🪜", sentence: "Walk carefully up the wooden stairs to the bedroom." },
+                    { word: "Sink", icon: "🚰", sentence: "Wash your hands thoroughly at the bathroom kitchen sink." },
+                    { word: "Fridge", icon: "🧊", sentence: "The cold kitchen fridge keeps our milk sweet and fresh." },
+                    { word: "Oven", icon: "🔥", sentence: "Mom baked delicious chocolate chip cookies in the hot oven." },
+                    { word: "Shower", icon: "🚿", sentence: "Take a refreshing warm shower after playing outside today." }
+                ]
+            },
+            school: {
+                title: "🏫 Classroom Objects", icon: "🏫",
+                words: [
+                    { word: "Book", icon: "📖", sentence: "Open your textbook book to read a fantastic exciting story." },
+                    { word: "Pencil", icon: "✏️", sentence: "Use a sharpened yellow pencil to write your name." },
+                    { word: "Eraser", icon: "🧼", sentence: "An eraser cleans up mistakes from your paper quickly." },
+                    { word: "Ruler", icon: "📐", sentence: "Use a straight plastic ruler to measure the line." },
+                    { word: "Desk", icon: "🪑", sentence: "Keep your school desk clean, tidy and very organized." },
+                    { word: "Bag", icon: "🎒", sentence: "Pack your heavy school bag before going to sleep." },
+                    { word: "Paper", icon: "📄", sentence: "Draw a colorful picture on this clean white sheet of paper." },
+                    { word: "Crayon", icon: "🖍️", sentence: "Color the beautiful sky with a blue wax crayon." },
+                    { word: "Glue", icon: "🧪", sentence: "Use sticky paper glue to craft your cardboard spaceship." },
+                    { word: "Scissors", icon: "✂️", sentence: "Be very careful using sharp metal scissors to cut paper." },
+                    { word: "Map", icon: "🗺️", sentence: "The world map shows oceans, continents and far countries." },
+                    { word: "Globe", icon: "🌐", sentence: "Spin the round classroom globe to find where we live." },
+                    { word: "Board", icon: " blackboard ", icon:"📋", sentence: "The smart teacher writes daily spelling lessons on the board." },
+                    { word: "Chalk", icon: "🖍️", sentence: "White chalk sticks make a squeak on old blackboards." },
+                    { word: "Marker", icon: "🖊️", sentence: "Use a dry-erase black marker on the glossy whiteboard." },
+                    { word: "Notebook", icon: "📓", sentence: "Write down your fun creative ideas inside this notebook." },
+                    { word: "Sharpener", icon: "✏️", sentence: "A sharpener makes your dull broken pencil sharp again." },
+                    { word: "Compass", icon: "🧭", sentence: "A drawing compass helps us trace perfect round circles." },
+                    { word: "Computer", icon: "💻", sentence: "We learn typing skills in the modern school computer lab." },
+                    { word: "Clock", icon: "⏰", sentence: "The school bell rings when the wall clock hits three." }
+                ]
+            },
+            family: {
+                title: "👨‍👩‍👧 Family Members", icon: "👨‍👩‍👧",
+                words: [
+                    { word: "Mother", icon: "👩", sentence: "My loving mother bakes the best chocolate birthday cakes." },
+                    { word: "Father", icon: "👨", sentence: "My helpful father teaches me how to ride bicycles." },
+                    { word: "Brother", icon: "👦", sentence: "My big brother plays catch with me in the backyard." },
+                    { word: "Sister", icon: "👧", sentence: "My little sister loves drawing funny pictures with crayons." },
+                    { word: "Grandmother", icon: "👵", sentence: "Grandmother tells us magical fairy tales before bedtime every night." },
+                    { word: "Grandfather", icon: "👴", sentence: "Grandfather walks with us to the playground every weekend." },
+                    { word: "Baby", icon: "👶", sentence: "The sweet little baby crawls on the living room rug." },
+                    { word: "Uncle", icon: "👨", sentence: "My funny uncle took us to see the circus monkeys." },
+                    { word: "Aunt", icon: "👩", sentence: "My kind aunt bought me a giant plush teddy bear." },
+                    { word: "Cousin", icon: "🧑", sentence: "My cousins and I build huge sandcastles at the beach." },
+                    { word: "Son", icon: "👦", sentence: "The proud father patted his helpful young son on the back." },
+                    { word: "Daughter", icon: "👧", sentence: "The happy mother braided her young daughter's long hair." },
+                    { word: "Parents", icon: "👪", sentence: "Our caring parents look after us with lots of love." },
+                    { word: "Grandparents", icon: "🧓", sentence: "We love visiting our grandparents' cozy countryside farm house." },
+                    { word: "Nephew", icon: "👦", sentence: "My uncle bought his young nephew a brand new toy truck." },
+                    { word: "Niece", icon: "👧", sentence: "My aunt loves teaching her little niece how to paint flowers." },
+                    { word: "Family", icon: "👨‍👩‍👧‍👦", sentence: "Our whole family loves eating big Sunday dinners together." },
+                    { word: "Twins", icon: "👦👧", sentence: "The twin brothers look exactly alike and wear matching shirts." },
+                    { word: "Stepfather", icon: "👨", sentence: "My helpful stepfather takes me camping in the deep forest." },
+                    { word: "Stepmother", icon: "👩", sentence: "My stepmother loves reading funny books aloud every evening." }
+                ]
+            },
+            clothes: {
+                title: "👕 Clothes & Apparel", icon: "👕",
+                words: [
+                    { word: "Shirt", icon: "👕", sentence: "Button up your clean white shirt before school starts." },
+                    { word: "Pants", icon: "👖", sentence: "Blue denim pants are strong and perfect for playground games." },
+                    { word: "Dress", icon: "👗", sentence: "She wore a beautiful bright yellow dress to the party." },
+                    { word: "Coat", icon: "🧥", sentence: "Wear a thick heavy coat so you do not freeze outside." },
+                    { word: "Hat", icon: "👒", sentence: "Put on a wide straw hat to shield your face from the sun." },
+                    { word: "Socks", icon: "🧦", sentence: "Warm fuzzy socks keep your toes cozy inside boots." },
+                    { word: "Scarf", icon: "🧣", sentence: "Wrap a long woolen knitted scarf around your cold neck." },
+                    { word: "Gloves", icon: "🧤", sentence: "Thick winter gloves keep your fingers warm in cold snow." },
+                    { word: "Sweater", icon: "🧥", sentence: "Grandma knitted a cozy red sweater for the winter holidays." },
+                    { word: "Skirt", icon: "👗", sentence: "The green pleated skirt twirled around while she danced." },
+                    { word: "Jacket", icon: "🧥", sentence: "Zip up your light windbreaker jacket on breezy autumn mornings." },
+                    { word: "Shorts", icon: "🩳", sentence: "We wear lightweight cotton shorts during hot summer days." },
+                    { word: "Pyjamas", icon: "🥼", sentence: "Change into cozy flannel pyjamas before getting into bed." },
+                    { word: "Belt", icon: "🪘", sentence: "A brown leather belt helps keep your pants fitting securely." },
+                    { word: "Tie", icon: "👔", sentence: "Dad wears a handsome blue silk tie to office meetings." },
+                    { word: "Uniform", icon: "🥼", sentence: "Our school uniform has a smart crest on the pocket." },
+                    { word: "Raincoat", icon: "🧥", sentence: "A bright yellow waterproof raincoat keeps you dry in storms." },
+                    { word: "Vest", icon: "🎽", sentence: "He wore a bright warm vest over his long sleeve shirt." },
+                    { word: "Cap", icon: "🧢", sentence: "Turn your baseball cap backward to look extra sporty today." },
+                    { word: "Gown", icon: "👗", sentence: "The beautiful fairy queen wore a sparkling silver gown." }
+                ]
+            },
+            footwear: {
+                title: "👟 Footwear & Shoes", icon: "👟",
+                words: [
+                    { word: "Shoes", icon: "👟", sentence: "Tie your shoelaces tightly before running the long race." },
+                    { word: "Boots", icon: "🥾", sentence: "Heavy rubber rain boots are great for splashing in mud." },
+                    { word: "Sandals", icon: "🩴", sentence: "We wear light open sandals when walking on warm sand." },
+                    { word: "Slippers", icon: "🩴", sentence: "Put on your soft indoor slippers when you wake up." },
+                    { word: "Sneakers", icon: "👟", sentence: "Comfortable running sneakers help you jump high in gym class." },
+                    { word: "Loafers", icon: "👞", sentence: "He wore shiny brown leather loafers to the fancy dinner." },
+                    { word: "Heels", icon: "👠", sentence: "Mom wore elegant high heels to the big wedding party." },
+                    { word: "Cleats", icon: "👟", sentence: "Spiky soccer cleats keep you from slipping on wet grass." },
+                    { word: "Slippers", icon: "🩴", sentence: "Fluffy pink bunny slippers keep your feet cozy at home." },
+                    { word: "Skates", icon: "🛼", sentence: "Tighten your roller skates before rolling down the smooth path." },
+                    { word: "Flipflops", icon: "🩴", sentence: "Flip-flops make a funny slapping sound when you walk fast." },
+                    { word: "Clogs", icon: "👞", sentence: "Traditional wooden clogs are made from carved tree blocks." },
+                    { word: "Brogues", icon: "👞", sentence: "Brogues are fancy leather shoes with pretty little hole patterns." },
+                    { word: "Galoshes", icon: "🥾", sentence: "Slip protective rubber galoshes over your nice dress shoes." },
+                    { word: "Moccasins", icon: "👞", sentence: "Moccasins are soft, comfortable leather shoes made without heels." },
+                    { word: "Espadrilles", icon: "👟", sentence: "Light summer espadrilles have cool soles woven from strong rope." },
+                    { word: "Trainers", icon: "👟", sentence: "Put on your athletic trainers for the track field events." },
+                    { word: "Waders", icon: "🥾", sentence: "High waterproof waders allow fishermen to stand deep in rivers." },
+                    { word: "Snowboots", icon: "🥾", sentence: "Thick insulated snowboots keep feet dry in deep winter drifts." },
+                    { word: "Pumps", icon: "👠", sentence: "She chose comfortable black patent pumps for the school concert." }
+                ]
+            },
+            food: {
+                title: "🍽 Food & Drinks", icon: "🍽",
+                words: [
+                    { word: "Bread", icon: "🍞", sentence: "We toast fresh whole-wheat bread until it turns golden brown." },
+                    { word: "Milk", icon: "🥛", sentence: "Drinking a cold glass of milk builds strong white teeth." },
+                    { word: "Rice", icon: "🍚", sentence: "Fluffy white rice goes perfectly with warm vegetable stews." },
+                    { word: "Egg", icon: "🥚", sentence: "A boiled egg is packed with healthy energy for breakfast." },
+                    { word: "Cheese", icon: "🧀", sentence: "The little gray mouse pulled a big wedge of yellow cheese." },
+                    { word: "Juice", icon: "🧃", sentence: "Freshly squeezed sweet orange juice tastes wonderful in the morning." },
+                    { word: "Water", icon: "🥛", sentence: "Drink plenty of cool clean water when playing sports outdoor." },
+                    { word: "Soup", icon: "🥣", sentence: "Warm chicken noodle soup feels great when you feel sick." },
+                    { word: "Cake", icon: "🎂", sentence: "Blow out the flickering wax candles on your birthday cake." },
+                    { word: "Applejuice", icon: "🧃", sentence: "Sweet clear apple juice is served in little lunchboxes." },
+                    { word: "Butter", icon: "🧈", sentence: "Spread creamy yellow butter onto warm toasted bread slices." },
+                    { word: "Honey", icon: "🍯", sentence: "Sweet golden honey is made by fuzzy buzzing bumblebees." },
+                    { word: "Yogurt", icon: "🥛", sentence: "Creamy strawberry yogurt is a healthy and delicious afternoon snack." },
+                    { word: "Salad", icon: "🥗", sentence: "A fresh green salad is full of crunchy raw vegetables." },
+                    { word: "Pizza", icon: "🍕", sentence: "The big round pizza was covered in gooey melted cheese." },
+                    { word: "Burger", icon: "🍔", sentence: "A tasty grilled burger comes inside a soft toasted bun." },
+                    { word: "Noodles", icon: "🍜", sentence: "Twirl long spaghetti noodles around your fork carefully before eating." },
+                    { word: "Cookie", icon: "🍪", sentence: "A crunchy chocolate chip cookie goes great with cold milk." },
+                    { word: "Tea", icon: "🫖", sentence: "Mom sips hot chamomile tea out of a porcelain cup." },
+                    { word: "Chocolate", icon: "🍫", sentence: "A sweet dark chocolate bar is a wonderful special treat." }
+                ]
+            },
+            transport: {
+                title: "🚗 Vehicles & Transport", icon: "🚗",
+                words: [
+                    { word: "Car", icon: "🚗", sentence: "Our family car fits five people comfortably for road trips." },
+                    { word: "Bus", icon: "🚌", sentence: "The big yellow school bus stops right at the street corner." },
+                    { word: "Bike", icon: "🚲", sentence: "Always wear a protective plastic helmet when riding your bike." },
+                    { word: "Train", icon: "🚂", sentence: "The heavy steam train chugged fast along the iron tracks." },
+                    { word: "Plane", icon: "✈️", sentence: "A giant silver plane flew high above the white clouds." },
+                    { word: "Boat", icon: "⛵", sentence: "The small wooden rowboat floated gently down the calm river." },
+                    { word: "Ship", icon: "🚢", sentence: "A massive cruise ship sailed across the deep blue ocean." },
+                    { word: "Truck", icon: "🚚", sentence: "The huge delivery truck carried heavy boxes to the store." },
+                    { word: "Rocket", icon: "🚀", sentence: "The space rocket blasted off with an incredibly loud boom." },
+                    { word: "Submarine", icon: "Submarine", icon:"🦪", sentence: "The yellow submarine dives deep below ocean waves to look at coral." },
+                    { word: "Helicopter", icon: "🚁", sentence: "The rescue helicopter has big spinning blades on its roof." },
+                    { word: "Tram", icon: "🚊", sentence: "Electric city trams roll smoothly along tracks embedded in streets." },
+                    { word: "Scooter", icon: "🛴", sentence: "Push off with your foot to ride your metal scooter fast." },
+                    { word: "Ambulance", icon: "🚑", sentence: "The loud flashing ambulance rushes sick people to the hospital." },
+                    { word: "Firetruck", icon: "🚒", sentence: "The red firetruck has a long ladder to reach high fires." },
+                    { word: "Tractor", icon: "🚜", sentence: "The heavy green tractor pulls plows across the farm fields." },
+                    { word: "Van", icon: "🚐", sentence: "The delivery van dropped off a package at our front door." },
+                    { word: "Ferry", icon: "🚢", sentence: "The broad ferry boat carries cars across the wide river channel." },
+                    { word: "Motorcycle", icon: "🏍️", sentence: "A motorcycle has a powerful loud engine and two large wheels." },
+                    { word: "Bicycle", icon: "🚲", sentence: "Riding a bicycle is great exercise for your leg muscles." }
+                ]
+            },
+            helpers: {
+                title: "🏥 Community Helpers", icon: "🏥",
+                words: [
+                    { word: "Doctor", icon: "🧑‍⚕️", sentence: "The kind doctor uses a stethoscope to check your heartbeat." },
+                    { word: "Teacher", icon: "👩‍🏫", sentence: "Our smart teacher guides us through reading and writing exercises." },
+                    { word: "Firefighter", icon: "🧑‍🚒", sentence: "The brave firefighter wears heavy protective gear to put out fires." },
+                    { word: "Police", icon: "👮", sentence: "The helpful police officer keeps our city neighborhoods safe and orderly." },
+                    { word: "Farmer", icon: "👨‍🌾", sentence: "The hard-working farmer plants seeds and grows healthy food for everyone." },
+                    { word: "Nurse", icon: "👩‍⚕️", sentence: "The caring hospital nurse checks your temperature when you feel sick." },
+                    { word: "Dentist", icon: "🦷", sentence: "The dentist checks your teeth and reminds you to brush daily." },
+                    { word: "Baker", icon: "🧑‍🍳", sentence: "The cheerful baker makes fresh warm bread loaves every morning." },
+                    { word: "Chef", icon: "👨‍🍳", sentence: "The skilled restaurant chef prepares delicious gourmet dinners for guests." },
+                    { word: "Pilot", icon: "🧑‍✈️", sentence: "The experienced airline pilot guides large passenger planes across continents." },
+                    { word: "Mailcarrier", icon: "📬", sentence: "The mail carrier delivers letters directly to our metal mailbox." },
+                    { word: "Builder", icon: "👷", sentence: "The construction builder wears a hard yellow hat for safety." },
+                    { word: "Librarian", icon: "👩‍💻", sentence: "The school librarian helps you find the most exciting adventure books." },
+                    { word: "Scientist", icon: "🔬", sentence: "The research scientist does experiments using glass test tubes in labs." },
+                    { word: "Artist", icon: "🎨", sentence: "The creative artist uses a wooden palette to mix beautiful paint colors." },
+                    { word: "Singer", icon: "🎤", sentence: "The talented opera singer performs beautiful melodic songs on the stage." },
+                    { word: "Coach", icon: "🏃", sentence: "Our sports coach teaches us the correct rules of soccer games." },
+                    { word: "Vet", icon: "🐱", sentence: "The animal vet helped heal my puppy's sore broken paw." },
+                    { word: "Tailor", icon: "🪡", sentence: "The master tailor uses shiny silver needles to sew custom suits." },
+                    { word: "Sailor", icon: "🧑‍✈️", sentence: "The brave naval sailor navigates massive ships through stormy ocean waters." }
+                ]
+            },
+            colours: {
+                title: "🎨 Rainbow Colours", icon: "🎨",
+                words: [
+                    { word: "Red", icon: "🔴", sentence: "A bright red strawberry tastes sweet and delicious." },
+                    { word: "Blue", icon: "🔵", sentence: "The vast beautiful sky is a magnificent clear blue color." },
+                    { word: "Yellow", icon: "🟡", sentence: "The bright yellow sun warmed up our whole playground today." },
+                    { word: "Green", icon: "🟢", sentence: "Fresh spring grass grows tall, lush and incredibly green." },
+                    { word: "Orange", icon: "🟠", sentence: "The juicy sweet orange fruit matches its colorful name perfectly." },
+                    { word: "Purple", icon: "🟣", sentence: "The king wore a royal crown lined with rich purple velvet." },
+                    { word: "Pink", icon: "🌸", sentence: "The elegant flamingo bird has bright pink feathers from eating shrimp." },
+                    { word: "Brown", icon: "🟤", sentence: "The giant grizzly bear has thick, warm, fluffy brown fur." },
+                    { word: "Black", icon: "⚫", sentence: "The dark night sky looked completely black without moon light." },
+                    { word: "White", icon: "⚪", sentence: "Fluffy white winter snow covered the entire frozen garden patch." },
+                    { word: "Grey", icon: "🔘", sentence: "Dark heavy grey clouds mean a rainstorm is coming soon." },
+                    { word: "Gold", icon: "👑", sentence: "The winner received a beautiful heavy medal made of shiny gold." },
+                    { word: "Silver", icon: "🥈", sentence: "The shiny silver stars twinkled brightly in the midnight sky." },
+                    { word: "Violet", icon: "🪻", sentence: "Sweet little violet flowers bloom early in the spring forest." },
+                    { word: "Indigo", icon: "🌌", sentence: "Indigo is the deep dark blue color found in the rainbow." },
+                    { word: "Cyan", icon: "🔵", sentence: "Cyan is a bright, beautiful light blue color like tropical oceans." },
+                    { word: "Magenta", icon: "🔴", sentence: "Magenta is a rich, dark purplish-red color that stands out clearly." },
+                    { word: "Lime", icon: "🟢", sentence: "Lime green is extra bright, energetic, and very fun to color with." },
+                    { word: "Teal", icon: "🔵", sentence: "Teal is a beautiful deep mixture of green and blue together." },
+                    { word: "Maroon", icon: "🟤", sentence: "Maroon is a handsome dark red color often found on school sweaters." }
+                ]
+            },
+            numbers: {
+                title: "🔢 Basic Numbers", icon: "🔢",
+                words: [
+                    { word: "One", icon: "1️⃣", sentence: "The little unicorn has exactly one spiral horn on its head." },
+                    { word: "Two", icon: "2️⃣", sentence: "You have two eyes to see the beautiful world around you." },
+                    { word: "Three", icon: "3️⃣", sentence: "A geometric triangle has three straight sides and three sharp corners." },
+                    { word: "Four", icon: "4️⃣", sentence: "A sturdy square table has four strong wooden legs standing straight." },
+                    { word: "Five", icon: "5️⃣", sentence: "You have five fingers on your hand to hold pencils tightly." },
+                    { word: "Six", icon: "6️⃣", sentence: "An insect has six busy walking legs to scurry across paths." },
+                    { word: "Seven", icon: "7️⃣", sentence: "There are seven days in one full week from Monday to Sunday." },
+                    { word: "Eight", icon: "8️⃣", sentence: "The ocean octopus has eight long wiggling arms to capture crabs." },
+                    { word: "Nine", icon: "9️⃣", sentence: "Nine bright colorful balloons floated up into the summer sky." },
+                    { word: "Ten", icon: "🔟", sentence: "You have ten little toes inside your socks keeping warm." },
+                    { word: "Eleven", icon: "1️⃣1️⃣", sentence: "An soccer team has eleven active players working together on fields." },
+                    { word: "Twelve", icon: "1️⃣2️⃣", sentence: "The wall clock face shows twelve big numbers to count hours." },
+                    { word: "Thirteen", icon: "1️⃣3️⃣", sentence: "A baker's dozen means you get thirteen fresh warm sweet donuts." },
+                    { word: "Fourteen", icon: "1️⃣4️⃣", sentence: "Two whole weeks add up to exactly fourteen days of time." },
+                    { word: "Fifteen", icon: "1️⃣5️⃣", sentence: "The high school basketball match lasts fifteen minutes per quarter." },
+                    { word: "Sixteen", icon: "1️⃣6️⃣", sentence: "You need sixteen candles to celebrate a sweet sixteenth birthday party." },
+                    { word: "Seventeen", icon: "1️⃣7️⃣", sentence: "Seventeen green grasshoppers hopped across the garden grass today." },
+                    { word: "Eighteen", icon: "1️⃣8️⃣", sentence: "Golf courses have eighteen distinct holes to play through entirely." },
+                    { word: "Nineteen", icon: "1️⃣9️⃣", sentence: "Nineteen bright orange butterflies landed on the lavender bush together." },
+                    { word: "Twenty", icon: "2️⃣0️⃣", sentence: "You have twenty pearly white teeth when you are a young child." }
+                ]
+            },
+            shapes: {
+                title: "🧩 Geometric Shapes", icon: "🧩",
+                words: [
+                    { word: "Circle", icon: "⭕", sentence: "A circle is perfectly round and has no sharp corners at all." },
+                    { word: "Square", icon: "⬛", sentence: "A square has four straight sides that are exactly equal length." },
+                    { word: "Triangle", icon: "🔺", sentence: "A triangle has three sharp corners and three straight connecting lines." },
+                    { word: "Rectangle", icon: "🪵", sentence: "A classroom door is shaped like a tall long wooden rectangle." },
+                    { word: "Star", icon: "⭐", sentence: "A yellow star shapes the sky above during clear dark nights." },
+                    { word: "Oval", icon: "🥚", sentence: "A fresh farm egg is shaped like a smooth white oval." },
+                    { word: "Heart", icon: "❤️", sentence: "The red heart shape stands for love, kindness and friendship." },
+                    { word: "Diamond", icon: "♦️", sentence: "A colorful flying kite is shaped like a regular geometric diamond." },
+                    { word: "Crescent", icon: "🌙", sentence: "The glowing night moon looks like a crescent when partly hidden." },
+                    { word: "Cube", icon: "🎲", sentence: "A playing dice is a solid cube with six square faces." },
+                    { word: "Sphere", icon: "🔮", sentence: "A round soccer ball is a perfect solid geometric sphere shape." },
+                    { word: "Cone", icon: "🍦", sentence: "The sweet cold ice cream sat perfectly on a crunchy waffle cone." },
+                    { word: "Cylinder", icon: "🥫", sentence: "A metal soup can is shaped like a smooth round cylinder tube." },
+                    { word: "Pentagon", icon: "⬠", sentence: "A geometric pentagon has five straight walls and five clear corners." },
+                    { word: "Hexagon", icon: "⬡", sentence: "A busy honey bee builds hexagon cells inside its wax honeycomb." },
+                    { word: "Octagon", icon: "🛑", sentence: "An official red traffic stop sign is shaped like an octagon." },
+                    { word: "Pyramid", icon: "📐", sentence: "The ancient Egyptian stone pyramids have triangular sides meeting high up." },
+                    { word: "Arrow", icon: "➡️", sentence: "Follow the painted road arrow to find the correct path easily." },
+                    { word: "Cross", icon: "➕", sentence: "A red cross symbol is used to mark medical first aid boxes." },
+                    { word: "Spiral", icon: "🌀", sentence: "The little garden snail shell has a beautiful winding spiral pattern." }
+                ]
+            },
+            actions: {
+                title: "🏃 Action Words", icon: "🏃",
+                words: [
+                    { word: "Run", icon: "🏃", sentence: "Run fast around the school track to win the gold medal." },
+                    { word: "Jump", icon: "🦘", sentence: "Jump high over the puddle to keep your feet dry." },
+                    { word: "Walk", icon: "🚶", sentence: "Walk safely along the sidewalk when you go to school." },
+                    { word: "Read", icon: "📚", sentence: "Read interesting books every single day to expand your clever mind." },
+                    { word: "Write", icon: "✏️", sentence: "Write your homework neat and clean using your blue ink pen." },
+                    { word: "Sing", icon: "🎤", sentence: "Sing cheerful happy songs together during morning music assembly." },
+                    { word: "Dance", icon: "💃", sentence: "Dance joyfully to the rhythm of the upbeat musical drums." },
+                    { word: "Laugh", icon: "😀", sentence: "We laugh out loud when someone tells a funny goofy joke." },
+                    { word: "Cry", icon: "😢", sentence: "Babies cry out loud when they feel hungry or very tired." },
+                    { word: "Sleep", icon: "😴", sentence: "Sleep deeply for eight hours every night to stay healthy." },
+                    { word: "Eat", icon: "🍽️", sentence: "Eat healthy green vegetables to build strong healthy muscles." },
+                    { word: "Drink", icon: "🥛", sentence: "Drink fresh pure water whenever you feel hot and thirsty." },
+                    { word: "Clap", icon: "👏", sentence: "Clap your hands loudly when the great performance finishes completely." },
+                    { word: "Smile", icon: "😊", sentence: "Smile brightly at your friends to show them your kind heart." },
+                    { word: "Swim", icon: "🏊", sentence: "Swim across the blue pool using long smooth arm strokes." },
+                    { word: "Fly", icon: "✈️", sentence: "Birds fly high across mountains using their strong feathered wings." },
+                    { word: "Climb", icon: "🧗", sentence: "Climb carefully up the wooden ladder into the backyard treehouse." },
+                    { word: "Throw", icon: "☄️", sentence: "Throw the red baseball directly to the player at base." },
+                    { word: "Catch", icon: "🧤", sentence: "Open your hands wide to catch the incoming flying ball." },
+                    { word: "Draw", icon: "🎨", sentence: "Draw a spectacular picture of a fire-breathing space dragon." }
+                ]
+            },
+            emotions: {
+                title: "😊 Feelings & Emotions", icon: "😊",
+                words: [
+                    { word: "Happy", icon: "😀", sentence: "I feel incredibly happy when playing games with my friends." },
+                    { word: "Sad", icon: "😢", sentence: "She felt sad when her bright red balloon popped loudly." },
+                    { word: "Angry", icon: "😠", sentence: "Take a deep breath and count to ten when angry." },
+                    { word: "Scared", icon: "😨", sentence: "Loud rolling thunder crashes can make little children feel scared." },
+                    { word: "Surprised", icon: "😲", sentence: "I was totally surprised by the giant birthday party gift!" },
+                    { word: "Tired", icon: "🥱", sentence: "After running the long race, the athletes felt very tired." },
+                    { word: "Excited", icon: "🤩", sentence: "We are so excited to visit the giant amusement park tomorrow." },
+                    { word: "Bored", icon: "😐", sentence: "On rainy days with no toys, we can feel a little bored." },
+                    { word: "Proud", icon: "😎", sentence: "He felt proud when he scored the winning soccer goal." },
+                    { word: "Silly", icon: "🤪", sentence: "The funny circus clown made silly faces to make kids laugh." },
+                    { word: "Shy", icon: "🫣", sentence: "The new student felt a little shy on her first day." },
+                    { word: "Calm", icon: "😌", sentence: "Listening to soft violin music helps keep our minds calm." },
+                    { word: "Jealous", icon: "😒", sentence: "Try not to feel jealous when others win a game prize." },
+                    { word: "Kind", icon: "😇", sentence: "Sharing your lunch treats with others is a very kind thing." },
+                    { word: "Curious", icon: "🧐", sentence: "The curious puppy explored every single corner of the new yard." },
+                    { word: "Sleepy", icon: "🥱", sentence: "The late night hours made everyone feel sleepy and warm." },
+                    { word: "Confused", icon: "🤔", sentence: "The tricky math puzzle left the whole class feeling confused." },
+                    { word: "Brave", icon: "🦁", sentence: "The brave little boy went to the dentist without crying." },
+                    { word: "Grateful", icon: "🙏", sentence: "Be grateful for the wonderful loving family that supports you." },
+                    { word: "Shocked", icon: "😮", sentence: "We were completely shocked to find a frog inside the kitchen." }
+                ]
+            },
+            instruments: {
+                title: "🎵 Musical Instruments", icon: "🎵",
+                words: [
+                    { word: "Piano", icon: "🎹", sentence: "Press down the black and white keys of the piano." },
+                    { word: "Guitar", icon: "🎸", sentence: "Pluck the six tight strings of the acoustic guitar cleanly." },
+                    { word: "Drum", icon: "🥁", sentence: "Beat the heavy marching drum with wooden drumsticks loudly." },
+                    { word: "Flute", icon: "🪈", sentence: "Blow sweet soft air through the shiny silver flute tube." },
+                    { word: "Violin", icon: "🎻", sentence: "Draw the wooden bow across violin strings to play music." },
+                    { word: "Trumpet", icon: "🎺", sentence: "The brass trumpet plays loud energetic fanfares for kings." },
+                    { word: "Xylophone", icon: "🪘", sentence: "Tap the colorful metal bars of the xylophone with mallets." },
+                    { word: "Harp", icon: "🪕", sentence: "The grand golden harp plays beautiful angelic sounding music chords." },
+                    { word: "Accordion", icon: "🪗", sentence: "Squeeze the accordion back and forth to play festive songs." },
+                    { word: "Maracas", icon: "🪇", sentence: "Shake the colorful wooden maracas to make rhythmic clicking sounds." },
+                    { word: "Tambourine", icon: "🪇", sentence: "Tap the side tambourine against your hand to jingle metal discs." },
+                    { word: "Saxophone", icon: "🎷", sentence: "The shiny brass saxophone plays smooth, beautiful jazz music melodies." },
+                    { word: "Cymbals", icon: "🪇", sentence: "Crash the heavy brass cymbals together for a big musical finish." },
+                    { word: "Harmonica", icon: "🪗", sentence: "The pocket harmonica is easy to blow into while traveling." },
+                    { word: "Triangle", icon: "📐", sentence: "Strike the little metal musical triangle for a high clear ring." },
+                    { word: "Bagpipes", icon: "🪗", sentence: "Traditional Scottish bagpipes make a strong unique sound over hills." },
+                    { word: "Cello", icon: "🎻", sentence: "The big wooden cello rests on floors and plays deep notes." },
+                    { word: "Clarinet", icon: "🪈", sentence: "The black woodwind clarinet has many silver keys to press." },
+                    { word: "Gong", icon: "🪘", sentence: "Strike the massive ancient metal gong for an incredibly deep crash." },
+                    { word: "Banjo", icon: "🪕", sentence: "The round banjo makes a bright twangy sound perfect for folk dances." }
+                ]
+            },
+            sports: {
+                title: "⚽ Sports & Games", icon: "⚽",
+                words: [
+                    { word: "Soccer", icon: "⚽", sentence: "Kick the black and white soccer ball into the goal net." },
+                    { word: "Basketball", icon: "🏀", sentence: "Bounce the orange basketball fast before throwing it through hoops." },
+                    { word: "Baseball", icon: "⚾", sentence: "Swing the heavy wooden baseball bat to hit home runs." },
+                    { word: "Tennis", icon: "🎾", sentence: "Hit the fuzzy yellow tennis ball over the central net grid." },
+                    { word: "Running", icon: "🏃", sentence: "Running is a great way to keep your heart healthy." },
+                    { word: "Swimming", icon: "🏊", sentence: "Swimming laps makes your arms and shoulders incredibly strong." },
+                    { word: "Cycling", icon: "🚲", sentence: "Cycling up steep mountain hills takes lots of leg energy." },
+                    { word: "Gymnastics", icon: "🤸", sentence: "Gymnastics athletes can flip through air and balance perfectly." },
+                    { word: "Golf", icon: "⛳", sentence: "Use a long metal club to tap golf balls into holes." },
+                    { word: "Volleyball", icon: "🏐", sentence: "Spike the white leather volleyball over high nets with force." },
+                    { word: "Hockey", icon: "🏑", sentence: "Use a curved hockey stick to push pucks across ice sheets." },
+                    { word: "Cricket", icon: "🏏", sentence: "The cricket batsman hit the leather ball far out fields." },
+                    { word: "Rugby", icon: "🏈", sentence: "Rugby players pass an oval shaped ball backward down fields." },
+                    { word: "Badminton", icon: "🏸", sentence: "Hit the lightweight feathered badminton shuttlecock over the high net net." },
+                    { word: "Skating", icon: "🛼", sentence: "Ice skating looks like dancing smoothly across frozen winter rinks." },
+                    { word: "Boxing", icon: "🥊", sentence: "Padded boxing gloves protect athlete hands during target matches." },
+                    { word: "Archery", icon: "🏹", sentence: "Pull back the tight bow string to shoot archery arrows." },
+                    { word: "Skiing", icon: "⛷️", sentence: "Skiing involves sliding down snowy mountain trails on long fiberglass boards." },
+                    { word: "Surfing", icon: "🏄", sentence: "Surfing athletes stand balanced on boards across massive ocean waves." },
+                    { word: "Bowling", icon: "🎳", sentence: "Roll the heavy black bowling ball to crash ten white pins down." }
+                ]
+            },
+            nature: {
+                title: "🌍 Mother Nature", icon: "🌍",
+                words: [
+                    { word: "Tree", icon: "🌳", sentence: "A tall oak tree provides cool shade during hot summer days." },
+                    { word: "River", icon: "🏞️", sentence: "The clear blue river flows quickly down from high snow mountains." },
+                    { word: "Mountain", icon: "⛰️", sentence: "The massive mountain peak was covered in white winter snow." },
+                    { word: "Lake", icon: "🏞️", sentence: "We took a small wooden rowboat out onto calm lake waters." },
+                    { word: "Forest", icon: "🌲", sentence: "Many wild animals live hidden inside the dense green forest trees." },
+                    { word: "Ocean", icon: "🌊", sentence: "The massive deep blue ocean covers most of our planet earth." },
+                    { word: "Beach", icon: "🏖️", sentence: "Children love building sandcastles on the warm sandy beach." },
+                    { word: "Desert", icon: "🏜️", sentence: "The dry sandy desert receives very little rainfall all year." },
+                    { word: "Valley", icon: "🏞️", sentence: "A beautiful green valley sits tucked between two steep hills." },
+                    { word: "Waterfall", icon: "🏞️", sentence: "Cool river water tumbles dramatically down the rocky waterfall cliffs." },
+                    { word: "Cave", icon: "🪨", sentence: "Brave explorers used flashlights to view the deep rock cave." },
+                    { word: "Island", icon: "🏝️", sentence: "An island is a piece of land completely surrounded by water." },
+                    { word: "Volcano", icon: "🌋", sentence: "The active volcano erupted, shooting hot red lava sky high." },
+                    { word: "Hill", icon: "⛰️", sentence: "We rolled down the grassy green hill laughing together happily." },
+                    { word: "Sky", icon: "🌌", sentence: "Look up at the wide blue sky to watch fluffy clouds move." },
+                    { word: "Rock", icon: "🪨", sentence: "The ancient gray rock sat embedded deep in the river bed." },
+                    { word: "Grass", icon: "🌱", sentence: "The garden grass feels cool and soft beneath bare feet." },
+                    { word: "Jungle", icon: "🌴", sentence: "Many tropical parrots live inside the warm wet green jungle." },
+                    { word: "Swamp", icon: "🐊", sentence: "Alligators swim slowly through thick muddy waters of the swamp." },
+                    { word: "Meadow", icon: "🌾", sentence: "The wild meadow was covered in thousands of colorful blooming flowers." }
+                ]
+            },
+            space: {
+                title: "🪐 Outer Space", icon: "🪐",
+                words: [
+                    { word: "Sun", icon: "☀️", sentence: "The sun is a giant burning star at our solar center." },
+                    { word: "Moon", icon: "🌙", sentence: "The silver moon orbits around our planet earth every month." },
+                    { word: "Earth", icon: "🌍", sentence: "Planet Earth is our beautiful blue home full of living things." },
+                    { word: "Star", icon: "⭐", sentence: "Billions of twinkling stars fill up the dark night universe sky." },
+                    { word: "Planet", icon: "🪐", sentence: "Eight large planets travel around the sun inside our solar system." },
+                    { word: "Rocket", icon: "🚀", sentence: "The powerful space rocket blasted off toward Mars with roaring engines." },
+                    { word: "Astronaut", icon: "🧑‍🚀", sentence: "An astronaut wears a heavy white space suit to breathe outside." },
+                    { word: "Spaceship", icon: "🛸", sentence: "The futuristic spaceship traveled incredibly fast between distant starry galaxies." },
+                    { word: "Comet", icon: "☄️", sentence: "A zooming icy comet leaves a long glowing dust tail behind." },
+                    { word: "Meteor", icon: "☄️", sentence: "We watched a shooting meteor burn bright across the night sky." },
+                    { word: "Galaxy", icon: "🌌", sentence: "Our Milky Way galaxy is shaped like a giant spinning spiral wheel." },
+                    { word: "Telescope", icon: "🔭", sentence: "Look through a powerful glass telescope to see distant planet rings clearly." },
+                    { word: "Alien", icon: "👽", sentence: "Science fiction stories tell tales of funny green alien visitors." },
+                    { word: "Satellite", icon: "🛰️", sentence: "A robotic satellite orbits high up sending weather pictures down." },
+                    { word: "Gravity", icon: "🪐", sentence: "Gravity is the invisible pulling force keeping our feet on grounds." },
+                    { word: "Orbit", icon: "🔄", sentence: "Planets follow a steady elliptical orbit pathway around the central sun." },
+                    { word: "Asteroid", icon: "🪨", sentence: "An asteroid is a giant space rock floating between Mars and Jupiter." },
+                    { word: "Nebula", icon: "🌌", sentence: "A cosmic nebula is a giant beautiful cloud of stellar dust and gas." },
+                    { word: "Universe", icon: "🌌", sentence: "The vast universe includes everything we can see, touch, or explore." },
+                    { word: "Crater", icon: "🕳️", sentence: "The surface of the moon is covered in deep dusty rock craters." }
+                ]
+            },
+            festivals: {
+                title: "🎉 Joyful Festivals", icon: "🎉",
+                words: [
+                    { word: "Festival", icon: "🎉", sentence: "A joyful festival brings communities together to celebrate happily." },
+                    { word: "Holiday", icon: "🗓️", sentence: "There is no school during the long winter holiday break." },
+                    { word: "Celebration", icon: "🥳", sentence: "The family held a giant celebration for grandpa's birthday." },
+                    { word: "Party", icon: "🥳", sentence: "We wore funny pointed paper hats to the classroom party." },
+                    { word: "Gift", icon: "🎁", sentence: "I wrapped up a special handmade gift for my best friend." },
+                    { word: "Balloons", icon: "🎈", sentence: "Bright colorful balloons filled up the entire party room ceiling." },
+                    { word: "Carnival", icon: "🎡", sentence: "We rode the giant Ferris wheel at the summer town carnival." },
+                    { word: "Parade", icon: "🎺", sentence: "Marching bands played loud drums down streets during the spring parade." },
+                    { word: "Feast", icon: "🍗", sentence: "Our entire family sat down to enjoy a massive delicious holiday feast." },
+                    { word: "Fireworks", icon: "🎆", sentence: "Spectacular colorful fireworks exploded brightly across the midnight sky." },
+                    { word: "Candle", icon: "🕯️", sentence: "Light the little wax candle to make the dinner look cozy." },
+                    { word: "Costume", icon: "🎭", sentence: "He wore a funny furry bear costume for the school play." },
+                    { word: "Mask", icon: "🎭", sentence: "The mystery masquerade dancers wore beautiful decorated silk face masks." },
+                    { word: "Music", icon: "🎵", sentence: "Upbeat festive music makes everyone want to stand up and dance." },
+                    { word: "Dance", icon: "💃", sentence: "Traditional folk dances are passed down from grandparents to children." },
+                    { word: "Games", icon: "🎯", sentence: "We played funny balloon popping games at the carnival stalls." },
+                    { word: "Sweets", icon: "🍬", sentence: "Grandmother handed out delicious homemade sugar sweets to all children." },
+                    { word: "Decorations", icon: "🎀", sentence: "Hang colorful paper lanterns and shiny ribbons as festive decorations." },
+                    { word: "Tradition", icon: "📜", sentence: "Lighting lamps is an ancient, beautiful festival tradition in our town." },
+                    { word: "Greetings", icon: "✉️", sentence: "We send colorful handmade greeting cards wishing friends a happy holiday." }
+                ]
+            }
+        };
+
+        // Complete robust responsive client-side educational game application core engine
+        const app = {
+            currentScreen: 'welcome',
+            currentCategory: null,
+            currentIndex: 0,
+            isGameMode: false,
+            spelledWord: "",
+            targetWord: "",
+            
+            stats: {
+                stars: 0,
+                wordsLearned: 0
+            },
+
+            init() {
+                this.loadStats();
+                this.renderDashboard();
+            },
+
+            loadStats() {
+                try {
+                    const savedStats = localStorage.getItem('vocabLabStats_Premium');
+                    if (savedStats) {
+                        this.stats = JSON.parse(savedStats);
+                        this.updateStatsUI();
+                    }
+                } catch (e) {
+                    console.warn("localStorage initialization bypass active.");
+                }
+            },
+
+            saveStats() {
+                try {
+                    localStorage.setItem('vocabLabStats_Premium', JSON.stringify(this.stats));
+                } catch (e) {}
+                this.updateStatsUI();
+            },
+
+            updateStatsUI() {
+                document.getElementById('stars-display').innerText = `⭐ ${this.stats.stars} Stars`;
+                document.getElementById('words-display').innerText = `📚 ${this.stats.wordsLearned} Learned`;
+            },
+
+            showScreen(screenId) {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                document.getElementById(`screen-${screenId}`).classList.add('active');
+                this.currentScreen = screenId;
+                window.speechSynthesis.cancel();
+            },
+
+            renderDashboard() {
+                const grid = document.getElementById('category-grid');
+                grid.innerHTML = '';
+                
+                Object.keys(vocabularyData).forEach(key => {
+                    const cat = vocabularyData[key];
+                    const card = document.createElement('div');
+                    card.className = 'glass category-card';
+                    card.innerHTML = `
+                        <div class="category-icon">${cat.icon}</div>
+                        <div class="category-title">${cat.title}</div>
+                        <div style="font-weight:bold; color: var(--primary); margin-top:5px;">${cat.words.length} Dynamic Words</div>
+                    `;
+                    card.onclick = () => this.startCategory(key);
+                    grid.appendChild(card);
+                });
+            },
+
+            startCategory(categoryId) {
+                this.currentCategory = categoryId;
+                this.currentIndex = 0;
+                this.isGameMode = false;
+                
+                document.getElementById('current-category-title').innerText = vocabularyData[categoryId].title;
+                document.getElementById('flashcard-mode').style.display = 'flex';
+                document.getElementById('game-mode').style.display = 'none';
+                document.getElementById('mode-toggle-btn').innerText = "🎮 Play Spelling Match";
+                
+                this.renderWord();
+                this.showScreen('learning');
+            },
+
+            renderWord() {
+                const words = vocabularyData[this.currentCategory].words;
+                const currentData = words[this.currentIndex];
+                
+                document.getElementById('active-flashcard').classList.remove('is-flipped');
+                
+                document.getElementById('fc-image').innerText = currentData.icon;
+                document.getElementById('fc-word').innerText = currentData.word;
+                document.getElementById('fc-sentence').innerText = currentData.sentence;
+
+                if (this.isGameMode) {
+                    this.initWordBuilder();
+                }
+            },
+
+            flipCard() {
+                const card = document.getElementById('active-flashcard');
+                card.classList.toggle('is-flipped');
+                
+                if (card.classList.contains('is-flipped')) {
+                    this.stats.wordsLearned++;
+                    this.saveStats();
+                    this.speakWord(false);
+                }
+            },
+
+            nextWord() {
+                const words = vocabularyData[this.currentCategory].words;
+                if (this.currentIndex < words.length - 1) {
+                    this.currentIndex++;
+                    this.renderWord();
+                } else {
+                    this.speakText("Fantastic deck discovery! Five bonus stars achieved!");
+                    this.stats.stars += 5;
+                    this.saveStats();
+                    setTimeout(() => this.showScreen('dashboard'), 2200);
+                }
+            },
+
+            prevWord() {
+                if (this.currentIndex > 0) {
+                    this.currentIndex--;
+                    this.renderWord();
+                }
+            },
+
+            speakWord(slow = false) {
+                const word = vocabularyData[this.currentCategory].words[this.currentIndex].word;
+                this.speakText(word, slow);
+            },
+
+            speakText(text, slow = false) {
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.rate = slow ? 0.45 : 0.9;
+                    utterance.pitch = 1.25; // Adjusted higher pitch optimizes vocal response clarity for primary grade rooms
+                    window.speechSynthesis.speak(utterance);
+                }
+            },
+
+            toggleMode() {
+                this.isGameMode = !this.isGameMode;
+                const toggleBtn = document.getElementById('mode-toggle-btn');
+                if (this.isGameMode) {
+                    toggleBtn.innerText = "🖼️ Study Flashcards";
+                    document.getElementById('flashcard-mode').style.display = 'none';
+                    document.getElementById('game-mode').style.display = 'block';
+                    this.initWordBuilder();
+                } else {
+                    toggleBtn.innerText = "🎮 Play Spelling Match";
+                    document.getElementById('flashcard-mode').style.display = 'flex';
+                    document.getElementById('game-mode').style.display = 'none';
+                    this.renderWord();
+                }
+            },
+
+            initWordBuilder() {
+                const wordData = vocabularyData[this.currentCategory].words[this.currentIndex];
+                this.targetWord = wordData.word.toUpperCase();
+                this.spelledWord = "";
+                
+                document.getElementById('game-image').innerText = wordData.icon;
+                
+                const slotsContainer = document.getElementById('letter-slots');
+                slotsContainer.innerHTML = '';
+                
+                for(let i=0; i < this.targetWord.length; i++) {
+                    const slot = document.createElement('div');
+                    slot.className = 'slot';
+                    slot.id = `slot-${i}`;
+                    slotsContainer.appendChild(slot);
+                }
+
+                let letters = this.targetWord.split('');
+                // Include systematic random alphabetic noise padding to dynamically scale gameplay complexity
+                while(letters.length < this.targetWord.length + 3) {
+                    const randomLetter = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+                    letters.push(randomLetter);
+                }
+                letters.sort(() => Math.random() - 0.5);
+
+                const bankContainer = document.getElementById('letter-bank');
+                bankContainer.innerHTML = '';
+
+                letters.forEach((letter) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'letter-btn';
+                    btn.innerText = letter;
+                    btn.onclick = () => this.handleLetterClick(letter, btn);
+                    bankContainer.appendChild(btn);
+                });
+            },
+
+            handleLetterClick(letter, btnElement) {
+                const currentSlotIndex = this.spelledWord.length;
+                
+                if (letter === this.targetWord[currentSlotIndex]) {
+                    this.spelledWord += letter;
+                    const targetedSlot = document.getElementById(`slot-${currentSlotIndex}`);
+                    targetedSlot.innerText = letter;
+                    targetedSlot.style.background = '#A8E6CF';
+                    targetedSlot.style.borderColor = 'var(--secondary)';
+                    btnElement.disabled = true;
+                    
+                    this.speakText(letter);
+
+                    if (this.spelledWord === this.targetWord) {
+                        this.stats.stars += 2;
+                        this.saveStats();
+                        setTimeout(() => {
+                            this.speakText("Incredible spelling success! " + this.targetWord);
+                            document.getElementById('game-image').style.transform = 'scale(1.25) rotate(5deg)';
+                            setTimeout(() => {
+                                document.getElementById('game-image').style.transform = 'none';
+                                this.nextWord();
+                            }, 1800);
+                        }, 400);
+                    }
+                } else {
+                    btnElement.style.background = '#FF6B6B';
+                    this.speakText("Try again");
+                    setTimeout(() => {
+                        btnElement.style.background = 'linear-gradient(135deg, var(--secondary), #3BA99F)';
+                    }, 600);
+                }
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            app.init();
+        });
+    </script>
+</body>
+</html>

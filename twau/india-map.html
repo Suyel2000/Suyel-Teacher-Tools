@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🇮🇳 Interactive India Map Explorer</title>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-light: #3b82f6;
+            --saffron: #ff9933;
+            --white: #ffffff;
+            --green: #138808;
+            --navy: #000080;
+            --bg-main: #f1f5f9;
+            --text-dark: #1e293b;
+            --sidebar-width: 420px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-dark);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Premium Dashboard Header */
+        header {
+            background: linear-gradient(135deg, var(--saffron) 0%, var(--white) 50%, var(--green) 100%);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            z-index: 100;
+            border-bottom: 3px solid var(--navy);
+        }
+
+        .logo-area h1 {
+            font-size: 24px;
+            color: var(--navy);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-shadow: 1px 1px 1px rgba(255,255,255,0.8);
+        }
+
+        .logo-area p {
+            font-size: 12px;
+            color: #334155;
+            font-weight: bold;
+        }
+
+        .top-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            background: var(--white);
+            border: 2px solid var(--navy);
+            color: var(--navy);
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .btn:hover, .btn.active {
+            background: var(--navy);
+            color: var(--white);
+            transform: translateY(-2px);
+        }
+
+        .search-container {
+            position: relative;
+        }
+
+        .search-box {
+            padding: 8px 12px 8px 32px;
+            border-radius: 8px;
+            border: 2px solid var(--navy);
+            width: 220px;
+            font-weight: 500;
+        }
+
+        /* Core Layout Workspace */
+        .workspace {
+            flex: 1;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Map Canvas & Modes Container */
+        .map-container {
+            flex: 1;
+            position: relative;
+            background: radial-gradient(circle, #e0f2fe 0%, #bae6fd 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Map Wrapper holding the external image and transparent map-matrix layout */
+        .map-wrapper {
+            position: relative;
+            width: 650px;
+            height: 750px;
+            transition: transform 0.3s ease;
+        }
+
+        .map-bg-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+
+        /* Transparent Interactive Overlay Node Zones mapped accurately over india-map.png */
+        .interactive-overlay-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+        }
+
+        .state-hitbox {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.01);
+            border: 2px dashed transparent;
+            border-radius: 50%;
+            cursor: pointer;
+            transform: translate(-50%, -50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .state-hitbox::after {
+            content: attr(data-name);
+            font-size: 10px;
+            font-weight: 800;
+            color: #0f172a;
+            background: rgba(255,255,255,0.75);
+            padding: 2px 4px;
+            border-radius: 4px;
+            pointer-events: none;
+            border: 1px solid #cbd5e1;
+            white-space: nowrap;
+            opacity: 0.8;
+        }
+
+        .state-hitbox:hover {
+            background: rgba(253, 224, 71, 0.4) !important;
+            border-color: var(--navy);
+            transform: translate(-50%, -50%) scale(1.2);
+            box-shadow: 0 0 15px rgba(234, 88, 12, 0.6);
+            z-index: 10;
+        }
+
+        .state-hitbox.selected {
+            background: rgba(249, 115, 22, 0.45) !important;
+            border-color: #ea580c;
+            border-style: solid;
+            transform: translate(-50%, -50%) scale(1.25);
+            animation: pulseGlow 1.5s infinite alternate;
+            z-index: 11;
+        }
+
+        .state-hitbox.faded {
+            opacity: 0.4;
+        }
+
+        /* Geographical Overlay Visual Targets */
+        .geo-marker {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #ef4444;
+            border: 2px solid white;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            display: none;
+            z-index: 4;
+        }
+
+        .geo-line {
+            position: absolute;
+            background: #0284c7;
+            height: 4px;
+            transform-origin: left center;
+            pointer-events: none;
+            display: none;
+            z-index: 3;
+            opacity: 0.65;
+        }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 5px #f97316; }
+            100% { box-shadow: 0 0 25px #f97316; }
+        }
+
+        /* Sidebar & Informational Control Base Layout */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--white);
+            border-left: 3px solid #cbd5e1;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -4px 0 20px rgba(0,0,0,0.05);
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        .panel-tabs {
+            display: flex;
+            background: #e2e8f0;
+            border-bottom: 2px solid #cbd5e1;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: none;
+            font-weight: bold;
+            cursor: pointer;
+            color: #64748b;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+
+        .tab-btn.active {
+            background: var(--white);
+            color: var(--primary);
+            border-bottom: 3px solid var(--primary);
+        }
+
+        .panel-content {
+            padding: 20px;
+            flex: 1;
+        }
+
+        /* State Explorer Card Profiles Layout */
+        .state-title-card {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeade 100%);
+            border-left: 6px solid var(--primary);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .badge-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .badge {
+            font-size: 11px;
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 12px;
+            color: var(--white);
+        }
+
+        /* Info Fields Data-Grid layout */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .info-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+
+        .info-card label {
+            font-size: 11px;
+            color: #64748b;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .info-card span {
+            font-weight: bold;
+            font-size: 14px;
+            color: #0f172a;
+        }
+
+        .full-width {
+            grid-column: span 2;
+        }
+
+        .comparison-matrix {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 13px;
+        }
+
+        .comparison-matrix th, .comparison-matrix td {
+            border: 1px solid #cbd5e1;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .comparison-matrix th {
+            background: #f1f5f9;
+        }
+
+        /* Floating Classroom Map Navigation Controls Tool Kit UI */
+        .map-floating-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.9);
+            border: 2px solid var(--navy);
+            border-radius: 12px;
+            padding: 8px;
+            display: flex;
+            gap: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            z-index: 20;
+        }
+
+        .floating-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .floating-btn:hover {
+            background: #f1f5f9;
+        }
+
+        #annotation-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        #annotation-canvas.active {
+            pointer-events: auto;
+            cursor: crosshair;
+        }
+
+        /* Bottom Status bar footprint */
+        footer {
+            background: #0f172a;
+            color: var(--white);
+            padding: 6px 20px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            align-items: center;
+            border-top: 2px solid var(--navy);
+        }
+
+        .hidden { display: none !important; }
+
+        @media(max-width: 1024px) {
+            .workspace { flex-direction: column; }
+            .sidebar { width: 100%; height: 35vh; border-left: none; border-top: 3px solid #cbd5e1; }
+            .map-wrapper { max-width: 95%; height: 50vh; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-area">
+            <h1>🇮🇳 Interactive India Map Explorer</h1>
+            <p>Explore • Discover • Learn (Primary Classes 3–5 Manipulative)</p>
+        </div>
+        
+        <div class="top-controls">
+            <div class="search-container">
+                <span style="position:absolute; left:10px; top:10px; opacity:0.5;">🔍</span>
+                <input type="text" class="search-box" id="global-search" placeholder="Search State, Capital, Fruit..." oninput="handleGlobalSearch()">
+            </div>
+            <button class="btn active" onclick="switchMode('explore')">📍 Explore</button>
+            <button class="btn" onclick="switchMode('compare')">🧩 Compare</button>
+            <button class="btn" onclick="switchMode('activities')">🎓 Activities</button>
+            <button class="btn" onclick="switchMode('teacher')">📚 Teacher Desk</button>
+            <button class="btn" id="fs-btn" onclick="toggleFullscreen()">🔲 Fullscreen</button>
+        </div>
+    </header>
+
+    <div class="workspace">
+        <div class="map-container" id="map-arena">
+            <canvas id="annotation-canvas"></canvas>
+
+            <div class="map-wrapper" id="interactive-map-wrapper">
+                <img src="india-map.png" alt="India Political and Physical Structure Base Map" class="map-bg-image">
+                
+                <div class="interactive-overlay-grid">
+                    <div id="IN-JK" class="state-hitbox" data-name="J&K & Ladakh" style="top: 12%; left: 38%; width: 90px; height: 90px;"></div>
+                    <div id="IN-HP" class="state-hitbox" data-name="Himachal" style="top: 19%; left: 42%; width: 45px; height: 45px;"></div>
+                    <div id="IN-PB" class="state-hitbox" data-name="Punjab" style="top: 21%; left: 35%; width: 45px; height: 45px;"></div>
+                    <div id="IN-HR" class="state-hitbox" data-name="Haryana" style="top: 26%; left: 38%; width: 45px; height: 50px;"></div>
+                    <div id="IN-UK" class="state-hitbox" data-name="Uttarakhand" style="top: 22%; left: 47%; width: 45px; height: 45px;"></div>
+                    <div id="IN-RJ" class="state-hitbox" data-name="Rajasthan" style="top: 33%; left: 28%; width: 110px; height: 110px;"></div>
+                    <div id="IN-GJ" class="state-hitbox" data-name="Gujarat" style="top: 45%; left: 20%; width: 95px; height: 85px;"></div>
+                    <div id="IN-UP" class="state-hitbox" data-name="Uttar Pradesh" style="top: 34%; left: 51%; width: 100px; height: 85px;"></div>
+                    <div id="IN-MP" class="state-hitbox" data-name="Madhya Pradesh" style="top: 47%; left: 44%; width: 120px; height: 100px;"></div>
+                    <div id="IN-MH" class="state-hitbox" data-name="Maharashtra" style="top: 59%; left: 38%; width: 110px; height: 95px;"></div>
+                    <div id="IN-BR" class="state-hitbox" data-name="Bihar" style="top: 36%; left: 66%; width: 65px; height: 55px;"></div>
+                    <div id="IN-JH" class="state-hitbox" data-name="Jharkhand" style="top: 44%; left: 67%; width: 55px; height: 50px;"></div>
+                    <div id="IN-WB" class="state-hitbox" data-name="West Bengal" style="top: 46%; left: 74%; width: 45px; height: 75px;"></div>
+                    <div id="IN-OD" class="state-hitbox" data-name="Odisha" style="top: 55%; left: 63%; width: 70px; height: 70px;"></div>
+                    <div id="IN-CT" class="state-hitbox" data-name="Chhattisgarh" style="top: 53%; left: 54%; width: 50px; height: 85px;"></div>
+                    <div id="IN-TG" class="state-hitbox" data-name="Telangana" style="top: 64%; left: 49%; width: 60px; height: 60px;"></div>
+                    <div id="IN-AP" class="state-hitbox" data-name="Andhra Pradesh" style="top: 73%; left: 51%; width: 65px; height: 95px;"></div>
+                    <div id="IN-KA" class="state-hitbox" data-name="Karnataka" style="top: 74%; left: 39%; width: 65px; height: 100px;"></div>
+                    <div id="IN-GA" class="state-hitbox" data-name="Goa" style="top: 73%; left: 33%; width: 25px; height: 25px;"></div>
+                    <div id="IN-KL" class="state-hitbox" data-name="Kerala" style="top: 88%; left: 42%; width: 35px; height: 75px;"></div>
+                    <div id="IN-TN" class="state-hitbox" data-name="Tamil Nadu" style="top: 88%; left: 48%; width: 55px; height: 90px;"></div>
+                    <div id="IN-AS" class="state-hitbox" data-name="Assam" style="top: 36%; left: 88%; width: 55px; height: 40px;"></div>
+                    <div id="IN-AR" class="state-hitbox" data-name="Arunachal" style="top: 31%; left: 91%; width: 65px; height: 40px;"></div>
+                    <div id="IN-ML" class="state-hitbox" data-name="Meghalaya" style="top: 40%; left: 86%; width: 35px; height: 25px;"></div>
+                </div>
+
+                <div id="capitals-layer">
+                    <div class="geo-marker" style="top: 30%; left: 41%;"></div> <div class="geo-marker" style="top: 29%; left: 29%;"></div> <div class="geo-marker" style="top: 61%; left: 34%;"></div> </div>
+                <div id="rivers-layer">
+                    <div class="geo-line" style="top: 31%; left: 42%; width: 180px; transform: rotate(25deg);"></div> </div>
+            </div>
+
+            <div class="map-floating-controls">
+                <button class="floating-btn" onclick="zoomMap(1.2)">➕</button>
+                <button class="floating-btn" onclick="zoomMap(0.8)">➖</button>
+                <button class="floating-btn" onclick="resetMapTransform()">🔄</button>
+                <button class="floating-btn" onclick="toggleLayer('rivers')">🌊 Rivers</button>
+                <button class="floating-btn" onclick="toggleLayer('capitals')">🏙 Capitals</button>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="panel-tabs">
+                <button class="tab-btn active" id="tab-explore" onclick="switchSidebarTab('info')">📋 State Info</button>
+                <button class="tab-btn" id="tab-activity" onclick="switchSidebarTab('task')">🎮 Engine Desk</button>
+            </div>
+
+            <div class="panel-content" id="info-tab-view">
+                <div id="welcome-message">
+                    <h3>🇮🇳 Welcome, Young Explorer!</h3>
+                    <p style="margin-top:8px; line-height: 1.5; font-size:14px;">Click any Indian state or union territory label on the map to begin discovering historical context, capitals, crops, and dynamic structural information parameters!</p>
+                </div>
+
+                <div id="state-data-profile" class="hidden">
+                    <div class="state-title-card">
+                        <h2 id="lbl-state-name">Rajasthan</h2>
+                        <p style="color:#475569; font-weight:600;" id="lbl-state-type">State of India</p>
+                        <div class="badge-grid" id="badge-container"></div>
+                    </div>
+
+                    <div class="info-grid">
+                        <div class="info-card">
+                            <label>Capital City</label>
+                            <span id="lbl-capital">Jaipur</span>
+                        </div>
+                        <div class="info-card">
+                            <label>Official Language</label>
+                            <span id="lbl-lang">Hindi</span>
+                        </div>
+                        <div class="info-card">
+                            <label>Total Area</label>
+                            <span id="lbl-area">342,239 km²</span>
+                        </div>
+                        <div class="info-card">
+                            <label>Literacy Rate</label>
+                            <span id="lbl-literacy">66.11%</span>
+                        </div>
+                        <div class="info-card full-width">
+                            <label>🎭 Festival & Dance</label>
+                            <span id="lbl-culture">Ghoomar, Gangaur</span>
+                        </div>
+                        <div class="info-card full-width">
+                            <label>🍛 Famous Food</label>
+                            <span id="lbl-food">Dal Baati Churma</span>
+                        </div>
+                        <div class="info-card full-width">
+                            <label>🌾 Major Crops & Industries</label>
+                            <span id="lbl-economy">Bajra, Mustard | Tourism, Textiles</span>
+                        </div>
+                        <div class="info-card full-width" style="background:#fffbeb; border-color:#fef08a;">
+                            <label>💡 Fun Fact for Kids</label>
+                            <span id="lbl-fact" style="font-weight:500; color:#b45309;">It is home to the massive Thar Desert and beautiful pink, blue, and golden palaces!</span>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:15px;" id="border-sharing-box">
+                        <h4 style="font-size:12px; margin-bottom:5px;">🔗 Connected Borders:</h4>
+                        <div class="badge-grid" id="border-links"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-content hidden" id="task-tab-view">
+                <div id="comparison-engine-ui" class="hidden">
+                    <h3>🧩 State Comparison Engine</h3>
+                    <p style="font-size:12px; margin-bottom:10px;">Select another state label on the map to compare against.</p>
+                    <div id="comparison-table-wrapper"></div>
+                </div>
+
+                <div id="classroom-activities-ui" class="hidden">
+                    <h3>🎮 Classroom Interactive Game Arena</h3>
+                    <div style="background:#f1f5f9; padding:12px; border-radius:8px; margin:10px 0;" id="activity-challenge-card">
+                        <h4 id="activity-title">Loading Activity...</h4>
+                        <p id="activity-desc" style="font-size:13px; margin-top:4px;"></p>
+                    </div>
+                    <button class="btn" style="width:100%; justify-content:center;" onclick="generateRandomActivity()">🎲 Next Classroom Challenge</button>
+                </div>
+
+                <div id="teacher-desk-ui" class="hidden">
+                    <h3>📚 Teacher Presentation Tools</h3>
+                    <p style="font-size:12px; margin-bottom:10px;">Control states, trigger spotlight, or switch on annotation pens instantly.</p>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                        <button class="btn" onclick="toggleAnnotationMode()" id="pen-tool-btn">✏️ Draw Tool</button>
+                        <button class="btn" onclick="clearAnnotations()">🗑️ Clear Canvas</button>
+                        <button class="btn" onclick="pickRandomState()">🎲 Random State</button>
+                        <button class="btn" onclick="resetExplorerState()">🔄 Full Reset</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div>🇮🇳 Interactive India Map Explorer | Content Design Fit for Primary Grades 3-5</div>
+        <div id="tracker-status">Visited: 0/24 States Loaded</div>
+    </footer>
+
+    <script>
+        // Premium Core Knowledge Base Engine Data Object Model
+        const indiaData = {
+            "IN-RJ": { name: "Rajasthan", capital: "Jaipur", lang: "Hindi", area: "342,239 km²", literacy: "66.11%", food: "Dal Baati Churma", culture: "Ghoomar, Gangaur", economy: "Bajra, Mustard | Tourism", type: "State", badges: ["🏆 Largest State by Area", "🏜 Desert State", "⭐ Tourism Hotspot"], fact: "Rajasthan is home to the big Thar Desert and beautiful grand royal palaces!", borders: ["IN-GJ", "IN-MP", "IN-HR", "IN-PB"] },
+            "IN-GJ": { name: "Gujarat", capital: "Gandhinagar", lang: "Gujarati", area: "196,024 km²", literacy: "78.03%", food: "Dhokla, Khandvi", culture: "Garba, Navratri", economy: "Cotton, Groundnuts | Diamonds", type: "State", badges: ["🌊 Coastal State", "🦁 Home of Asiatic Lions"], fact: "Gujarat has the longest coastline in India and is famous for its colorful Garba dance!", borders: ["IN-RJ", "IN-MP", "IN-MH"] },
+            "IN-MH": { name: "Maharashtra", capital: "Mumbai", lang: "Marathi", area: "307,713 km²", literacy: "82.34%", food: "Vada Pav, Puran Poli", culture: "Lavani, Ganesh Chaturthi", economy: "Sugarcane | Finance, Cinema", type: "State", badges: ["👥 Second Populous State", "🏛 Heritage State"], fact: "Mumbai, its capital, is known as the financial heart of India and home to Bollywood film industry!", borders: ["IN-GJ", "IN-MP", "IN-CT", "IN-TG", "IN-KA", "IN-GA"] },
+            "IN-MP": { name: "Madhya Pradesh", capital: "Bhopal", lang: "Hindi", area: "308,252 km²", literacy: "69.32%", food: "Poha Jalebi", culture: "Matki Dance, Lokrang", economy: "Soyabean, Pulses | Diamonds", type: "State", badges: ["🏞 Heart of India", "🐅 Maximum Tigers Count"], fact: "Known as the 'Heart of India', it has some of the finest national parks and tiger reserves!", borders: ["IN-RJ", "IN-UP", "IN-CT", "IN-MH", "IN-GJ"] },
+            "IN-UP": { name: "Uttar Pradesh", capital: "Lucknow", lang: "Hindi", area: "243,286 km²", literacy: "67.68%", food: "Kebab Paratha", culture: "Kathak, Taj Mahotsav", economy: "Sugarcane, Wheat | Handicrafts", type: "State", badges: ["👥 Largest State by Population", "🌾 Sugar Bowl of India"], fact: "It is the most populous state and has the magnificent Taj Mahal located in Agra!", borders: ["IN-UK", "IN-HR", "IN-RJ", "IN-MP", "IN-BR", "IN-JH"] },
+            "IN-BR": { name: "Bihar", capital: "Patna", lang: "Hindi", area: "94,163 km²", literacy: "61.80%", food: "Litti Chokha", culture: "Jhijhiya, Chhath Puja", economy: "Rice, Litchi | Agriculture", type: "State", badges: ["📜 Ancient Seat of Learning"], fact: "The ancient Nalanda University and Lord Buddha's place of enlightenment Bodh Gaya are located here!", borders: ["IN-UP", "IN-JH", "IN-WB"] },
+            "IN-WB": { name: "West Bengal", capital: "Kolkata", lang: "Bengali", area: "88,752 km²", literacy: "76.26%", food: "Rosogolla, Maach Bhaat", culture: "Chhau Dance, Durga Puja", economy: "Rice, Jute | Tea cultivation", type: "State", badges: ["🌾 Largest Producer of Rice", "🐯 Royal Bengal Tiger Land"], fact: "Kolkata was once the capital of British India and is known for its grand structural yellow taxis!", borders: ["IN-BR", "IN-JH", "IN-OD", "IN-AS"] },
+            "IN-KL": { name: "Kerala", capital: "Thiruvananthapuram", lang: "Malayalam", area: "38,863 km²", literacy: "94.00%", food: "Idli Sambar, Sadya", culture: "Kathakali, Onam", economy: "Rubber, Coconut | Spices", type: "State", badges: ["📈 Highest Literacy Rate", "🌶 Spice State", "🌊 Coastal State"], fact: "Known as 'God's Own Country', Kerala is world famous for its serene houseboats and backwaters!", borders: ["IN-KA", "IN-TN"] },
+            "IN-TN": { name: "Tamil Nadu", capital: "Chennai", lang: "Tamil", area: "130,058 km²", literacy: "80.09%", food: "Dosa, Pongal", culture: "Bharatanatyam, Pongal festival", economy: "Textiles, Automobiles", type: "State", badges: ["🏛 Ancient Temples Hub", "🌊 Coastal State"], fact: "It is home to the majestic Dravidian architecture temples and beautiful Marina Beach!", borders: ["IN-KL", "IN-KA", "IN-AP"] },
+            "IN-KA": { name: "Karnataka", capital: "Bengaluru", lang: "Kannada", area: "191,791 km²", literacy: "75.36%", food: "Bisi Bele Bath", culture: "Yakshagana, Dasara", economy: "Coffee, Silk | Information Technology", type: "State", badges: ["💻 Silicon Valley of India", "☕ Coffee Producing State"], fact: "Bengaluru is India's tech space capital, often called the Silicon Valley of Asia!", borders: ["IN-GA", "IN-MH", "IN-TG", "IN-AP", "IN-TN", "IN-KL"] },
+            "IN-JK": { name: "Jammu & Kashmir", capital: "Srinagar / Jammu", lang: "Dogri, Kashmiri", area: "42,241 km²", literacy: "67.16%", food: "Rogan Josh, Dum Aloo", culture: "Rouf Dance, Shikara Ride", economy: "Saffron, Apples | Tourism", type: "UT", badges: ["🏔 Himalayan State", "🌸 Saffron Paradise"], fact: "Famous for beautiful snowcapped peaks, Dal lake houseboat rides, and tasty sweet apples!", borders: ["IN-HP", "IN-PB"] },
+            "IN-GA": { name: "Goa", capital: "Panaji", lang: "Konkani", area: "3,702 km²", literacy: "88.70%", food: "Fish Curry Rice", culture: "Dekhni, Goa Carnival", economy: "Tourism, Iron Ore", type: "State", badges: ["🏝 Smallest State", "🏖 Tourism Explorer"], fact: "Goa is the smallest state of India, highly famous for its beautiful sandy beaches and old historical cathedrals!", borders: ["IN-MH", "IN-KA"] },
+            "IN-AP": { name: "Andhra Pradesh", capital: "Amaravati", lang: "Telugu", area: "162,968 km²", literacy: "67.02%", food: "Pootarekulu", culture: "Kuchipudi", economy: "Rice, Tobacco", type: "State", badges: ["🌊 Coastal State"], fact: "It is famous for Sri Venkateswara Temple at Tirupati, visited by millions of people!", borders: ["IN-TG", "IN-KA", "IN-TN", "IN-OD"] },
+            "IN-TG": { name: "Telangana", capital: "Hyderabad", lang: "Telugu", area: "112,077 km²", literacy: "66.54%", food: "Hyderabadi Biryani", culture: "Perini Shivatandavam", economy: "IT, Pharma", type: "State", badges: ["🏛 Heritage State"], fact: "Hyderabad is famous for the historical Charminar and delicious world-famous Biryani!", borders: ["IN-MH", "IN-MP", "IN-AP", "IN-KA"] },
+            "IN-HP": { name: "Himachal Pradesh", capital: "Shimla", lang: "Hindi", area: "55,673 km²", literacy: "82.80%", food: "Madra", culture: "Nati Dance", economy: "Apples, Hydro-power", type: "State", badges: ["🏔 Himalayan State"], fact: "Known as the Apple State of India, it is filled with scenic hill stations like Manali and Shimla!", borders: ["IN-JK", "IN-PB", "IN-UK"] },
+            "IN-PB": { name: "Punjab", capital: "Chandigarh", lang: "Punjabi", area: "50,362 km²", literacy: "75.84%", food: "Makki di Roti & Sarson ka Saag", culture: "Bhangra & Gidha", economy: "Wheat, Rice | Agriculture", type: "State", badges: ["🌾 Granary of India"], fact: "Punjab means 'The Land of Five Rivers' and is famous for its vibrant harvest festivals!", borders: ["IN-JK", "IN-HP", "IN-HR", "IN-RJ"] },
+            "IN-HR": { name: "Haryana", capital: "Chandigarh", lang: "Hindi", area: "44,212 km²", literacy: "75.55%", food: "Singri ki Sabzi", culture: "Saang Dance", economy: "Agriculture, Automobiles", type: "State", badges: ["🥛 Milk Pail of India"], fact: "Surrounding Delhi on three sides, it is a big sports powerhouse producing Olympic champions!", borders: ["IN-PB", "IN-HP", "IN-UK", "IN-UP", "IN-RJ"] },
+            "IN-UK": { name: "Uttarakhand", capital: "Dehradun", lang: "Hindi", area: "53,483 km²", literacy: "78.82%", food: "Kafuli", culture: "Choliya Dance", economy: "Tourism, Organic Farming", type: "State", badges: ["🏔 Himalayan State", "🏛 Heritage State"], fact: "Called 'Land of Gods' (Devbhumi), the sacred rivers Ganga and Yamuna originate here!", borders: ["IN-HP", "IN-HR", "IN-UP"] },
+            "IN-JH": { name: "Jharkhand", capital: "Ranchi", lang: "Hindi", area: "79,716 km²", literacy: "66.41%", food: "Dhooska", culture: "Jhumair", economy: "Coal, Steel Mining", type: "State", badges: ["🏭 Mineral Land"], fact: "It contains more than 40% of India's total mineral wealth and massive lush green forests!", borders: ["IN-BR", "IN-UP", "IN-CT", "IN-OD", "IN-WB"] },
+            "IN-OD": { name: "Odisha", capital: "Bhubaneswar", lang: "Odia", area: "155,707 km²", literacy: "72.87%", food: "Dalma, Pakhala", culture: "Odissi Dance, Jagannath Rath Yatra", economy: "Mining, Seafood", type: "State", badges: ["🏛 Ancient Temples Hub", "🌊 Coastal State"], fact: "Famous for the massive sun temple of Konark and Chilika lake, Asia's largest brackish lagoon!", borders: ["IN-WB", "IN-JH", "IN-CT", "IN-AP"] },
+            "IN-CT": { name: "Chhattisgarh", capital: "Raipur", lang: "Chhattisgarhi", area: "135,192 km²", literacy: "70.28%", food: "Chila", culture: "Panthi Dance", economy: "Rice cultivation, Steel", type: "State", badges: ["🌾 Rice Bowl of Central India"], fact: "Over 40% of this beautiful land is blanketed by thick, biodiverse green forest reserves!", borders: ["IN-MP", "IN-UP", "IN-JH", "IN-OD", "IN-TG", "IN-MH"] },
+            "IN-AS": { name: "Assam", capital: "Dispur", lang: "Assamese", area: "78,438 km²", literacy: "72.19%", food: "Masor Tenga", culture: "Bihu Dance", economy: "Tea cultivation, Petroleum", type: "State", badges: ["☕ Tea Producing State", "🏞 North Eastern State"], fact: "Assam grows some of the finest black tea in the world and protects rare one-horned rhinos!", borders: ["IN-WB", "IN-AR", "IN-ML"] },
+            "IN-AR": { name: "Arunachal Pradesh", capital: "Itanagar", lang: "English", area: "83,743 km²", literacy: "65.38%", food: "Thukpa", culture: "Bardo Chham", economy: "Fruit Orchards, Bamboo", type: "State", badges: ["🏔 Himalayan State", "🌅 Land of the Rising Sun"], fact: "It is the easternmost state of India, receiving the very first morning rays of sunlight!", borders: ["IN-AS"] },
+            "IN-ML": { name: "Meghalaya", capital: "Shillong", lang: "Khasi, Garo", area: "22,429 km²", literacy: "74.43%", food: "Jadoh", culture: "Wangala Drums", economy: "Potatoes, Tourism", type: "State", badges: ["🌧 Wettest Place on Earth", "🏞 North Eastern State"], fact: "Its name translates to 'Abode of Clouds'. Mawsynram here receives the highest rainfall globally!", borders: ["IN-AS"] }
+        };
+
+        // App Control Orchestration
+        let currentMode = 'explore';
+        let selectedStateId = null;
+        let comparisonTargetId = null;
+        let audioCtx = null;
+        let visitedStates = JSON.parse(localStorage.getItem('visitedStates')) || [];
+
+        // Canvas Annotations
+        const canvas = document.getElementById('annotation-canvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let annotationActive = false;
+
+        window.addEventListener('load', () => {
+            initCanvas();
+            attachHitboxHandlers();
+            updateTrackerDisplay();
+            setupAudioEngine();
+        });
+
+        function setupAudioEngine() {
+            try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            if (type === 'click') {
+                osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+            } else if (type === 'success') {
+                osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.25);
+            }
+        }
+
+        function initCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+            canvas.addEventListener('mousedown', (e) => { if(annotationActive) { isDrawing = true; draw(e); } });
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', () => isDrawing = false);
+        }
+
+        function draw(e) {
+            if (!isDrawing || !annotationActive) return;
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#ef4444';
+            let rect = canvas.getBoundingClientRect();
+            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+        }
+
+        function toggleAnnotationMode() {
+            annotationActive = !annotationActive;
+            const btn = document.getElementById('pen-tool-btn');
+            if (annotationActive) {
+                canvas.classList.add('active');
+                btn.classList.add('active');
+                btn.style.background = '#ef4444';
+                btn.style.color = '#fff';
+            } else {
+                canvas.classList.remove('active');
+                btn.classList.remove('active');
+                btn.style.background = '';
+                btn.style.color = '';
+            }
+        }
+
+        function clearAnnotations() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            playSound('click');
+        }
+
+        function attachHitboxHandlers() {
+            document.querySelectorAll('.state-hitbox').forEach(box => {
+                box.addEventListener('click', () => handleStateSelection(box.id));
+            });
+        }
+
+        function handleStateSelection(id) {
+            playSound('click');
+            const data = indiaData[id];
+            if (!data) return;
+
+            if (currentMode === 'explore') {
+                selectedStateId = id;
+                highlightStateBoxes(id);
+                populateStateProfile(data, id);
+                
+                if (!visitedStates.includes(id)) {
+                    visitedStates.push(id);
+                    localStorage.setItem('visitedStates', JSON.stringify(visitedStates));
+                    updateTrackerDisplay();
+                }
+            } else if (currentMode === 'compare') {
+                if (!selectedStateId) {
+                    selectedStateId = id;
+                    highlightStateBoxes(id);
+                } else {
+                    comparisonTargetId = id;
+                    renderComparisonMatrix(selectedStateId, comparisonTargetId);
+                }
+            } else if (currentMode === 'activities') {
+                checkActivityAnswer(id);
+            }
+        }
+
+        function highlightStateBoxes(id) {
+            document.querySelectorAll('.state-hitbox').forEach(b => {
+                b.classList.remove('selected', 'faded');
+                if (id && b.id !== id) b.classList.add('faded');
+            });
+            if (id) document.getElementById(id).classList.add('selected');
+        }
+
+        function populateStateProfile(data, id) {
+            document.getElementById('welcome-message').classList.add('hidden');
+            document.getElementById('state-data-profile').classList.remove('hidden');
+
+            document.getElementById('lbl-state-name').innerText = data.name;
+            document.getElementById('lbl-state-type').innerText = data.type === 'UT' ? 'Union Territory' : 'State of India';
+            document.getElementById('lbl-capital').innerText = data.capital;
+            document.getElementById('lbl-lang').innerText = data.lang;
+            document.getElementById('lbl-area').innerText = data.area;
+            document.getElementById('lbl-literacy').innerText = data.literacy;
+            document.getElementById('lbl-culture').innerText = data.culture;
+            document.getElementById('lbl-food').innerText = data.food;
+            document.getElementById('lbl-economy').innerText = data.economy;
+            document.getElementById('lbl-fact').innerText = data.fact;
+
+            const bContainer = document.getElementById('badge-container');
+            bContainer.innerHTML = '';
+            data.badges.forEach(b => {
+                const el = document.createElement('span');
+                el.className = 'badge';
+                el.style.background = 'var(--primary-light)';
+                el.innerText = b;
+                bContainer.appendChild(el);
+            });
+
+            const borderBox = document.getElementById('border-links');
+            borderBox.innerHTML = '';
+            data.borders.forEach(bId => {
+                if(indiaData[bId]) {
+                    const bBtn = document.createElement('span');
+                    bBtn.className = 'badge';
+                    bBtn.style.background = '#475569';
+                    bBtn.style.cursor = 'pointer';
+                    bBtn.innerText = indiaData[bId].name;
+                    bBtn.onclick = (e) => { e.stopPropagation(); handleStateSelection(bId); };
+                    borderBox.appendChild(bBtn);
+                }
+            });
+        }
+
+        function renderComparisonMatrix(id1, id2) {
+            const d1 = indiaData[id1];
+            const d2 = indiaData[id2];
+            const wrapper = document.getElementById('comparison-table-wrapper');
+
+            wrapper.innerHTML = `
+                <table class="comparison-matrix">
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th style="color:var(--primary);">${d1.name}</th>
+                            <th style="color:var(--green);">${d2.name}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><b>Capital</b></td><td>${d1.capital}</td><td>${d2.capital}</td></tr>
+                        <tr><td><b>Language</b></td><td>${d1.lang}</td><td>${d2.lang}</td></tr>
+                        <tr><td><b>Area</b></td><td>${d1.area}</td><td>${d2.area}</td></tr>
+                        <tr><td><b>Literacy</b></td><td>${d1.literacy}</td><td>${d2.literacy}</td></tr>
+                        <tr><td><b>Famous Food</b></td><td>${d1.food}</td><td>${d2.food}</td></tr>
+                        <tr><td><b>Economy</b></td><td>${d1.economy}</td><td>${d2.economy}</td></tr>
+                    </tbody>
+                </table>
+                <button class="btn" style="margin-top:10px; width:100%; justify-content:center;" onclick="clearComparison()">Reset Engine Comparison</button>
+            `;
+        }
+
+        function clearComparison() {
+            selectedStateId = null;
+            comparisonTargetId = null;
+            highlightStateBoxes(null);
+            document.getElementById('comparison-table-wrapper').innerHTML = `<p style="font-size:13px; opacity:0.6;">Select two labels sequentially on the map.</p>`;
+        }
+
+        function switchMode(mode) {
+            currentMode = mode;
+            playSound('click');
+            document.querySelectorAll('.top-controls .btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+
+            if (mode === 'explore') {
+                switchSidebarTab('info');
+                highlightStateBoxes(selectedStateId);
+            } else if (mode === 'compare') {
+                switchSidebarTab('task');
+                document.getElementById('comparison-engine-ui').classList.remove('hidden');
+                document.getElementById('classroom-activities-ui').classList.add('hidden');
+                document.getElementById('teacher-desk-ui').classList.add('hidden');
+                clearComparison();
+            } else if (mode === 'activities') {
+                switchSidebarTab('task');
+                document.getElementById('comparison-engine-ui').classList.add('hidden');
+                document.getElementById('classroom-activities-ui').classList.remove('hidden');
+                document.getElementById('teacher-desk-ui').classList.add('hidden');
+                generateRandomActivity();
+            } else if (mode === 'teacher') {
+                switchSidebarTab('task');
+                document.getElementById('comparison-engine-ui').classList.add('hidden');
+                document.getElementById('classroom-activities-ui').classList.add('hidden');
+                document.getElementById('teacher-desk-ui').classList.remove('hidden');
+            }
+        }
+
+        function switchSidebarTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            if (tab === 'info') {
+                document.getElementById('tab-explore').classList.add('active');
+                document.getElementById('info-tab-view').classList.remove('hidden');
+                document.getElementById('task-tab-view').classList.add('hidden');
+            } else {
+                document.getElementById('tab-activity').classList.add('active');
+                document.getElementById('info-tab-view').classList.add('hidden');
+                document.getElementById('task-tab-view').classList.remove('hidden');
+            }
+        }
+
+        function toggleLayer(layerKey) {
+            playSound('click');
+            const layer = document.getElementById(`${layerKey}-layer`);
+            const nodes = layer.querySelectorAll('.geo-marker, .geo-line');
+            nodes.forEach(n => {
+                n.style.display = (n.style.display === 'block') ? 'none' : 'block';
+            });
+        }
+
+        let currentActivityTarget = null;
+        const tasks = [
+            { title: "Find My State 📍", desc: "Can you click on the map label where the Spice Garden of India Kerala is located?", target: "IN-KL" },
+            { title: "Locate Largest Kingdom 👑", desc: "Find the largest state of India by total area (Rajasthan).", target: "IN-RJ" },
+            { title: "The Financial Heart 💰", desc: "Click on the state whose capital is Mumbai, famous for Bollywood! (Maharashtra)", target: "IN-MH" }
+        ];
+
+        function generateRandomActivity() {
+            const task = tasks[Math.floor(Math.random() * tasks.length)];
+            currentActivityTarget = task.target;
+            document.getElementById('activity-title').innerText = task.title;
+            document.getElementById('activity-desc').innerText = task.desc;
+            highlightStateBoxes(null);
+        }
+
+        function checkActivityAnswer(id) {
+            if (id === currentActivityTarget) {
+                playSound('success');
+                alert("🌟 Spectacular! You found the correct state! Keep exploring!");
+                generateRandomActivity();
+            } else {
+                alert("Try again, little champion! Look closer at the labels!");
+            }
+        }
+
+        function handleGlobalSearch() {
+            const query = document.getElementById('global-search').value.toLowerCase().trim();
+            if(!query) return;
+            for (const [id, data] of Object.entries(indiaData)) {
+                if (data.name.toLowerCase().includes(query) || data.capital.toLowerCase().includes(query)) {
+                    handleStateSelection(id);
+                    break;
+                }
+            }
+        }
+
+        function pickRandomState() {
+            const keys = Object.keys(indiaData);
+            handleStateSelection(keys[Math.floor(Math.random() * keys.length)]);
+        }
+
+        function resetExplorerState() {
+            playSound('click');
+            selectedStateId = null;
+            highlightStateBoxes(null);
+            document.getElementById('welcome-message').classList.remove('hidden');
+            document.getElementById('state-data-profile').classList.add('hidden');
+            clearAnnotations();
+        }
+
+        function updateTrackerDisplay() {
+            document.getElementById('tracker-status').innerText = `Visited: ${visitedStates.length} / ${Object.keys(indiaData).length} States Loaded`;
+        }
+
+        let scaleFactor = 1;
+        function zoomMap(factor) {
+            scaleFactor *= factor;
+            if(scaleFactor < 0.6) scaleFactor = 0.6;
+            if(scaleFactor > 3) scaleFactor = 3;
+            document.getElementById('interactive-map-wrapper').style.transform = `scale(${scaleFactor})`;
+        }
+
+        function resetMapTransform() {
+            scaleFactor = 1;
+            document.getElementById('interactive-map-wrapper').style.transform = `scale(1)`;
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+                document.getElementById('fs-btn').innerText = "Exit Fullscreen";
+            } else {
+                document.exitFullscreen();
+                document.getElementById('fs-btn').innerText = "🔲 Fullscreen";
+            }
+        }
+    </script>
+</body>
+</html>

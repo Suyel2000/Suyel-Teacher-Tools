@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔤 English Teacher Tools - Primary Classroom Dashboard</title>
+    <style>
+        /* --- CSS Reset & Variables --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Segoe UI', Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --blue-grad: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --green-grad: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            --yellow-grad: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+            --purple-grad: linear-gradient(135deg, #b1f4cf 0%, #9890e3 100%);
+            --pink-grad: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            --deep-purple: #2e1a47;
+            
+            --glass-bg: rgba(255, 255, 255, 0.15);
+            --glass-border: rgba(255, 255, 255, 0.25);
+            --text-dark: #2c3e50;
+            --text-light: #ffffff;
+        }
+
+        body {
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradientBG 20s ease infinite;
+            min-height: 100vh;
+            color: var(--text-dark);
+            overflow-x: hidden;
+            padding-bottom: 100px;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* --- Background Floating Canvas --- */
+        #particleCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* --- Layout Container --- */
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* --- Hero Section --- */
+        header {
+            text-align: center;
+            padding: 50px 20px;
+            margin-bottom: 30px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 30px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+            animation: fadeInUp 1s ease-out;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            color: var(--text-light);
+            text-shadow: 3px 3px 0px rgba(0,0,0,0.15);
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+        }
+
+        .subtitle {
+            font-size: 1.5rem;
+            color: rgba(255,255,255,0.9);
+            font-weight: 600;
+            margin-bottom: 25px;
+        }
+
+        .floating-icons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            font-size: 2.5rem;
+        }
+
+        .floating-icons span {
+            animation: bounce 3s ease-in-out infinite;
+        }
+        .floating-icons span:nth-child(2n) { animation-delay: 0.5s; }
+        .floating-icons span:nth-child(3n) { animation-delay: 1s; }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        /* --- Statistics Bar --- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+            animation: fadeInUp 1.2s ease-out;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            color: var(--text-light);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .stat-icon {
+            font-size: 2.2rem;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .stat-text {
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        /* --- Tools Grid & Cards --- */
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 30px;
+            animation: fadeInUp 1.4s ease-out;
+        }
+
+        .tool-card {
+            position: relative;
+            border-radius: 25px;
+            padding: 25px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        /* Card color variants */
+        .tool-card[data-theme="blue"] { background: linear-gradient(135deg, rgba(79,172,254,0.2), rgba(0,242,254,0.2)); }
+        .tool-card[data-theme="green"] { background: linear-gradient(135deg, rgba(67,233,123,0.2), rgba(56,249,215,0.2)); }
+        .tool-card[data-theme="yellow"] { background: linear-gradient(135deg, rgba(246,211,101,0.25), rgba(253,160,133,0.25)); }
+        .tool-card[data-theme="purple"] { background: linear-gradient(135deg, rgba(177,244,207,0.2), rgba(152,144,227,0.2)); }
+        .tool-card[data-theme="pink"] { background: linear-gradient(135deg, rgba(255,154,158,0.2), rgba(254,207,239,0.2)); }
+
+        .tool-card:hover {
+            transform: translateY(-12px) scale(1.02);
+            box-shadow: 0 15px 45px rgba(255,255,255,0.2), 0 10px 30px rgba(0,0,0,0.15);
+            border-color: rgba(255,255,255,0.5);
+        }
+
+        /* Ambient Glow effect on hover */
+        .tool-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 60%);
+            transform: scale(0);
+            transition: transform 0.6s ease-out;
+            pointer-events: none;
+        }
+        .tool-card:hover::before {
+            transform: scale(1);
+        }
+
+        .img-container {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.2);
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        .tool-img {
+            max-width: 80%;
+            max-height: 80%;
+            object-fit: contain;
+        }
+
+        /* Fallback Dynamic Emoji Styling */
+        .fallback-emoji {
+            font-size: 4rem;
+            animation: floatEmoji 4s ease-in-out infinite;
+        }
+
+        @keyframes floatEmoji {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-6px) rotate(5deg); }
+        }
+
+        .tool-title {
+            font-size: 1.5rem;
+            color: var(--text-light);
+            margin-bottom: 10px;
+            font-weight: bold;
+            text-shadow: 1px 2px 4px rgba(0,0,0,0.15);
+        }
+
+        .tool-desc {
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 20px;
+            flex-grow: 1;
+            line-height: 1.4;
+            font-weight: 500;
+        }
+
+        .explore-btn {
+            background: white;
+            color: #23a6d5;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.05rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .tool-card:hover .explore-btn {
+            background: var(--deep-purple);
+            color: white;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+            transform: scale(1.05);
+        }
+
+        /* Ripple Effect Container */
+        .ripple {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            transform: scale(0);
+            animation: clickRipple 0.6s linear;
+            pointer-events: none;
+        }
+
+        @keyframes clickRipple {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        /* --- Footer --- */
+        footer {
+            margin-top: 60px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid var(--glass-border);
+            padding: 30px 20px;
+            text-align: center;
+            border-radius: 30px 30px 0 0;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            left: 0;
+        }
+
+        .footer-title {
+            color: var(--text-light);
+            font-size: 1.4rem;
+            margin-bottom: 5px;
+        }
+
+        .footer-sub {
+            color: rgba(255,255,255,0.7);
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+        }
+
+        .footer-nav {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .footer-btn {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid var(--glass-border);
+            color: var(--text-light);
+            padding: 8px 18px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .footer-btn:hover {
+            background: white;
+            color: #e73c7e;
+            transform: translateY(-2px);
+        }
+
+        /* --- Entry Animations --- */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- Responsive Design Adjustments --- */
+        @media (max-width: 768px) {
+            h1 { font-size: 2.4rem; }
+            .subtitle { font-size: 1.1rem; }
+            .floating-icons { font-size: 1.8rem; }
+            .tools-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+            body { padding-bottom: 160px; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="particleCanvas"></canvas>
+
+    <div class="container">
+        
+        <header>
+            <h1>🔤 English Teacher Tools</h1>
+            <div class="subtitle">Interactive Teaching Tools for Fun English Learning</div>
+            <div class="floating-icons">
+                <span>🔤</span>
+                <span>📖</span>
+                <span>✏️</span>
+                <span>📝</span>
+                <span>⭐</span>
+                <span>📚</span>
+            </div>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-icon">🔤</span>
+                <span class="stat-text">15+ Interactive Tools</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">👨‍🏫</span>
+                <span class="stat-text">Teacher Friendly</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">🖥</span>
+                <span class="stat-text">Smartboard Ready</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">📱</span>
+                <span class="stat-text">Mobile Friendly</span>
+            </div>
+        </div>
+
+        <main class="tools-grid" id="toolsGrid">
+            </main>
+
+    </div>
+
+    <footer>
+        <div class="footer-title">🔤 Digital English Teacher Tools</div>
+        <div class="footer-sub">Teach • Inspire • Learn</div>
+        <div class="footer-nav">
+            <a href="#" class="footer-btn" onclick="playClickSound()">🏠 Home</a>
+            <a href="quiz-zone.html" class="footer-btn" onclick="playClickSound()">🧠 English Quiz Zone</a>
+            <a href="worksheets.html" class="footer-btn" onclick="playClickSound()">📄 English Worksheets</a>
+            <a href="teacher-tools.html" class="footer-btn" onclick="playClickSound()">📚 Teacher Tools</a>
+        </div>
+    </footer>
+
+    <script>
+        /* --- High Fidelity Audio Core Engine (Web Audio API) --- */
+        const AudioEngine = {
+            ctx: null,
+
+            init() {
+                // Instantiates context lazily upon configuration trigger interaction sequence
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
+
+            play(type) {
+                try {
+                    this.init();
+                    if (!this.ctx) return;
+                    
+                    // Multi-browser resume safety pattern
+                    if (this.ctx.state === 'suspended') {
+                        this.ctx.resume();
+                    }
+
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    const now = this.ctx.currentTime;
+
+                    if (type === 'load') {
+                        // Soft Orchestral Ascending Chime Sequence
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(261.63, now); // C4
+                        osc.frequency.exponentialRampToValueAtTime(523.25, now + 0.4); // C5
+                        gain.gain.setValueAtTime(0.15, now);
+                        gain.gain.linearRampToValueAtTime(0, now + 0.4);
+                        osc.start(now);
+                        osc.stop(now + 0.4);
+                    } 
+                    else if (type === 'hover') {
+                        // High Fidelity Ultra-short Tock Transient
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(800, now);
+                        osc.frequency.exponentialRampToValueAtTime(400, now + 0.04);
+                        gain.gain.setValueAtTime(0.04, now);
+                        gain.gain.linearRampToValueAtTime(0, now + 0.04);
+                        osc.start(now);
+                        osc.stop(now + 0.05);
+                    } 
+                    else if (type === 'click') {
+                        // Compound Tactile Acoustic Snap Element
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(150, now);
+                        osc.frequency.exponentialRampToValueAtTime(600, now + 0.12);
+                        gain.gain.setValueAtTime(0.2, now);
+                        gain.gain.linearRampToValueAtTime(0, now + 0.15);
+                        osc.start(now);
+                        osc.stop(now + 0.15);
+                    }
+                } catch (e) {
+                    console.log('Audio engine setup deferred until explicit gesture registration context.');
+                }
+            }
+        };
+
+        // Standardized Interface Hooks
+        function playClickSound() { AudioEngine.play('click'); }
+        function playHoverSound() { AudioEngine.play('hover'); }
+
+        /* --- Curriculum Dataset Matrix Mapping --- */
+        const toolsData = [
+            { id: 1, name: "Alphabet", icon: "🔤", path: "alphabet.html", img: "images/alphabet.png", desc: "Learn and explore English alphabets.", theme: "blue" },
+            { id: 2, name: "Phonics", icon: "🔊", path: "phonics.html", img: "images/phonics.png", desc: "Learn letter sounds and phonics.", theme: "green" },
+            { id: 3, name: "Vocabulary", icon: "📖", path: "vocabulary.html", img: "images/vocabulary.png", desc: "Build everyday English vocabulary.", theme: "yellow" },
+            { id: 4, name: "Word Builder", icon: "📝", path: "word-builder.html", img: "images/word-builder.png", desc: "Create and learn new words.", theme: "purple" },
+            { id: 5, name: "Nouns", icon: "👤", path: "nouns.html", img: "images/nouns.png", desc: "Learn naming words with activities.", theme: "pink" },
+            { id: 6, name: "Pronouns", icon: "👦", path: "pronouns.html", img: "images/pronouns.png", desc: "Replace nouns using pronouns.", theme: "blue" },
+            { id: 7, name: "Adjectives", icon: "✨", path: "adjectives.html", img: "images/adjectives.png", desc: "Learn describing words.", theme: "green" },
+            { id: 8, name: "Verbs", icon: "🏃", path: "verbs.html", img: "images/verbs.png", desc: "Learn action words through activities.", theme: "yellow" },
+            { id: 9, name: "Adverbs", icon: "⚡", path: "adverbs.html", img: "images/adverbs.png", desc: "Learn words that describe actions.", theme: "purple" },
+            { id: 10, name: "Prepositions", icon: "🔗", path: "prepositions.html", img: "images/prepositions.png", desc: "Understand position words.", theme: "pink" },
+            { id: 11, name: "Conjunctions", icon: "🤝", path: "conjunctions.html", img: "images/conjunctions.png", desc: "Join words and sentences.", theme: "blue" },
+            { id: 12, name: "Articles (A, An, The)", icon: "📄", path: "articles.html", img: "images/articles.png", desc: "Use articles correctly.", theme: "green" },
+            { id: 13, name: "Sentence Formation", icon: "✍️", path: "sentence-formation.html", img: "images/sentence-formation.png", desc: "Build meaningful sentences.", theme: "yellow" },
+            { id: 14, name: "Reading Comprehension", icon: "📚", path: "reading-comprehension.html", img: "images/reading-comprehension.png", desc: "Develop reading and understanding skills.", theme: "purple" },
+            { id: 15, name: "Creative Writing", icon: "💬", path: "creative-writing.html", img: "images/creative-writing.png", desc: "Develop writing skills using guided activities.", theme: "pink" }
+        ];
+
+        /* --- Dynamic Card Generation and Failback Assembly Engine --- */
+        const toolsGrid = document.getElementById('toolsGrid');
+
+        toolsData.forEach((tool) => {
+            const card = document.createElement('div');
+            card.className = 'tool-card';
+            card.setAttribute('data-theme', tool.theme);
+            
+            // Interaction attachment layers
+            card.addEventListener('mouseenter', () => AudioEngine.play('hover'));
+            card.addEventListener('click', (e) => {
+                AudioEngine.play('click');
+                createRippleEffect(e, card);
+                setTimeout(() => {
+                    window.location.href = tool.path;
+                }, 250);
+            });
+
+            card.innerHTML = `
+                <div class="img-container">
+                    <img class="tool-img" src="${tool.img}" alt="${tool.name}" data-emoji="${tool.icon}">
+                </div>
+                <div class="tool-title">${tool.name}</div>
+                <div class="tool-desc">${tool.desc}</div>
+                <button class="explore-btn">Explore 🚀</button>
+            `;
+
+            toolsGrid.appendChild(card);
+        });
+
+        /* --- Failback System Verification --- */
+        document.querySelectorAll('.tool-img').forEach(img => {
+            img.onerror = function() {
+                const fallbackEmoji = this.getAttribute('data-emoji');
+                const parent = this.parentNode;
+                if (parent) {
+                    parent.innerHTML = `<span class="fallback-emoji">${fallbackEmoji}</span>`;
+                }
+            };
+        });
+
+        /* --- Ripple Click Animation Engine --- */
+        function createRippleEffect(event, element) {
+            const circle = document.createElement('span');
+            const diameter = Math.max(element.clientWidth, element.clientHeight);
+            const radius = diameter / 2;
+
+            const rect = element.getBoundingClientRect();
+            
+            circle.style.width = circle.style.height = `${diameter}px`;
+            circle.style.left = `${event.clientX - rect.left - radius}px`;
+            circle.style.top = `${event.clientY - rect.top - radius}px`;
+            circle.className = 'ripple';
+
+            // Clean up old active ripples
+            const oldRipple = element.querySelector('.ripple');
+            if (oldRipple) oldRipple.remove();
+
+            element.appendChild(circle);
+        }
+
+        /* --- Background Floating Vector Canvas System --- */
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let particlesArray = [];
+        const poolSymbols = ['A', 'B', 'C', 'D', '✏️', '⭐', '📖', '📚', 'P', 'Z', '✨'];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height + canvas.height;
+                this.size = Math.random() * 20 + 16;
+                this.speedY = -(Math.random() * 0.8 + 0.4);
+                this.speedX = (Math.random() * 0.4 - 0.2);
+                this.symbol = poolSymbols[Math.floor(Math.random() * poolSymbols.length)];
+                this.opacity = Math.random() * 0.3 + 0.15;
+                this.rotation = Math.random() * Math.PI;
+                this.rotationSpeed = Math.random() * 0.01 - 0.005;
+            }
+
+            update() {
+                this.y += this.speedY;
+                this.x += this.speedX;
+                this.rotation += this.rotationSpeed;
+                
+                // Boundaries reset pattern
+                if (this.y < -40) {
+                    this.y = canvas.height + 40;
+                    this.x = Math.random() * canvas.width;
+                }
+                if (this.x < -40) this.x = canvas.width + 40;
+                if (this.x > canvas.width + 40) this.x = -40;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+                ctx.font = `bold ${this.size}px sans-serif`;
+                ctx.fillText(this.symbol, 0, 0);
+                ctx.restore();
+            }
+        }
+
+        function initParticles() {
+            particlesArray = [];
+            const nativeDensityCount = Math.min(Math.floor(window.innerWidth / 30), 40);
+            for (let i = 0; i < nativeDensityCount; i++) {
+                particlesArray.push(new Particle());
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update();
+                particlesArray[i].draw();
+            }
+            requestAnimationFrame(animateParticles);
+        }
+
+        // Global Initialization Routine Entry Hooks
+        window.addEventListener('DOMContentLoaded', () => {
+            initParticles();
+            animateParticles();
+            // Trigger automatic entry chime sequence execution
+            setTimeout(() => { AudioEngine.play('load'); }, 300);
+        });
+    </script>
+</body>
+</html>

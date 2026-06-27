@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🔤 Phonics Quiz</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #FFEFBA 0%, #FFFFFF 100%), linear-gradient(210deg, #E6F7FF 0%, #F6E3FF 100%);
+            --card-background: rgba(255, 255, 255, 0.9);
+            --border-glow: rgba(255, 255, 255, 0.6);
+            --font-main: #2C3E50;
+            --color-easy: #2ECC71;
+            --color-medium: #F1C40F;
+            --color-hard: #E74C3C;
+            --color-correct: #2ECC71;
+            --color-wrong: #E74C3C;
+            --color-nav: #34495E;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Fredoka One', cursive, sans-serif;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background: linear-gradient(135deg, #FFEBEB 0%, #E8F5E9 50%, #E3F2FD 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+            position: relative;
+            padding: 15px;
+        }
+
+        /* Ambient Floating Blocks */
+        .ambient-decorations {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .floating-element {
+            position: absolute;
+            font-size: 2rem;
+            color: rgba(0, 0, 0, 0.04);
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.6);
+            animation: drift 15s infinite linear;
+        }
+
+        @keyframes drift {
+            0% { transform: translateY(110vh) rotate(0deg) scale(0.7); opacity: 0; }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.6; }
+            100% { transform: translateY(-15vh) rotate(360deg) scale(1.3); opacity: 0; }
+        }
+
+        /* Glassmorphism Main Card Frame */
+        .quiz-wrapper {
+            width: 100%;
+            max-width: 680px;
+            background: var(--card-background);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 4px solid #FFFFFF;
+            border-radius: 32px;
+            padding: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.06);
+            z-index: 10;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        h1 {
+            color: #FF6F61;
+            font-size: 2.6rem;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 0px #FFF;
+        }
+
+        .subtitle {
+            color: #7F8C8D;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 25px;
+            letter-spacing: 1.5px;
+        }
+
+        .screen {
+            display: none;
+            animation: flashCardTransition 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.15);
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes flashCardTransition {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* Standard Tier/Interface Selection Buttons */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 16px 25px;
+            margin: 15px 0;
+            font-size: 1.4rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 24px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 6px 0 rgba(0,0,0,0.1);
+            color: #FFF;
+        }
+
+        .btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 rgba(0,0,0,0.1);
+        }
+
+        .btn-easy { background: var(--color-easy); }
+        .btn-medium { background: var(--color-medium); color: #2C3E50; }
+        .btn-hard { background: var(--color-hard); }
+        .btn-primary { background: #4A90E2; }
+        .btn-secondary { background: #E67E22; }
+
+        /* Dashboard Stat Bars */
+        .dashboard {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.7);
+            padding: 12px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1rem;
+            color: var(--font-main);
+            margin-bottom: 15px;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 16px;
+            background: #EAEAEA;
+            border-radius: 20px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #4A90E2, #63E6BE);
+            transition: width 0.3s ease;
+        }
+
+        .question-container {
+            font-size: 1.6rem;
+            color: var(--font-main);
+            margin-bottom: 20px;
+            font-weight: bold;
+            line-height: 1.4;
+        }
+
+        /* Container Frame For Dynamic SVG Visuals Blocks */
+        .graphics-box {
+            margin: 15px auto;
+            min-height: 140px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .svg-card {
+            background: white;
+            border: 3px solid #E0E0E0;
+            border-radius: 20px;
+            padding: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Grid Framework for Options Options Layout */
+        .options-layout {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .choice-btn {
+            background: #FFFFFF;
+            border: 3px solid #E2E8F0;
+            border-radius: 22px;
+            padding: 16px 12px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--font-main);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: 0 6px 0 #E2E8F0;
+        }
+
+        .choice-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #E2E8F0;
+        }
+
+        .choice-btn.correct-state {
+            background-color: var(--color-correct) !important;
+            border-color: #27AE60 !important;
+            color: white !important;
+            box-shadow: 0 6px 0 #27AE60 !important;
+        }
+
+        .choice-btn.wrong-state {
+            background-color: var(--color-wrong) !important;
+            border-color: #C0392B !important;
+            color: white !important;
+            box-shadow: 0 6px 0 #C0392B !important;
+        }
+
+        /* Feedback/Explanation Unit Frame */
+        .explanation-card {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 18px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            display: none;
+            animation: bounceIn 0.3s ease;
+        }
+
+        @keyframes bounceIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        /* MANDATORY REQUISITE STIPULATED FIXED NAVIGATION SYSTEM */
+        .navigation-dock {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 25px;
+            border-top: 3px dashed #E2E8F0;
+            padding-top: 20px;
+            gap: 12px;
+        }
+
+        .nav-control-item {
+            flex: 1;
+            padding: 14px 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 16px;
+            border: none;
+            cursor: pointer;
+            color: #FFFFFF;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.15);
+        }
+
+        .nav-control-item:disabled {
+            background-color: #CBD5E1 !important;
+            box-shadow: 0 4px 0 #94A3B8 !important;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .btn-dock-prev { background-color: #78909C; }
+        .btn-dock-home { background-color: #E67E22; }
+        .btn-dock-next { background-color: var(--color-nav); }
+
+        /* Summary / Final Dashboard Metrics View */
+        .summary-block {
+            background: rgba(255,255,255,0.7);
+            border-radius: 22px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .metrics-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .metrics-table td {
+            padding: 12px 10px;
+            text-align: left;
+            font-size: 1.1rem;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+        }
+
+        .metrics-table td:last-child {
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .badge-presenter {
+            margin: 15px 0;
+            padding: 20px;
+            background: #FFF;
+            border-radius: 24px;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.02);
+            border: 2px dashed #E2E8F0;
+        }
+
+        .badge-trophy {
+            font-size: 4.2rem;
+            animation: leap 1.2s infinite ease-in-out;
+            display: inline-block;
+        }
+
+        @keyframes leap {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px) scale(1.03); }
+        }
+
+        #celebration-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+            border-radius: 32px;
+        }
+
+        /* Certificate Print Layout Directives */
+        @media print {
+            body * { visibility: hidden; }
+            #printable-certificate-frame, #printable-certificate-frame * { visibility: visible; }
+            #printable-certificate-frame {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                text-align: center;
+                padding: 40px;
+                border: 10px double #FF6F61;
+                background: white;
+            }
+        }
+
+        #printable-certificate-frame { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-decorations" id="ambientDecorations"></div>
+
+    <div class="quiz-wrapper">
+        <canvas id="celebration-canvas"></canvas>
+
+        <h1>🔤 Phonics Quiz</h1>
+        <p class="subtitle">Look • Think • Match • Read</p>
+
+        <div id="startScreen" class="screen active">
+            <p style="font-size: 1.3rem; font-weight: bold; margin-bottom: 25px; color: #555;">Choose your Phonics Level:</p>
+            <button class="btn btn-easy" onclick="startPhonicsQuizSession('easy')">🟢 Easy Level</button>
+            <button class="btn btn-medium" onclick="startPhonicsQuizSession('medium')">🟡 Medium Level</button>
+            <button class="btn btn-hard" onclick="startPhonicsQuizSession('hard')">🔴 Hard Level</button>
+        </div>
+
+        <div id="quizScreen" class="screen">
+            <div class="dashboard">
+                <span id="lblLevel">Level: Easy</span>
+                <span id="lblScore">Score: 0</span>
+                <span id="lblTracker">Question: 1/30</span>
+            </div>
+            
+            <div class="progress-track">
+                <div id="progressFill" class="progress-fill"></div>
+            </div>
+
+            <div class="question-container" id="targetQuestionText"></div>
+
+            <div class="graphics-box" id="graphicsBox"></div>
+
+            <div class="options-layout" id="optionsLayoutGrid"></div>
+
+            <div class="explanation-card" id="explanationCard"></div>
+
+            <div class="navigation-dock">
+                <button class="nav-control-item btn-dock-prev" id="navBtnPrev" onclick="shiftActiveIndex(-1)">⬅️ Previous</button>
+                <button class="nav-control-item btn-dock-home" id="navBtnHome" onclick="routeToHomeDashboard()">🏠 Home</button>
+                <button class="nav-control-item btn-dock-next" id="navBtnNext" onclick="shiftActiveIndex(1)">➡️ Next</button>
+            </div>
+        </div>
+
+        <div id="summaryScreen" class="screen">
+            <h2 style="color:#2ECC71; font-size: 2.1rem; margin-bottom:10px;">🎉 Great Job Reading! 🎉</h2>
+            
+            <div class="badge-presenter">
+                <div class="badge-trophy" id="badgeDisplayTrophy">🏆</div>
+                <h3 id="badgeDisplayTitle" style="margin-top: 8px; color: var(--font-main);">Phonics Master</h3>
+            </div>
+
+            <div class="summary-block">
+                <table class="metrics-table">
+                    <tr><td>Selected Track:</td><td id="resLevel">-</td></tr>
+                    <tr><td>Total Points Score:</td><td id="resScore">-</td></tr>
+                    <tr><td>Percentage Weight:</td><td id="resPercent">-</td></tr>
+                    <tr><td>Correct Answers:</td><td id="resCorrect" style="color:var(--color-correct)">-</td></tr>
+                    <tr><td>Incorrect Answers:</td><td id="resWrong" style="color:var(--color-wrong)">-</td></tr>
+                    <tr><td>Time Spent:</td><td id="resDuration">-</td></tr>
+                </table>
+            </div>
+
+            <button class="btn btn-primary" onclick="restartSelectedLevelSession()">🔄 Play Again</button>
+            <button class="btn btn-secondary" onclick="routeToHomeDashboard()">🏫 Choose Another Level</button>
+            <button class="btn btn-easy" onclick="triggerDevicePrinting()">🖨️ Print Certificate</button>
+        </div>
+    </div>
+
+    <div id="printable-certificate-frame">
+        <h1 style="font-size: 3rem; color: #4A90E2;">CERTIFICATE OF PHONICS EXCELLENCE</h1>
+        <p style="font-size: 1.5rem; margin: 20px 0;">This award goes to a spectacular young reader for finishing the</p>
+        <h2 style="font-size: 2.2rem; color: #FF6F61; margin: 15px 0;">🔤 Interactive Phonics Quiz Challenge</h2>
+        <p style="font-size: 1.2rem; font-weight: bold; color:#555;" id="printableMetaLine"></p>
+        <div style="margin-top: 60px; border-top: 3px dashed #BDBDBD; display: inline-block; width: 260px; padding-top: 10px; font-size: 1.1rem;">
+            Phonics Reading Coach
+        </div>
+    </div>
+
+    <script>
+        // Web Audio Synthesizer Engine (Interface Interaction Logic Only)
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtxInstance = null;
+
+        function playSoundEffect(type) {
+            try {
+                if (!audioCtxInstance) audioCtxInstance = new AudioCtx();
+                const now = audioCtxInstance.currentTime;
+                
+                if (type === 'click') {
+                    let osc = audioCtxInstance.createOscillator();
+                    let gain = audioCtxInstance.createGain();
+                    osc.frequency.setValueAtTime(520, now);
+                    gain.gain.setValueAtTime(0.06, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                    osc.connect(gain); gain.connect(audioCtxInstance.destination);
+                    osc.start(now); osc.stop(now + 0.05);
+                } else if (type === 'correct') {
+                    let osc = audioCtxInstance.createOscillator();
+                    let gain = audioCtxInstance.createGain();
+                    osc.frequency.setValueAtTime(660, now);
+                    osc.frequency.setValueAtTime(880, now + 0.08);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                    osc.connect(gain); gain.connect(audioCtxInstance.destination);
+                    osc.start(now); osc.stop(now + 0.2);
+                } else if (type === 'wrong') {
+                    let osc = audioCtxInstance.createOscillator();
+                    let gain = audioCtxInstance.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(260, now);
+                    osc.frequency.linearRampToValueAtTime(180, now + 0.2);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                    osc.connect(gain); gain.connect(audioCtxInstance.destination);
+                    osc.start(now); osc.stop(now + 0.2);
+                } else if (type === 'badge') {
+                    let notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, index) => {
+                        let osc = audioCtxInstance.createOscillator();
+                        let gain = audioCtxInstance.createGain();
+                        osc.frequency.setValueAtTime(freq, now + (index * 0.07));
+                        gain.gain.setValueAtTime(0.06, now + (index * 0.07));
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + (index * 0.07) + 0.2);
+                        osc.connect(gain); gain.connect(audioCtxInstance.destination);
+                        osc.start(now + (index * 0.07)); osc.stop(now + (index * 0.07) + 0.2);
+                    });
+                }
+            } catch (e) { console.log('Audio Context initialize blocked.'); }
+        }
+
+        // Inline Custom Clean High-Visibility SVG Vectors Asset Registry
+        const VECTOR_ASSET_VAULT = {
+            apple: `<svg width="100" height="100" viewBox="0 0 100 100"><path d="M50,25 C35,12 15,18 15,45 C15,72 45,90 50,90 C55,90 85,72 85,45 C85,18 65,12 50,25 Z" fill="#E74C3C"/><path d="M50,25 Q46,12 42,8" stroke="#6D4C41" stroke-width="4" fill="none"/><path d="M50,20 Q65,12 60,5 C52,5 50,20 50,20" fill="#2ECC71"/></svg>`,
+            ball: `<svg width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="#3498DB"/><path d="M15,35 Q50,70 85,35 M12,50 Q50,90 88,50" stroke="#FFF" stroke-width="4" fill="none"/><circle cx="50" cy="50" r="42" fill="none" stroke="#2980B9" stroke-width="3"/></svg>`,
+            cat: `<svg width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="55" r="32" fill="#F39C12"/><polygon points="22,30 36,48 18,44" fill="#D35400"/><polygon points="78,30 64,48 82,44" fill="#D35400"/><circle cx="38" cy="50" r="4" fill="#2C3E50"/><circle cx="62" cy="50" r="4" fill="#2C3E50"/><polygon points="47,60 53,60 50,64" fill="#E74C3C"/><path d="M40,68 Q50,74 60,68" stroke="#2C3E50" stroke-width="2" fill="none"/></svg>`,
+            dog: `<svg width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="55" r="32" fill="#95A5A6"/><path d="M18,34 Q25,28 30,50 Z" fill="#7F8C8D"/><path d="M82,34 Q75,28 70,50 Z" fill="#7F8C8D"/><circle cx="40" cy="48" r="4" fill="#000"/><circle cx="60" cy="48" r="4" fill="#000"/><ellipse cx="50" cy="62" rx="6" ry="4" fill="#000"/></svg>`,
+            fish: `<svg width="100" height="100" viewBox="0 0 100 100"><path d="M12,50 C28,22 72,28 82,50 C72,72 28,78 12,50 Z" fill="#1ABC9C"/><polygon points="82,50 96,34 91,50 96,66" fill="#E67E22"/><circle cx="28" cy="44" r="4" fill="#FFF"/></svg>`,
+            sun: `<svg width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="25" fill="#F1C40F"/><path d="M50,10 L50,20 M50,80 L50,90 M10,50 L20,50 M80,50 L90,50 M22,22 L30,30 M70,70 L78,78 M22,70 L30,62 M70,30 L78,22" stroke="#F39C12" stroke-width="5" stroke-linecap="round"/></svg>`,
+            tree: `<svg width="100" height="100" viewBox="0 0 100 100"><rect x="46" y="58" width="8" height="32" fill="#795548"/><circle cx="50" cy="40" r="24" fill="#2ECC71"/><circle cx="36" cy="46" r="18" fill="#27AE60"/><circle cx="64" cy="46" r="18" fill="#27AE60"/></svg>`,
+            frog: `<svg width="100" height="100" viewBox="0 0 100 100"><ellipse cx="50" cy="60" rx="35" ry="25" fill="#2ECC71"/><circle cx="32" cy="38" r="10" fill="#2ECC71"/><circle cx="68" cy="38" r="10" fill="#2ECC71"/><circle cx="32" cy="38" r="5" fill="#000"/><circle cx="68" cy="38" r="5" fill="#000"/><path d="M30,62 Q50,75 70,62" stroke="#27AE60" stroke-width="4" fill="none" stroke-linecap="round"/></svg>`,
+            train: `<svg width="100" height="100" viewBox="0 0 100 100"><rect x="15" y="40" width="50" height="35" fill="#E74C3C"/><rect x="65" y="50" width="22" height="25" fill="#3498DB"/><rect x="52" y="30" width="10" height="10" fill="#7F8C8D"/><circle cx="30" cy="80" r="8" fill="#333"/><circle cx="55" cy="80" r="8" fill="#333"/><circle cx="76" cy="80" r="8" fill="#333"/></svg>`,
+            star: `<svg width="100" height="100" viewBox="0 0 100 100"><polygon points="50,5 64,36 98,36 70,57 81,91 50,70 19,91 30,57 2,36 36,36" fill="#F1C40F" stroke="#F39C12" stroke-width="2"/></svg>`,
+            spoon: `<svg width="100" height="100" viewBox="0 0 100 100"><ellipse cx="50" cy="28" rx="14" ry="20" fill="#BDC3C7"/><rect x="47" y="48" width="6" height="42" rx="3" fill="#95A5A6"/></svg>`,
+            clock: `<svg width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#FFF" stroke="#34495E" stroke-width="4"/><line x1="50" y1="50" x2="50" y2="25" stroke="#2C3E50" stroke-width="4" stroke-linecap="round"/><line x1="50" y1="50" x2="68" y2="50" stroke="#E74C3C" stroke-width="3" stroke-linecap="round"/><circle cx="50" cy="50" r="3" fill="#2C3E50"/></svg>`,
+            drum: `<svg width="100" height="100" viewBox="0 0 100 100"><ellipse cx="50" cy="30" rx="35" ry="10" fill="#FFF" stroke="#9B59B6" stroke-width="4"/><rect x="15" y="30" width="70" height="40" fill="#9B59B6"/><ellipse cx="50" cy="70" rx="35" ry="10" fill="#8E44AD"/><line x1="25" y1="38" x2="25" y2="65" stroke="#FFF" stroke-width="2"/><line x1="50" y1="40" x2="50" y2="68" stroke="#FFF" stroke-width="2"/><line x1="75" y1="38" x2="75" y2="65" stroke="#FFF" stroke-width="2"/></svg>`,
+            flag: `<svg width="100" height="100" viewBox="0 0 100 100"><rect x="20" y="10" width="6" height="80" fill="#7F8C8D"/><path d="M26,15 L82,32 L26,50 Z" fill="#E74C3C"/></svg>`
+        };
+
+        // Complete Structured 90-Question Data Matrix Engine Core Array (Exactly 30 items per level tier)
+        const PHONICS_QUESTION_MATRIX = {
+            easy: [
+                { type: "svg", asset: "apple", q: "Which letter does Apple begin with?", o: ["A", "B", "M", "T"], a: "A", e: "Apple begins with the letter A." },
+                { type: "svg", asset: "ball", q: "Which letter does Ball begin with?", o: ["B", "F", "D", "P"], a: "B", e: "Ball begins with the letter B." },
+                { type: "svg", asset: "cat", q: "Which letter does Cat begin with?", o: ["C", "G", "K", "S"], a: "C", e: "Cat begins with the letter C." },
+                { type: "svg", asset: "dog", q: "Which letter does Dog begin with?", o: ["D", "B", "P", "T"], a: "D", e: "Dog begins with the letter D." },
+                { type: "svg", asset: "fish", q: "Which letter does Fish begin with?", o: ["F", "V", "T", "M"], a: "F", e: "Fish begins with the letter F." },
+                { type: "svg", asset: "sun", q: "Which letter does Sun begin with?", o: ["S", "C", "Z", "N"], a: "S", e: "Sun begins with the letter S." },
+                { type: "svg", asset: "tree", q: "Which letter does Tree begin with?", o: ["T", "D", "F", "B"], a: "T", e: "Tree begins with the letter T." },
+                { type: "text", q: "Which word begins with the 'm' letter sound?", o: ["Man", "Can", "Pan", "Tan"], a: "Man", e: "Man starts with the letter M." },
+                { type: "text", q: "Which word begins with the 'b' letter sound?", o: ["Bat", "Cat", "Rat", "Hat"], a: "Bat", e: "Bat starts with the letter B." },
+                { type: "text", q: "Which word begins with the 'p' letter sound?", o: ["Pig", "Dig", "Wig", "Big"], a: "Pig", e: "Pig starts with the letter P." },
+                { type: "text", q: "Which word begins with the 'r' letter sound?", o: ["Run", "Sun", "Fun", "Bun"], a: "Run", e: "Run starts with the letter R." },
+                { type: "text", q: "Which word begins with the 'z' letter sound?", o: ["Zoo", "Too", "Boo", "Moo"], a: "Zoo", e: "Zoo starts with the letter Z." },
+                { type: "svg_choices", assets: ["ball", "cat", "fish", "sun"], q: "Which picture begins with the B sound?", o: ["ball", "cat", "fish", "sun"], a: "ball", e: "The ball begins with B." },
+                { type: "svg_choices", assets: ["sun", "dog", "tree", "apple"], q: "Which picture begins with the S sound?", o: ["sun", "dog", "tree", "apple"], a: "sun", e: "The sun begins with S." },
+                { type: "svg_choices", assets: ["cat", "fish", "apple", "ball"], q: "Which picture begins with the C sound?", o: ["cat", "fish", "apple", "ball"], a: "cat", e: "The cat begins with C." },
+                { type: "svg_choices", assets: ["fish", "sun", "tree", "dog"], q: "Which picture begins with the F sound?", o: ["fish", "sun", "tree", "dog"], a: "fish", e: "The fish begins with F." },
+                { type: "text", q: "Which two words begin with the exact same letter sound?", o: ["Top and Tan", "Cat and Dog", "Map and Pin", "Big and Sun"], a: "Top and Tan", e: "Top and Tan both begin with the letter T." },
+                { type: "text", q: "Which two words begin with the exact same letter sound?", o: ["Fox and Fun", "Bag and Net", "Sit and Hop", "Mud and Lip"], a: "Fox and Fun", e: "Fox and Fun both begin with the letter F." },
+                { type: "text", q: "Which two words begin with the exact same letter sound?", o: ["Hop and Hen", "Red and Wet", "Zip and Pin", "Let and Met"], a: "Hop and Hen", e: "Hop and Hen both begin with the letter H." },
+                { type: "text", q: "Find the odd one out (starts with a different sound).", o: ["Dog, Duck, Doll, Cat", "Bag, Bed, Bus, Net", "Map, Mug, Mud, Pig", "Sun, Sit, Sad, Box"], a: "Dog, Duck, Doll, Cat", e: "Cat starts with C, while the others start with D!" },
+                { type: "text", q: "Find the odd one out (starts with a different sound).", o: ["Van, Vest, Vine, Sun", "Pen, Pig, Pot, Log", "Nut, Net, Nap, Web", "Hop, Hat, Hit, Dig"], a: "Van, Vest, Vine, Sun", e: "Sun starts with S, while the others start with V!" },
+                { type: "text", q: "Complete the easy CVC word: C _ T", o: ["A", "O", "E", "I"], a: "A", e: "C-A-T spells Cat." },
+                { type: "text", q: "Complete the easy CVC word: B _ G", o: ["A", "E", "O", "U"], a: "A", e: "B-A-G spells Bag." },
+                { type: "text", q: "Complete the easy CVC word: M _ P", o: ["A", "E", "I", "U"], a: "A", e: "M-A-P spells Map." },
+                { type: "text", q: "What is the very first letter sound you hear in 'Jam'?", o: ["J", "M", "A", "G"], a: "J", e: "Jam starts with the letter J." },
+                { type: "text", q: "What is the very first letter sound you hear in 'Van'?", o: ["V", "W", "F", "B"], a: "V", e: "Van starts with the letter V." },
+                { type: "text", q: "What is the very first letter sound you hear in 'Kite'?", o: ["K", "C", "Q", "G"], a: "K", e: "Kite starts with the letter K." },
+                { type: "text", q: "Which sound does the letter 'G' make at the start of 'Goat'?", o: ["g", "j", "t", "d"], a: "g", e: "Goat starts with the hard g sound." },
+                { type: "text", q: "Which sound does the letter 'L' make at the start of 'Lion'?", o: ["l", "m", "n", "r"], a: "l", e: "Lion starts with the l sound." },
+                { type: "text", q: "Which letter matches the beginning sound of the word 'Nest'?", o: ["N", "M", "H", "U"], a: "N", e: "Nest begins with the letter N." }
+            ],
+            medium: [
+                { type: "text", q: "Which word rhymes with Cat?", o: ["Hat", "Dog", "Pin", "Mug"], a: "Hat", e: "Hat and Cat are in the -at family." },
+                { type: "text", q: "Which word rhymes with Fan?", o: ["Pan", "Hop", "Red", "Fin"], a: "Pan", e: "Pan and Fan are in the -an family." },
+                { type: "text", q: "Which word rhymes with Hop?", o: ["Mop", "Map", "Hen", "Sun"], a: "Mop", e: "Mop and Hop belong to the -op family." },
+                { type: "text", q: "Which word rhymes with Fin?", o: ["Pin", "Pen", "Pan", "Fun"], a: "Pin", e: "Pin and Fin belong to the -in family." },
+                { type: "text", q: "Complete the word for a furry friend: D _ G", o: ["O", "A", "I", "U"], a: "O", e: "D-O-G spells Dog." },
+                { type: "text", q: "Complete the word for a hot sky object: S _ N", o: ["U", "A", "E", "O"], a: "U", e: "S-U-N spells Sun." },
+                { type: "text", q: "Complete the word for something to write with: P _ N", o: ["E", "A", "I", "O"], a: "E", e: "P-E-N spells Pen." },
+                { type: "text", q: "Find the missing middle vowel letter: B _ D", o: ["E", "O", "I", "U"], a: "E", e: "B-E-D spells Bed with a short e sound." },
+                { type: "text", q: "Find the missing middle vowel letter: L _ G", o: ["O", "A", "E", "I"], a: "O", e: "L-O-G spells Log with a short o sound." },
+                { type: "text", q: "Find the missing middle vowel letter: P _ G", o: ["I", "A", "E", "U"], a: "I", e: "P-I-G spells Pig with a short i sound." },
+                { type: "text", q: "Which letter does the word 'Net' END with?", o: ["t", "n", "e", "d"], a: "t", e: "Net ends with the letter t sound." },
+                { type: "text", q: "Which letter does the word 'Cup' END with?", o: ["p", "c", "u", "b"], a: "p", e: "Cup ends with the letter p sound." },
+                { type: "text", q: "Which letter does the word 'Bus' END with?", o: ["s", "b", "u", "z"], a: "s", e: "Bus ends with the letter s sound." },
+                { type: "text", q: "Which letter does the word 'Frog' END with?", o: ["g", "f", "r", "k"], a: "g", e: "Frog ends with the letter g sound." },
+                { type: "text", q: "Choose the correct word family for the words: Map, Cap, Lap.", o: ["-ap family", "-at family", "-an family", "-op family"], a: "-ap family", e: "Map, Cap, and Lap all belong to the -ap family." },
+                { type: "text", q: "Choose the correct word family for the words: Hen, Pen, Men.", o: ["-en family", "-et family", "-un family", "-in family"], a: "-en family", e: "Hen, Pen, and Men all belong to the -en family." },
+                { type: "text", q: "Choose the correct word family for the words: Bug, Jug, Rug.", o: ["-ug family", "-un family", "-og family", "-ag family"], a: "-ug family", e: "Bug, Jug, and Rug all belong to the -ug family." },
+                { type: "text", q: "Which word does NOT belong to the -at family?", o: ["Pin", "Cat", "Mat", "Rat"], a: "Pin", e: "Pin belongs to the -in family, not -at!" },
+                { type: "text", q: "Which word does NOT belong to the -og family?", o: ["Leg", "Dog", "Log", "Jog"], a: "Leg", e: "Leg ends in -eg, not -og!" },
+                { type: "text", q: "Which word has a short 'i' middle sound?", o: ["Sit", "Sat", "Set", "Sut"], a: "Sit", e: "Sit has the short i sound." },
+                { type: "text", q: "Which word has a short 'u' middle sound?", o: ["Nut", "Net", "Not", "Nat"], a: "Nut", e: "Nut has the short u sound." },
+                { type: "text", q: "Which word has a short 'e' middle sound?", o: ["Wet", "Wit", "Wat", "Wot"], a: "Wet", e: "Wet has the short e sound." },
+                { type: "svg_choices", assets: ["cat", "ball", "tree", "sun"], q: "Which picture belongs to the -at family?", o: ["cat", "ball", "tree", "sun"], a: "cat", e: "Cat belongs to the -at family." },
+                { type: "text", q: "Find the middle letter sound in the word 'Lip'.", o: ["i", "l", "p", "e"], a: "i", e: "The middle sound of Lip is the short vowel i." },
+                { type: "text", q: "Find the middle letter sound in the word 'Mad'.", o: ["a", "m", "d", "e"], a: "a", e: "The middle sound of Mad is the short vowel a." },
+                { type: "text", q: "What is the ending sound of 'Run'?", o: ["n", "r", "u", "m"], a: "n", e: "Run ends with the letter n sound." },
+                { type: "text", q: "What is the ending sound of 'Jam'?", o: ["m", "j", "a", "n"], a: "m", e: "Jam ends with the letter m sound." },
+                { type: "text", q: "What is the ending sound of 'Box'?", o: ["x", "b", "o", "s"], a: "x", e: "Box ends with the letter x sound." },
+                { type: "text", q: "Which word belongs to the -ip family?", o: ["Lip", "Lap", "Let", "Log"], a: "Lip", e: "Lip ends with -ip." },
+                { type: "text", q: "Which word belongs to the -un family?", o: ["Sun", "Sit", "Sad", "Set"], a: "Sun", e: "Sun ends with -un." }
+            ],
+            hard: [
+                { type: "text", q: "Which digraph blend does the word 'Ship' begin with?", o: ["sh", "ch", "th", "wh"], a: "sh", e: "Ship starts with the sh digraph sound." },
+                { type: "text", q: "Which digraph blend does the word 'Chair' begin with?", o: ["ch", "sh", "th", "ph"], a: "ch", e: "Chair starts with the ch digraph sound." },
+                { type: "text", q: "Which digraph blend does the word 'Thumb' begin with?", o: ["th", "sh", "ch", "wh"], a: "th", e: "Thumb starts with the th digraph sound." },
+                { type: "text", q: "Which digraph blend does the word 'Phone' begin with?", o: ["ph", "wh", "th", "ch"], a: "ph", e: "Phone starts with the ph sound (sounds like f!)." },
+                { type: "text", q: "Which word ends with the 'ck' digraph sound?", o: ["Clock", "Brush", "Train", "Frog"], a: "Clock", e: "Clock ends with the ck digraph sound." },
+                { type: "text", q: "Which word ends with the 'sh' digraph sound?", o: ["Brush", "Chair", "Thumb", "Clock"], a: "Brush", e: "Brush ends with the sh digraph sound." },
+                { type: "text", q: "Which word ends with the 'ng' digraph sound?", o: ["King", "Kick", "Kite", "Kiss"], a: "King", e: "King ends with the ng digraph sound." },
+                { type: "text", q: "Complete the consonant blend: _ rain", o: ["tr", "bl", "st", "cl"], a: "tr", e: "T-R combines to make the tr blend in Train." },
+                { type: "text", q: "Complete the consonant blend: _ rog", o: ["fr", "gr", "br", "pr"], a: "fr", e: "F-R combines to make the fr blend in Frog." },
+                { type: "text", q: "Complete the consonant blend: _ tar", o: ["st", "sp", "sn", "sw"], a: "st", e: "S-T combines to make the st blend in Star." },
+                { type: "text", q: "Complete the consonant blend: _ poon", o: ["sp", "sm", "st", "sn"], a: "sp", e: "S-P combines to make the sp blend in Spoon." },
+                { type: "text", q: "Complete the consonant blend: _ rum", o: ["dr", "cr", "fr", "gr"], a: "dr", e: "D-R combines to make the dr blend in Drum." },
+                { type: "text", q: "Complete the consonant blend: _ lag", o: ["fl", "bl", "cl", "gl"], a: "fl", e: "F-L combines to make the fl blend in Flag." },
+                { type: "svg_choices", assets: ["frog", "train", "star", "spoon"], q: "Choose the correct picture for the 'fr' blend.", o: ["frog", "train", "star", "spoon"], a: "frog", e: "Frog starts with the fr consonant blend." },
+                { type: "svg_choices", assets: ["train", "star", "spoon", "drum"], q: "Choose the correct picture for the 'tr' blend.", o: ["train", "star", "spoon", "drum"], a: "train", e: "Train starts with the tr consonant blend." },
+                { type: "svg_choices", assets: ["star", "spoon", "drum", "flag"], q: "Choose the correct picture for the 'st' blend.", o: ["star", "spoon", "drum", "flag"], a: "star", e: "Star starts with the st consonant blend." },
+                { type: "svg_choices", assets: ["clock", "drum", "flag", "frog"], q: "Choose the correct picture for the 'cl' blend.", o: ["clock", "drum", "flag", "frog"], a: "clock", e: "Clock starts with the cl consonant blend." },
+                { type: "text", q: "Which word belongs to the long vowel '-ight' family?", o: ["Light", "Lip", "Let", "Lap"], a: "Light", e: "Light contains the long i sound in the -ight family." },
+                { type: "text", q: "Which word belongs to the long vowel '-ight' family?", o: ["Night", "Nut", "Net", "Not"], a: "Night", e: "Night belongs to the -ight family." },
+                { type: "text", q: "Find the odd word out (different vowel length).", o: ["Cake (long), Cat (short), Mat (short), Hat (short)", "Like, Pin, Sit, Lip", "Bone, Dog, Log, Hop", "Cube, Tub, Rub, Mud"], a: "Cake (long), Cat (short), Mat (short), Hat (short)", e: "Cake has a long a sound, others have a short a sound." },
+                { type: "text", q: "Which word has a silent 'e' at the end?", o: ["Cake", "Cat", "Can", "Cap"], a: "Cake", e: "Cake has a silent e at the end that makes the a say its name." },
+                { type: "text", q: "Which word has a silent 'e' at the end?", o: ["Kite", "Kit", "Kin", "Kid"], a: "Kite", e: "Kite has a silent e at the end." },
+                { type: "text", q: "Which word has a silent 'e' at the end?", o: ["Robe", "Rob", "Rat", "Ran"], a: "Robe", e: "Robe has a silent e at the end." },
+                { type: "text", q: "Which compound word combines two smaller base words together?", o: ["Sunlight", "Running", "Happy", "Simple"], a: "Sunlight", e: "Sun + Light combines into the compound word Sunlight." },
+                { type: "text", q: "Which compound word combines two smaller base words together?", o: ["Starfish", "Spoons", "Playing", "Little"], a: "Starfish", e: "Star + Fish combines into the compound word Starfish." },
+                { type: "text", q: "Which word starts with the consonant blend 'bl'?", o: ["Blue", "Red", "Green", "Yellow"], a: "Blue", e: "Blue starts with the bl blend sound." },
+                { type: "text", q: "Which word starts with the consonant blend 'gr'?", o: ["Green", "Blue", "Pink", "White"], a: "Green", e: "Green starts with the gr blend sound." },
+                { type: "text", q: "Identify the word with a short 'o' sound.", o: ["Frog", "Rope", "Coat", "Goat"], a: "Frog", e: "Frog features the short o sound, others are long o." },
+                { type: "text", q: "Identify the word with a long 'e' sound.", o: ["Tree", "Bed", "Net", "Leg"], a: "Tree", e: "Tree features the long double e sound." },
+                { type: "text", q: "Which word starts with the 'wh' digraph sound?", o: ["Whale", "Pale", "Male", "Sale"], a: "Whale", e: "Whale starts with the wh digraph." }
+            ]
+        };
+
+        // Application State Management Registry
+        let targetDifficultyLevel = 'easy';
+        let levelActiveQuestions = [];
+        let cursorQuestionIndex = 0;
+        let cumulativeUserScore = 0;
+        let executionResponseCache = [];
+        let sessionTimerStartMark = null;
+
+        // Build floating decorative matrix dynamically
+        function initializeBackgroundDecorations() {
+            const container = document.getElementById('ambientDecorations');
+            const characterPool = ['A', 'B', 'C', 'D', '⭐', '📚', 'SH', 'TR', 'CH', '⭐️'];
+            for (let i = 0; i < 15; i++) {
+                let div = document.createElement('div');
+                div.className = 'floating-element';
+                div.innerText = characterPool[Math.floor(Math.random() * characterPool.length)];
+                div.style.left = (Math.random() * 94) + 'vw';
+                div.style.animationDelay = (Math.random() * 10) + 's';
+                div.style.fontSize = (Math.random() * 1.5 + 1.5) + 'rem';
+                container.appendChild(div);
+            }
+        }
+        initializeBackgroundDecorations();
+
+        // Fisher-Yates Array Shuffler
+        function shuffleTargetArray(target) {
+            for (let i = target.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [target[i], target[j]] = [target[j], target[i]];
+            }
+        }
+
+        // Initialize session workflow
+        function startPhonicsQuizSession(level) {
+            playSoundEffect('click');
+            targetDifficultyLevel = level;
+            
+            // Extract, shuffle and slice questions down to exactly 30 randomized units
+            let rawPool = JSON.parse(JSON.stringify(PHONICS_QUESTION_MATRIX[level]));
+            shuffleTargetArray(rawPool);
+            levelActiveQuestions = rawPool.slice(0, 30);
+
+            // Scramble sub choices inside independently
+            levelActiveQuestions.forEach(qItem => {
+                shuffleTargetArray(qItem.o);
+            });
+
+            cursorQuestionIndex = 0;
+            cumulativeUserScore = 0;
+            executionResponseCache = new Array(30).fill(null);
+            sessionTimerStartMark = new Date();
+
+            // Load and recover localized progress checkpoints states if available
+            const savedState = localStorage.getItem('phonics_quiz_state_' + level);
+            if (savedState) {
+                try {
+                    const parsedState = JSON.parse(savedState);
+                    cursorQuestionIndex = parsedState.cursorQuestionIndex || 0;
+                    cumulativeUserScore = parsedState.cumulativeUserScore || 0;
+                    executionResponseCache = parsedState.executionResponseCache || new Array(30).fill(null);
+                } catch (e) { console.warn("Checkpoints state parse bypassed."); }
+            }
+
+            document.getElementById('startScreen').classList.remove('active');
+            document.getElementById('quizScreen').classList.add('active');
+            document.getElementById('lblLevel').innerText = "Level: " + level.toUpperCase();
+            
+            renderCurrentQuestionFrame();
+        }
+
+        // Main Render Loop UI Presenter Frame
+        function renderCurrentQuestionFrame() {
+            const currentItem = levelActiveQuestions[cursorQuestionIndex];
+            
+            // Write local backup snapshot tracking indices states
+            localStorage.setItem('phonics_quiz_state_' + targetDifficultyLevel, JSON.stringify({
+                cursorQuestionIndex: cursorQuestionIndex,
+                cumulativeUserScore: cumulativeUserScore,
+                executionResponseCache: executionResponseCache
+            }));
+
+            // Header UI states syncing
+            document.getElementById('lblTracker').innerText = `Question: ${cursorQuestionIndex + 1}/30`;
+            document.getElementById('lblScore').innerText = `Score: ${cumulativeUserScore}`;
+            
+            // Render smooth horizontal visual tracking metrics gauge
+            const visualProgressRatio = ((cursorQuestionIndex + 1) / 30) * 100;
+            document.getElementById('progressFill').style.width = visualProgressRatio + '%';
+
+            // Insert core text question directive strings line safely
+            document.getElementById('targetQuestionText').innerText = currentItem.q;
+
+            // Handle custom vector images matching strict rules (No empty placeholder blocks)
+            const graphicsBoxNode = document.getElementById('graphicsBox');
+            graphicsBoxNode.innerHTML = "";
+            
+            if (currentItem.type === 'svg') {
+                graphicsBoxNode.style.display = 'flex';
+                let card = document.createElement('div');
+                card.className = 'svg-card';
+                card.innerHTML = VECTOR_ASSET_VAULT[currentItem.asset] || '';
+                graphicsBoxNode.appendChild(card);
+            } else if (currentItem.type === 'svg_choices') {
+                graphicsBoxNode.style.display = 'flex';
+                currentItem.assets.forEach(assetKey => {
+                    let card = document.createElement('div');
+                    card.className = 'svg-card';
+                    card.innerHTML = VECTOR_ASSET_VAULT[assetKey] || '';
+                    graphicsBoxNode.appendChild(card);
+                });
+            } else {
+                graphicsBoxNode.style.display = 'none'; // Closes structure gap entirely
+            }
+
+            // Populate choice control grids options selection elements 
+            const interactiveGrid = document.getElementById('optionsLayoutGrid');
+            interactiveGrid.innerHTML = "";
+            
+            const existingResponse = executionResponseCache[cursorQuestionIndex];
+
+            currentItem.o.forEach((optionString, positionIdx) => {
+                const choiceBtn = document.createElement('button');
+                choiceBtn.className = 'choice-btn';
+                
+                // Capitalize strings beautifully for kids where required, or display directly
+                choiceBtn.innerText = optionString;
+                choiceBtn.onclick = () => handleChoiceActionSelection(positionIdx, choiceBtn);
+                
+                // Keep visually rendered state persistent if already locked/committed
+                if (existingResponse !== null) {
+                    choiceBtn.disabled = true;
+                    if (optionString === currentItem.a) {
+                        choiceBtn.classList.add('correct-state');
+                    }
+                    if (positionIdx === existingResponse.selectedIndex && optionString !== currentItem.a) {
+                        choiceBtn.classList.add('wrong-state');
+                    }
+                }
+                interactiveGrid.appendChild(choiceBtn);
+            });
+
+            // Display contextual feedback explanatory modules cards blocks
+            const feedbackCard = document.getElementById('explanationCard');
+            if (existingResponse !== null) {
+                feedbackCard.style.display = 'block';
+                if (existingResponse.isCorrect) {
+                    feedbackCard.style.backgroundColor = '#D4EFDF';
+                    feedbackCard.style.color = '#196F3D';
+                    feedbackCard.innerText = "✅ Correct! " + currentItem.e;
+                } else {
+                    feedbackCard.style.backgroundColor = '#FADBD8';
+                    feedbackCard.style.color = '#78281F';
+                    feedbackCard.innerText = "❌ Keep Trying! " + currentItem.e;
+                }
+            } else {
+                feedbackCard.style.display = 'none';
+            }
+
+            // Lock or unlock navigation element nodes safely
+            document.getElementById('navBtnPrev').disabled = (cursorQuestionIndex === 0);
+        }
+
+        // Handle interactive selections checks execution tracks
+        function handleChoiceActionSelection(idx, elementRef) {
+            const activeQuestionItem = levelActiveQuestions[cursorQuestionIndex];
+            if (executionResponseCache[cursorQuestionIndex] !== null) return; // Action state already locked
+
+            const chosenTextString = activeQuestionItem.o[idx];
+            const isMatchCorrect = (chosenTextString === activeQuestionItem.a);
+            
+            if (isMatchCorrect) {
+                cumulativeUserScore += 1;
+                elementRef.classList.add('correct-state');
+                playSoundEffect('correct');
+            } else {
+                elementRef.classList.add('wrong-state');
+                playSoundEffect('wrong');
+                
+                // Auto-highlight correct choice answers paths cleanly to foster rapid comprehension loop
+                const gridButtons = document.querySelectorAll('.choice-btn');
+                gridButtons.forEach(btnNode => {
+                    if (btnNode.innerText === activeQuestionItem.a) btnNode.classList.add('correct-state');
+                });
+            }
+
+            executionResponseCache[cursorQuestionIndex] = {
+                selectedIndex: idx,
+                isCorrect: isMatchCorrect
+            };
+
+            // Force visual loop update patterns updates instantly
+            renderCurrentQuestionFrame();
+
+            if (isMatchCorrect) triggersConfettiSplashes();
+
+            // Auto-advance safely to the next flash card item if boundaries allow
+            if (cursorQuestionIndex < 29) {
+                setTimeout(() => {
+                    if (cursorQuestionIndex === levelActiveQuestions.indexOf(activeQuestionItem)) {
+                        shiftActiveIndex(1);
+                    }
+                }, 3500);
+            } else {
+                document.getElementById('navBtnNext').innerText = "Finish 🏆";
+            }
+        }
+
+        // Shifts layout tracks across index ranges metrics mapping directions
+        function shiftActiveIndex(offsetValue) {
+            playSoundEffect('click');
+            
+            if (cursorQuestionIndex === 29 && offsetValue === 1) {
+                generateSummaryTerminalMetricsReport();
+                return;
+            }
+
+            cursorQuestionIndex += offsetValue;
+            if (cursorQuestionIndex < 0) cursorQuestionIndex = 0;
+            if (cursorQuestionIndex > 29) cursorQuestionIndex = 29;
+
+            document.getElementById('navBtnNext').innerText = (cursorQuestionIndex === 29) ? "Finish 🏆" : "➡️ Next";
+
+            renderCurrentQuestionFrame();
+        }
+
+        // Escape out to active initial select menu layout dashboards
+        function routeToHomeDashboard() {
+            playSoundEffect('click');
+            document.getElementById('quizScreen').classList.remove('active');
+            document.getElementById('summaryScreen').classList.remove('active');
+            document.getElementById('startScreen').classList.add('active');
+        }
+
+        // Flush tracking caches storage keys to run another complete session sequence
+        function restartSelectedLevelSession() {
+            localStorage.removeItem('phonics_quiz_state_' + targetDifficultyLevel);
+            startPhonicsQuizSession(targetDifficultyLevel);
+        }
+
+        // Map final scores into localized rank matrices benchmarks
+        function generateSummaryTerminalMetricsReport() {
+            playSoundEffect('badge');
+            document.getElementById('quizScreen').classList.remove('active');
+            document.getElementById('summaryScreen').classList.add('active');
+
+            const scoreRatioPercent = Math.round((cumulativeUserScore / 30) * 100);
+            const absoluteWrongCounts = 30 - cumulativeUserScore;
+            const completionClockStop = new Date();
+            const elapsedSecondsDuration = Math.round((completionClockStop - sessionTimerStartMark) / 1000);
+            const parsedMinutesString = Math.floor(elapsedSecondsDuration / 60);
+            const parsedSecondsString = elapsedSecondsDuration % 60;
+            const absoluteTimeLabel = `${parsedMinutesString}m ${parsedSecondsString}s`;
+
+            let badgeIcon = "📚";
+            let badgeTitleLabel = "Keep Practising";
+            if (scoreRatioPercent >= 90) { badgeIcon = "🏆"; badgeTitleLabel = "Phonics Master"; }
+            else if (scoreRatioPercent >= 70) { badgeIcon = "🌟"; badgeTitleLabel = "Reading Explorer"; }
+            else if (scoreRatioPercent >= 50) { badgeIcon = "👍"; badgeTitleLabel = "Good Reader"; }
+
+            // Clear performance checkpoints states upon completing difficulty tiers runs
+            localStorage.removeItem('phonics_quiz_state_' + targetDifficultyLevel);
+
+            // Map stats contents targets strings elements
+            document.getElementById('badgeDisplayTrophy').innerText = badgeIcon;
+            document.getElementById('badgeDisplayTitle').innerText = badgeTitleLabel;
+            document.getElementById('resLevel').innerText = targetDifficultyLevel.toUpperCase();
+            document.getElementById('resScore').innerText = `${cumulativeUserScore} / 30`;
+            document.getElementById('resPercent').innerText = `${scoreRatioPercent}%`;
+            document.getElementById('resCorrect').innerText = cumulativeUserScore;
+            document.getElementById('resWrong').innerText = absoluteWrongCounts;
+            document.getElementById('resDuration').innerText = absoluteTimeLabel;
+
+            // Prepare static printable sheet lines references values mapping strings
+            document.getElementById('printableMetaLine').innerText = `Track Level: ${targetDifficultyLevel.toUpperCase()} | Final Accuracy Score: ${cumulativeUserScore}/30 (${scoreRatioPercent}%) | Earned Badge Rank: ${badgeTitleLabel}`;
+            
+            triggersConfettiSplashes();
+        }
+
+        // Lightweight Canvas Exploding Confetti Particle Generator Core Engine
+        function triggersConfettiSplashes() {
+            const canvasElement = document.getElementById('celebration-canvas');
+            const context = canvasElement.getContext('2d');
+            canvasElement.width = canvasElement.parentElement.clientWidth;
+            canvasElement.height = canvasElement.parentElement.clientHeight;
+
+            let particlesPool = [];
+            const hexColorMatrix = ['#FF6F61', '#4A90E2', '#2ECC71', '#F1C40F', '#9B59B6', '#34495E'];
+
+            for (let i = 0; i < 60; i++) {
+                particlesPool.push({
+                    x: Math.random() * canvasElement.width,
+                    y: Math.random() * canvasElement.height - canvasElement.height,
+                    r: Math.random() * 4 + 4,
+                    d: Math.random() * canvasElement.height,
+                    color: hexColorMatrix[Math.floor(Math.random() * hexColorMatrix.length)],
+                    tilt: Math.random() * 6 - 3,
+                    tiltAngleStep: Math.random() * 0.05 + 0.02,
+                    angle: 0
+                });
+            }
+
+            function cycleFrame() {
+                context.clearRect(0, 0, canvasElement.width, canvasElement.height);
+                let continueAnimationLoop = false;
+                
+                particlesPool.forEach((p) => {
+                    p.angle += p.tiltAngleStep;
+                    p.y += (Math.cos(p.d) + 2.5 + p.r / 2) / 2;
+                    p.x += Math.sin(p.angle);
+                    p.tilt = Math.sin(p.angle - p.r/2) * 4;
+
+                    if (p.y <= canvasElement.height) continueAnimationLoop = true;
+
+                    context.beginPath();
+                    context.lineWidth = p.r;
+                    context.strokeStyle = p.color;
+                    context.moveTo(p.x + p.tilt + p.r/2, p.y);
+                    context.lineTo(p.x + p.tilt, p.y + p.tilt + p.r/2);
+                    context.stroke();
+                });
+
+                if (continueAnimationLoop) {
+                    requestAnimationFrame(cycleFrame);
+                } else {
+                    context.clearRect(0, 0, canvasElement.width, canvasElement.height);
+                }
+            }
+            cycleFrame();
+        }
+
+        // Fire device native system print routine dialog intercept pipeline
+        function triggerDevicePrinting() {
+            playSoundEffect('click');
+            window.print();
+        }
+    </script>
+</body>
+</html>

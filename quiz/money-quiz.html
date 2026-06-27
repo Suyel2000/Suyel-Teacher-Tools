@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💰 Money Quiz - Master Indian Currency</title>
+    <style>
+        :root {
+            --primary-bg: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --easy-color: #2ec4b6;
+            --medium-color: #ff9f1c;
+            --hard-color: #e71d36;
+            --glass-bg: rgba(255, 255, 255, 0.96);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --text-dark: #2b2d42;
+            --correct-bg: #d4edd2;
+            --correct-border: #c3e6cb;
+            --correct-text: #155724;
+            --wrong-bg: #f8d7da;
+            --wrong-border: #f5c6cb;
+            --wrong-text: #721c24;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--primary-bg);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .decorative-bg {
+            position: absolute;
+            font-size: 3.5rem;
+            opacity: 0.12;
+            pointer-events: none;
+            user-select: none;
+            animation: floatingFloat 8s ease-in-out infinite;
+            z-index: 0;
+        }
+
+        @keyframes floatingFloat {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(15deg); }
+        }
+
+        .quiz-container {
+            width: 100%;
+            max-width: 740px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+            padding: 25px;
+            z-index: 10;
+            position: relative;
+        }
+
+        .header-title {
+            text-align: center;
+            font-size: 2.5rem;
+            color: #0b4f35;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .header-subtitle {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #1f6b4d;
+            margin-bottom: 25px;
+            font-weight: 600;
+        }
+
+        .screen-layout {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .screen-layout.active {
+            display: block;
+        }
+
+        .level-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 22px 25px;
+            margin: 15px 0;
+            border: none;
+            border-radius: 18px;
+            cursor: pointer;
+            color: white;
+            font-size: 1.35rem;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.12);
+        }
+
+        .level-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 22px rgba(0,0,0,0.18);
+        }
+
+        .level-btn span { font-size: 0.95rem; font-weight: 400; opacity: 0.9; display: block; margin-top: 4px; }
+        .level-btn .btn-left { text-align: left; }
+
+        .btn-easy { background: linear-gradient(135deg, #2ec4b6, #0f9f90); }
+        .btn-medium { background: linear-gradient(135deg, #ff9f1c, #e65100); }
+        .btn-hard { background: linear-gradient(135deg, #e71d36, #b7094c); }
+
+        .top-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .badge-pill {
+            background: #11998e;
+            color: white;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 12px;
+            background: rgba(0,0,0,0.06);
+            border-radius: 6px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #38ef7d 0%, #11998e 100%);
+            transition: width 0.3s ease;
+        }
+
+        .graphics-container {
+            display: none; /* Controlled dynamically via JS */
+            width: 100%;
+            min-height: 140px;
+            background: #ffffff;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 15px;
+            border: 2px dashed rgba(0,0,0,0.08);
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.02);
+        }
+
+        .question-text {
+            font-size: 1.3rem;
+            color: var(--text-dark);
+            font-weight: 700;
+            margin-bottom: 20px;
+            line-height: 1.45;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        @media (max-width: 550px) {
+            .options-grid { grid-template-columns: 1fr; }
+            .header-title { font-size: 2rem; }
+        }
+
+        .option-btn {
+            background: white;
+            border: 2px solid rgba(0,0,0,0.06);
+            border-radius: 14px;
+            padding: 18px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-align: center;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background: #f8f9fa;
+            border-color: #11998e;
+            transform: scale(1.01);
+        }
+
+        .option-btn.correct {
+            background-color: var(--correct-bg) !important;
+            border-color: var(--correct-border) !important;
+            color: var(--correct-text) !important;
+        }
+
+        .option-btn.wrong {
+            background-color: var(--wrong-bg) !important;
+            border-color: var(--wrong-border) !important;
+            color: var(--wrong-text) !important;
+        }
+
+        .feedback-box {
+            display: none;
+            padding: 16px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            line-height: 1.5;
+        }
+
+        .feedback-box.correct {
+            display: block;
+            background-color: var(--correct-bg);
+            border-left: 6px solid #28a745;
+            color: var(--correct-text);
+        }
+
+        .feedback-box.wrong {
+            display: block;
+            background-color: var(--wrong-bg);
+            border-left: 6px solid #dc3545;
+            color: var(--wrong-text);
+        }
+
+        .nav-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .action-btn {
+            background: #0b4f35;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .action-btn:hover:not(:disabled) { background: #166c4b; }
+        .action-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+        .btn-menu { background: #6c757d; }
+        .btn-menu:hover { background: #5a6268; }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .summary-card {
+            background: rgba(255,255,255,0.7);
+            padding: 14px;
+            border-radius: 14px;
+            text-align: center;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .summary-card div:first-child { font-size: 0.85rem; color: #555; margin-bottom: 3px; }
+        .summary-card div:last-child { font-size: 1.25rem; font-weight: 700; color: #0b4f35; }
+
+        .badge-showcase {
+            text-align: center;
+            margin: 20px 0;
+            padding: 18px;
+            background: linear-gradient(135deg, #fffde7 0%, #fff9c4 100%);
+            border-radius: 18px;
+            border: 2px dashed #fbc02d;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        #confetti-canvas {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 99; border-radius: 24px;
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            #printable-certificate, #printable-certificate * { visibility: visible; }
+            #printable-certificate { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
+        }
+
+        #printable-certificate {
+            display: none;
+            background: #fff;
+            color: #000;
+            padding: 40px;
+            border: 12px double #0b4f35;
+            text-align: center;
+            margin-top: 20px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="decorative-bg" style="top: 8%; left: 6%;">🪙</div>
+    <div class="decorative-bg" style="bottom: 12%; left: 8%;">🛍️</div>
+    <div class="decorative-bg" style="top: 15%; right: 7%;">💵</div>
+    <div class="decorative-bg" style="bottom: 10%; right: 5%;">🛒</div>
+
+    <div class="quiz-container">
+        <canvas id="confetti-canvas"></canvas>
+
+        <h1 class="header-title">💰 Money Quiz</h1>
+        <p class="header-subtitle">Identify • Count • Calculate • Master Money</p>
+
+        <div id="screen-start" class="screen-layout active">
+            <div style="text-align: center; margin-bottom: 25px; color: var(--text-dark); font-weight: 500;">
+                <p>Welcome to the Interactive Indian Currency Challenge! Select a difficulty level below to solve 50 unique money tasks.</p>
+            </div>
+            <button class="level-btn btn-easy" onclick="QuizEngine.start('easy')">
+                <div class="btn-left">
+                    <div>🟢 Easy Level</div>
+                    <span>Classes 2–3 • Coins, Single Notes, & Identification</span>
+                </div>
+                <div>➡️</div>
+            </button>
+            <button class="level-btn btn-medium" onclick="QuizEngine.start('medium')">
+                <div class="btn-left">
+                    <div>🟡 Medium Level</div>
+                    <span>Classes 3–4 • Mixed Currency, Shopping, & Missing Amount</span>
+                </div>
+                <div>➡️</div>
+            </button>
+            <button class="level-btn btn-hard" onclick="QuizEngine.start('hard')">
+                <div class="btn-left">
+                    <div>🔴 Hard Level</div>
+                    <span>Classes 4–5 • Multi-step Bills, Budgets & Returning Change</span>
+                </div>
+                <div>➡️</div>
+            </button>
+        </div>
+
+        <div id="screen-quiz" class="screen-layout">
+            <div class="top-meta">
+                <div>Tier: <span id="lbl-level" style="text-transform: capitalize; color:#11998e;">-</span></div>
+                <div class="badge-pill">Score: <span id="lbl-score">0</span></div>
+                <div>Q: <span id="lbl-counter">1/50</span></div>
+            </div>
+
+            <div class="progress-bar-container">
+                <div id="progress-fill" class="progress-bar-fill"></div>
+            </div>
+
+            <div class="graphics-container" id="graphics-panel"></div>
+
+            <div class="question-text" id="question-payload-box"></div>
+            <div class="options-grid" id="options-payload-box"></div>
+            <div id="feedback-explanation-panel" class="feedback-box"></div>
+
+            <div class="nav-controls">
+                <button class="action-btn btn-menu" onclick="QuizEngine.quitToMenu()">Menu</button>
+                <div style="display:flex; gap: 10px;">
+                    <button class="action-btn" id="btn-prev" onclick="QuizEngine.navigateStep(-1)">Back</button>
+                    <button class="action-btn" id="btn-next" onclick="QuizEngine.navigateStep(1)">Next ➡️</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-summary" class="screen-layout">
+            <h2 style="text-align: center; color: #0b4f35; margin-bottom: 10px;">🎉 Challenge Completed!</h2>
+            
+            <div class="badge-showcase">
+                <div id="sum-badge-icon" style="font-size:3.5rem;">🏆</div>
+                <h3 id="sum-badge-title" style="font-size: 1.6rem; color:#e65100; margin-top: 5px;">Money Master</h3>
+                <p id="sum-badge-desc" style="color: #4d4d4d; font-size: 0.95rem; margin-top: 4px; padding: 0 10px;"></p>
+            </div>
+
+            <div class="summary-grid">
+                <div class="summary-card"><div>Difficulty Tier</div><div id="sum-tier" style="text-transform: capitalize;">-</div></div>
+                <div class="summary-card"><div>Final Score</div><div id="sum-score">-</div></div>
+                <div class="summary-card"><div>Accuracy</div><div id="sum-pct">-</div></div>
+                <div class="summary-card"><div>Correct Solves</div><div id="sum-correct" style="color:var(--correct-text);">-</div></div>
+                <div class="summary-card"><div>Wrong Steps</div><div id="sum-wrong" style="color:var(--hard-color);">-</div></div>
+                <div class="summary-card"><div>Duration</div><div id="sum-time">-</div></div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+                <button class="level-btn btn-easy" style="margin:0; justify-content:center; font-size:1.1rem; padding:14px;" onclick="window.print()">🖨️ Print Achievement Certificate</button>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <button class="action-btn btn-menu" style="padding:14px;" onclick="QuizEngine.restartTier()">Retry Level</button>
+                    <button class="action-btn" style="padding:14px; background-color:#11998e;" onclick="QuizEngine.quitToMenu()">Change Level</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="printable-certificate">
+            <h1 style="font-size: 2.5rem; letter-spacing: 1px;">CERTIFICATE OF FINANCIAL MATHEMATICS</h1>
+            <p style="font-size: 1.3rem; margin: 20px 0; font-style: italic;">This dynamic credential validates that the participant successfully mastered</p>
+            <h2 style="font-size: 2.2rem; color: #0b4f35; margin-bottom: 10px;">THE INTERACTIVE INDIAN CURRENCY (₹) ENGINE</h2>
+            <p style="font-size: 1.2rem; margin: 10px 0;">Difficulty Level Evaluated: <strong id="cert-tier" style="text-transform: capitalize;"></strong></p>
+            <p style="font-size: 1.5rem; color: #28a745; font-weight: bold; margin: 25px 0;">Performance Verification Score: <span id="cert-score"></span> (<span id="cert-pct"></span>)</p>
+            <div style="margin-top: 60px; display: flex; justify-content: space-around;">
+                <div><div style="border-top: 2px solid #333; width: 200px; margin-top: 40px; padding-top: 5px;">Evaluation Date</div></div>
+                <div><div style="border-top: 2px solid #333; width: 200px; margin-top: 40px; padding-top: 5px;">Quiz Administrator</div></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /*********************************************************
+         * 1. NATIVE SYNTHETIC WEB AUDIO ENGINE
+         *********************************************************/
+        const AudioSynth = {
+            ctx: null,
+            init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+            play(freq, type, duration, volume) {
+                try {
+                    this.init();
+                    let osc = this.ctx.createOscillator();
+                    let gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(volume, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.00001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e){}
+            },
+            click() { this.play(600, 'sine', 0.05, 0.1); },
+            coin() {
+                this.play(987.77, 'sine', 0.08, 0.15);
+                setTimeout(() => this.play(1318.51, 'sine', 0.15, 0.12), 60);
+            },
+            cash() {
+                this.play(800, 'triangle', 0.05, 0.2);
+                setTimeout(() => this.play(1500, 'sine', 0.2, 0.15), 50);
+            },
+            correct() {
+                this.play(523.25, 'triangle', 0.1, 0.15);
+                setTimeout(() => this.play(659.25, 'triangle', 0.1, 0.15), 60);
+                setTimeout(() => this.play(783.99, 'triangle', 0.2, 0.15), 120);
+            },
+            wrong() {
+                this.play(180, 'sawtooth', 0.15, 0.15);
+                setTimeout(() => this.play(130, 'sawtooth', 0.25, 0.15), 110);
+            },
+            badge() {
+                let now = 0;
+                [440, 554.37, 659.25, 880].forEach((f, i) => {
+                    setTimeout(() => this.play(f, 'sine', 0.25, 0.15), now);
+                    now += 100;
+                });
+            }
+        };
+
+        /*********************************************************
+         * 2. COMPLETE INDIAN CURRENCY VECTOR DRAWING ENGINE
+         *********************************************************/
+        const CurrencyDraw = {
+            createSVGElement(tag, attrs) {
+                let el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+                for (let k in attrs) el.setAttribute(k, attrs[k]);
+                return el;
+            },
+            coin(value) {
+                let colors = { 1: ["#b5b5b5", "#d6d6d6"], 2: ["#b5b5b5", "#d6d6d6"], 5: ["#bcaaa4", "#d7ccc8"], 10: ["#b0afac", "#dcdad5"] };
+                let c = colors[value] || ["#c0c0c0", "#e0e0e0"];
+                
+                let svg = this.createSVGElement("svg", { width: "70", height: "70", viewBox: "0 0 70 70" });
+                
+                if (value === 10) {
+                    let outR = this.createSVGElement("circle", { cx: 35, cy: 35, r: 32, fill: "#cca43b", stroke: "#997315", "stroke-width": "1" });
+                    let inR = this.createSVGElement("circle", { cx: 35, cy: 35, r: 22, fill: c[1], stroke: c[0], "stroke-width": "1" });
+                    svg.appendChild(outR);
+                    svg.appendChild(inR);
+                } else {
+                    let base = this.createSVGElement("circle", { cx: 35, cy: 35, r: 31, fill: c[1], stroke: c[0], "stroke-width": "2" });
+                    let rim = this.createSVGElement("circle", { cx: 35, cy: 35, r: 27, fill: "none", stroke: c[0], "stroke-width": "1", "stroke-dasharray": "3,2" });
+                    svg.appendChild(base);
+                    svg.appendChild(rim);
+                }
+
+                let txt = this.createSVGElement("text", { x: 35, y: 41, "text-anchor": "middle", "font-size": "17", "font-weight": "bold", fill: "#333" });
+                txt.textContent = `₹${value}`;
+                svg.appendChild(txt);
+                return svg;
+            },
+            note(value) {
+                let colors = {
+                    10: "#df9857",  // Chocolate Brown
+                    20: "#92a63a",  // Greenish Yellow
+                    50: "#49bad6",  // Fluorescent Blue
+                    100: "#af89be", // Lavender
+                    200: "#e4973c", // Bright Yellow
+                    500: "#98a395"  // Stone Grey
+                };
+                let bg = colors[value] || "#cccccc";
+                
+                let svg = this.createSVGElement("svg", { width: "155", height: "82", viewBox: "0 0 155 82" });
+                
+                let base = this.createSVGElement("rect", { x: 2, y: 2, width: 151, height: 78, rx: 5, fill: bg, stroke: "#444", "stroke-width": "1.5" });
+                svg.appendChild(base);
+                
+                // Security strip
+                let strip = this.createSVGElement("line", { x1: 45, y1: 2, x2: 45, y2: 80, stroke: "#3a7d44", "stroke-width": "2.5", "stroke-dasharray": "6,4" });
+                svg.appendChild(strip);
+                
+                // Watermark circle
+                let wm = this.createSVGElement("circle", { cx: 122, cy: 41, r: 24, fill: "rgba(255,255,255,0.35)", stroke: "rgba(0,0,0,0.05)", "stroke-width": "1" });
+                svg.appendChild(wm);
+
+                // Denomination Text
+                let txt = this.createSVGElement("text", { x: 22, y: 47, "font-size": "20", "font-weight": "900", fill: "#111" });
+                txt.textContent = `₹${value}`;
+                svg.appendChild(txt);
+
+                let rbi = this.createSVGElement("text", { x: 75, y: 16, "font-size": "7", "font-weight": "bold", "text-anchor": "middle", fill: "#222" });
+                rbi.textContent = "RESERVE BANK OF INDIA";
+                svg.appendChild(rbi);
+
+                return svg;
+            },
+            illustration(type) {
+                let svg = this.createSVGElement("svg", { width: "85", height: "85", viewBox: "0 0 85 85" });
+                let main = this.createSVGElement("circle", { cx: 42.5, cy: 42.5, r: 38, fill: "#f1f3f5", stroke: "#ced4da", "stroke-width": "1" });
+                svg.appendChild(main);
+
+                let emo = this.createSVGElement("text", { x: 42.5, y: 53, "text-anchor": "middle", "font-size": "38" });
+                
+                let maps = {
+                    wallet: "👛", purse: "👜", basket: "🧺", register: "🧮",
+                    pencil: "✏️", eraser: "🧼", book: "📚", chocolate: "🍫",
+                    juice: "🧃", toy: "🧸", car: "🚗", ball: "⚽",
+                    apple: "🍎", banana: "🍌", mango: "🥭", tomato: "🍅"
+                };
+                emo.textContent = maps[type] || "🎁";
+                svg.appendChild(emo);
+                return svg;
+            }
+        };
+
+        /*********************************************************
+         * 3. IMMUTABLE SYSTEM COMPONENT QUESTION GENERATOR DATASETS
+         *********************************************************/
+        const QuestionBank = {
+            easy: [
+                { type: "coin", val: 1, q: "Identify this Indian Coin.", o: ["₹1 Coin", "₹2 Coin", "₹5 Coin", "₹10 Coin"], a: "₹1 Coin", e: "The numeric text and shape match the native ₹1 coin." },
+                { type: "coin", val: 2, q: "Which Indian Coin is this?", o: ["₹1 Coin", "₹2 Coin", "₹5 Coin", "₹10 Coin"], a: "₹2 Coin", e: "This visual represents the ₹2 national coin format." },
+                { type: "coin", val: 5, q: "Identify the coin shown in the frame.", o: ["₹5 Coin", "₹1 Coin", "₹2 Coin", "₹10 Coin"], a: "₹5 Coin", e: "This is a thick golden-silverish tinted ₹5 coin." },
+                { type: "coin", val: 10, q: "Identify this bi-metallic coin.", o: ["₹10 Coin", "₹5 Coin", "₹2 Coin", "₹1 Coin"], a: "₹10 Coin", e: "The bi-metallic ring structure belongs uniquely to the ₹10 coin." },
+                { type: "note", val: 10, q: "Identify this currency note.", o: ["₹10 Note", "₹20 Note", "₹50 Note", "₹100 Note"], a: "₹10 Note", e: "The chocolate brown base tint is used for the ₹10 note." },
+                { type: "note", val: 20, q: "Which Indian currency note is this?", o: ["₹20 Note", "₹10 Note", "₹50 Note", "₹100 Note"], a: "₹20 Note", e: "The greenish-yellow hue represents the standard ₹20 note." },
+                { type: "note", val: 50, q: "Identify the note displayed below.", o: ["₹50 Note", "₹100 Note", "₹20 Note", "₹500 Note"], a: "₹50 Note", e: "The bright fluorescent blue color belongs to the ₹50 note." },
+                { type: "note", val: 100, q: "Identify this standard currency note.", o: ["₹100 Note", "₹50 Note", "₹200 Note", "₹10 Note"], a: "₹100 Note", e: "The distinct lavender color tone belongs to the ₹100 note." },
+                { type: "mixed", elements: [{t:"note", v:10}, {t:"note", v:10}], q: "Count the total money shown.", o: ["₹20", "₹10", "₹30", "₹15"], a: "₹20", e: "₹10 + ₹10 = ₹20." },
+                { type: "mixed", elements: [{t:"note", v:50}, {t:"coin", v:5}], q: "Find the total value of this note and coin.", o: ["₹55", "₹50", "₹60", "₹45"], a: "₹55", e: "₹50 + ₹5 = ₹55." },
+                { type: "mixed", elements: [{t:"note", v:20}, {t:"note", v:20}, {t:"coin", v:10}], q: "Add the money together.", o: ["₹50", "₹40", "₹60", "₹30"], a: "₹50", e: "₹20 + ₹20 + ₹10 = ₹50." },
+                { type: "mixed", elements: [{t:"coin", v:5}, {t:"coin", v:2}, {t:"coin", v:1}], q: "Count these pocket change coins.", o: ["₹8", "₹7", "₹10", "₹9"], a: "₹8", e: "₹5 + ₹2 + ₹1 = ₹8." },
+                { type: "mixed", elements: [{t:"note", v:100}, {t:"coin", v:10}], q: "What is the total sum here?", o: ["₹110", "₹101", "₹200", "₹120"], a: "₹110", e: "An asset map of ₹100 and a ₹10 coin simplifies to ₹110." },
+                { type: "illustrate", item: "pencil", q: "A pencil costs ₹10. Which note is exact payment?", o: ["₹10 Note", "₹20 Note", "₹50 Note", "₹100 Note"], a: "₹10 Note", e: "A single ₹10 note pays exactly ₹10 without needing any change." },
+                { type: "illustrate", item: "toy", q: "A toy car costs ₹50. Which note matches its price perfectly?", o: ["₹50 Note", "₹20 Note", "₹10 Note", "₹100 Note"], a: "₹50 Note", e: "The ₹50 note provides the exact matching amount." },
+                { type: "none", q: "Which value is greater?", o: ["₹50", "₹20", "Equal", "None"], a: "₹50", e: "₹50 is worth more than ₹20." },
+                { type: "none", q: "Which value is smaller and cheaper?", o: ["₹15", "₹45", "They match", "₹50"], a: "₹15", e: "₹15 is a lesser numerical value than ₹45." },
+                { type: "mixed", elements: [{t:"coin", v:10}, {t:"coin", v:10}, {t:"coin", v:10}], q: "Count the total value of these three coins.", o: ["₹30", "₹20", "₹40", "₹15"], a: "₹30", e: "10 + 10 + 10 = 30." },
+                { type: "mixed", elements: [{t:"note", v:20}, {t:"coin", v:2}], q: "What is the sum of these items?", o: ["₹22", "₹20", "₹24", "₹40"], a: "₹22", e: "₹20 + ₹2 = ₹22." },
+                { type: "illustrate", item: "eraser", q: "Rohan buys an eraser for ₹5. Which coin pays for it exactly?", o: ["₹5 Coin", "₹1 Coin", "₹2 Coin", "₹10 Coin"], a: "₹5 Coin", e: "The value matches the ₹5 coin directly." },
+                { type: "none", q: "If you have ₹20 and buy a chocolate for ₹12, is your remaining balance more or less than ₹10?", o: ["Less than ₹10", "More than ₹10", "Exactly ₹10", "₹20"], a: "Less than ₹10", e: "₹20 - ₹12 = ₹8, which is less than ₹10." },
+                { type: "mixed", elements: [{t:"note", v:50}, {t:"note", v:50}], q: "Count the total value of these two notes.", o: ["₹100", "₹50", "₹150", "₹200"], a: "₹100", e: "Fifty plus fifty equals exactly one hundred." },
+                { type: "none", q: "Which coin has the highest value among these options?", o: ["₹10 Coin", "₹5 Coin", "₹2 Coin", "₹1 Coin"], a: "₹10 Coin", e: "The ₹10 coin holds the highest face value here." },
+                { type: "none", q: "Which note has the lowest value among these options?", o: ["₹10 Note", "₹20 Note", "₹50 Note", "₹100 Note"], a: "₹10 Note", e: "The ₹10 note is the lowest value note listed." },
+                { type: "mixed", elements: [{t:"coin", v:5}, {t:"coin", v:5}], q: "Two ₹5 coins equal which currency note?", o: ["₹10 Note", "₹20 Note", "₹50 Note", "₹100 Note"], a: "₹10 Note", e: "5 + 5 = 10, which matches a ₹10 note." },
+                { type: "mixed", elements: [{t:"note", v:10}, {t:"note", v:10}, {t:"note", v:10}, {t:"note", v:10}, {t:"note", v:10}], q: "Count these five ₹10 notes.", o: ["₹50", "₹40", "₹60", "₹100"], a: "₹50", e: "Five tens equal 50." },
+                { type: "illustrate", item: "apple", q: "An apple costs ₹25. Which combo is exactly equal to ₹25?", o: ["₹20 Note + ₹5 Coin", "₹10 Note + ₹10 Note", "₹50 Note", "₹20 Note + ₹1 Coin"], a: "₹20 Note + ₹5 Coin", e: "20 + 5 = 25." },
+                { type: "none", q: "Identify the correct symbol used for Indian Currency.", o: ["₹", "$", "¥", "€"], a: "₹", e: "The Rupee symbol (₹) is the official currency symbol of India." },
+                { type: "mixed", elements: [{t:"coin", v:2}, {t:"coin", v:2}], q: "Two ₹2 coins equal how much money?", o: ["₹4", "₹2", "₹5", "₹6"], a: "₹4", e: "2 + 2 = 4." },
+                { type: "none", q: "If a notebook costs ₹35 and a pen costs ₹40, which item is cheaper?", o: ["Notebook", "Pen", "Same Price", "Cannot Tell"], a: "Notebook", e: "₹35 is less than ₹40, so the notebook is cheaper." },
+                { type: "mixed", elements: [{t:"note", v:100}, {t:"note", v:50}], q: "Combine these two high-value notes.", o: ["₹150", "₹100", "₹200", "₹120"], a: "₹150", e: "100 + 50 = 150." },
+                { type: "mixed", elements: [{t:"coin", v:10}, {t:"coin", v:5}], q: "Add a ₹10 coin and a ₹5 coin.", o: ["₹15", "₹20", "₹25", "₹12"], a: "₹15", e: "10 + 5 = 15." },
+                { type: "none", q: "You need to pay ₹15. You give a ₹20 note. How much change back do you get?", o: ["₹5", "₹10", "₹2", "₹0"], a: "₹5", e: "20 - 15 = 5." },
+                { type: "mixed", elements: [{t:"note", v:20}, {t:"coin", v:5}], q: "Count the money.", o: ["₹25", "₹30", "₹20", "₹15"], a: "₹25", e: "20 + 5 = 25." },
+                { type: "mixed", elements: [{t:"note", v:10}, {t:"coin", v:2}, {t:"coin", v:1}], q: "Count the total value.", o: ["₹13", "₹12", "₹15", "₹14"], a: "₹13", e: "10 + 2 + 1 = 13." },
+                { type: "none", q: "Which note is worth the most?", o: ["₹100 Note", "₹50 Note", "₹20 Note", "₹10 Note"], a: "₹100 Note", e: "One hundred holds the highest numerical value here." },
+                { type: "none", q: "True or False: A ₹50 note can buy a shirt that costs ₹45.", o: ["True", "False"], a: "True", e: "Yes, because ₹50 is more than the cost of ₹45." },
+                { type: "mixed", elements: [{t:"coin", v:1}, {t:"coin", v:1}, {t:"coin", v:1}], q: "Three ₹1 coins equal...", o: ["₹3", "₹1", "₹2", "₹5"], a: "₹3", e: "1 + 1 + 1 = 3." },
+                { type: "none", q: "Which amount is the lowest?", o: ["₹9", "₹12", "₹19", "₹10"], a: "₹9", e: "9 is the lowest number listed." },
+                { type: "mixed", elements: [{t:"note", v:50}, {t:"coin", v:10}], q: "Count the value.", o: ["₹60", "₹70", "₹55", "₹51"], a: "₹60", e: "50 + 10 = 60." },
+                { type: "none", q: "How many ₹1 coins do you need to make ₹10?", o: ["10 coins", "5 coins", "20 coins", "1 coin"], a: "10 coins", e: "Each coin is worth ₹1, so you need 10 of them." },
+                { type: "mixed", elements: [{t:"note", v:20}, {t:"note", v:10}], q: "Count the notes.", o: ["₹30", "₹40", "₹25", "₹50"], a: "₹30", e: "20 + 10 = 30." },
+                { type: "none", q: "A balloon costs ₹7. You have a ₹10 coin. Do you have enough money?", o: ["Yes", "No"], a: "Yes", e: "Yes, because ₹10 is greater than ₹7." },
+                { type: "mixed", elements: [{t:"note", v:100}, {t:"note", v:100}], q: "Two ₹100 notes make...", o: ["₹200", "₹100", "₹300", "₹400"], a: "₹200", e: "100 + 100 = 200." },
+                { type: "mixed", elements: [{t:"coin", v:5}, {t:"coin", v:2}], q: "Count the coins.", o: ["₹7", "₹6", "₹8", "₹10"], a: "₹7", e: "5 + 2 = 7." },
+                { type: "none", q: "Which note is blue?", o: ["₹50 Note", "₹10 Note", "₹20 Note", "₹100 Note"], a: "₹50 Note", e: "The modern Mahatma Gandhi New Series ₹50 note is fluorescent blue." },
+                { type: "none", q: "Which note is lavender purple?", o: ["₹100 Note", "₹10 Note", "₹50 Note", "₹500 Note"], a: "₹100 Note", e: "The modern ₹100 note is lavender purple." },
+                { type: "mixed", elements: [{t:"note", v:20}, {t:"note", v:20}], q: "Count the total value.", o: ["₹40", "₹30", "₹50", "₹20"], a: "₹40", e: "20 + 20 = 40." },
+                { type: "none", q: "If you give a shopkeeper a ₹10 note for a ₹6 candy, how much change back do you get?", o: ["₹4", "₹5", "₹3", "₹2"], a: "₹4", e: "10 - 6 = 4." },
+                { type: "none", q: "How many ₹5 coins do you need to make ₹10?", o: ["2 coins", "5 coins", "1 coin", "3 coins"], a: "2 coins", e: "5 + 5 = 10, so you need 2 coins." }
+            ],
+            medium: [
+                { type: "mixed", elements: [{t:"note", v:50}, {t:"note", v:20}, {t:"note", v:10}], q: "Calculate the total sum of these mixed notes.", o: ["₹80", "₹70", "₹90", "₹100"], a: "₹80", e: "₹50 + ₹20 + ₹10 = ₹80." },
+                { type: "illustrate", item: "basket", q: "A pencil costs ₹18 and an eraser costs ₹12. Find the total combined cost.", o: ["₹30", "₹28", "₹32", "₹40"], a: "₹30", e: "₹18 + ₹12 = ₹30." },
+                { type: "none", q: "Which combination of notes adds up exactly to ₹100?", o: ["₹50 + ₹20 + ₹20 + ₹10", "₹50 + ₹50 + ₹10", "₹50 + ₹20 + ₹10", "₹100 + ₹10"], a: "₹50 + ₹20 + ₹20 + ₹10", e: "50 + 20 + 20 + 10 = 100." },
+                { type: "none", q: "Find the missing amount: ₹20 + ___ = ₹70", o: ["₹50", "₹40", "₹60", "₹30"], a: "₹50", e: "Subtract 20 from 70: 70 - 20 = 50." },
+                { type: "illustrate", item: "chocolate", q: "A chocolate costs ₹45 and a juice box costs ₹30. How much money do you need to buy both?", o: ["₹75", "₹70", "₹80", "₹65"], a: "₹75", e: "45 + 30 = 75." },
+                { type: "mixed", elements: [{t:"note", v:100}, {t:"note", v:50}, {t:"coin", v:10}], q: "Calculate the total amount.", o: ["₹160", "₹150", "₹170", "₹200"], a: "₹160", e: "100 + 50 + 10 = 160." },
+                { type: "none", q: "If you have ₹85 and spend ₹40 on a notebook, how much money is left with you?", o: ["₹45", "₹35", "₹55", "₹40"], a: "₹45", e: "85 - 40 = 45." },
+                { type: "none", q: "How many ₹20 notes are needed to make exactly ₹100?", o: ["5 notes", "4 notes", "6 notes", "10 notes"], a: "5 notes", e: "100 divided by 20 is 5. Five ₹20 notes equal ₹100." },
+                { type: "illustrate", item: "book", q: "A drawing book costs ₹65. You give a ₹100 note. How much change will you get back?", o: ["₹35", "₹45", "₹25", "₹30"], a: "₹35", e: "100 - 65 = 35." },
+                { type: "none", q: "Find the missing item: ₹50 + ₹20 + ___ = ₹95", o: ["₹25", "₹15", "₹20", "₹35"], a: "₹25", e: "50 + 20 = 70. 95 - 70 = 25." },
+                { type: "mixed", elements: [{t:"note", v:200}, {t:"note", v:50}], q: "Count the total value of these notes.", o: ["₹250", "₹220", "₹300", "₹205"], a: "₹250", e: "200 + 50 = 250." },
+                { type: "illustrate", item: "mango", q: "One kg of mangoes costs ₹80. How much will half a kg cost?", o: ["₹40", "₹50", "₹60", "₹30"], a: "₹40", e: "Half of 80 is 40 (80 / 2 = 40)." },
+                { type: "none", q: "Amit has three ₹20 notes. How much total money does he have?", o: ["₹60", "₹40", "₹50", "₹80"], a: "₹60", e: "3 x 20 = 60." },
+                { type: "illustrate", item: "toy", q: "A small toy costs ₹24. You want to pay with exact coins. Which combo works?", o: ["Two ₹10 coins + Two ₹2 coins", "Four ₹5 coins", "One ₹20 note + One ₹5 coin", "Three ₹10 coins"], a: "Two ₹10 coins + Two ₹2 coins", e: "10 + 10 + 2 + 2 = 24." },
+                { type: "none", q: "Which is greater: ₹120 or four ₹20 notes?", o: ["₹120", "Four ₹20 notes", "They are equal", "None"], a: "₹120", e: "Four ₹20 notes equal ₹80. ₹120 is greater than ₹80." },
+                { type: "illustrate", item: "banana", q: "If one banana costs ₹6, how much do 5 bananas cost?", o: ["₹30", "₹25", "₹35", "₹24"], a: "₹30", e: "6 x 5 = 30." },
+                { type: "none", q: "Add: ₹45.50 + ₹10.50", o: ["₹56.00", "₹55.00", "₹56.50", "₹50.00"], a: "₹56.00", e: "45 + 10 = 55. 50p + 50p = 1 Rupee. 55 + 1 = 56." },
+                { type: "none", q: "How many ₹10 coins make a ₹50 note?", o: ["5 coins", "10 coins", "2 coins", "4 coins"], a: "5 coins", e: "50 / 10 = 5." },
+                { type: "illustrate", item: "juice", q: "A juice carton costs ₹32. You pay with a ₹50 note. What is your change?", o: ["₹18", "₹12", "₹28", "₹22"], a: "₹18", e: "50 - 32 = 18." },
+                { type: "none", q: "Find the total value: ₹200 + ₹100 + ₹50", o: ["₹350", "₹300", "₹400", "₹250"], a: "₹350", e: "200 + 100 + 50 = 350." },
+                { type: "none", q: "Subtract: ₹150 - ₹65", o: ["₹85", "₹75", "₹95", "₹90"], a: "₹85", e: "150 - 65 = 85." },
+                { type: "none", q: "If you have ₹120, can you buy a book for ₹85 and a pen for ₹40?", o: ["No, you need ₹5 more", "Yes, with ₹5 left", "Yes, with exact money", "No, you need ₹15 more"], a: "No, you need ₹5 more", e: "Total cost = 85 + 40 = 125. You have 120, so you need 5 more." },
+                { type: "mixed", elements: [{t:"note", v:20}, {t:"coin", v:10}, {t:"coin", v:5}], q: "Count the total value.", o: ["₹35", "₹25", "₹40", "₹30"], a: "₹35", e: "20 + 10 + 5 = 35." },
+                { type: "none", q: "What is double the value of a ₹200 note?", o: ["₹400", "₹200", "₹500", "₹600"], a: "₹400", e: "200 x 2 = 400." },
+                { type: "illustrate", item: "tomato", q: "A basket of tomatoes costs ₹90. A shopkeeper offers a ₹15 discount. What is the new price?", o: ["₹75", "₹85", "₹80", "₹70"], a: "₹75", e: "90 - 15 = 75." },
+                { type: "none", q: "How many ₹50 notes make up a ₹200 note?", o: ["4 notes", "2 notes", "3 notes", "5 notes"], a: "4 notes", e: "200 / 50 = 4." },
+                { type: "none", q: "Find the total: 4 coins of ₹5 each + 2 coins of ₹2 each.", o: ["₹24", "₹22", "₹20", "₹26"], a: "₹24", e: "4 x 5 = 20. 2 x 2 = 4. 20 + 4 = 24." },
+                { type: "none", q: "Find the missing amount: ₹100 - ___ = ₹45", o: ["₹55", "₹45", "₹65", "₹35"], a: "₹55", e: "100 - 45 = 55." },
+                { type: "illustrate", item: "car", q: "A toy car costs ₹110. You have one ₹100 note. How much more do you need?", o: ["One ₹10 Coin", "One ₹5 Coin", "One ₹2 Coin", "Nothing"], a: "One ₹10 Coin", e: "110 - 100 = 10." },
+                { type: "none", q: "Which costs more: Item A at ₹145 or Item B at ₹154?", o: ["Item B", "Item A", "They cost the same", "Cannot Tell"], a: "Item B", e: "154 is greater than 145." },
+                { type: "mixed", elements: [{t:"note", v:100}, {t:"coin", v:5}, {t:"coin", v:2}], q: "Count the total value.", o: ["₹107", "₹105", "₹102", "₹110"], a: "₹107", e: "100 + 5 + 2 = 107." },
+                { type: "none", q: "If 3 ice cream cones cost ₹90, what is the cost of 1 ice cream cone?", o: ["₹30", "₹20", "₹40", "₹25"], a: "₹30", e: "90 / 3 = 30." },
+                { type: "none", q: "Add: ₹72 + ₹28", o: ["₹100", "₹90", "₹110", "₹98"], a: "₹100", e: "72 + 28 = 100." },
+                { type: "none", q: "You have a ₹50 note. You buy popcorn for ₹35. What change is returned?", o: ["₹15", "₹25", "₹5", "₹10"], a: "₹15", e: "50 - 35 = 15." },
+                { type: "none", q: "How many ₹10 notes equal a ₹100 note?", o: ["10 notes", "5 notes", "20 notes", "1 note"], a: "10 notes", e: "100 / 10 = 10." },
+                { type: "mixed", elements: [{t:"note", v:50}, {t:"note", v:20}, {t:"coin", v:5}], q: "Count the money.", o: ["₹75", "₹70", "₹85", "₹65"], a: "₹75", e: "50 + 20 + 5 = 75." },
+                { type: "none", q: "Estimate the closest total: An item costs ₹42 and another costs ₹19.", o: ["Around ₹60", "Around ₹50", "Around ₹70", "Around ₹80"], a: "Around ₹60", e: "42 + 19 = 61, which rounds closest to 60." },
+                { type: "none", q: "Subtract: ₹200 - ₹125", o: ["₹75", "₹65", "₹85", "₹100"], a: "₹75", e: "200 - 125 = 75." },
+                { type: "none", q: "If you save ₹15 every week, how much will you save in 4 weeks?", o: ["₹60", "₹45", "₹50", "₹30"], a: "₹60", e: "15 x 4 = 60." },
+                { type: "illustrate", item: "ball", q: "A cricket ball costs ₹55. You pay with three ₹20 notes. What is your change?", o: ["₹5", "₹10", "₹15", "₹2"], a: "₹5", e: "Three ₹20 notes equal ₹60. 60 - 55 = 5." },
+                { type: "none", q: "Find the total value: ₹130 + ₹70", o: ["₹200", "₹190", "₹300", "₹150"], a: "₹200", e: "130 + 70 = 200." },
+                { type: "none", q: "Find the missing amount: ___ + ₹35 = ₹100", o: ["₹65", "₹55", "₹75", "₹45"], a: "₹65", e: "100 - 35 = 65." },
+                { type: "none", q: "Which note value is exactly halfway between ₹0 and ₹200?", o: ["₹100 Note", "₹50 Note", "₹20 Note", "₹10 Note"], a: "₹100 Note", e: "Half of 200 is 100." },
+                { type: "mixed", elements: [{t:"note", v:20}, {t:"note", v:20}, {t:"note", v:10}], q: "Count the total value.", o: ["₹50", "₹40", "₹60", "₹45"], a: "₹50", e: "20 + 20 + 10 = 50." },
+                { type: "none", q: "A textbook costs ₹92. You have ₹70. How much more do you need?", o: ["₹22", "₹12", "₹20", "₹32"], a: "₹22", e: "92 - 70 = 22." },
+                { type: "none", q: "How many ₹2 coins are needed to match a ₹20 note?", o: ["10 coins", "5 coins", "20 coins", "8 coins"], a: "10 coins", e: "20 / 2 = 10." },
+                { type: "mixed", elements: [{t:"note", v:100}, {t:"coin", v:10}, {t:"coin", v:5}], q: "Count the money.", o: ["₹115", "₹110", "₹105", "₹120"], a: "₹115", e: "100 + 10 + 5 = 115." },
+                { type: "none", q: "Add: ₹125 + ₹35", o: ["₹160", "₹150", "₹155", "₹170"], a: "₹160", e: "125 + 35 = 160." },
+                { type: "none", q: "If you buy a toy for ₹42 and give the shopkeeper a ₹50 note, what change do you get back?", o: ["₹8", "₹6", "₹10", "₹5"], a: "₹8", e: "50 - 42 = 8." },
+                { type: "none", q: "What is the total value of five ₹10 coins?", o: ["₹50", "₹40", "₹60", "₹100"], a: "₹50", e: "5 x 10 = 50." }
+            ],
+            hard: [
+                { type: "illustrate", item: "book", q: "A backpack costs ₹350 and a water bottle costs ₹120. Calculate the total bill.", o: ["₹470", "₹450", "₹490", "₹460"], a: "₹470", e: "₹350 + ₹120 = ₹470." },
+                { type: "none", q: "A customer buys items worth ₹375 and hands over a ₹500 note. Calculate the exact change to be returned.", o: ["₹125", "₹135", "₹115", "₹150"], a: "₹125", e: "₹500 - ₹375 = ₹125." },
+                { type: "none", q: "Karan has ₹250. He buys a storybook for ₹185. How much money does he have left?", o: ["₹65", "₹75", "₹55", "₹60"], a: "₹65", e: "₹250 - ₹185 = ₹65." },
+                { type: "none", q: "Which of these item combinations is the most expensive?", o: ["₹300 + ₹250", "₹400 + ₹120", "₹150 + ₹380", "₹500 + ₹20"], a: "₹300 + ₹250", e: "300 + 250 = 550, which is higher than 520, 530, or 520." },
+                { type: "mixed", elements: [{t:"note", v:500}, {t:"note", v:200}], q: "What is the total sum of these two notes?", o: ["₹700", "₹600", "₹800", "₹520"], a: "₹700", e: "500 + 200 = 700." },
+                { type: "none", q: "A box of crayons costs ₹120. The shopkeeper sells it at a 15% discount (or ₹18 off). What is the final price?", o: ["₹102", "₹108", "₹112", "₹100"], a: "₹102", e: "120 - 18 = 102." },
+                { type: "none", q: "Raran wants to buy 4 board games. Each game costs ₹220. How much total money does she need?", o: ["₹880", "₹840", "₹860", "₹900"], a: "₹880", e: "220 x 4 = 880." },
+                { type: "none", q: "Find the total value: Two ₹200 notes + Three ₹50 notes.", o: ["₹550", "₹450", "₹500", "₹600"], a: "₹550", e: "2 x 200 = 400. 3 x 50 = 150. 400 + 150 = 550." },
+                { type: "none", q: "A student has a budget of ₹1,000. He buys a school bag for ₹580 and geometry box for ₹240. How much budget remains?", o: ["₹180", "₹200", "₹160", "₹220"], a: "₹180", e: "580 + 240 = 820. 1000 - 820 = 180." },
+                { type: "none", q: "Best Buy Check: Pack X has 3 pens for ₹45. Pack Y has 5 pens for ₹70. Which is cheaper per single pen?", o: ["Pack Y", "Pack X", "They cost the same", "Cannot be determined"], a: "Pack Y", e: "Pack X pen = 45/3 = ₹15 each. Pack Y pen = 70/5 = ₹14 each. Pack Y is cheaper." },
+                { type: "none", q: "Add these amounts: ₹340.75 + ₹125.25", o: ["₹466.00", "₹465.00", "₹465.50", "₹460.00"], a: "₹466.00", e: "340 + 125 = 465. 0.75 + 0.25 = 1. 465 + 1 = 466." },
+                { type: "none", q: "If 12 notebooks cost ₹480, what is the calculated cost of 5 notebooks?", o: ["₹200", "₹240", "₹180", "₹220"], a: "₹200", e: "Cost of 1 book = 480 / 12 = ₹40. Cost of 5 books = 40 x 5 = ₹200." },
+                { type: "none", q: "You purchase groceries worth ₹830. You pay with one ₹500 note and four ₹100 notes. What is the correct change back?", o: ["₹70", "₹60", "₹80", "₹50"], a: "₹70", e: "Total money given = 500 + 400 = 900. Change = 900 - 830 = 70." },
+                { type: "none", q: "Find the missing amount: ₹460 + ___ - ₹120 = ₹500", o: ["₹160", "₹140", "₹150", "₹180"], a: "₹160", e: "460 - 120 = 340. 500 - 340 = 160." },
+                { type: "none", q: "An item costs ₹2,500. If its price drops by ₹450, what is its new value?", o: ["₹2,050", "₹2,150", "₹1,950", "₹2,100"], a: "₹2,050", e: "2500 - 450 = 2050." },
+                { type: "none", q: "How many ₹50 notes are needed to equal a single ₹500 note?", o: ["10 notes", "5 notes", "20 notes", "8 notes"], a: "10 notes", e: "500 / 50 = 10." },
+                { type: "none", q: "Rahul saves ₹45 per day. How many days will it take him to save exactly ₹900?", o: ["20 days", "15 days", "25 days", "30 days"], a: "20 days", e: "900 / 45 = 20." },
+                { type: "none", q: "A cricket kit costs ₹1,450. Tarun has one ₹500 note and four ₹200 notes. How much more money does he need?", o: ["₹150", "₹250", "₹50", "₹100"], a: "₹150", e: "Tarun has 500 + 800 = 1300. He needs 1450 - 1300 = 150 more." },
+                { type: "none", q: "Calculate: ₹1,000 - (₹320 + ₹415)", o: ["₹265", "₹275", "₹255", "₹280"], a: "₹265", e: "320 + 415 = 735. 1000 - 735 = 265." },
+                { type: "none", q: "Three friends split a restaurant dinner bill of ₹720 equally. How much does each person pay?", o: ["₹240", "₹220", "₹260", "₹230"], a: "₹240", e: "720 / 3 = 240." },
+                { type: "none", q: "A train ticket costs ₹385. How much will tickets cost for a family of 3?", o: ["₹1,155", "₹1,145", "₹1,165", "₹1,150"], a: "₹1,155", e: "385 x 3 = 1155." },
+                { type: "none", q: "Subtract: ₹500.00 - ₹264.50", o: ["₹235.50", "₹236.50", "₹234.50", "₹245.50"], a: "₹235.50", e: "500 - 264.50 = 235.50." },
+                { type: "none", q: "A shopkeeper buys an item for ₹340 and sells it for ₹410. How much profit does he make?", o: ["₹70", "₹60", "₹80", "₹50"], a: "₹70", e: "410 - 340 = 70." },
+                { type: "none", q: "How many ₹20 notes are required to match the value of two ₹500 notes?", o: ["50 notes", "40 notes", "60 notes", "25 notes"], a: "50 notes", e: "Two ₹500 notes equal ₹1000. 1000 / 20 = 50 notes." },
+                { type: "none", q: "A water tank costs ₹890. If you receive a ₹120 discount, what is the final cost?", o: ["₹770", "₹760", "₹780", "₹790"], a: "₹770", e: "890 - 120 = 770." },
+                { type: "none", q: "Add: ₹1,250 + ₹850", o: ["₹2,100", "₹2,000", "₹2,200", "₹1,900"], a: "₹2,100", e: "1250 + 850 = 2100." },
+                { type: "none", q: "A uniform shirt costs ₹299. Find the cost of 4 shirts.", o: ["₹1,196", "₹1,192", "₹1,200", "₹1,186"], a: "₹1,196", e: "299 x 4 = (300 - 1) x 4 = 1200 - 4 = 1196." },
+                { type: "none", q: "You have ₹600. You buy three books at ₹140 each. How much money do you have left?", o: ["₹180", "₹200", "₹160", "₹220"], a: "₹180", e: "3 x 140 = 420. 600 - 420 = 180." },
+                { type: "none", q: "Find the missing amount: ₹1,500 - ___ = ₹850", o: ["₹650", "₹550", "₹750", "₹600"], a: "₹650", e: "1500 - 850 = 650." },
+                { type: "none", q: "If 10kg of basmati rice costs ₹750, what is the cost of 4kg of rice?", o: ["₹300", "₹280", "₹320", "₹250"], a: "₹300", e: "Cost per kg = 750 / 10 = ₹75. Cost of 4kg = 75 x 4 = ₹300." },
+                { type: "none", q: "A smartphone case costs ₹240. The seller increases the price by ₹45. What is the new cost?", o: ["₹285", "₹275", "₹295", "₹65"], a: "₹285", e: "240 + 45 = 285." },
+                { type: "none", q: "Calculate the total: Four ₹200 notes + Two ₹100 notes + Five ₹10 coins.", o: ["₹1,050", "₹1,000", "₹1,100", "₹950"], a: "₹1,050", e: "4x200=800. 2x100=200. 5x10=50. 800+200+50 = 1050." },
+                { type: "none", q: "A worker earns ₹400 per day. How much does he earn in 6 days?", o: ["₹2,400", "₹2,000", "₹2,200", "₹2,600"], a: "₹2,400", e: "400 x 6 = 2400." },
+                { type: "none", q: "Divide ₹1,050 equally among 5 charity collection boxes. How much goes into each box?", o: ["₹210", "₹220", "₹200", "₹250"], a: "₹210", e: "1050 / 5 = 210." },
+                { type: "none", q: "A toy track set costs ₹670. You pay with a ₹500 note and a ₹200 note. What change is returned?", o: ["₹30", "₹20", "₹40", "₹50"], a: "₹30", e: "Total given = 700. 700 - 670 = 30." },
+                { type: "none", q: "Add: ₹1,580 + ₹420", o: ["₹2,000", "₹1,900", "₹2,100", "₹1,980"], a: "₹2,000", e: "1580 + 420 = 2000." },
+                { type: "none", q: "A customer pays ₹1,000 for a ₹745 service bill. What change is returned?", o: ["₹255", "₹245", "₹265", "₹235"], a: "₹255", e: "1000 - 745 = 255." },
+                { type: "none", q: "How many ₹50 notes are required to make exactly ₹1,500?", o: ["30 notes", "20 notes", "25 notes", "15 notes"], a: "30 notes", e: "1500 / 50 = 30." },
+                { type: "none", q: "If you save ₹120 every month, how much will you save in 8 months?", o: ["₹960", "₹840", "₹880", "₹920"], a: "₹960", e: "₹120 x 8 = 960." },
+                { type: "none", q: "Calculate the total cost: A jacket for ₹780 and shoes for ₹640.", o: ["₹1,420", "₹1,400", "₹1,440", "₹1,380"], a: "₹1,420", e: "780 + 640 = 1420." },
+                { type: "none", q: "Find the missing amount: ₹2,000 - ___ = ₹1,250", o: ["₹750", "₹650", "₹850", "₹700"], a: "₹750", e: "2000 - 1250 = 750." },
+                { type: "none", q: "An electronics kit costs ₹840. The shop offers a ₹95 discount. What is the final price?", o: ["₹745", "₹755", "₹735", "₹765"], a: "₹745", e: "840 - 95 = 745." },
+                { type: "none", q: "A group of 4 students buys a gift for ₹600, sharing the cost equally. How much does each student pay?", o: ["₹150", "₹120", "₹160", "₹140"], a: "₹150", e: "600 / 4 = 150." },
+                { type: "none", q: "Calculate: 6 notes of ₹200 each = ___", o: ["₹1,200", "₹1,000", "₹1,400", "₹1,500"], a: "₹1,200", e: "6 x 200 = 1200." },
+                { type: "none", q: "A desk costs ₹1,350 and a chair costs ₹450. Find the total price for both.", o: ["₹1,800", "₹1,700", "₹1,400", "₹1,750"], a: "₹1,800", e: "1350 + 450 = 1800." },
+                { type: "none", q: "You have ₹450. You need to purchase a book for ₹520. How much more money do you need?", o: ["₹70", "₹60", "₹80", "₹50"], a: "₹70", e: "520 - 450 = 70." },
+                { type: "none", q: "How many ₹10 coins are needed to equal the value of two ₹200 notes?", o: ["40 coins", "20 coins", "50 coins", "80 coins"], a: "40 coins", e: "2 x 200 = 400. 400 / 10 = 40 coins." },
+                { type: "none", q: "Add: ₹1,630 + ₹370", o: ["₹2,000", "₹1,900", "₹2,100", "₹1,990"], a: "₹2,000", e: "1630 + 370 = 2000." },
+                { type: "none", q: "A watch costs ₹1,250. The seller gives a discount and sells it for ₹1,120. Find the discount amount.", o: ["₹130", "₹120", "₹140", "₹150"], a: "₹130", e: "1250 - 1120 = 130." },
+                { type: "none", q: "Calculate total value: Three ₹500 notes = ___", o: ["₹1,500", "₹1,200", "₹1,800", "₹1,000"], a: "₹1,500", e: "3 x 500 = 1500." }
+            ]
+        };
+
+        /*********************************************************
+         * 4. MAIN QUIZ ENGINE & STATE MACHINE INTERACTIVE LOGIC
+         *********************************************************/
+        let QuizEngine = {
+            level: '',
+            questions: [],
+            index: 0,
+            score: 0,
+            userAnswers: [],
+            timeStart: null,
+
+            shuffleArray(arr) {
+                for (let i = arr.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [arr[i], arr[j]] = [arr[j], arr[i]];
+                }
+                return arr;
+            },
+
+            start(levelTier) {
+                this.level = levelTier;
+                let dataPool = QuestionBank[levelTier] || QuestionBank.easy;
+                
+                this.questions = this.shuffleArray(JSON.parse(JSON.stringify(dataPool))).slice(0, 50);
+                this.index = 0;
+                this.score = 0;
+                this.userAnswers = new Array(50).fill(null);
+                this.timeStart = new Date();
+
+                document.getElementById('lbl-level').innerText = levelTier;
+                document.getElementById('screen-start').classList.remove('active');
+                document.getElementById('screen-quiz').classList.add('active');
+
+                AudioSynth.cash();
+                this.renderQuestion();
+            },
+
+            renderQuestion() {
+                if (this.index >= this.questions.length) return;
+                const currentQuestion = this.questions[this.index];
+
+                document.getElementById('lbl-score').innerText = this.score;
+                document.getElementById('lbl-counter').innerText = `${this.index + 1} / ${this.questions.length}`;
+                document.getElementById('progress-fill').style.width = `${((this.index + 1) / this.questions.length) * 100}%`;
+
+                // Handle conditional visibility of the graphics box
+                const panel = document.getElementById('graphics-panel');
+                if (currentQuestion.type === "none") {
+                    panel.style.display = "none";
+                    panel.innerHTML = '';
+                } else {
+                    panel.style.display = "flex";
+                    this.buildGraphicPanel(currentQuestion);
+                }
+
+                document.getElementById('question-payload-box').innerText = currentQuestion.q;
+
+                const optionsBox = document.getElementById('options-payload-box');
+                optionsBox.innerHTML = '';
+
+                if (!currentQuestion._shuffledOptions) {
+                    currentQuestion._shuffledOptions = this.shuffleArray([...currentQuestion.o]);
+                }
+
+                currentQuestion._shuffledOptions.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'option-btn';
+                    btn.innerText = opt;
+                    btn.onclick = () => this.selectOption(btn, opt);
+
+                    if (this.userAnswers[this.index] !== null) {
+                        btn.disabled = true;
+                        if (opt === currentQuestion.a) btn.classList.add('correct');
+                        if (opt === this.userAnswers[this.index] && opt !== currentQuestion.a) btn.classList.add('wrong');
+                    }
+                    optionsBox.appendChild(btn);
+                });
+
+                const fbPanel = document.getElementById('feedback-explanation-panel');
+                if (this.userAnswers[this.index] !== null) {
+                    let picked = this.userAnswers[this.index];
+                    if (picked === currentQuestion.a) {
+                        fbPanel.className = "feedback-box correct";
+                        fbPanel.innerHTML = `<strong>✅ Correct!</strong><br>${currentQuestion.e}`;
+                    } else if (picked === "") {
+                        fbPanel.className = "feedback-box wrong";
+                        fbPanel.innerHTML = `<strong>⚠️ Skipped.</strong> Correct Answer: <em>${currentQuestion.a}</em><br>${currentQuestion.e}`;
+                    } else {
+                        fbPanel.className = "feedback-box wrong";
+                        fbPanel.innerHTML = `<strong>❌ Incorrect.</strong> Correct Answer: <em>${currentQuestion.a}</em><br>${currentQuestion.e}`;
+                    }
+                } else {
+                    fbPanel.style.display = 'none';
+                }
+
+                document.getElementById('btn-prev').disabled = (this.index === 0);
+                document.getElementById('btn-next').innerText = (this.index === this.questions.length - 1) ? "Finish 🏁" : "Next ➡️";
+            },
+
+            buildGraphicPanel(q) {
+                const panel = document.getElementById('graphics-panel');
+                panel.innerHTML = '';
+
+                if (q.type === "coin") {
+                    panel.appendChild(CurrencyDraw.coin(q.val));
+                } else if (q.type === "note") {
+                    panel.appendChild(CurrencyDraw.note(q.val));
+                } else if (q.type === "illustrate") {
+                    panel.appendChild(CurrencyDraw.illustration(q.item));
+                } else if (q.type === "mixed" && q.elements) {
+                    q.elements.forEach(el => {
+                        if (el.t === "note") panel.appendChild(CurrencyDraw.note(el.v));
+                        if (el.t === "coin") panel.appendChild(CurrencyDraw.coin(el.v));
+                    });
+                }
+            },
+
+            selectOption(btn, value) {
+                const currentQuestion = this.questions[this.index];
+                this.userAnswers[this.index] = value;
+
+                const buttons = document.querySelectorAll('.option-btn');
+                buttons.forEach(b => b.disabled = true);
+
+                const fbPanel = document.getElementById('feedback-explanation-panel');
+
+                if (value === currentQuestion.a) {
+                    this.score++;
+                    AudioSynth.correct();
+                    btn.classList.add('correct');
+                    fbPanel.className = "feedback-box correct";
+                    fbPanel.innerHTML = `<strong>✅ Correct!</strong><br>${currentQuestion.e}`;
+                } else {
+                    AudioSynth.wrong();
+                    btn.classList.add('wrong');
+                    buttons.forEach(b => { if (b.innerText === currentQuestion.a) b.classList.add('correct'); });
+                    fbPanel.className = "feedback-box wrong";
+                    fbPanel.innerHTML = `<strong>❌ Incorrect.</strong> Correct Answer: <em>${currentQuestion.a}</em><br>${currentQuestion.e}`;
+                }
+                document.getElementById('lbl-score').innerText = this.score;
+            },
+
+            navigateStep(direction) {
+                AudioSynth.click();
+                if (direction === 1 && this.userAnswers[this.index] === null) {
+                    if (!confirm("Proceed without an answer? This question will be marked as skipped.")) return;
+                    this.userAnswers[this.index] = ""; 
+                }
+
+                this.index += direction;
+
+                if (this.index >= this.questions.length) {
+                    this.showSummary();
+                } else if (this.index < 0) {
+                    this.index = 0;
+                } else {
+                    this.renderQuestion();
+                }
+            },
+
+            quitToMenu() {
+                AudioSynth.click();
+                document.getElementById('screen-quiz').className = "screen-layout";
+                document.getElementById('screen-summary').className = "screen-layout";
+                document.getElementById('screen-start').className = "screen-layout active";
+            },
+
+            restartTier() {
+                this.start(this.level);
+            },
+
+            showSummary() {
+                const totalSeconds = Math.floor((new Date() - this.timeStart) / 1000);
+                const m = Math.floor(totalSeconds / 60);
+                const s = totalSeconds % 60;
+                const scorePercent = Math.round((this.score / this.questions.length) * 100);
+
+                let badgeIcon = "📚", badgeHead = "Keep Practising", badgeInfo = "Keep training your change calculations and counting maps.";
+                if (scorePercent >= 90) {
+                    badgeIcon = "🏆"; badgeHead = "Money Master";
+                    badgeInfo = "Incredible! You have complete precision over note additions, multi-step bills, and exact wallet combinations.";
+                } else if (scorePercent >= 70) {
+                    badgeIcon = "🌟"; badgeHead = "Smart Shopper";
+                    badgeInfo = "Splendid job! You can calculate change balances and handle multi-item transactions smoothly.";
+                } else if (scorePercent >= 50) {
+                    badgeIcon = "👍"; badgeHead = "Good Learner";
+                    badgeInfo = "Good core skills. With a little more practice, you will master faster mental currency estimates.";
+                }
+
+                document.getElementById('sum-tier').innerText = this.level;
+                document.getElementById('sum-score').innerText = `${this.score} / ${this.questions.length}`;
+                document.getElementById('sum-pct').innerText = `${scorePercent}%`;
+                document.getElementById('sum-correct').innerText = this.score;
+                document.getElementById('sum-wrong').innerText = this.questions.length - this.score;
+                document.getElementById('sum-time').innerText = `${m}m ${s}s`;
+
+                document.getElementById('sum-badge-icon').innerText = badgeIcon;
+                document.getElementById('sum-badge-title').innerText = badgeHead;
+                document.getElementById('sum-badge-desc').innerText = badgeInfo;
+
+                document.getElementById('cert-tier').innerText = this.level;
+                document.getElementById('cert-score').innerText = `${this.score}/${this.questions.length}`;
+                document.getElementById('cert-pct').innerText = `${scorePercent}%`;
+
+                document.getElementById('screen-quiz').classList.remove('active');
+                document.getElementById('screen-summary').classList.add('active');
+
+                AudioSynth.badge();
+                if (scorePercent >= 70) { launchConfettiEffect(); }
+            }
+        };
+
+        /*********************************************************
+         * 5. CONFETTI EFFECT
+         *********************************************************/
+        function launchConfettiEffect() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.parentElement.offsetWidth;
+            canvas.height = canvas.parentElement.offsetHeight;
+
+            let count = 75;
+            let pieces = [];
+            const palette = ['#ff9f1c', '#2ec4b6', '#e71d36', '#38ef7d', '#fff'];
+
+            for (let i = 0; i < count; i++) {
+                pieces.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    r: Math.random() * 4 + 4,
+                    d: Math.random() * canvas.height,
+                    color: palette[Math.floor(Math.random() * palette.length)],
+                    tilt: Math.random() * 2,
+                    tiltInc: Math.random() * 0.04
+                });
+            }
+
+            function drawFrame() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let processing = false;
+                pieces.forEach(p => {
+                    p.tilt += p.tiltInc;
+                    p.y += 2.5;
+                    p.x += Math.sin(p.tilt);
+                    
+                    if (p.y <= canvas.height) { processing = true; }
+                    
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.fill();
+                });
+                if (processing) requestAnimationFrame(drawFrame);
+            }
+            drawFrame();
+        }
+    </script>
+</body>
+</html>

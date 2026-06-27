@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🕒 Time & Clock Quiz Engine</title>
+    <style>
+        :root {
+            --primary-bg: linear-gradient(135deg, #FF6B6B 0%, #4D96FF 100%);
+            --easy-color: #2EC4B6;
+            --medium-color: #FF9F1C;
+            --hard-color: #E71D36;
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --text-dark: #2B2D42;
+            --correct-bg: #D4EDDA;
+            --correct-border: #C3E6CB;
+            --correct-text: #155724;
+            --wrong-bg: #F8D7DA;
+            --wrong-border: #F5C6CB;
+            --wrong-text: #721C24;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--primary-bg);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .bg-element {
+            position: absolute;
+            font-size: 3.5rem;
+            opacity: 0.12;
+            pointer-events: none;
+            user-select: none;
+            animation: floatingFloat 10s ease-in-out infinite;
+            z-index: 0;
+        }
+
+        @keyframes floatingFloat {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-25px) rotate(20deg); }
+        }
+
+        .quiz-container {
+            width: 100%;
+            max-width: 720px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+            padding: 25px;
+            z-index: 10;
+            position: relative;
+        }
+
+        .header-title {
+            text-align: center;
+            font-size: 2.3rem;
+            color: #1A1A40;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .header-subtitle {
+            text-align: center;
+            font-size: 1.05rem;
+            color: #4D4D75;
+            margin-bottom: 25px;
+            font-weight: 600;
+        }
+
+        .screen-layout {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .screen-layout.active {
+            display: block;
+        }
+
+        .level-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 20px 25px;
+            margin: 15px 0;
+            border: none;
+            border-radius: 18px;
+            cursor: pointer;
+            color: white;
+            font-size: 1.3rem;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+        }
+
+        .level-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .level-btn span { font-size: 0.9rem; font-weight: 400; opacity: 0.95; display: block; margin-top: 4px; }
+        .level-btn .btn-left { text-align: left; }
+
+        .btn-easy { background: linear-gradient(135deg, #2EC4B6, #0A9396); }
+        .btn-medium { background: linear-gradient(135deg, #FF9F1C, #E65100); }
+        .btn-hard { background: linear-gradient(135deg, #E71D36, #B7094C); }
+
+        .top-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .badge-pill {
+            background: #4D96FF;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 12px;
+            background: rgba(0,0,0,0.08);
+            border-radius: 6px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #00F2FE 0%, #4FACFE 100%);
+            transition: width 0.3s ease;
+        }
+
+        .graphics-container {
+            width: 100%;
+            height: 200px;
+            background: #FFFFFF;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 2px dashed rgba(0,0,0,0.08);
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.03);
+        }
+
+        .question-text {
+            font-size: 1.25rem;
+            color: var(--text-dark);
+            font-weight: 700;
+            margin-bottom: 20px;
+            line-height: 1.45;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        @media (max-width: 550px) {
+            .options-grid { grid-template-columns: 1fr; }
+            .header-title { font-size: 1.9rem; }
+        }
+
+        .option-btn {
+            background: white;
+            border: 2px solid rgba(0,0,0,0.06);
+            border-radius: 14px;
+            padding: 16px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background: #F8F9FA;
+            border-color: #4D96FF;
+            transform: scale(1.01);
+        }
+
+        .option-btn.correct {
+            background-color: var(--correct-bg) !important;
+            border-color: var(--correct-border) !important;
+            color: var(--correct-text) !important;
+        }
+
+        .option-btn.wrong {
+            background-color: var(--wrong-bg) !important;
+            border-color: var(--wrong-border) !important;
+            color: var(--wrong-text) !important;
+        }
+
+        .feedback-box {
+            display: none;
+            padding: 16px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            line-height: 1.5;
+        }
+
+        .feedback-box.correct {
+            display: block;
+            background-color: var(--correct-bg);
+            border-left: 6px solid #28A745;
+            color: var(--correct-text);
+        }
+
+        .feedback-box.wrong {
+            display: block;
+            background-color: var(--wrong-bg);
+            border-left: 6px solid #DC3545;
+            color: var(--wrong-text);
+        }
+
+        .nav-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .action-btn {
+            background: #1A1A40;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .action-btn:hover:not(:disabled) { background: #303070; }
+        .action-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+        .btn-menu { background: #6C757D; }
+        .btn-menu:hover { background: #5A6268; }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .summary-card {
+            background: rgba(255,255,255,0.6);
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .summary-card div:first-child { font-size: 0.85rem; color: #555; margin-bottom: 3px; }
+        .summary-card div:last-child { font-size: 1.15rem; font-weight: 700; color: #1A1A40; }
+
+        .badge-showcase {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: linear-gradient(135deg, #FFF9E6 0%, #FFE0B2 100%);
+            border-radius: 16px;
+            border: 2px dashed #FFB74D;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        #confetti-canvas {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 99; border-radius: 24px;
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            #printable-certificate, #printable-certificate * { visibility: visible; }
+            #printable-certificate { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
+        }
+
+        #printable-certificate {
+            display: none;
+            background: #FFF;
+            color: #000;
+            padding: 40px;
+            border: 12px double #1A1A40;
+            text-align: center;
+            margin-top: 20px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-element" style="top: 8%; left: 6%;">🕒</div>
+    <div class="bg-element" style="bottom: 12%; left: 8%;">⏱️</div>
+    <div class="bg-element" style="top: 15%; right: 7%;">⏳</div>
+    <div class="bg-element" style="bottom: 10%; right: 5%;">⏰</div>
+
+    <div class="quiz-container">
+        <canvas id="confetti-canvas"></canvas>
+
+        <h1 class="header-title">🕒 Time Mastery Quiz</h1>
+        <p class="header-subtitle">Clocks • Intervals • Durations • Timelines</p>
+
+        <div id="screen-start" class="screen-layout active">
+            <div style="text-align: center; margin-bottom: 20px; color: var(--text-dark); font-weight: 500;">
+                <p>Welcome! Test your time calculations across 50 purely clock-and-time targeted challenges.</p>
+            </div>
+            <button class="level-btn btn-easy" onclick="QuizController.start('easy')">
+                <div class="btn-left">
+                    <div>🟢 Easy Level</div>
+                    <span>Full Hours & Half Hours (AM/PM)</span>
+                </div>
+                <div>➡️</div>
+            </button>
+            <button class="level-btn btn-medium" onclick="QuizController.start('medium')">
+                <div class="btn-left">
+                    <div>🟡 Medium Level</div>
+                    <span>Quarters, 5-Minute Intervals & Simple Durations</span>
+                </div>
+                <div>➡️</div>
+            </button>
+            <button class="level-btn btn-hard" onclick="QuizController.start('hard')">
+                <div class="btn-left">
+                    <div>🔴 Hard Level</div>
+                    <span>To the Minute, 24-Hour Shifts & Advanced Timelines</span>
+                </div>
+                <div>➡️</div>
+            </button>
+        </div>
+
+        <div id="screen-quiz" class="screen-layout">
+            <div class="top-meta">
+                <div>Tier: <span id="lbl-level" style="text-transform: capitalize; color:#4D96FF;">-</span></div>
+                <div class="badge-pill">Score: <span id="lbl-score">0</span></div>
+                <div>Q: <span id="lbl-counter">1/50</span></div>
+            </div>
+
+            <div class="progress-bar-container">
+                <div id="progress-fill" class="progress-bar-fill"></div>
+            </div>
+
+            <div class="graphics-container" id="graphics-panel"></div>
+
+            <div class="question-text" id="question-payload-box"></div>
+            <div class="options-grid" id="options-payload-box"></div>
+            <div id="feedback-explanation-panel" class="feedback-box"></div>
+
+            <div class="nav-controls">
+                <button class="action-btn btn-menu" onclick="QuizController.quitToMenu()">Menu</button>
+                <div style="display:flex; gap: 10px;">
+                    <button class="action-btn" id="btn-prev" onclick="QuizController.navigateStep(-1)">Back</button>
+                    <button class="action-btn" id="btn-next" onclick="QuizController.navigateStep(1)">Next ➡️</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-summary" class="screen-layout">
+            <h2 style="text-align: center; color: #1A1A40; margin-bottom: 10px;">🎉 Tier Completed!</h2>
+            
+            <div class="badge-showcase">
+                <div class="badge-icon" id="sum-badge-icon" style="font-size:3.5rem;">🏆</div>
+                <h3 id="sum-badge-title" style="font-size: 1.5rem; color:#E65100; margin-top: 5px;">Time Titan</h3>
+                <p id="sum-badge-desc" style="color: #4D4D75; font-size: 0.95rem; margin-top: 4px; padding: 0 10px;"></p>
+            </div>
+
+            <div class="summary-grid">
+                <div class="summary-card"><div>Difficulty Tier</div><div id="sum-tier" style="text-transform: capitalize;">-</div></div>
+                <div class="summary-card"><div>Final Score</div><div id="sum-score">-</div></div>
+                <div class="summary-card"><div>Accuracy</div><div id="sum-pct">-</div></div>
+                <div class="summary-card"><div>Correct Tasks</div><div id="sum-correct" style="color:var(--correct-text);">-</div></div>
+                <div class="summary-card"><div>Wrong Mistakes</div><div id="sum-wrong" style="color:var(--hard-color);">-</div></div>
+                <div class="summary-card"><div>Time Tracker</div><div id="sum-time">-</div></div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+                <button class="level-btn btn-easy" style="margin:0; justify-content:center; font-size:1.1rem; padding:14px;" onclick="window.print()">🖨️ Print Achievement Certificate</button>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <button class="action-btn btn-menu" style="padding:14px;" onclick="QuizController.restartTier()">Retry Level</button>
+                    <button class="action-btn" style="padding:14px; background-color:#4D96FF;" onclick="QuizController.quitToMenu()">Change Level</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="printable-certificate">
+            <h1 style="font-size: 2.5rem; letter-spacing: 1px;">CERTIFICATE OF TIME MASTERY</h1>
+            <p style="font-size: 1.3rem; margin: 20px 0; font-style: italic;">This dynamic credential validates that the participant successfully solved</p>
+            <h2 style="font-size: 2rem; color: #1A1A40; margin-bottom: 10px;">THE INTERACTIVE CHRONOLOGY MATHEMATICS ENGINE</h2>
+            <p style="font-size: 1.2rem; margin: 10px 0;">Difficulty Level Evaluated: <strong id="cert-tier" style="text-transform: capitalize;"></strong></p>
+            <p style="font-size: 1.5rem; color: #28A745; font-weight: bold; margin: 25px 0;">Performance Verification Score: <span id="cert-score"></span> (<span id="cert-pct"></span>)</p>
+            <div style="margin-top: 50px; display: flex; justify-content: space-around;">
+                <div><div style="border-top: 2px solid #333; width: 200px; margin-top: 40px; padding-top: 5px;">Evaluation Date</div></div>
+                <div><div style="border-top: 2px solid #333; width: 200px; margin-top: 40px; padding-top: 5px;">Quiz Administrator</div></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /*********************************************************
+         * 1. NATIVE AUDIO BACKBONE
+         *********************************************************/
+        const AudioEngine = {
+            ctx: null,
+            init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+            play(freq, type, duration, volume) {
+                try {
+                    this.init();
+                    let osc = this.ctx.createOscillator();
+                    let gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(volume, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.00001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e){}
+            },
+            click() { this.play(500, 'sine', 0.05, 0.1); },
+            correct() {
+                this.play(523.25, 'triangle', 0.1, 0.15);
+                setTimeout(() => this.play(659.25, 'triangle', 0.2, 0.15), 70);
+            },
+            wrong() {
+                this.play(200, 'sawtooth', 0.12, 0.1);
+                setTimeout(() => this.play(150, 'sawtooth', 0.2, 0.1), 100);
+            }
+        };
+
+        /*********************************************************
+         * 2. 100% PURE CLOCK & TIME DATASETS (50 ITEMS EACH TIER)
+         *********************************************************/
+        const RawQuestionBank = {
+            easy: [
+                { type: "clock", h: 3, m: 0, q: "Look at the clock face. What time is shown?", o: ["3:00", "12:15", "12:03", "4:00"], a: "3:00", e: "The short hour hand points right at 3 and the long minute hand points to 12. That means it is exactly 3 o'clock!" },
+                { type: "clock", h: 8, m: 30, q: "Look at the clock face. What time is shown?", o: ["8:30", "6:40", "9:30", "8:06"], a: "8:30", e: "The hour hand is past 8, and the minute hand points to 6, which indicates half past or 30 minutes." },
+                { type: "clock", h: 10, m: 0, q: "What time is shown on this analogue clock?", o: ["10:00", "12:10", "11:00", "9:00"], a: "10:00", e: "Hour hand at 10, minute hand at 12 reads precisely 10:00." },
+                { type: "clock", h: 5, m: 30, q: "Identify the time on the dial.", o: ["5:30", "6:30", "5:06", "4:30"], a: "5:30", e: "Minute hand on 6 means 30 minutes past, and the hour hand has crossed 5. That's 5:30!" },
+                { type: "clock", h: 1, m: 0, q: "Identify the time on the dial.", o: ["1:00", "12:05", "2:00", "12:01"], a: "1:00", e: "The minute hand is at 12 and the hour hand is at 1. That means it is exactly 1:00." },
+                { type: "clock", h: 6, m: 0, q: "Which hand on an analogue clock tells us the hours?", o: ["The short hand", "The long hand", "The thin ticking red hand", "The digital screen"], a: "The short hand", e: "The short hand is the hour hand. It moves slowly from number to number each hour." },
+                { type: "clock", h: 12, m: 0, q: "What does the long hand on a clock keep track of?", o: ["Minutes", "Hours", "Days", "Years"], a: "Minutes", e: "The long hand is the minute hand. It loops around the entire dial every 60 minutes." },
+                { type: "digital-display", timeStr: "07:00 AM", q: "If the sun is just rising and you are eating breakfast, is it AM or PM?", o: ["AM", "PM", "Midnight", "Sunset Time"], a: "AM", e: "AM stands for morning hours from midnight up until midday lunch." },
+                { type: "digital-display", timeStr: "07:30 PM", q: "Which time marker represents a normal evening hour when families eat dinner?", o: ["7:30 PM", "7:30 AM", "2:30 AM", "12:30 AM"], a: "7:30 PM", e: "PM handles afternoon and evening hours. 7:30 PM is evening dinner time." },
+                { type: "clock", h: 4, m: 0, q: "If it is 4:00 now, what time was it exactly one hour ago?", o: ["3:00", "5:00", "4:30", "2:00"], a: "3:00", e: "Count backwards by one hour: 4 - 1 = 3 o'clock." },
+                { type: "clock", h: 10, m: 0, q: "If it is 9:00 now, what time will it be in exactly 1 hour?", o: ["10:00", "8:00", "11:00", "9:30"], a: "10:00", e: "Count forward one hour on the line: 9 + 1 = 10 o'clock." },
+                { type: "timeline", t1: "Sunrise", t2: "School Bells", q: "School sessions typically begin during which quadrant of the day?", o: ["Morning", "Night", "Evening", "Midnight"], a: "Morning", e: "Morning hours follow sunrise, when school classes start." },
+                { type: "timeline", t1: "Sunset", t2: "Moon Out", q: "The stars are glowing brightly in the dark sky. What time domain is this?", o: ["Night", "Afternoon", "Morning", "Noon"], a: "Night", e: "When the sky becomes completely dark after sunset, it is night." },
+                { type: "digital-display", timeStr: "02:00", q: "Match this digital clock time to its layout reading.", o: ["2 o'clock", "Half past 2", "12:02", "2 minutes past 12"], a: "2 o'clock", e: "02:00 stands for 2 hours and 00 minutes, which is exactly 2 o'clock." },
+                { type: "digital-display", timeStr: "06:30", q: "Match this digital clock time to its description text.", o: ["Half past 6", "6 o'clock", "Half past 7", "12:06"], a: "Half past 6", e: "30 minutes represents a half-hour slice, meaning half past 6." },
+                { type: "clock", h: 11, m: 0, q: "Read the clock face.", o: ["11:00", "12:11", "10:00", "12:00"], a: "11:00", e: "Hour hand at 11, minute hand at 12 is precisely 11:00." },
+                { type: "clock", h: 7, m: 30, q: "Read the clock face.", o: ["7:30", "8:30", "6:30", "7:06"], a: "7:30", e: "Hour hand past 7 and minute hand directly at 6 means 7:30." },
+                { type: "clock", h: 12, m: 0, q: "When both clock hands point straight up at the number 12, what time is it?", o: ["12:00", "6:00", "12:30", "1:00"], a: "12:00", e: "Both hands overlap at the 12 position when it is 12 o'clock." },
+                { type: "clock", h: 9, m: 0, q: "Read the time shown on the dial.", o: ["9:00", "12:45", "10:00", "8:00"], a: "9:00", e: "Short hand at 9 and long hand at 12 indicates 9 o'clock." },
+                { type: "timeline", t1: "Afternoon", t2: "Sunset Glow", q: "What segment of the daytime timeline immediately follows the afternoon?", o: ["Evening", "Morning", "Midnight", "Dawn"], a: "Evening", e: "As afternoon finishes and the sun sets, evening arrives." },
+                { type: "digital-display", timeStr: "09:00 PM", q: "You climb into bed to fall asleep at 9:00 ____.", o: ["PM", "AM", "Noon", "Midnight"], a: "PM", e: "Night sleep hours fall within the PM cycle of the day." },
+                { type: "clock", h: 2, m: 0, q: "Read the clock face.", o: ["2:00", "12:10", "3:00", "1:00"], a: "2:00", e: "Hour hand at 2 and minute hand at 12 is 2:00." },
+                { type: "clock", h: 4, m: 30, q: "Read the clock face.", o: ["4:30", "5:30", "3:30", "4:06"], a: "4:30", e: "Hour hand has passed 4, and the minute hand points to 6, which is 4:30." },
+                { type: "clock", h: 6, m: 0, q: "Where does the hour hand point when it is exactly 6:00?", o: ["Directly at 6", "Directly at 12", "Directly at 3", "Between 6 and 7"], a: "Directly at 6", e: "At exactly 6:00, the hour hand points directly at 6 while the minute hand points to 12." },
+                { type: "clock", h: 12, m: 30, q: "Read this dial time carefully.", o: ["12:30", "1:30", "6:00", "11:30"], a: "12:30", e: "The hour hand is midway between 12 and 1, and the minute hand points to 6, indicating 12:30." },
+                { type: "digital-display", timeStr: "11:00 AM", q: "If it is 11:00 AM, it is late in the...", o: ["Morning", "Night", "Evening", "Afternoon"], a: "Morning", e: "11:00 AM is one hour before noon, making it late morning." },
+                { type: "digital-display", timeStr: "12:00 AM", q: "Midnight is represented on digital clocks as...", o: ["12:00 AM", "12:00 PM", "06:00 PM", "11:59 PM"], a: "12:00 AM", e: "The transition to a new day at midnight starts at 12:00 AM." },
+                { type: "digital-display", timeStr: "12:00 PM", q: "Noon or lunch midday is written on digital screens as...", o: ["12:00 PM", "12:00 AM", "12:30 AM", "11:00 AM"], a: "12:00 PM", e: "12:00 PM indicates noon, the middle of the waking day." },
+                { type: "timeline", t1: "00:00", t2: "24 Hours", q: "How many total hours exist inside one complete full day?", o: ["24 hours", "12 hours", "60 hours", "48 hours"], a: "24 hours", e: "A single complete day includes 24 hours (12 hours AM and 12 hours PM)." },
+                { type: "digital-display", timeStr: "09:00", q: "What time value is shown here?", o: ["9 o'clock", "12:09", "Half past 9", "9:30"], a: "9 o'clock", e: "The display has 9 hours and 00 minutes, meaning 9 o'clock." },
+                { type: "digital-display", timeStr: "11:30", q: "What time is shown on this display?", o: ["11:30", "12:30", "11:03", "Half past 12"], a: "11:30", e: "The reading shows 11 hours and 30 minutes, or 11:30." },
+                { type: "digital-display", timeStr: "04:00 PM", q: "If you are watching afternoon cartoons at 4:00, is it AM or PM?", o: ["PM", "AM", "Midnight", "Noon"], a: "PM", e: "Afternoon hours past 12:00 noon use PM markers." },
+                { type: "clock", h: 7, m: 0, q: "Read the clock face.", o: ["7:00", "12:35", "8:00", "6:00"], a: "7:00", e: "Short hand at 7 and long hand at 12 means exactly 7:00." },
+                { type: "clock", h: 9, m: 30, q: "Read the clock face.", o: ["9:30", "10:30", "8:30", "9:06"], a: "9:30", e: "Hour hand is past 9, and the minute hand points to 6, giving 9:30." },
+                { type: "digital-display", timeStr: "08:00 AM", q: "Which time occurs earliest in a standard school day?", o: ["8:00 AM", "11:00 AM", "1:00 PM", "5:00 PM"], a: "8:00 AM", e: "8:00 AM is breakfast time, which happens before the other times." },
+                { type: "digital-display", timeStr: "10:00 PM", q: "Which of these timestamps represents the latest point in a day?", o: ["10:00 PM", "2:00 PM", "9:00 AM", "6:00 PM"], a: "10:00 PM", e: "10:00 PM is late at night, making it the latest time listed." },
+                { type: "digital-display", timeStr: "01:00", q: "How many minutes are inside one single complete hour?", o: ["60 minutes", "12 minutes", "24 minutes", "100 minutes"], a: "60 minutes", e: "An hour consists of exactly 60 minutes." },
+                { type: "clock", h: 5, m: 0, q: "Read the clock face.", o: ["5:00", "12:25", "6:00", "4:00"], a: "5:00", e: "Hour hand at 5 and minute hand at 12 reads 5 o'clock." },
+                { type: "clock", h: 2, m: 30, q: "Read the clock face.", o: ["2:30", "3:30", "1:30", "2:06"], a: "2:30", e: "The hour hand is past 2, and the minute hand points to 6, which indicates 2:30." },
+                { type: "clock", h: 8, m: 0, q: "Read the clock face.", o: ["8:00", "12:40", "9:00", "7:00"], a: "8:00", e: "Hour hand at 8 and minute hand at 12 represents 8:00." },
+                { type: "clock", h: 11, m: 30, q: "Read the clock face.", o: ["11:30", "12:30", "10:30", "11:06"], a: "11:30", e: "The hour hand is past 11, and the minute hand points to 6, indicating 11:30." },
+                { type: "digital-display", timeStr: "03:00", q: "If it is 2:00 now, what time will it be in 1 hour?", o: ["3:00", "1:00", "2:30", "4:00"], a: "3:00", e: "Add 1 hour to the time: 2 + 1 = 3 o'clock." },
+                { type: "digital-display", timeStr: "07:00", q: "If it is 8:00 now, what time was it 1 hour ago?", o: ["7:00", "9:00", "8:30", "6:00"], a: "7:00", e: "Subtract 1 hour from the time: 8 - 1 = 7 o'clock." },
+                { type: "clock", h: 12, m: 0, q: "Which clock hand moves faster and loops the dial every hour?", o: ["The long minute hand", "The short hour hand", "The frame border", "The center pin"], a: "The long minute hand", e: "The long hand is the minute hand. It tracks minutes and moves faster than the hour hand." },
+                { type: "digital-display", timeStr: "06:00 AM", q: "Waking up at sunrise happens around...", o: ["6:00 AM", "6:00 PM", "12:00 PM", "11:00 PM"], a: "6:00 AM", e: "Sunrise occurs in the morning, which uses AM markers." },
+                { type: "digital-display", timeStr: "04:30 PM", q: "Playing at the park after school happens around...", o: ["4:30 PM", "4:30 AM", "1:30 AM", "2:00 AM"], a: "4:30 PM", e: "Afternoon playtime occurs after midday, which uses PM markers." },
+                { type: "clock", h: 10, m: 30, q: "Read the clock face.", o: ["10:30", "11:30", "9:30", "10:06"], a: "10:30", e: "The hour hand is past 10, and the minute hand points to 6, which indicates 10:30." },
+                { type: "clock", h: 1, m: 30, q: "Read the clock face.", o: ["1:30", "2:30", "12:30", "1:06"], a: "1:30", e: "The hour hand is past 1, and the minute hand points to 6, which indicates 1:30." },
+                { type: "clock", h: 4, m: 0, q: "Read the clock face.", o: ["4:00", "12:20", "5:00", "3:00"], a: "4:00", e: "Hour hand at 4 and minute hand at 12 reads 4 o'clock." },
+                { type: "clock", h: 9, m: 30, q: "Another common term for the time 9:30 is...", o: ["Half past 9", "Quarter past 9", "9 o'clock", "Quarter to 10"], a: "Half past 9", e: "30 minutes represents a half-hour slice, which is called half past 9." }
+            ],
+            medium: [
+                { type: "clock", h: 4, m: 15, q: "Read the clock face.", o: ["4:15", "3:45", "4:30", "5:15"], a: "4:15", e: "The minute hand points directly to 3, which is 15 minutes past the hour. This is quarter past 4 or 4:15." },
+                { type: "clock", h: 6, m: 45, q: "Read the clock face.", o: ["6:45", "6:15", "7:45", "6:09"], a: "6:45", e: "The minute hand points to 9, which means 15 minutes until 7:00. This is 6:45." },
+                { type: "clock", h: 2, m: 10, q: "What time is shown on this clock?", o: ["2:10", "10:10", "2:02", "3:10"], a: "2:10", e: "The hour hand has passed 2, and the minute hand points to 2, which represents 10 minutes (2 x 5 = 10)." },
+                { type: "clock", h: 9, m: 25, q: "What time is shown on this clock?", o: ["9:25", "5:45", "9:05", "10:25"], a: "9:25", e: "The hour hand is past 9, and the minute hand points to 5, which represents 25 minutes (5 x 5 = 25)." },
+                { type: "digital-display", timeStr: "08:15", q: "What is another common term for 8:15?", o: ["Quarter past 8", "Quarter to 8", "Half past 8", "8 hours sharp"], a: "Quarter past 8", e: "15 minutes past an hour is called a quarter past." },
+                { type: "digital-display", timeStr: "01:45", q: "What is another common term for 1:45?", o: ["Quarter to 2", "Quarter to 1", "Quarter past 1", "Half past 1"], a: "Quarter to 2", e: "1:45 means it is 15 minutes before 2:00, which is quarter to 2." },
+                { type: "timeline", t1: "4:00 PM Start", t2: "6:00 PM End", q: "Soccer practice starts at 4:00 PM and ends at 6:00 PM. How long did it last?", o: ["2 hours", "1 hour", "3 hours", "30 minutes"], a: "2 hours", e: "Subtract the start hour from the end hour: 6 - 4 = 2 hours." },
+                { type: "timeline", t1: "10:30 AM", t2: "11:30 AM", q: "Jenny started reading at 10:30 AM and finished at 11:30 AM. How long did she read?", o: ["1 hour", "2 hours", "30 minutes", "90 minutes"], a: "1 hour", e: "From 10:30 to 11:30 is exactly one full hour." },
+                { type: "timeline", t1: "7:00 AM Wake", t2: "7:45 AM Breakfast", q: "How many minutes pass between waking up at 7:00 AM and eating breakfast at 7:45 AM?", o: ["45 minutes", "30 minutes", "1 hour", "15 minutes"], a: "45 minutes", e: "The difference between 7:00 and 7:45 is 45 minutes." },
+                { type: "clock", h: 10, m: 45, q: "Read the clock face.", o: ["10:45", "10:15", "11:45", "9:45"], a: "10:45", e: "The minute hand is at 9, which means 15 minutes before 11:00. This is 10:45." },
+                { type: "clock", h: 1, m: 15, q: "Read the clock face.", o: ["1:15", "12:45", "1:30", "2:15"], a: "1:15", e: "The minute hand points directly to 3, meaning it is 15 minutes past 1:00." },
+                { type: "clock", h: 12, m: 5, q: "What time is shown on this analogue clock?", o: ["12:05", "1:00", "12:01", "5:12"], a: "12:05", e: "The hour hand is at 12 and the minute hand points to 1, which represents 5 minutes past." },
+                { type: "clock", h: 5, m: 20, q: "What time is shown on this clock?", o: ["5:20", "4:20", "5:04", "6:20"], a: "5:20", e: "The hour hand is past 5, and the minute hand points to 4, which represents 20 minutes (4 x 5 = 20)." },
+                { type: "clock", h: 11, m: 40, q: "Read the clock face.", o: ["11:40", "12:40", "11:08", "10:40"], a: "11:40", e: "The hour hand is approaching 12, and the minute hand points to 8, which represents 40 minutes (8 x 5 = 40)." },
+                { type: "digital-display", timeStr: "03:15", q: "Convert this digital display into text format.", o: ["Quarter past 3", "Quarter to 3", "Quarter to 4", "3 o'clock"], a: "Quarter past 3", e: "15 minutes past 3 is called quarter past 3." },
+                { type: "digital-display", timeStr: "05:45", q: "Convert this digital display into text format.", o: ["Quarter to 6", "Quarter to 5", "Quarter past 5", "Half past 5"], a: "Quarter to 6", e: "5:45 means there are 15 minutes left until 6:00, which is quarter to 6." },
+                { type: "timeline", t1: "2:30 PM Movie", t2: "3 Hours Later", q: "If you go to a movie at 2:30 PM and it runs for exactly 3 hours, what time does it finish?", o: ["5:30 PM", "4:30 PM", "5:30 AM", "3:30 PM"], a: "5:30 PM", e: "Add 3 hours to the hour value: 2 + 3 = 5, keeping the minutes the same. It finishes at 5:30 PM." },
+                { type: "timeline", t1: "3:00 PM Bake", t2: "45 Mins Later", q: "A cake needs to bake for 45 minutes. If it goes into the oven at 3:00 PM, when will it be done?", o: ["3:45 PM", "4:00 PM", "3:30 PM", "4:45 PM"], a: "3:45 PM", e: "Add 45 minutes to 3:00 to get 3:45 PM." },
+                { type: "digital-display", timeStr: "02:00", q: "What is the total number of minutes in 2 full hours?", o: ["120 minutes", "60 minutes", "100 minutes", "90 minutes"], a: "120 minutes", e: "One hour has 60 minutes, so two hours have 60 x 2 = 120 minutes." },
+                { type: "clock", h: 8, m: 55, q: "Read the clock face carefully.", o: ["8:55", "9:55", "8:11", "9:11"], a: "8:55", e: "The hour hand is nearly at 9, and the minute hand points to 11 (11 x 5 = 55). This is 8:55." },
+                { type: "clock", h: 3, m: 35, q: "Read the clock face.", o: ["3:35", "4:35", "3:07", "2:35"], a: "3:35", e: "The hour hand is between 3 and 4, and the minute hand points to 7 (7 x 5 = 35). This is 3:35." },
+                { type: "clock", h: 7, m: 20, q: "Read the clock face.", o: ["7:20", "8:20", "7:04", "6:20"], a: "7:20", e: "The hour hand is past 7, and the minute hand points to 4 (4 x 5 = 20). This is 7:20." },
+                { type: "digital-display", timeStr: "12:15", q: "Read this digital time configuration.", o: ["Quarter past 12", "Quarter to 12", "Quarter to 1", "12 o'clock"], a: "Quarter past 12", e: "12:15 means 15 minutes past 12, which is quarter past 12." },
+                { type: "digital-display", timeStr: "09:45", q: "Read this digital time configuration.", o: ["Quarter to 10", "Quarter to 9", "Quarter past 9", "Half past 9"], a: "Quarter to 10", e: "9:45 means it is 15 minutes before 10:00, which is quarter to 10." },
+                { type: "timetable", line1: "Train Departs: 8:15 AM", line2: "Train Arrives: 11:15 AM", q: "A train leaves the station at 8:15 AM and arrives at 11:15 AM. How long was the ride?", o: ["3 hours", "2 hours", "4 hours", "30 minutes"], a: "3 hours", e: "Subtract the start hour from the end hour: 11 - 8 = 3 hours." },
+                { type: "digital-display", timeStr: "00:30", q: "How many minutes are there in half an hour?", o: ["30 minutes", "15 minutes", "45 minutes", "60 minutes"], a: "30 minutes", e: "Since a full hour has 60 minutes, half an hour has 60 / 2 = 30 minutes." },
+                { type: "clock", h: 1, m: 50, q: "Read the clock face.", o: ["1:50", "2:50", "1:10", "12:50"], a: "1:50", e: "The hour hand is close to 2, and the minute hand points to 10 (10 x 5 = 50). This is 1:50." },
+                { type: "clock", h: 10, m: 15, q: "Read the clock face.", o: ["Quarter past 10", "Quarter to 10", "Quarter to 11", "10:30"], a: "Quarter past 10", e: "The minute hand points directly to 3, which means 15 minutes past 10." },
+                { type: "digital-display", timeStr: "03:45", q: "What digital time matches 'Quarter to 4'?", o: ["3:45", "4:45", "4:15", "3:15"], a: "3:45", e: "Quarter to 4 means 15 minutes before 4:00, which is 3:45." },
+                { type: "digital-display", timeStr: "06:15", q: "What digital time matches 'Quarter past 6'?", o: ["6:15", "6:45", "7:15", "5:45"], a: "6:15", e: "Quarter past 6 means 15 minutes after 6:00, which is 6:15." },
+                { type: "timeline", t1: "10:00 PM Sleep", t2: "6:00 AM Wake", q: "If you sleep from 10:00 PM to 6:00 AM, how many hours of sleep did you get?", o: ["8 hours", "7 hours", "9 hours", "6 hours"], a: "8 hours", e: "From 10 PM to midnight is 2 hours, plus 6 hours in the morning: 2 + 6 = 8 hours." },
+                { type: "timeline", t1: "9:15 AM Start", t2: "10:00 AM End", q: "A math class starts at 9:15 AM and ends at 10:00 AM. How many minutes long is it?", o: ["45 minutes", "30 minutes", "15 minutes", "1 hour"], a: "45 minutes", e: "Counting from 9:15 to 10:00 gives exactly 45 minutes." },
+                { type: "digital-display", timeStr: "11:45", q: "If a clock shows 11:45, how many minutes are left until 12:00?", o: ["15 minutes", "45 minutes", "5 minutes", "20 minutes"], a: "15 minutes", e: "Subtract the current minutes from 60: 60 - 45 = 15 minutes." },
+                { type: "clock", h: 12, m: 30, q: "What is the shortcut term for 12:30?", o: ["Half past 12", "Quarter past 12", "Quarter to 1", "12 o'clock"], a: "Half past 12", e: "30 minutes past an hour is called half past." },
+                { type: "clock", h: 11, m: 15, q: "Read the clock face.", o: ["11:15", "11:45", "12:15", "10:15"], a: "11:15", e: "The hour hand is at 11 and the minute hand points to 3 (3 x 5 = 15). This is 11:15." },
+                { type: "clock", h: 5, m: 45, q: "Read the clock face.", o: ["5:45", "6:45", "5:15", "4:45"], a: "5:45", e: "The hour hand is nearing 6, and the minute hand points to 9 (9 x 5 = 45). This is 5:45." },
+                { type: "digital-display", timeStr: "04:30", q: "How many minutes are in 4 and a half hours?", o: ["270 minutes", "240 minutes", "300 minutes", "180 minutes"], a: "270 minutes", e: "4 hours x 60 = 240 minutes. Add 30 minutes for the half hour: 240 + 30 = 270 minutes." },
+                { type: "timeline", t1: "1:15 PM Start", t2: "2:00 PM End", q: "A meeting lasted from 1:15 PM to 2:00 PM. How many minutes did it take?", o: ["45 minutes", "30 minutes", "15 minutes", "60 minutes"], a: "45 minutes", e: "From 1:15 to 2:00 is a difference of 45 minutes." },
+                { type: "digital-display", timeStr: "10:15", q: "What is another way to say 10:15?", o: ["Quarter past 10", "Quarter to 11", "Half past 10", "10 o'clock"], a: "Quarter past 10", e: "15 minutes past 10 is called quarter past 10." },
+                { type: "digital-display", timeStr: "07:45", q: "What is another way to say 7:45?", o: ["Quarter to 8", "Quarter to 7", "Quarter past 7", "Half past 7"], a: "Quarter to 8", e: "7:45 means it is 15 minutes before 8:00, which is quarter to 8." },
+                { type: "clock", h: 3, m: 20, q: "Read the clock face.", o: ["3:20", "4:20", "3:04", "2:20"], a: "3:20", e: "The hour hand is past 3, and the minute hand points to 4 (4 x 5 = 20). This is 3:20." },
+                { type: "clock", h: 9, m: 10, q: "Read the clock face.", o: ["9:10", "10:10", "9:02", "8:10"], a: "9:10", e: "The hour hand is past 9, and the minute hand points to 2 (2 x 5 = 10). This is 9:10." },
+                { type: "clock", h: 6, m: 50, q: "Read the clock face.", o: ["6:50", "7:50", "6:10", "5:50"], a: "6:50", e: "The hour hand is approaching 7, and the minute hand points to 10 (10 x 5 = 50). This is 6:50." },
+                { type: "digital-display", timeStr: "01:30", q: "How many minutes are in 1 and a half hours?", o: ["90 minutes", "60 minutes", "80 minutes", "120 minutes"], a: "90 minutes", e: "1 hour has 60 minutes. Add 30 minutes for the half hour: 60 + 30 = 90 minutes." },
+                { type: "timeline", t1: "11:00 AM Start", t2: "1:30 PM End", q: "A road trip starts at 11:00 AM and ends at 1:30 PM. What was the total travel duration?", o: ["2 hours 30 minutes", "2 hours", "3 hours 30 minutes", "1 hour 30 minutes"], a: "2 hours 30 minutes", e: "From 11:00 AM to 1:00 PM is 2 hours. Add 30 minutes to get to 1:30 PM: total 2 hours 30 minutes." },
+                { type: "clock", h: 12, m: 40, q: "Read the clock face.", o: ["12:40", "1:40", "12:08", "11:40"], a: "12:40", e: "The hour hand is past 12 approaching 1, and the minute hand points to 8 (8 x 5 = 40). This is 12:40." },
+                { type: "clock", h: 10, m: 25, q: "Read the clock face.", o: ["10:25", "11:25", "10:05", "9:25"], a: "10:25", e: "The hour hand is past 10, and the minute hand points to 5 (5 x 5 = 25). This is 10:25." },
+                { type: "digital-display", timeStr: "05:15", q: "Convert 5 hours and 15 minutes into standard digital notation.", o: ["5:15", "5:45", "5:03", "6:15"], a: "5:15", e: "5 hours and 15 minutes is written digitally as 05:15." },
+                { type: "timeline", t1: "8:00 AM Start", t2: "20 Mins Later", q: "If your morning alarm rings at 8:00 AM and you hit snooze for 20 minutes, what time do you wake up?", o: ["8:20 AM", "8:40 AM", "8:10 AM", "7:40 AM"], a: "8:20 AM", e: "Add 20 minutes to 8:00 AM to get 8:20 AM." },
+                { type: "clock", h: 2, m: 45, q: "Another way to describe 2:45 is...", o: ["Quarter to 3", "Quarter to 2", "Quarter past 2", "Half past 2"], a: "Quarter to 3", e: "2:45 means there are 15 minutes left until 3:00, which is quarter to 3." }
+            ],
+            hard: [
+                { type: "clock", h: 7, m: 12, q: "Read the clock face to the exact minute.", o: ["7:12", "7:10", "7:15", "8:12"], a: "7:12", e: "The hour hand is past 7. The minute hand is two small marks past the 2 (10 + 2 = 12 minutes). This makes the time 7:12." },
+                { type: "clock", h: 2, m: 43, q: "Read the clock face to the exact minute.", o: ["2:43", "3:43", "2:40", "2:45"], a: "2:43", e: "The hour hand is nearing 3. The minute hand is three small tick marks past the 8 (40 + 3 = 43 minutes). This makes the time 2:43." },
+                { type: "timeline", t1: "4:25 PM Start", t2: "6:10 PM End", q: "A movie starts at 4:25 PM and ends at 6:10 PM. Calculate its exact run time.", o: ["1 hour 45 minutes", "1 hour 35 minutes", "2 hours 15 minutes", "1 hour 55 minutes"], a: "1 hour 45 minutes", e: "From 4:25 PM to 5:25 PM is 1 hour. From 5:25 PM to 6:10 PM is another 45 minutes. Total: 1 hour 45 minutes." },
+                { type: "digital-display", timeStr: "07:20 PM", q: "What time will it be 45 minutes after 7:20 PM?", o: ["8:05 PM", "7:55 PM", "8:15 PM", "8:00 PM"], a: "8:05 PM", e: "Adding 45 minutes to 20 minutes gives 65 minutes. Since 60 minutes make an hour, this becomes 1 hour and 5 minutes. 1 hour added to 7 gives 8, so the time is 8:05 PM." },
+                { type: "digital-display", timeStr: "14:30", q: "Convert 14:30 from 24-hour time notation into 12-hour time format.", o: ["2:30 PM", "2:30 AM", "4:30 PM", "12:30 PM"], a: "2:30 PM", e: "For 24-hour times greater than 12, subtract 12 and append PM: 14 - 12 = 2, making it 2:30 PM." },
+                { type: "digital-display", timeStr: "08:20", q: "Convert 08:20 from 24-hour time notation into 12-hour format.", o: ["8:20 AM", "8:20 PM", "6:20 AM", "12:20 AM"], a: "8:20 AM", e: "Hours from 01:00 to 11:59 map directly to AM values in 12-hour formatting." },
+                { type: "digital-display", timeStr: "21:15", q: "Convert 9:15 PM into 24-hour time notation.", o: ["21:15", "09:15", "19:15", "22:15"], a: "21:15", e: "For PM hours, add 12 to convert to 24-hour time: 9 + 12 = 21, making it 21:15." },
+                { type: "timetable", line1: "Train Leaves: 09:45", line2: "Train Arrives: 13:15", q: "A train departs at 09:45 and reaches its destination at 13:15. Find the total journey time.", o: ["3 hours 30 minutes", "3 hours", "4 hours 30 minutes", "2 hours 45 minutes"], a: "3 hours 30 minutes", e: "From 09:45 to 12:45 is 3 hours. From 12:45 to 13:15 is another 30 minutes, for a total of 3 hours 30 minutes." },
+                { type: "digital-display", timeStr: "08:15 AM", q: "Which of these chronologically options is the earliest in a day?", o: ["08:15 AM", "08:50 AM", "2:00 PM", "11:00 AM"], a: "08:15 AM", e: "8:15 AM comes before 8:50 AM, making it the earliest time listed." },
+                { type: "digital-display", timeStr: "23:50", q: "Which of these 24-hour timestamps represents the latest time in a day?", o: ["23:50", "21:45", "23:10", "18:00"], a: "23:50", e: "23:50 is 11:50 PM, making it the closest to midnight on this list." },
+                { type: "timetable", line1: "Bus A - Departs 08:00, Arrives 08:45", line2: "Bus B - Departs 08:15, Arrives 08:55", q: "Look at the logs. Which bus has the shorter journey duration?", o: ["Bus B (40 mins)", "Bus A (45 mins)", "They take the same time", "Bus A is faster"], a: "Bus B (40 mins)", e: "Bus A takes 45 minutes (8:45 - 8:00). Bus B takes 40 minutes (8:55 - 8:15). Bus B is faster by 5 minutes." },
+                { type: "timeline", t1: "Takeoff Time ?", t2: "3:10 PM Landing", q: "A plane flight lands at 3:10 PM. If the flight lasted 4 hours and 25 minutes, what time did the plane take off?", o: ["10:45 AM", "11:45 AM", "10:45 PM", "11:10 AM"], a: "10:45 AM", e: "Count back 4 hours from 3:10 PM to get 11:10 AM. Then, count back 25 minutes from 11:10 AM to get 10:45 AM." },
+                { type: "digital-display", timeStr: "03:30", q: "How many minutes are there in 3 and a half hours?", o: ["210 minutes", "180 minutes", "200 minutes", "240 minutes"], a: "210 minutes", e: "3 hours x 60 = 180 minutes. Half an hour is 30 minutes. 180 + 30 = 210 minutes." },
+                { type: "digital-display", timeStr: "05:00", q: "How many seconds are contained in 5 complete minutes?", o: ["300 seconds", "50 seconds", "250 seconds", "60 seconds"], a: "300 seconds", e: "There are 60 seconds in one minute, so 5 x 60 = 300 seconds." },
+                { type: "timeline", t1: "Start Run", t2: "145 Minutes", q: "A marathon runner completed a race in 145 minutes. Express this time in hours and minutes.", o: ["2 hours 25 minutes", "1 hour 45 minutes", "2 hours 45 minutes", "2 hours 5 minutes"], a: "2 hours 25 minutes", e: "120 minutes make 2 hours, leaving 25 minutes remaining (145 - 120 = 25)." },
+                { type: "digital-display", timeStr: "12:00", q: "If a faulty clock gains 5 minutes every hour, how many minutes will it gain after 12 hours?", o: ["60 minutes (1 hour)", "50 minutes", "12 minutes", "24 minutes"], a: "60 minutes (1 hour)", e: "Multiply the rate by the hours: 12 x 5 = 60 minutes, which is equal to 1 hour." },
+                { type: "timetable", line1: "Open: 09:00", line2: "Close: 18:30", q: "A store is open from 09:00 until 18:30 in 24-hour time. How long is the store open?", o: ["9 hours 30 minutes", "9 hours", "10 hours 30 minutes", "8 hours 30 minutes"], a: "9 hours 30 minutes", e: "Subtract the opening hour from the closing hour: 18:30 - 09:00 = 9 hours and 30 minutes." },
+                { type: "clock", h: 11, m: 58, q: "Read the clock face to the exact minute.", o: ["11:58", "12:58", "11:53", "11:55"], a: "11:58", e: "The hour hand is nearly at 12, and the minute hand is three marks past 11 (55 + 3 = 58 minutes)." },
+                { type: "clock", h: 4, m: 19, q: "Read the clock face to the exact minute.", o: ["4:19", "4:20", "4:15", "5:19"], a: "4:19", e: "The hour hand is past 4, and the minute hand is four marks past 3 (15 + 4 = 19 minutes)." },
+                { type: "digital-display", timeStr: "00:15", q: "Convert 00:15 into 12-hour time format.", o: ["12:15 AM", "12:15 PM", "12:15 Midnight", "1:15 AM"], a: "12:15 AM", e: "00 hours in 24-hour time corresponds to the 12 o'clock midnight hour, making it 12:15 AM." },
+                { type: "digital-display", timeStr: "12:00 PM", q: "Convert 12:00 PM into 24-hour time notation.", o: ["12:00", "00:00", "24:00", "12:00 PM"], a: "12:00", e: "12:00 PM is noon, which stays exactly 12:00 in 24-hour notation." },
+                { type: "timeline", t1: "Start ?", t2: "2:15 PM End", q: "A science experiment took 75 minutes to finish. It ended at 2:15 PM. When did it start?", o: ["1:00 PM", "1:15 PM", "1:30 PM", "12:45 PM"], a: "1:00 PM", e: "75 minutes is equal to 1 hour and 15 minutes. Counting back from 2:15 PM gives exactly 1:00 PM." },
+                { type: "digital-display", timeStr: "03:55 PM", q: "A clock shows 3:55 PM. What time will it show in 25 minutes?", o: ["4:20 PM", "4:15 PM", "4:25 PM", "4:00 PM"], a: "4:20 PM", e: "It takes 5 minutes to reach 4:00, leaving 20 minutes more. This brings the time to 4:20 PM." },
+                { type: "timetable", line1: "Departure: 6:30 AM", line2: "Duration: 5h 50m", q: "A train trip takes 5 hours and 50 minutes. If the train leaves at 6:30 AM, when does it arrive?", o: ["12:20 PM", "11:20 AM", "12:20 AM", "1:20 PM"], a: "12:20 PM", e: "Adding 5 hours to 6:30 AM gives 11:30 AM. Adding 50 minutes to 11:30 AM brings you past 12 noon to 12:20 PM." },
+                { type: "clock", h: 9, m: 31, q: "Read the clock face to the exact minute.", o: ["9:31", "9:30", "9:35", "10:31"], a: "9:31", e: "The hour hand is past 9, and the minute hand is one small mark past 6 (30 + 1 = 31 minutes)." },
+                { type: "clock", h: 1, m: 4, q: "Read the clock face to the exact minute.", o: ["1:04", "1:05", "1:00", "12:04"], a: "1:04", e: "The hour hand is at 1, and the minute hand is one mark before the 1 (5 - 1 = 4 minutes past)." },
+                { type: "timetable", line1: "Start Time: 22:40", line2: "End Time: 01:15", q: "What is the duration of a time interval from 22:40 to 01:15 the next day?", o: ["2 hours 35 minutes", "2 hours 25 minutes", "3 hours 35 minutes", "1 hour 55 minutes"], a: "2 hours 35 minutes", e: "From 22:40 to 00:00 (midnight) is 1 hour and 20 minutes. Add 1 hour and 15 minutes for the next day: 1 hr 20 min + 1 hr 15 min = 2 hours 35 minutes." },
+                { type: "timeline", t1: "0 Hours", t2: "4 Hours Ring", q: "If an alarm clock rings every 40 minutes, how many times will it ring in 4 full hours?", o: ["6 times", "4 times", "5 times", "10 times"], a: "6 times", e: "4 hours x 60 = 240 minutes. Divide by the interval: 240 / 40 = 6 times." },
+                { type: "timetable", line1: "Takeoff: 23:00", line2: "Flight Duration: 8h", q: "A plane flies for 8 hours. If it takes off at 23:00, what 24-hour time will it be when it lands?", o: ["07:00", "06:00", "08:00", "15:00"], a: "07:00", e: "23:00 plus 1 hour is midnight (00:00). Add the remaining 7 hours to get 07:00." },
+                { type: "timetable", line1: "Exam Start: 13:15", line2: "Duration: 105 mins", q: "An exam starts at 13:15 and lasts for 105 minutes. What 24-hour time does it end?", o: ["15:00", "14:20", "14:45", "15:15"], a: "15:00", e: "105 minutes is equal to 1 hour and 45 minutes. 13:15 + 1 hr 45 min = 15:00." },
+                { type: "clock", h: 6, m: 27, q: "Read the clock face to the exact minute.", o: ["6:27", "6:25", "6:30", "5:27"], a: "6:27", e: "The hour hand is past 6. The minute hand is two marks past 5 (25 + 2 = 27 minutes)." },
+                { type: "clock", h: 12, m: 39, q: "Read the clock face to the exact minute.", o: ["12:39", "12:40", "1:39", "12:35"], a: "12:39", e: "The hour hand is past 12. The minute hand is four marks past 7 (35 + 4 = 39 minutes)." },
+                { type: "timeline", t1: "8h 15m", t2: "Subtract 3h 50m", q: "Subtract 3 hours and 50 minutes from 8 hours and 15 minutes.", o: ["4 hours 25 minutes", "4 hours 35 minutes", "5 hours 25 minutes", "3 hours 45 minutes"], a: "4 hours 25 minutes", e: "Borrow 1 hour (60 minutes) from 8 hours, changing it to 7 hours and 75 minutes: 75 - 50 = 25 minutes. Then, 7 - 3 = 4 hours. This leaves 4 hours and 25 minutes." },
+                { type: "digital-display", timeStr: "00:20", q: "What is the equivalent fraction of an hour for 20 minutes?", o: ["1/3 of an hour", "1/4 of an hour", "1/2 of an hour", "1/5 of an hour"], a: "1/3 of an hour", e: "20 / 60 simplifies to 1/3." },
+                { type: "digital-display", timeStr: "00:45", q: "What is the equivalent fraction of an hour for 45 minutes?", o: ["3/4 of an hour", "1/4 of an hour", "2/3 of an hour", "1/2 of an hour"], a: "3/4 of an hour", e: "45 / 60 simplifies to 3/4." },
+                { type: "digital-display", timeStr: "01:00", q: "A high-precision digital watch updates its screen every second. How many times does it update in 1 hour?", o: ["3600 times", "60 times", "600 times", "1440 times"], a: "3600 times", e: "1 hour contains 60 minutes, and each minute has 60 seconds: 60 x 60 = 3600 updates." },
+                { type: "timeline", t1: "12:01 AM", t2: "12:01 PM Loop", q: "A clock chime rings at 1:00, twice at 2:00, three times at 3:00, and so on. How many total chimes sound between 12:01 AM and 12:01 PM?", o: ["78 chimes", "12 chimes", "24 chimes", "144 chimes"], a: "78 chimes", e: "Sum the hours from 1 to 12: 1+2+3+4+5+6+7+8+9+10+11+12 = 78 chimes." },
+                { type: "timetable", line1: "Show: 45 min daily", line2: "Mon through Fri", q: "A radio broadcast is scheduled for 45 minutes every weekday (5 days). How many hours and minutes does the show air each week?", o: ["3 hours 45 minutes", "3 hours", "4 hours 15 minutes", "2 hours 45 minutes"], a: "3 hours 45 minutes", e: "Total daily minutes: 45 x 5 = 225 minutes. Convert to hours: 180 minutes make 3 hours, leaving 45 minutes remaining (225 - 180 = 45)." },
+                { type: "timeline", t1: "10,000 min", t2: "Convert safety", q: "An industrial timer runs for exactly 10,000 minutes. Express this duration in days, hours, and minutes.", o: ["6 days, 22 hours, 40 minutes", "7 days, 0 hours, 0 minutes", "5 days, 12 hours, 20 minutes", "6 days, 10 hours, 30 minutes"], a: "6 days, 22 hours, 40 minutes", e: "Convert minutes to hours: 10,000 / 60 = 166 hours and 40 minutes. Convert hours to days: 166 / 24 = 6 days and 22 hours remaining. Total time: 6 days, 22 hours, and 40 minutes." },
+                { type: "digital-display", timeStr: "02:15 AM", q: "If it is 2:15 AM now, what time was it 50 minutes ago?", o: ["1:25 AM", "1:35 AM", "1:15 AM", "2:25 AM"], a: "1:25 AM", e: "Counting back 15 minutes gets you to 2:00 AM. Counting back the remaining 35 minutes gets you to 1:25 AM." },
+                { type: "digital-display", timeStr: "11:40 PM", q: "What time will it be 35 minutes after 11:40 PM?", o: ["12:15 AM", "12:15 PM", "11:15 PM", "12:05 AM"], a: "12:15 AM", e: "It takes 20 minutes to reach 12:00 midnight. The remaining 15 minutes brings the time to 12:15 AM of the next day." },
+                { type: "clock", h: 5, m: 56, q: "Read the clock face to the exact minute.", o: ["5:56", "6:56", "5:54", "5:55"], a: "5:56", e: "The hour hand is nearly at 6, and the minute hand is one mark past 11 (55 + 1 = 56 minutes)." },
+                { type: "clock", h: 8, m: 14, q: "Read the clock face to the exact minute.", o: ["8:14", "8:15", "8:10", "9:14"], a: "8:14", e: "The hour hand is past 8, and the minute hand is one mark before 3 (15 - 1 = 14 minutes past)." },
+                { type: "digital-display", timeStr: "17:45", q: "Convert 17:45 from 24-hour time notation into 12-hour format.", o: ["5:45 PM", "5:45 AM", "7:45 PM", "4:45 PM"], a: "5:45 PM", e: "Subtract 12 from the hour: 17 - 12 = 5, making it 5:45 PM." },
+                { type: "digital-display", timeStr: "06:10", q: "Convert 06:10 from 24-hour time notation into 12-hour format.", o: ["6:10 AM", "6:10 PM", "4:10 AM", "12:10 AM"], a: "6:10 AM", e: "Hours from 01:00 to 11:59 use AM in 12-hour format, so it is 6:10 AM." },
+                { type: "digital-display", timeStr: "23:20", q: "Convert 11:20 PM into 24-hour time notation.", o: ["23:20", "11:20", "13:20", "22:20"], a: "23:20", e: "Add 12 to the PM hour value: 11 + 12 = 23, making it 23:20." },
+                { type: "timetable", line1: "Flight Departs: 22:15", line2: "Flight Arrives: 03:45", q: "A night flight departs at 22:15 and lands at 03:45 the next morning. Calculate the total flight duration.", o: ["5 hours 30 minutes", "5 hours", "4 hours 30 minutes", "6 hours 15 minutes"], a: "5 hours 30 minutes", e: "From 22:15 to midnight (00:00) is 1 hour 45 minutes. From midnight to 03:45 is 3 hours 45 minutes. Total: 1h 45m + 3h 45m = 5 hours 30 minutes." },
+                { type: "timeline", t1: "3 Hours", t2: "Seconds ?", q: "How many total seconds are there inside 3 full hours?", o: ["10800 seconds", "3600 seconds", "7200 seconds", "14400 seconds"], a: "10800 seconds", e: "Each hour has 3600 seconds (60 x 60). 3 hours x 3600 = 10,800 seconds." },
+                { type: "timetable", line1: "Task A: 45 mins", line2: "Task B: 1 hour 25 mins", q: "If you spend 45 minutes on homework and 1 hour 25 minutes practicing music, how much total time did you spend?", o: ["2 hours 10 minutes", "2 hours 5 minutes", "1 hour 70 minutes", "2 hours"], a: "2 hours 10 minutes", e: "Add the minutes: 45 + 25 = 70 minutes, which is 1 hour and 10 minutes. Add this to the 1 hour to get 2 hours 10 minutes." },
+                { type: "digital-display", timeStr: "12:00", q: "How many total minutes are in a complete 24-hour day?", o: ["1440 minutes", "1200 minutes", "2400 minutes", "3600 minutes"], a: "1440 minutes", e: "Multiply hours by minutes: 24 x 60 = 1,440 minutes." }
+            ]
+        };
+
+        /*********************************************************
+         * 3. QUIZ SYSTEM MOTOR CONTROLLER
+         *********************************************************/
+        let QuizController = {
+            level: '',
+            questions: [],
+            index: 0,
+            score: 0,
+            history: [],
+            startTime: null,
+
+            shuffle(arr) {
+                for (let i = arr.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [arr[i], arr[j]] = [arr[j], arr[i]];
+                }
+                return arr;
+            },
+
+            start(levelTier) {
+                this.level = levelTier;
+                let dataPool = RawQuestionBank[levelTier] || RawQuestionBank.easy;
+                
+                this.questions = this.shuffle(JSON.parse(JSON.stringify(dataPool))).slice(0, 50);
+                this.index = 0;
+                this.score = 0;
+                this.history = new Array(50).fill(null);
+                this.startTime = new Date();
+
+                document.getElementById('lbl-level').innerText = levelTier;
+                document.getElementById('screen-start').classList.remove('active');
+                document.getElementById('screen-quiz').classList.add('active');
+
+                this.render();
+            },
+
+            render() {
+                if (this.index >= this.questions.length) return;
+                const qData = this.questions[this.index];
+
+                document.getElementById('lbl-score').innerText = this.score;
+                document.getElementById('lbl-counter').innerText = `${this.index + 1} / ${this.questions.length}`;
+                document.getElementById('progress-fill').style.width = `${((this.index + 1) / this.questions.length) * 100}%`;
+
+                this.drawGraphic(qData);
+
+                document.getElementById('question-payload-box').innerText = qData.q;
+
+                const optionsBox = document.getElementById('options-payload-box');
+                optionsBox.innerHTML = '';
+
+                if (!qData._shuffledOptions) {
+                    qData._shuffledOptions = this.shuffle([...qData.o]);
+                }
+
+                qData._shuffledOptions.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'option-btn';
+                    btn.innerText = opt;
+                    btn.onclick = () => this.evaluateChoice(btn, opt);
+
+                    if (this.history[this.index] !== null) {
+                        btn.disabled = true;
+                        if (opt === qData.a) btn.classList.add('correct');
+                        if (opt === this.history[this.index] && opt !== qData.a) btn.classList.add('wrong');
+                    }
+                    optionsBox.appendChild(btn);
+                });
+
+                const fbPanel = document.getElementById('feedback-explanation-panel');
+                if (this.history[this.index] !== null) {
+                    let userPick = this.history[this.index];
+                    if (userPick === qData.a) {
+                        fbPanel.className = "feedback-box correct";
+                        fbPanel.innerHTML = `<strong>✅ Correct!</strong><br>${qData.e}`;
+                    } else {
+                        fbPanel.className = "feedback-box wrong";
+                        fbPanel.innerHTML = `<strong>❌ Incorrect.</strong> Correct Answer: <em>${qData.a}</em><br>${qData.e}`;
+                    }
+                } else {
+                    fbPanel.style.display = 'none';
+                }
+
+                document.getElementById('btn-prev').disabled = (this.index === 0);
+                document.getElementById('btn-next').innerText = (this.index === this.questions.length - 1) ? "Finish 🏁" : "Next ➡️";
+            },
+
+            evaluateChoice(btn, selectedValue) {
+                const qData = this.questions[this.index];
+                this.history[this.index] = selectedValue;
+
+                const buttons = document.querySelectorAll('.option-btn');
+                buttons.forEach(b => b.disabled = true);
+
+                const fbPanel = document.getElementById('feedback-explanation-panel');
+
+                if (selectedValue === qData.a) {
+                    this.score++;
+                    AudioEngine.correct();
+                    btn.classList.add('correct');
+                    fbPanel.className = "feedback-box correct";
+                    fbPanel.innerHTML = `<strong>✅ Correct!</strong><br>${qData.e}`;
+                } else {
+                    AudioEngine.wrong();
+                    btn.classList.add('wrong');
+                    buttons.forEach(b => { if (b.innerText === qData.a) b.classList.add('correct'); });
+                    fbPanel.className = "feedback-box wrong";
+                    fbPanel.innerHTML = `<strong>❌ Incorrect.</strong> Correct Answer: <em>${qData.a}</em><br>${qData.e}`;
+                }
+                document.getElementById('lbl-score').innerText = this.score;
+            },
+
+            navigateStep(step) {
+                AudioEngine.click();
+                if (step === 1 && this.history[this.index] === null) {
+                    if (!confirm("Proceed without an answer? This step marks the task as skipped.")) return;
+                    this.history[this.index] = ""; 
+                }
+
+                this.index += step;
+
+                if (this.index >= this.questions.length) {
+                    this.finishSummary();
+                } else if (this.index < 0) {
+                    this.index = 0;
+                } else {
+                    this.render();
+                }
+            },
+
+            quitToMenu() {
+                AudioEngine.click();
+                document.getElementById('screen-quiz').className = "screen-layout";
+                document.getElementById('screen-summary').className = "screen-layout";
+                document.getElementById('screen-start').className = "screen-layout active";
+            },
+
+            restartTier() {
+                this.start(this.level);
+            },
+
+            /*********************************************************
+             * 4. VECTOR RENDER PIPELINE - COMPLETE FIX
+             *********************************************************/
+            drawGraphic(qData) {
+                const panel = document.getElementById('graphics-panel');
+                panel.innerHTML = ''; 
+
+                let ns = "http://www.w3.org/2000/svg";
+                let svg = document.createElementNS(ns, "svg");
+                svg.setAttribute("width", "100%");
+                svg.setAttribute("height", "100%");
+                svg.setAttribute("viewBox", "0 0 400 200");
+
+                if (qData.type === "clock") {
+                    // Center point is set at (200, 100)
+                    let cx = 200, cy = 100;
+
+                    let rim = document.createElementNS(ns, "circle");
+                    rim.setAttribute("cx", cx); rim.setAttribute("cy", cy); rim.setAttribute("r", "82");
+                    rim.setAttribute("fill", "#F8F9FA"); rim.setAttribute("stroke", "#1A1A40"); rim.setAttribute("stroke-width", "5");
+                    svg.appendChild(rim);
+
+                    // Add minute ticks around the rim
+                    for (let m = 0; m < 60; m++) {
+                        let angle = (m * 6) * Math.PI / 180;
+                        let isHour = (m % 5 === 0);
+                        let r1 = isHour ? 76 : 79;
+                        let r2 = 82;
+                        
+                        let tick = document.createElementNS(ns, "line");
+                        tick.setAttribute("x1", (cx + Math.sin(angle) * r1).toFixed(2));
+                        tick.setAttribute("y1", (cy - Math.cos(angle) * r1).toFixed(2));
+                        tick.setAttribute("x2", (cx + Math.sin(angle) * r2).toFixed(2));
+                        tick.setAttribute("y2", (cy - Math.cos(angle) * r2).toFixed(2));
+                        tick.setAttribute("stroke", isHour ? "#1A1A40" : "#A0A0AB");
+                        tick.setAttribute("stroke-width", isHour ? "2" : "1");
+                        svg.appendChild(tick);
+                    }
+
+                    // Draw the hour numbers
+                    for (let h = 1; h <= 12; h++) {
+                        let angle = (h * 30) * Math.PI / 180;
+                        let tx = cx + Math.sin(angle) * 62;
+                        let ty = cy - Math.cos(angle) * 62;
+                        
+                        let textNode = document.createElementNS(ns, "text");
+                        textNode.setAttribute("x", tx.toFixed(1));
+                        textNode.setAttribute("y", (ty + 4).toFixed(1));
+                        textNode.setAttribute("text-anchor", "middle");
+                        textNode.setAttribute("font-size", "13");
+                        textNode.setAttribute("font-weight", "bold");
+                        textNode.setAttribute("fill", "#2B2D42");
+                        textNode.textContent = h;
+                        svg.appendChild(textNode);
+                    }
+
+                    let visualHours = (qData.h !== undefined) ? qData.h : 12;
+                    let visualMinutes = (qData.m !== undefined) ? qData.m : 0;
+
+                    // Compute hand rotation vectors using exact inline math coordinates
+                    let minAngle = (visualMinutes * 6) * Math.PI / 180; 
+                    let hrAngle = ((visualHours * 30) + (visualMinutes * 0.5)) * Math.PI / 180;
+
+                    // Hour Hand
+                    let hLength = 44;
+                    let hx2 = cx + Math.sin(hrAngle) * hLength;
+                    let hy2 = cy - Math.cos(hrAngle) * hLength;
+                    let hrHand = document.createElementNS(ns, "line");
+                    hrHand.setAttribute("x1", cx); hrHand.setAttribute("y1", cy);
+                    hrHand.setAttribute("x2", hx2.toFixed(2)); hrHand.setAttribute("y2", hy2.toFixed(2));
+                    hrHand.setAttribute("stroke", "#FF6B6B"); hrHand.setAttribute("stroke-width", "6");
+                    hrHand.setAttribute("stroke-linecap", "round");
+                    svg.appendChild(hrHand);
+
+                    // Minute Hand
+                    let mLength = 68;
+                    let mx2 = cx + Math.sin(minAngle) * mLength;
+                    let my2 = cy - Math.cos(minAngle) * mLength;
+                    let minHand = document.createElementNS(ns, "line");
+                    minHand.setAttribute("x1", cx); minHand.setAttribute("y1", cy);
+                    minHand.setAttribute("x2", mx2.toFixed(2)); minHand.setAttribute("y2", my2.toFixed(2));
+                    minHand.setAttribute("stroke", "#1A1A40"); minHand.setAttribute("stroke-width", "4");
+                    minHand.setAttribute("stroke-linecap", "round");
+                    svg.appendChild(minHand);
+
+                    // Center pin cap
+                    let centerPin = document.createElementNS(ns, "circle");
+                    centerPin.setAttribute("cx", cx); centerPin.setAttribute("cy", cy); centerPin.setAttribute("r", "6");
+                    centerPin.setAttribute("fill", "#1A1A40");
+                    svg.appendChild(centerPin);
+
+                } else if (qData.type === "digital-display") {
+                    let frame = document.createElementNS(ns, "rect");
+                    frame.setAttribute("x", "110"); frame.setAttribute("y", "65");
+                    frame.setAttribute("width", "180"); frame.setAttribute("height", "70");
+                    frame.setAttribute("rx", "12"); frame.setAttribute("fill", "#2B2D42");
+                    svg.appendChild(frame);
+
+                    let screen = document.createElementNS(ns, "rect");
+                    screen.setAttribute("x", "122"); screen.setAttribute("y", "75");
+                    screen.setAttribute("width", "156"); screen.setAttribute("height", "50");
+                    screen.setAttribute("rx", "6"); screen.setAttribute("fill", "#111");
+                    svg.appendChild(screen);
+
+                    let LCDText = document.createElementNS(ns, "text");
+                    LCDText.setAttribute("x", "200"); LCDText.setAttribute("y", "111");
+                    LCDText.setAttribute("fill", "#00F2FE"); LCDText.setAttribute("font-family", "monospace");
+                    LCDText.setAttribute("font-size", "28"); LCDText.setAttribute("font-weight", "bold");
+                    LCDText.setAttribute("text-anchor", "middle");
+                    LCDText.textContent = qData.timeStr || "12:00";
+                    svg.appendChild(LCDText);
+
+                } else if (qData.type === "timeline") {
+                    let track = document.createElementNS(ns, "line");
+                    track.setAttribute("x1", "40"); track.setAttribute("y1", "100");
+                    track.setAttribute("x2", "360"); track.setAttribute("y2", "100");
+                    track.setAttribute("stroke", "#4D96FF"); track.setAttribute("stroke-width", "6");
+                    svg.appendChild(track);
+
+                    let n1 = document.createElementNS(ns, "circle");
+                    n1.setAttribute("cx", "100"); n1.setAttribute("cy", "100"); n1.setAttribute("r", "8");
+                    n1.setAttribute("fill", "#FF6B6B");
+                    svg.appendChild(n1);
+
+                    let lbl1 = document.createElementNS(ns, "text");
+                    lbl1.setAttribute("x", "100"); lbl1.setAttribute("y", "135");
+                    lbl1.setAttribute("fill", "#2B2D42"); lbl1.setAttribute("font-size", "12");
+                    lbl1.setAttribute("font-weight", "bold"); lbl1.setAttribute("text-anchor", "middle");
+                    lbl1.textContent = qData.t1 || "";
+                    svg.appendChild(lbl1);
+
+                    let n2 = document.createElementNS(ns, "circle");
+                    n2.setAttribute("cx", "300"); n2.setAttribute("cy", "100"); n2.setAttribute("r", "8");
+                    n2.setAttribute("fill", "#2EC4B6");
+                    svg.appendChild(n2);
+
+                    let lbl2 = document.createElementNS(ns, "text");
+                    lbl2.setAttribute("x", "300"); lbl2.setAttribute("y", "135");
+                    lbl2.setAttribute("fill", "#2B2D42"); lbl2.setAttribute("font-size", "12");
+                    lbl2.setAttribute("font-weight", "bold"); lbl2.setAttribute("text-anchor", "middle");
+                    lbl2.textContent = qData.t2 || "";
+                    svg.appendChild(lbl2);
+
+                } else if (qData.type === "timetable") {
+                    let box = document.createElementNS(ns, "rect");
+                    box.setAttribute("x", "30"); box.setAttribute("y", "45");
+                    box.setAttribute("width", "340"); box.setAttribute("height", "110");
+                    box.setAttribute("rx", "8"); box.setAttribute("fill", "#FFF");
+                    box.setAttribute("stroke", "#4D96FF"); box.setAttribute("stroke-width", "2");
+                    svg.appendChild(box);
+
+                    let headingBg = document.createElementNS(ns, "rect");
+                    headingBg.setAttribute("x", "30"); headingBg.setAttribute("y", "45");
+                    headingBg.setAttribute("width", "340"); headingBg.setAttribute("height", "30");
+                    headingBg.setAttribute("fill", "#4D96FF");
+                    svg.appendChild(headingBg);
+
+                    let thText = document.createElementNS(ns, "text");
+                    thText.setAttribute("x", "45"); thText.setAttribute("y", "65");
+                    thText.setAttribute("fill", "#FFF"); thText.setAttribute("font-size", "13");
+                    thText.setAttribute("font-weight", "bold");
+                    thText.textContent = "SCHEDULE INFORMATION TIMETABLE";
+                    svg.appendChild(thText);
+
+                    let row1 = document.createElementNS(ns, "text");
+                    row1.setAttribute("x", "45"); row1.setAttribute("y", "100");
+                    row1.setAttribute("fill", "#2B2D42"); row1.setAttribute("font-size", "12");
+                    row1.setAttribute("font-weight", "600");
+                    row1.textContent = qData.line1 || "";
+                    svg.appendChild(row1);
+
+                    let row2 = document.createElementNS(ns, "text");
+                    row2.setAttribute("x", "45"); row2.setAttribute("y", "132");
+                    row2.setAttribute("fill", "#2B2D42"); row2.setAttribute("font-size", "12");
+                    row2.setAttribute("font-weight", "600");
+                    row2.textContent = qData.line2 || "";
+                    svg.appendChild(row2);
+                }
+
+                panel.appendChild(svg);
+            },
+
+            finishSummary() {
+                const elapsedSeconds = Math.floor((new Date() - this.startTime) / 1000);
+                const min = Math.floor(elapsedSeconds / 60);
+                const sec = elapsedSeconds % 60;
+                const percentageScore = Math.round((this.score / this.questions.length) * 100);
+
+                let badgeChar = "📚", badgeHeader = "Keep Practising", badgeSummary = "Keep training your interval and dial estimation maps.";
+                if (percentageScore >= 90) {
+                    badgeChar = "🏆"; badgeHeader = "Time Titan";
+                    badgeSummary = "Superb! You have completely mastered all analogue hands, 24-hour systems, and timelines.";
+                } else if (percentageScore >= 70) {
+                    badgeChar = "🌟"; badgeHeader = "Clock Expert";
+                    badgeSummary = "Great work! You read clocks smoothly and evaluate absolute duration gaps easily.";
+                }
+
+                document.getElementById('sum-tier').innerText = this.level;
+                document.getElementById('sum-score').innerText = `${this.score} / ${this.questions.length}`;
+                document.getElementById('sum-pct').innerText = `${percentageScore}%`;
+                document.getElementById('sum-correct').innerText = this.score;
+                document.getElementById('sum-wrong').innerText = this.questions.length - this.score;
+                document.getElementById('sum-time').innerText = `${min}m ${sec}s`;
+
+                document.getElementById('sum-badge-icon').innerText = badgeChar;
+                document.getElementById('sum-badge-title').innerText = badgeHeader;
+                document.getElementById('sum-badge-desc').innerText = badgeSummary;
+
+                document.getElementById('cert-tier').innerText = this.level;
+                document.getElementById('cert-score').innerText = `${this.score}/${this.questions.length}`;
+                document.getElementById('cert-pct').innerText = `${percentageScore}%`;
+
+                document.getElementById('screen-quiz').classList.remove('active');
+                document.getElementById('screen-summary').classList.add('active');
+
+                if (percentageScore >= 70) { triggerConfettiParticles(); }
+            }
+        };
+
+        function triggerConfettiParticles() {
+            const canvas = document.getElementById('confetti-canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = canvas.parentElement.offsetWidth;
+            canvas.height = canvas.parentElement.offsetHeight;
+
+            let particlesList = [];
+            const hexColors = ['#FF6B6B', '#4D96FF', '#2EC4B6', '#FF9F1C'];
+            for (let i = 0; i < 80; i++) {
+                particlesList.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    radius: Math.random() * 4 + 4,
+                    density: Math.random() * canvas.height,
+                    color: hexColors[Math.floor(Math.random() * hexColors.length)],
+                    angle: Math.random() * 2,
+                    angleIncremental: Math.random() * 0.05
+                });
+            }
+
+            function frameLoop() {
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                let framesRemaining = false;
+                particlesList.forEach(p => {
+                    p.angle += p.angleIncremental;
+                    p.y += 2.5;
+                    p.x += Math.sin(p.angle);
+                    if (p.y <= canvas.height) { framesRemaining = true; }
+                    context.beginPath();
+                    context.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    context.fillStyle = p.color;
+                    context.fill();
+                });
+                if (framesRemaining) requestAnimationFrame(frameLoop);
+            }
+            frameLoop();
+        }
+    </script>
+</body>
+</html>

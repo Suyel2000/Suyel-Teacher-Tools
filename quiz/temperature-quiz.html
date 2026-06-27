@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌡️ Temperature Quiz</title>
+    <style>
+        :root {
+            --easy: #4caf50;
+            --medium: #ff9800;
+            --hard: #e91e63;
+            --primary: #0284c7;
+            --mercury-hot: #ef4444;
+            --mercury-cold: #3b82f6;
+            --bg-gradient: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #fee2e2 100%);
+            --text-main: #1e293b;
+            --glass: rgba(255, 255, 255, 0.95);
+            --correct-bg: #ecfdf5;
+            --correct-text: #065f46;
+            --wrong-bg: #fef2f2;
+            --wrong-text: #991b1b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Segoe UI', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .bg-decorations {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0; left: 0;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .floating-icon {
+            position: absolute;
+            opacity: 0.08;
+            animation: floatAnim 6s ease-in-out infinite alternate;
+        }
+        @keyframes floatAnim {
+            0% { transform: translateY(0) rotate(0deg); }
+            100% { transform: translateY(-25px) rotate(15deg); }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 760px;
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            border-radius: 28px;
+            box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.1);
+            border: 4px solid #ffffff;
+            padding: 28px;
+            z-index: 10;
+            position: relative;
+        }
+
+        .title {
+            font-size: 2.6rem;
+            color: #1e3a8a;
+            text-align: center;
+            margin-bottom: 4px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #475569;
+            text-align: center;
+            margin-bottom: 28px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .screen {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .level-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 22px 26px;
+            margin: 16px 0;
+            border: none;
+            border-radius: 20px;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+            transition: all 0.2s ease;
+        }
+
+        .level-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.14);
+        }
+        .level-btn span { font-size: 0.95rem; font-weight: normal; display: block; margin-top: 6px; opacity: 0.95; }
+        .btn-easy { background: linear-gradient(135deg, #4caf50, #2e7d32); }
+        .btn-medium { background: linear-gradient(135deg, #ff9800, #e65100); }
+        .btn-hard { background: linear-gradient(135deg, #e91e63, #ad1457); }
+
+        .meta-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            font-weight: bold;
+            color: var(--text-main);
+            font-size: 1.05rem;
+        }
+
+        .score-box {
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 6px 16px;
+            border-radius: 14px;
+            border: 2px solid #bae6fd;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 16px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 24px;
+            border: 1px solid #cbd5e1;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #3b82f6, #ef4444);
+            transition: width 0.3s ease;
+        }
+
+        .graphic-host {
+            display: none;
+            width: 100%;
+            text-align: center;
+            margin: 0 auto 24px auto;
+            animation: popIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.85); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .graphic-flex {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 24px;
+            padding: 12px;
+            flex-wrap: wrap;
+        }
+
+        .graphic-card {
+            background: white;
+            padding: 12px;
+            border-radius: 16px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+            border: 2px solid #f1f5f9;
+        }
+
+        .graphic-label {
+            margin-top: 8px;
+            font-weight: bold;
+            color: #334155;
+            font-size: 1.1rem;
+        }
+
+        .question-box {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--text-main);
+            margin-bottom: 24px;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 540px) {
+            .options-grid { grid-template-columns: 1fr; }
+            .title { font-size: 2.1rem; }
+        }
+
+        .option-btn {
+            background: #ffffff;
+            border: 2px solid #cbd5e1;
+            border-radius: 16px;
+            padding: 18px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .option-btn:hover:not(:disabled) {
+            border-color: #0284c7;
+            background: #f8fafc;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+
+        .option-btn.correct {
+            background-color: var(--correct-bg) !important;
+            border-color: #10b981 !important;
+            color: var(--correct-text) !important;
+        }
+
+        .option-btn.wrong {
+            background-color: var(--wrong-bg) !important;
+            border-color: #ef4444 !important;
+            color: var(--wrong-text) !important;
+        }
+
+        .explanation-panel {
+            display: none;
+            padding: 18px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            font-size: 1.1rem;
+            line-height: 1.5;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.01);
+        }
+        .explanation-panel.correct { display: block; background: var(--correct-bg); color: var(--correct-text); border-left: 6px solid #10b981; }
+        .explanation-panel.wrong { display: block; background: var(--wrong-bg); color: var(--wrong-text); border-left: 6px solid #ef4444; }
+
+        .nav-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 14px;
+        }
+
+        .action-btn {
+            background: #475569;
+            color: white;
+            border: none;
+            padding: 14px 26px;
+            border-radius: 14px;
+            font-size: 1.05rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .action-btn:hover:not(:disabled) { background: #334155; }
+        .action-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+        .btn-prime { background: #0284c7; }
+        .btn-prime:hover:not(:disabled) { background: #0369a1; }
+
+        .badge-box {
+            background: #fffbeb;
+            border: 3px dashed #d97706;
+            padding: 20px;
+            border-radius: 22px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .badge-art { font-size: 4.5rem; margin-bottom: 8px; animation: bounce 2s infinite alternate; }
+        @keyframes bounce { 0% { transform: translateY(0); } 100% { transform: translateY(-10px); } }
+        .badge-lbl { font-size: 1.7rem; font-weight: bold; color: #d97706; }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin: 20px 0;
+        }
+        .result-card {
+            background: white;
+            padding: 16px;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+        .res-val { font-size: 1.5rem; font-weight: bold; color: #0f172a; }
+        .res-lbl { font-size: 0.95rem; color: #64748b; margin-top: 4px; }
+
+        #canvas-confetti {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 99; border-radius: 28px;
+        }
+
+        #printable-certificate {
+            display: none;
+            background: #ffffff;
+            color: #000000;
+            padding: 50px;
+            border: 12px double #0284c7;
+            text-align: center;
+            border-radius: 16px;
+            margin-top: 24px;
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            #printable-certificate, #printable-certificate * { visibility: visible; }
+            #printable-certificate { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-decorations">
+        <div class="floating-icon" style="top:10%; left:5%; font-size:4rem;">🌡️</div>
+        <div class="floating-icon" style="bottom:15%; left:8%; font-size:3.5rem;">☀️</div>
+        <div class="floating-icon" style="top:18%; right:7%; font-size:3.8rem;">❄️</div>
+        <div class="floating-icon" style="bottom:10%; right:6%; font-size:4rem;">💧</div>
+        <div class="floating-icon" style="top:45%; left:40%; font-size:3rem;">🔥</div>
+    </div>
+
+    <div class="container">
+        <canvas id="canvas-confetti"></canvas>
+        <h1 class="title">🌡️ Temperature Quiz</h1>
+        <p class="subtitle">Observe • Compare • Measure • Master Temperature</p>
+
+        <div id="screen-start" class="screen active">
+            <button class="level-btn btn-easy" onclick="QuizEngine.start('easy')">
+                <div>
+                    <div>🟢 Easy Level</div>
+                    <span>Classes 2–3 • Hot/Cold, Weather, Everyday Basics</span>
+                </div>
+                <div>➔</div>
+            </button>
+            <button class="level-btn btn-medium" onclick="QuizEngine.start('medium')">
+                <div>
+                    <div>🟡 Medium Level</div>
+                    <span>Classes 3–4 • Reading Scales (°C), Estimates, Body Temp</span>
+                </div>
+                <div>➔</div>
+            </button>
+            <button class="level-btn btn-hard" onclick="QuizEngine.start('hard')">
+                <div>
+                    <div>🔴 Hard Level</div>
+                    <span>Classes 4–5 • Sorting, Word Problems, Positive/Negative</span>
+                </div>
+                <div>➔</div>
+            </button>
+        </div>
+
+        <div id="screen-quiz" class="screen">
+            <div class="meta-bar">
+                <div>Level: <span id="lbl-tier" style="text-transform: capitalize; color:#0284c7;">-</span></div>
+                <div class="score-box">Score: <span id="lbl-score">0</span></div>
+                <div>Q: <span id="lbl-counter">1/50</span></div>
+            </div>
+
+            <div class="progress-container">
+                <div id="progress-fill" class="progress-fill"></div>
+            </div>
+
+            <div class="graphic-host" id="graphic-area">
+                <div class="graphic-flex" id="graphic-render-node"></div>
+            </div>
+
+            <div class="question-box" id="question-text"></div>
+            <div class="options-grid" id="options-box"></div>
+            <div id="explanation-box" class="explanation-panel"></div>
+
+            <div class="nav-row">
+                <button class="action-btn" onclick="QuizEngine.abortToMenu()">Menu</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="action-btn" id="btn-back" onclick="QuizEngine.navigate(-1)">Back</button>
+                    <button class="action-btn btn-prime" id="btn-forward" onclick="QuizEngine.navigate(1)">Next ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-summary" class="screen">
+            <h2 style="text-align: center; color: #0284c7; margin-bottom: 8px;">🎉 Quiz Completed!</h2>
+            
+            <div class="badge-box">
+                <div id="dash-badge-art" class="badge-art">🏆</div>
+                <div id="dash-badge-lbl" class="badge-lbl">-</div>
+            </div>
+
+            <div class="results-grid">
+                <div class="result-card"><div id="dash-tier" class="res-val" style="text-transform: capitalize;">-</div><div class="res-lbl">Difficulty</div></div>
+                <div class="result-card"><div id="dash-score" class="res-val">-</div><div class="res-lbl">Correct Answers</div></div>
+                <div class="result-card"><div id="dash-pct" class="res-val">-</div><div class="res-lbl">Accuracy Score</div></div>
+                <div class="result-card"><div id="dash-time" class="res-val">-</div><div class="res-lbl">Total Time</div></div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 24px;">
+                <button class="level-btn btn-easy" style="margin:0; justify-content:center; font-size:1.15rem; padding:14px;" onclick="window.print()">🖨️ Print Temperature Certificate</button>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button class="action-btn" style="padding:14px;" onclick="QuizEngine.replayLevel()">Play Again</button>
+                    <button class="action-btn btn-prime" style="padding:14px;" onclick="QuizEngine.abortToMenu()">Main Menu</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="printable-certificate">
+            <h1 style="font-size: 2.6rem; color: #0284c7;">CERTIFICATE OF TEMPERATURE MASTER</h1>
+            <p style="font-size: 1.3rem; margin: 20px 0; font-style: italic;">This certificate confirms excellence in monitoring, measuring, and computing thermal metrics.</p>
+            <h2 style="font-size: 2rem; margin-bottom: 16px; color: #d97706;">Temperature Champion</h2>
+            <p style="font-size: 1.2rem;">Difficulty Level: <strong id="cert-tier" style="text-transform: capitalize;"></strong></p>
+            <p style="font-size: 1.5rem; color: #059669; font-weight: bold; margin: 24px 0;">Scored: <span id="cert-score"></span> Correct (<span id="cert-pct"></span> Percentage)</p>
+            <div style="margin-top: 60px; display: flex; justify-content: space-around; font-size: 1.1rem;">
+                <div style="border-top: 2px dashed #64748b; width: 220px; padding-top: 8px;">Date Passed</div>
+                <div style="border-top: 2px dashed #64748b; width: 220px; padding-top: 8px;">Teacher/Parent Sign</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /*********************************************************
+         * WEB AUDIO SYNTHESIZER SOUND ENGINE
+         *********************************************************/
+        const AudioFX = {
+            audioCtx: null,
+            init() { if (!this.audioCtx) this.audioCtx = new (window.AudioContext || window.webkitAudioContext)(); },
+            playTone(freq, type, duration, vol) {
+                try {
+                    this.init();
+                    let osc = this.audioCtx.createOscillator();
+                    let gainNode = this.audioCtx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.audioCtx.currentTime);
+                    gainNode.gain.setValueAtTime(vol, this.audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.0001, this.audioCtx.currentTime + duration);
+                    osc.connect(gainNode);
+                    gainNode.connect(this.audioCtx.destination);
+                    osc.start();
+                    osc.stop(this.audioCtx.currentTime + duration);
+                } catch(e){}
+            },
+            click() { this.playTone(600, 'sine', 0.04, 0.06); },
+            right() {
+                this.playTone(440, 'sine', 0.08, 0.08);
+                setTimeout(() => this.playTone(554.37, 'sine', 0.08, 0.08), 60);
+                setTimeout(() => this.playTone(659.25, 'sine', 0.2, 0.08), 120);
+            },
+            wrong() {
+                this.playTone(180, 'triangle', 0.12, 0.15);
+                setTimeout(() => this.playTone(130, 'triangle', 0.22, 0.15), 80);
+            },
+            thermalChange() {
+                // Generates a sweep tone tracking rising or falling mercury lines
+                for (let i = 0; i < 5; i++) {
+                    setTimeout(() => {
+                        this.playTone(300 + (i * 90), 'sine', 0.1, 0.04);
+                    }, i * 50);
+                }
+            },
+            triumph() {
+                let notes = [261.6, 329.6, 392.0, 523.3, 659.3, 784.0];
+                notes.forEach((f, idx) => {
+                    setTimeout(() => this.playTone(f, 'sine', 0.25, 0.07), idx * 60);
+                });
+            }
+        };
+
+        /*********************************************************
+         * PROCEDURAL VECTOR DRAWING ENGINE (SVG ARTWORKS)
+         *********************************************************/
+        const SVGRenderEngine = {
+            draw(type, value = 0) {
+                let svg = `<svg width="110" height="150" viewBox="0 0 110 150" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">`;
+                
+                if (type === 'thermometer') {
+                    // map values from -10 to 100 degrees down to safe drawing coordinates (95 to 25)
+                    let clampVal = Math.max(-20, Math.min(100, value));
+                    let pct = (clampVal - (-20)) / (100 - (-20)); // Normalized fraction
+                    let liquidTopY = 105 - (80 * pct);
+                    let mercuryColor = value > 25 ? 'var(--mercury-hot)' : 'var(--mercury-cold)';
+
+                    svg += `
+                        <rect x="47" y="15" width="16" height="100" rx="8" fill="#e2e8f0" stroke="#475569" stroke-width="3" />
+                        <circle cx="55" cy="115" r="16" fill="#e2e8f0" stroke="#475569" stroke-width="3" />
+                        <rect x="50" y="${liquidTopY}" width="10" height="${115 - liquidTopY}" fill="${mercuryColor}" rx="4" />
+                        <circle cx="55" cy="115" r="12" fill="${mercuryColor}" />
+                        <line x1="63" y1="25" x2="69" y2="25" stroke="#475569" stroke-width="2"/>
+                        <line x1="63" y1="45" x2="69" y2="45" stroke="#475569" stroke-width="2"/>
+                        <line x1="63" y1="65" x2="69" y2="65" stroke="#475569" stroke-width="2"/>
+                        <line x1="63" y1="85" x2="69" y2="85" stroke="#475569" stroke-width="2"/>
+                        <line x1="63" y1="105" x2="69" y2="105" stroke="#475569" stroke-width="2"/>
+                        <text x="73" y="28" font-size="9" font-weight="bold" fill="#64748b">100°C</text>
+                        <text x="73" y="68" font-size="9" font-weight="bold" fill="#64748b">40°C</text>
+                        <text x="73" y="108" font-size="9" font-weight="bold" fill="#64748b">0°C</text>
+                    `;
+                }
+                else if (type === 'sun') {
+                    svg += `
+                        <circle cx="55" cy="75" r="24" fill="#f59e0b" stroke="#d97706" stroke-width="2" />
+                        <g stroke="#f59e0b" stroke-width="4" stroke-linecap="round">
+                            <line x1="55" y1="35" x2="55" y2="45" /> <line x1="55" y1="105" x2="55" y2="115" />
+                            <line x1="15" y1="75" x2="25" y2="75" /> <line x1="85" y1="75" x2="95" y2="75" />
+                            <line x1="27" y1="47" x2="34" y2="54" /> <line x1="76" y1="96" x2="83" y2="103" />
+                            <line x1="83" y1="47" x2="76" y2="54" /> <line x1="34" y1="96" x2="27" y2="103" />
+                        </g>`;
+                }
+                else if (type === 'snowflake') {
+                    svg += `
+                        <g stroke="#38bdf8" stroke-width="4" stroke-linecap="round">
+                            <line x1="55" y1="30" x2="55" y2="120" />
+                            <line x1="10" y1="75" x2="100" y2="75" />
+                            <line x1="23" y1="43" x2="87" y2="107" />
+                            <line x1="87" y1="43" x2="23" y2="107" />
+                            <path d="M47,40 L55,48 L63,40 M47,110 L55,102 L63,110 M20,67 L28,75 L20,83 M90,67 L82,75 L90,83" fill="none" stroke-width="3"/>
+                        </g>`;
+                }
+                else if (type === 'icecube') {
+                    svg += `
+                        <rect x="25" y="40" width="55" height="55" rx="8" fill="#bae6fd" stroke="#7dd3fc" stroke-width="3" opacity="0.9"/>
+                        <path d="M 32,48 L 73,48 L 73,82" fill="none" stroke="#fff" stroke-width="2" opacity="0.6"/>
+                        <path d="M 35,88 L 70,88" fill="none" stroke="#0284c7" stroke-width="2" opacity="0.3"/>`;
+                }
+                else if (type === 'fire') {
+                    svg += `
+                        <path d="M 55,20 C 75,55 85,85 75,115 C 65,130 45,130 35,115 C 25,85 35,55 55,20 Z" fill="#ef4444" />
+                        <path d="M 55,45 C 68,70 73,90 68,110 C 60,120 50,120 42,110 C 37,90 42,70 55,45 Z" fill="#f97316" />
+                        <path d="M 55,70 C 62,85 65,100 60,110 C 58,115 52,115 50,110 C 45,100 48,85 55,70 Z" fill="#facc15" />`;
+                }
+                else if (type === 'teacup') {
+                    svg += `
+                        <path d="M 75,65 A 16 16 0 0 1 75,105" fill="none" stroke="#94a3b8" stroke-width="4" />
+                        <path d="M 20,55 L 80,55 L 75,105 L 25,105 Z" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="3" />
+                        <ellipse cx="50" cy="55" rx="30" ry="8" fill="#d97706" />
+                        <path d="M 35,40 Q 30,25 38,15" fill="none" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M 50,42 Q 45,27 53,17" fill="none" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M 65,40 Q 60,25 68,15" fill="none" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round"/>`;
+                }
+                else if (type === 'icecream') {
+                    svg += `
+                        <polygon points="55,135 30,80 80,80" fill="#d97706" stroke="#b45309" stroke-width="2" />
+                        <circle cx="42" cy="74" r="16" fill="#f43f5e" />
+                        <circle cx="68" cy="74" r="16" fill="#fef08a" />
+                        <circle cx="55" cy="60" r="18" fill="#60a5fa" />
+                        <circle cx="55" cy="42" r="6" fill="#ef4444" />`;
+                }
+                else if (type === 'refrigerator') {
+                    svg += `
+                        <rect x="25" y="20" width="60" height="110" rx="6" fill="#cbd5e1" stroke="#475569" stroke-width="3" />
+                        <line x1="25" y1="65" x2="85" y2="65" stroke="#475569" stroke-width="3" />
+                        <rect x="75" y="35" width="4" height="20" rx="2" fill="#475569" />
+                        <rect x="75" y="78" width="4" height="25" rx="2" fill="#475569" />`;
+                }
+
+                svg += `</svg>`;
+                
+                let el = document.createElement('div');
+                el.className = "graphic-card";
+                el.innerHTML = svg;
+                return el;
+            }
+        };
+
+        /*********************************************************
+         * COMPLETE 150 DYNAMIC QUESTION MASTER REPOSITORY
+         *********************************************************/
+        const TemperatureQuestionMatrix = {
+            easy: [
+                { q: "Which item is much hotter?", o: ["Hot Soup", "Ice Cream", "Cold Water", "Ice Cube"], a: "Hot Soup", e: "Hot soup is warm and cooked, while ice cream and ice cubes are cold items." },
+                { q: "Which item is very cold?", o: ["An Ice Cube", "Hot Tea", "Fried Rice", "The Sun"], a: "An Ice Cube", e: "An ice cube is made of frozen water, which makes it cold." },
+                { q: "Which tool do we use to measure temperature?", o: ["Thermometer", "Ruler", "Weighing Scale", "Clock"], a: "Thermometer", e: "A thermometer is the special scientific tool used to check temperatures." },
+                { q: "How does hot cocoa taste and feel when you hold it?", o: ["Warm and Hot", "Cold and Freezing", "Icy", "Cool"], a: "Warm and Hot", e: "Cocoa is heated before serving, making it hot." },
+                { q: "Which season is usually the hottest?", o: ["Summer", "Winter", "Autumn", "Spring"], a: "Summer", e: "Summer is the season with long sunny days and the highest temperatures." },
+                { q: "Which season is known to be the coldest?", o: ["Winter", "Summer", "Monsoon", "Spring"], a: "Winter", e: "Winter brings freezing weather, snow, and low temperatures." },
+                { q: "If you touch a snowman, what will your hands feel?", o: ["Cold", "Hot", "Warm", "Burning"], a: "Cold", e: "Snowmen are built from frozen snow packs, which are very cold." },
+                { q: "What happens to butter if you place it on a hot pan?", o: ["It melts", "It freezes into ice", "It turns colder", "Nothing happens"], a: "It melts", e: "Heat makes solid butter turn into liquid by melting it." },
+                { q: "Which item is usually the coldest?", o: ["Ice Cream cone", "Fresh Milk", "Hot Pizza", "Warm Toast"], a: "Ice Cream cone", e: "Ice cream is kept inside a freezing cabinet so it stays frozen and cold." },
+                { q: "What should you wear on a freezing cold winter day?", o: ["A heavy coat", "A swimsuit", "Shorts", "Sunglasses"], a: "A heavy coat", e: "Thick winter coats trap body heat to protect you from cold weather." },
+                { type: 'sun', q: "Look at the object. Is this object hot or cold?", o: ["Very Hot", "Very Cold", "Freezing", "Cool"], a: "Very Hot", e: "The Sun is a giant star that creates massive amounts of light and heat." },
+                { type: 'snowflake', q: "Look at the decoration shape. What type of weather does it match?", o: ["Freezing Snowy day", "Hot Desert day", "Warm Sunny afternoon", "Boiling water"], a: "Freezing Snowy day", e: "Snowflakes form only in freezing clouds during winter seasons." },
+                { type: 'teacup', q: "Look at the steaming cup. What is the temperature state inside?", o: ["Hot", "Frozen", "Icy", "Sub-Zero"], a: "Hot", e: "Rising steam lines show the liquid inside the mug is hot." },
+                { type: 'icecube', q: "Look at the square block. What will happen if left outside on a hot day?", o: ["It will melt into water", "It will get colder", "It will catch fire", "It stays the same"], a: "It will melt into water", e: "Heat transforms cold ice into warm liquid water." },
+                { type: 'fire', q: "Look at the campfire flame. Is it safe to touch directly?", o: ["No, it is too hot!", "Yes, it is freezing cold", "Yes, it is lukewarm", "Yes, it is icy"], a: "No, it is too hot!", e: "Fire creates high temperatures that can burn skin." },
+                { q: "Which activity is best for a very hot summer afternoon?", o: ["Swimming in a pool", "Building a snowman", "Wearing thick gloves", "Skiing on ice mountains"], a: "Swimming in a pool", e: "Cool pool water helps lower your body temperature on a hot day." },
+                { q: "If something has a high temperature, it means it is:", o: ["Hot", "Cold", "Frozen", "Chilly"], a: "Hot", e: "Higher numbers on temperature scales mean things are hotter." },
+                { q: "If something has a very low temperature, it means it is:", o: ["Cold", "Boiling", "Hot", "Warm"], a: "Cold", e: "Lower temperature values match cold or freezing conditions." },
+                { q: "What item inside the house keeps your fruit and milk cold?", o: ["Refrigerator", "Oven", "Toaster", "Bookshelf"], a: "Refrigerator", e: "A fridge cools items down to stop them from spoiling." },
+                { q: "Which item is hotter than a standard ice cube?", o: ["Warm soup", "Frozen juice drop", "Ice block", "Snow"], a: "Warm soup", e: "Warm soup has a much higher temperature than any ice variant." },
+                { q: "When you feel sick with a fever, your body temperature is usually:", o: ["Higher than normal", "Lower than normal", "Exactly zero", "Freezing"], a: "Higher than normal", e: "A fever means your body temperature rises to fight off germs." },
+                { q: "What type of food is served hot?", o: ["Freshly baked pizza", "Watermelon slices", "Chocolate ice cream", "Iced tea"], a: "Freshly baked pizza", e: "Pizza is cooked inside a very hot oven." },
+                { q: "Which place is usually the coldest?", o: ["Inside a freezer", "In the living room", "Near a campfire", "Under the afternoon sun"], a: "Inside a freezer", e: "Freezers are built to keep food frozen solid." },
+                { q: "Which tool does a doctor use to check if you have a fever?", o: ["Thermometer", "Measuring tape", "Clock", "Compass"], a: "Thermometer", e: "Doctors read thermometers to check internal body heat levels." },
+                { q: "What happens to liquid water if you put it in the freezer?", o: ["It turns into solid ice", "It boils and steams", "It gets hotter", "It turns into soup"], a: "It turns into solid ice", e: "Freezing temperatures turn liquid water into solid ice blocks." },
+                { q: "Which is warmer: a sunny day at the beach or a snowy day on a mountain?", o: ["A sunny day at the beach", "A snowy day on a mountain", "They are identical", "The snowy mountain"], a: "A sunny day at the beach", e: "Sunlight heats the beach sand and air to high temperatures." },
+                { q: "What element does a campfire give off?", o: ["Heat and Light", "Ice and Frost", "Cold wind", "Snowflakes"], a: "Heat and Light", e: "Burning wood creates a chemical reaction that produces high heat." },
+                { q: "If water is boiling in a kettle, it is safe to touch?", o: ["No, it is too hot", "Yes, it is chilly", "Yes, it is cold", "Yes, it is frozen"], a: "No, it is too hot", e: "Boiling liquid contains high thermal energy and will scald you." },
+                { q: "Which word describes a chilly winter breeze?", o: ["Cold", "Boiling", "Scorching", "Hot"], a: "Cold", e: "Chilly winds lower temperatures, making the air feel cold." },
+                { q: "Which object is colder than a cup of warm tea?", o: ["An ice cream scoop", "A bowl of hot noodles", "A freshly baked potato", "Boiling water"], a: "An ice cream scoop", e: "Ice cream sits far below the temperature of warm tea." },
+                { q: "The word 'Temperature' tells us how ________ an object is.", o: ["Hot or cold", "Heavy or light", "Long or short", "Fast or slow"], a: "Hot or cold", e: "Temperature is the math measurement of hotness or coldness." },
+                { q: "What do you see coming out of a very hot pot of boiling water?", o: ["Steam", "Ice chips", "Snow", "Frosted glass"], a: "Steam", e: "Hot water evaporates into rising water vapor called steam." },
+                { q: "Which item is cooler than the burning hot sun?", o: ["A cold swimming pool", "A lightning bolt", "A hot rocket engine", "A burning campfire"], a: "A cold swimming pool", e: "Swimming pools are cool, whereas stars like the sun are incredibly hot." },
+                { q: "In which weather would you want to wear gloves and a woolen cap?", o: ["Snowy weather", "Scorching sunny weather", "Hot desert weather", "Tropical humid afternoon"], a: "Snowy weather", e: "Winter wear keeps your extremities safe from cold temperatures." },
+                { q: "If a pool feels 'lukewarm', it means the water is:", o: ["Mildly warm", "Freezing solid", "Boiling hot", "Sub-zero"], a: "Mildly warm", e: "Lukewarm means comfortable, pleasant, and slightly warm." },
+                { q: "Which animal prefers living in very cold freezing places?", o: ["Polar Bear", "Camel", "Desert Lizard", "Giraffe"], a: "Polar Bear", e: "Polar bears have thick layers of fat and fur to tolerate freezing arctic climates." },
+                { q: "Which item helps cool a room down on a hot summer day?", o: ["Air Conditioner", "Heating radiator", "Thick blanket", "Hot oven"], a: "Air Conditioner", e: "AC units remove heat from internal air, lowering room temperature." },
+                { q: "What color is often used on thermometers to show hot temperatures?", o: ["Red", "Blue", "Green", "Purple"], a: "Red", e: "Red is the universal educational color cue representing heat." },
+                { q: "What color is often used on weather maps to show cold conditions?", o: ["Blue", "Red", "Orange", "Yellow"], a: "Blue", e: "Blue represents cool or icy temperatures visually." },
+                { q: "Which item has a lower temperature than hot melted chocolate?", o: ["A refrigerated soda bottle", "A burning matchstick", "Boiling soup", "Baking bread"], a: "A refrigerated soda bottle", e: "Refrigerated bottles are cooled down intentionally." },
+                { q: "If you leave a glass of ice water out in the sun, the water will become:", o: ["Warmer", "Colder", "Frozen solid", "Turn into ice cream"], a: "Warmer", e: "Sunlight transfers thermal energy, making the liquid warmer." },
+                { q: "Which item can create high heat to toast bread?", o: ["Toaster", "Ice Box", "Cooler bag", "Sink"], a: "Toaster", e: "Toasters use electric wires to create hot radiant heating elements." },
+                { q: "True or False: Soup is typically served freezing cold.", o: ["False", "True"], a: "False", e: "Soup is a warm comfort food served at hot or warm temperatures." },
+                { q: "True or False: The temperature outside changes between day and night.", o: ["True", "False"], a: "True", e: "When the sun goes down, the air loses its main heat source, making nights cooler." },
+                { q: "Which surface is cooler to step on during a hot summer day?", o: ["Grass shade", "Dark asphalt road", "Hot metal plate", "Sunny concrete"], a: "Grass shade", e: "Shaded areas do not absorb direct solar heat, keeping them cooler." },
+                { q: "If you hear that the weather is 'scorching', it means it is:", o: ["Extremely hot", "Freezing cold", "Raining ice flakes", "Perfectly mild"], a: "Extremely hot", e: "Scorching is another word for very intense heat." },
+                { q: "Which item does NOT generate its own heat?", o: ["An ice cube block", "A kitchen stove", "A room heater", "The sun"], a: "An ice cube block", e: "Ice blocks contain very little heat energy and absorb heat to melt." },
+                { q: "When liquid mercury expands and goes UP inside a thermometer scale, the object is getting:", o: ["Hotter", "Colder", "Lighter", "Smaller"], a: "Hotter", e: "Liquids expand when heated, causing the indicator bar to rise up." },
+                { q: "When liquid columns shrink and drop DOWN inside a thermometer, the environment is getting:", o: ["Colder", "Hotter", "Heavier", "Taller"], a: "Colder", e: "Cooling causes contraction, pulling the colored liquid downwards." },
+                { q: "Is your normal body temperature closer to freezing ice or to a warm summer day?", o: ["A warm summer day", "Freezing ice"], a: "A warm summer day", e: "Human bodies are naturally warm to keep organs functioning well." }
+            ],
+            medium: [
+                { type: 'thermometer', value: 10, q: "Look at the thermometer. What temperature reading is shown?", o: ["10°C", "0°C", "40°C", "100°C"], a: "10°C", e: "The colored line lines up perfectly with the 10 graduation mark." },
+                { type: 'thermometer', value: 40, q: "Read the scale value on the thermometer. What is the temperature?", o: ["40°C", "20°C", "0°C", "80°C"], a: "40°C", e: "The mercury column reaches the 40°C marker line." },
+                { type: 'thermometer', value: 80, q: "What is the temperature indicated on this thermometer instrument?", o: ["80°C", "40°C", "100°C", "0°C"], a: "80°C", e: "The top level of the red line shows exactly 80°C." },
+                { type: 'thermometer', value: 0, q: "Look closely at the thermometer. What temperature value is it reading?", o: ["0°C", "10°C", "-10°C", "50°C"], a: "0°C", e: "The colored metric level rests exactly on the 0°C line." },
+                { type: 'thermometer', value: 100, q: "What level does this thermometer show?", o: ["100°C", "50°C", "0°C", "10°C"], a: "100°C", e: "The mercury line is fully raised to the 100°C point." },
+                { q: "What is the short math symbol written for degrees Celsius?", o: ["°C", "°F", "cm", "kg"], a: "°C", e: "Degrees Celsius is represented globally by a circle degree sign and a capital C." },
+                { q: "Which temperature value is warmer?", o: ["35°C", "15°C", "25°C", "5°C"], a: "35°C", e: "35 is the highest number here, meaning it represents the most heat." },
+                { q: "Which temperature value is the coldest?", o: ["4°C", "14°C", "24°C", "34°C"], a: "4°C", e: "4°C is closest to the freezing point of water, making it the coldest selection." },
+                { q: "At what exact temperature does liquid water freeze into solid ice?", o: ["0°C", "100°C", "37°C", "50°C"], a: "0°C", e: "Pure liquid water turns to solid ice at exactly 0 degrees Celsius." },
+                { q: "At what temperature does water start to boil rapidly at normal pressure?", o: ["100°C", "0°C", "50°C", "37°C"], a: "100°C", e: "Water reaches its boiling state at exactly 100 degrees Celsius." },
+                { q: "What is the normal body temperature of a healthy human being?", o: ["About 37°C", "About 0°C", "About 100°C", "About 50°C"], a: "About 37°C", e: "A healthy human body naturally stays around 37°C." },
+                { q: "If the weather channel says the outside temperature is 38°C, the day is:", o: ["Very Hot", "Freezing Cold", "Snowing", "Below freezing"], a: "Very Hot", e: "38°C is a high atmospheric temperature common during hot summers." },
+                { q: "If a mountain cabin registers an outdoor temperature of 2°C, it is:", o: ["Very Cold", "Boiling Hot", "Warm and Tropical", "Scorching"], a: "Very Cold", e: "2°C is just slightly above freezing (0°C), making it very cold." },
+                { q: "Which temperature feels most comfortable for a normal classroom room?", o: ["22°C", "0°C", "95°C", "50°C"], a: "22°C", e: "Around 20°C to 22°C is standard room temperature." },
+                { q: "Compare these two values: Which is colder, 12°C or 29°C?", o: ["12°C", "29°C", "They feel identical", "Neither"], a: "12°C", e: "12°C has less thermal energy than 29°C, so it is colder." },
+                { q: "Compare these two values: Which is warmer, 18°C or 8°C?", o: ["18°C", "8°C", "They are identical", "8°C is warmer"], a: "18°C", e: "18°C is a higher reading on the scale than 8°C." },
+                { q: "If a bowl of soup drops from 70°C down to 40°C, the soup has become:", o: ["Colder", "Hotter", "Boiling", "Frozen"], a: "Colder", e: "A decrease in temperature value means it lost heat energy." },
+                { q: "If a cup of milk changes from 15°C up to 55°C, the milk has become:", o: ["Hotter", "Colder", "Solid ice", "Sub-zero"], a: "Hotter", e: "An increase in numerical temperature means it gained heat." },
+                { q: "A cup of water is at 25°C. If you add ice cubes to it, the temperature will likely:", o: ["Go Down", "Go Up", "Stay at 25°C", "Reach 100°C"], a: "Go Down", e: "Ice absorbs heat from the liquid, lowering its temperature." },
+                { q: "A pot of water is at 40°C. If you place it on a burning stove, the temperature will:", o: ["Go Up", "Go Down", "Stay exactly the same", "Drop to 0°C"], a: "Go Up", e: "The stove flame inputs continuous thermal energy, raising the value." },
+                { q: "Which temperature is closer to the boiling point of water?", o: ["90°C", "10°C", "50°C", "30°C"], a: "90°C", e: "Boiling point is 100°C. 90°C is only 10 degrees away from it." },
+                { q: "Which temperature is closer to the freezing point of water?", o: ["3°C", "45°C", "85°C", "19°C"], a: "3°C", e: "Freezing point is 0°C. 3°C is very close to it." },
+                { q: "If your body temperature is checked at 39°C, you probably:", o: ["Have a fever illness", "Are freezing cold", "Are perfectly healthy", "Turned into an ice block"], a: "Have a fever illness", e: "39°C is higher than the normal baseline of 37°C, indicating a fever." },
+                { q: "What temperature is a cup of hot tea likely to be?", o: ["Around 75°C", "Around 0°C", "Around -15°C", "Around 5°C"], a: "Around 75°C", e: "Hot drinks are usually served well above room temperature, around 75°C." },
+                { q: "What temperature is a glass of iced soda likely to be?", o: ["Around 4°C", "Around 40°C", "Around 95°C", "Around 70°C"], a: "Around 4°C", e: "Iced drinks stay cold, near standard refrigeration levels of 4°C." },
+                { q: "If the morning temperature is 18°C and it rises by 7°C in the afternoon, what is the new temperature?", o: ["25°C", "21°C", "11°C", "26°C"], a: "25°C", e: "18 + 7 = 25 degrees Celsius." },
+                { q: "The temperature outside was 32°C. A thunderstorm cooled the air down by 5°C. What is the temperature now?", o: ["27°C", "37°C", "25°C", "28°C"], a: "27°C", e: "32 minus 5 leaves 27 degrees Celsius." },
+                { q: "Which is hotter: water at 50°C or water at 50°F?", o: ["50°C", "50°F", "They are exactly identical", "Neither holds heat"], a: "50°C", e: "50°C is quite warm, while 50°F is chilly. 50°C is much hotter." },
+                { q: "Can an outside weather temperature realistically be 120°C?", o: ["No, that is hotter than boiling water", "Yes, on normal summer days", "Yes, during winter seasons", "Yes, when it rains"], a: "No, that is hotter than boiling water", e: "120°C is past the boiling threshold of water. Humans could not survive that ambient air temperature." },
+                { q: "A refrigerator column should ideally maintain what internal temperature to protect food?", o: ["4°C", "100°C", "60°C", "-50°C"], a: "4°C", e: "4°C is cold enough to slow bacterial growth without freezing things solid." },
+                { q: "If you have a digital thermometer reading 15°C, what layout should you use to dress for outdoor play?", o: ["A light jacket or sweater", "A thin swimsuit only", "No clothes needed", "Heavy arctic snow gear"], a: "A light jacket or sweater", e: "15°C is cool, so a light sweater keeps you comfortable." },
+                { q: "What happens to the liquid inside a thermometer if it is dipped in boiling water?", o: ["It rises quickly towards 100°C", "It shrinks to the bottom bulb", "It turns purple", "It freezes instantly"], a: "It rises quickly towards 100°C", e: "Boiling water transfers massive heat, expanding the core indicator up to 100°C." },
+                { q: "Which of these numbers represents the lowest amount of thermal heat?", o: ["11°C", "22°C", "33°C", "44°C"], a: "11°C", e: "The smallest number represents the lowest amount of heat." },
+                { q: "If you mix equal parts of water at 20°C and water at 20°C, the mixture will be:", o: ["20°C", "40°C", "0°C", "10°C"], a: "20°C", e: "Mixing identical temperatures results in the same steady temperature." },
+                { q: "Which is colder: 15°C or 0°C?", o: ["0°C", "15°C", "They are the same", "15°C is colder"], a: "0°C", e: "0°C is the freezing point, which is 15 degrees colder than 15°C." },
+                { q: "Which is hotter: 85°C or 95°C?", o: ["95°C", "85°C", "They are identical", "85°C is hotter"], a: "95°C", e: "95°C is higher and closer to boiling." },
+                { q: "If the classroom thermostat reads 16°C and we want it warmer, we should change it to:", o: ["21°C", "10°C", "0°C", "5°C"], a: "21°C", e: "Raising the set target number commands the heater to raise the room temperature." },
+                { q: "On a mild spring day, the temperature is likely to be around:", o: ["20°C", "0°C", "100°C", "-20°C"], a: "20°C", e: "20°C is pleasant and typical of spring." },
+                { q: "If you leave an ice cube at 0°C in a room that is 25°C, the ice will:", o: ["Absorb heat and melt", "Get colder and grow bigger", "Boil away instantly", "Stay solid forever"], a: "Absorb heat and melt", e: "The warmer room air transfers heat into the cold ice block, melting it." },
+                { q: "True or False: All objects in the same room usually cool down or warm up to room temperature.", o: ["True", "False"], a: "True", e: "Objects exchange heat with the surrounding air until they match its temperature." },
+                { q: "Which temperature value is higher: 42°C or 24°C?", o: ["42°C", "24°C", "They are equal", "Neither"], a: "42°C", e: "42 is a larger number than 24." },
+                { q: "Which temperature value is lower: 19°C or 29°C?", o: ["19°C", "29°C", "They are equal", "29°C is lower"], a: "19°C", e: "19 is a smaller number than 29." },
+                { q: "A typical cup of ice cream is served at what estimated temperature?", o: ["-5°C", "25°C", "50°C", "100°C"], a: "-5°C", e: "Ice cream must be below 0°C to stay frozen solid." },
+                { q: "Why do we use standard scales like Celsius instead of just saying 'hot' or 'cold'?", o: ["To measure exactly how hot or cold it is", "To make math harder", "Because numbers look pretty", "To check length"], a: "To measure exactly how hot or cold it is", e: "Degrees provide an exact, reliable measurement." },
+                { q: "The temperature of a warm bath is usually around:", o: ["38°C", "5°C", "98°C", "0°C"], a: "38°C", e: "38°C is just above normal body temperature, making it comfortably warm." },
+                { q: "If a fluid is at 99°C, it is about to start:", o: ["Boiling", "Freezing", "Turning into ice", "Clumping solid"], a: "Boiling", e: "99°C is just 1 degree away from the 100°C boiling threshold." },
+                { q: "If a bucket of water is at 1°C, it is very close to:", o: ["Freezing into ice", "Boiling into steam", "Catching fire", "Evaporating completely"], a: "Freezing into ice", e: "1°C is just 1 degree above the freezing point of 0°C." },
+                { q: "If outside it is 10°C, what season is it likely to be?", o: ["Winter or Late Autumn", "Peak Summer afternoon", "Tropical heat wave", "Equator noon"], a: "Winter or Late Autumn", e: "10°C indicates cold weather." },
+                { q: "Can you measure the temperature of a solid object like metal?", o: ["Yes, everything has a temperature", "No, only liquids have temperature", "No, only weather has temperature", "Only if it is red"], a: "Yes, everything has a temperature", e: "All matter contains moving molecules that have a measurable temperature." },
+                { q: "If you heat water up, its temperature number will:", o: ["Increase", "Decrease", "Stay at zero", "Cut in half"], a: "Increase", e: "Heating adds thermal energy, increasing the temperature reading." }
+            ],
+            hard: [
+                { q: "Arrange these three temperatures from the COLDEST to the HOTTEST: 15°C, 3°C, 42°C.", o: ["3°C ➔ 15°C ➔ 42°C", "42°C ➔ 15°C ➔ 3°C", "15°C ➔ 3°C ➔ 42°C", "3°C ➔ 42°C ➔ 15°C"], a: "3°C ➔ 15°C ➔ 42°C", e: "3°C is the coldest, 15°C is mild, and 42°C is the hottest." },
+                { q: "Which list is correctly sorted from the HOTTEST to the COLDEST?", o: ["95°C, 24°C, 0°C, -10°C", "-10°C, 0°C, 24°C, 95°C", "0°C, -10°C, 24°C, 95°C", "24°C, 95°C, 0°C, -10°C"], a: "95°C, 24°C, 0°C, -10°C", e: "95°C is hot, 24°C is room temp, 0°C is freezing, and -10°C is sub-zero cold." },
+                { q: "In a science lab, a liquid sample is at -5°C. If it gets heated and its temperature rises by 12°C, what is the new temperature?", o: ["7°C", "-17°C", "17°C", "12°C"], a: "7°C", e: "Start at -5, add 5 to reach 0, then add the remaining 7 to end at 7°C." },
+                { q: "The overnight temperature in a snowy town is -8°C. By noon, it warms up by 15°C. What is the noon reading?", o: ["7°C", "23°C", "-23°C", "8°C"], a: "7°C", e: "-8 + 15 = 7 degrees Celsius." },
+                { q: "Which temperature value is the LOWEST (the absolute coldest)?", o: ["-15°C", "-5°C", "0°C", "5°C"], a: "-15°C", e: "In negative numbers, a larger numerical value means it is further below zero, making it colder." },
+                { q: "Which temperature is colder than -2°C?", o: ["-10°C", "0°C", "5°C", "-1°C"], a: "-10°C", e: "-10°C is further below zero than -2°C." },
+                { q: "The temperature in a freezer is -18°C. The temperature in a fridge is 4°C. What is the difference between them?", o: ["22°C", "14°C", "-14°C", "18°C"], a: "22°C", fill: [], e: "To get from -18 to 4, you move 18 steps to zero, then 4 more steps. 18 + 4 = 22 degrees difference." },
+                { q: "On Monday, the desert heat was 43°C. On Tuesday, it was 39°C. How many degrees did the temperature drop?", o: ["4°C", "5°C", "6°C", "3°C"], a: "4°C", e: "43 minus 39 equals a drop of 4 degrees." },
+                { type: 'thermometer', value: -10, q: "Look closely at the negative scale mark. What is this below-zero temperature?", o: ["-10°C", "10°C", "0°C", "-20°C"], a: "-10°C", e: "The fluid line rests on the marker labeled 10 points below the zero line (-10°C)." },
+                { q: "Water at 25°C is heated until it reaches its boiling point. How many degrees did its temperature increase?", o: ["75°C", "100°C", "50°C", "65°C"], a: "75°C", e: "Boiling point is 100°C. 100 - 25 = 75 degrees increase." },
+                { q: "Which place on Earth is most likely to record a temperature of -40°C?", o: ["The South Pole ice sheet", "A tropical rainforest", "A sandy desert at noon", "An indoor public pool"], a: "The South Pole ice sheet", e: "Polar ice caps routinely drop to extreme below-zero ranges like -40°C." },
+                { q: "An experiment requires a flask to stay at 65°C. It is currently 48°C. How much more heat must be added?", o: ["17°C", "27°C", "13°C", "23°C"], a: "17°C", e: "65 minus 48 equals 17 degrees Celsius." },
+                { q: "Two cups of water at 30°C are poured together into a large pitcher. What is the temperature of the water in the pitcher?", o: ["30°C", "60°C", "15°C", "0°C"], a: "30°C", e: "Combining volumes does not add their temperatures together; it stays at 30°C." },
+                { q: "If the temperature falls from 5°C down by 8 degrees, what is the final reading?", o: ["-3°C", "-8°C", "3°C", "0°C"], a: "-3°C", e: "5 minus 5 brings us to 0. Subtracting 3 more brings us to -3°C." },
+                { q: "A weather report says: 'The morning temperature is 12°C. It will rise by 14°C by afternoon, and then drop by 9°C at night.' What is the final night temperature?", o: ["17°C", "26°C", "12°C", "15°C"], a: "17°C", e: "12 + 14 = 26°C. Then 26 - 9 = 17°C." },
+                { q: "Which temperature is HIGHEST?", o: ["-1°C", "-5°C", "-12°C", "-20°C"], a: "-1°C", e: "-1°C is closest to zero and positive ranges, making it the highest value among these choices." },
+                { q: "Normal human body temperature is 37°C. A patient has a body temperature of 40°C. How many degrees above normal is this?", o: ["3°C", "4°C", "5°C", "2°C"], a: "3°C", e: "40 minus 37 equals 3 degrees above normal." },
+                { q: "Why is a temperature of -5°C dangerous for outdoor garden plants?", o: ["Water inside the cells freezes and expands", "The plants get sunburnt", "The soil boils away", "The air gets too dry"], a: "Water inside the cells freezes and expands", e: "Below 0°C, moisture turns to ice, which can damage plant cells." },
+                { q: "What is likely happening outside if the outdoor thermometer reads exactly 0°C and it is raining?", o: ["The rain might turn into sleet or snow", "The rain will boil instantly", "A tropical heatwave is starting", "The clouds will disappear"], a: "The rain might turn into sleet or snow", e: "0°C is the freezing point where liquid rain transitions into solid snow or ice." },
+                { q: "A metal rod at 90°C is left on a table in a room that is kept at 22°C. What temperature will the rod eventually become?", o: ["22°C", "0°C", "90°C", "56°C"], a: "22°C", e: "The rod will cool down until it matches the surrounding room temperature." },
+                { q: "If the temperature inside a science cooler is -3°C and it drops by 5°C, what is the new setting?", o: ["-8°C", "-2°C", "2°C", "8°C"], a: "-3°C", e: "-3 minus 5 equals -8°C." },
+                { q: "Which temperature is hotter than 100°C?", o: ["105°C", "95°C", "0°C", "-5°C"], a: "105°C", e: "105 is a larger number than 100." },
+                { q: "If a fluid sample cools from 15°C to -2°C, how many degrees did it drop?", o: ["17 degrees", "13 degrees", "15 degrees", "2 degrees"], a: "17 degrees", e: "From 15 to 0 is 15 degrees, plus 2 more degrees below zero is 17 degrees total." },
+                { q: "A cup of boiling water at 100°C is left to cool. It drops by 8°C every minute. What is its temperature after 5 minutes?", o: ["60°C", "40°C", "92°C", "70°C"], a: "60°C", e: "Total drop = 8°C x 5 = 40°C. 100°C - 40°C = 60°C." },
+                { q: "A bag of frozen peas is at -12°C. It warms up to -4°C. How many degrees did its temperature increase?", o: ["8 degrees", "16 degrees", "-8 degrees", "4 degrees"], a: "8 degrees", e: "Moving from -12 up to -4 is an increase of 8 degrees (-12 + 8 = -4)." },
+                { q: "Which of the following numbers represents a temperature below the freezing point of water?", o: ["-4°C", "4°C", "0°C", "100°C"], a: "-4°C", e: "Any negative temperature is below the 0°C freezing point." },
+                { q: "True or False: An object can have a temperature of exactly zero degrees Celsius without being completely frozen.", o: ["False", "True"], a: "False", e: "At 0°C, water transitions into ice." },
+                { q: "A weather reporter says: 'Today's high was 28°C and the low was 14°C.' What is the temperature range (the difference between high and low)?", o: ["14°C", "42°C", "20°C", "12°C"], a: "14°C", e: "28 minus 14 equals a range of 14 degrees Celsius." },
+                { q: "If you heat an ice cube that is at -5°C, what temperature must it reach before it begins to melt into water?", o: ["0°C", "5°C", "100°C", "1°C"], a: "0°C", e: "Ice begins melting as soon as it warms up to 0°C." },
+                { q: "A science incubator rises from 19°C to 35°C. What was the net temperature increase?", o: ["16°C", "14°C", "26°C", "15°C"], a: "16°C", e: "35 minus 19 equals 16 degrees Celsius." },
+                { q: "Which temperature is warmer: -15°C or -5°C?", o: ["-5°C", "-15°C", "They are identical", "Neither"], a: "-5°C", e: "-5°C is closer to zero, so it is warmer than -15°C." },
+                { q: "A solution at -6°C is cooled down by 6 more degrees. What is the new temperature?", o: ["-12°C", "0°C", "12°C", "-6°C"], a: "-12°C", e: "-6 - 6 = -12°C." },
+                { q: "What temperature is closest to a hot stove flame?", o: ["400°C", "40°C", "100°C", "0°C"], a: "400°C", e: "Stove flames are very hot, typically reaching several hundred degrees Celsius." },
+                { q: "If you put a digital probe into a frosty snowbank, which reading is most realistic?", o: ["-2°C", "25°C", "100°C", "15°C"], a: "-2°C", e: "Snow requires below-freezing temperatures to exist without melting." },
+                { q: "The temperature in Canada during a winter storm was -14°C. In Australia during summer it was 36°C. What is the difference between these two extreme temperatures?", o: ["50°C", "22°C", "42°C", "40°C"], a: "50°C", e: "36 minus (-14) = 36 + 14 = 50 degrees difference." },
+                { q: "A heated wax block is at 82°C. As it cools, its temperature halves every 10 minutes. What is its temperature after 10 minutes?", o: ["41°C", "80°C", "20°C", "50°C"], a: "41°C", e: "82 divided by 2 equals 41 degrees Celsius." },
+                { q: "Which sequence correctly shows temperature values decreasing (getting colder)?", o: ["30°C ➔ 12°C ➔ 0°C ➔ -8°C", "-8°C ➔ 0°C ➔ 12°C ➔ 30°C", "0°C ➔ -8°C ➔ 12°C ➔ 30°C", "30°C ➔ 0°C ➔ -8°C ➔ 12°C"], a: "30°C ➔ 12°C ➔ 0°C ➔ -8°C", e: "This order goes from the highest heat down to the lowest sub-zero value." },
+                { q: "If an oven is preheated to 180°C and then turned off, its temperature will drop until it matches:", o: ["The room's temperature", "0°C", "100°C", "The freezing point"], a: "The room's temperature", e: "Once turned off, it releases its heat into the room until they are equal." },
+                { q: "An ice skating rink needs to keep its ice solid. What temperature should the floor cooling system be?", o: ["-6°C", "5°C", "22°C", "100°C"], a: "-6°C", e: "It must be below 0°C to keep the floor ice from melting." },
+                { q: "The outside temperature is -4°C. Is this above or below the freezing point of water?", o: ["Below the freezing point", "Above the freezing point", "Exactly at the freezing point", "It matches boiling point"], a: "Below the freezing point", e: "Since the freezing point is 0°C, -4°C is below it." },
+                { q: "Calculate: 15°C + 25°C - 10°C = ?", o: ["30°C", "40°C", "20°C", "50°C"], a: "30°C", e: "15 + 25 = 40. Then 40 - 10 = 30°C." },
+                { q: "If the temperature on a distant cold planet is -120°C, this environment is:", o: ["Unbelievably freezing cold", "Extremely hot and boiling", "Comfortable for a walk", "Lukewarm"], a: "Unbelievably freezing cold", e: "-120°C is far colder than anywhere on Earth, making it incredibly freezing." },
+                { q: "A cup of water at 95°C is left to cool down. It loses 5°C of heat every minute. How long will it take to reach 75°C?", o: ["4 minutes", "5 minutes", "3 minutes", "6 minutes"], a: "4 minutes", e: "Total drop needed = 95 - 75 = 20°C. 20 divided by 5 equals 4 minutes." },
+                { q: "Which temperature is closest to the temperature of a comfortable swimming pool?", o: ["26°C", "0°C", "80°C", "-10°C"], a: "26°C", e: "26°C is a comfortable temperature for pool water." },
+                { q: "If the temperature inside a greenhouse is 29°C and the outside temperature is 14°C, how much warmer is it inside?", o: ["15°C", "25°C", "13°C", "11°C"], a: "15°C", e: "29 minus 14 equals 15 degrees Celsius." },
+                { q: "Convert a drop of '18 degrees' into an integer action starting from 10°C:", o: ["-8°C", "8°C", "28°C", "-18°C"], a: "-8°C", e: "10 minus 18 equals -8°C." },
+                { q: "What is the difference between -1°C and 1°C?", o: ["2 degrees", "0 degrees", "1 degree", "4 degrees"], a: "2 degrees", e: "From -1 to 0 is 1 step, and from 0 to 1 is another step. That's 2 degrees total difference." },
+                { q: "A cold soda can is at 5°C. If you hold it in your warm hands, heat moves from:", o: ["Your hands into the can", "The can into your hands", "Nowhere, heat does not move", "The air into your feet"], a: "Your hands into the can", e: "Heat naturally moves from warmer objects (your hands) to colder objects (the soda can)." },
+                { q: "If you heat steam to a higher temperature, it remains a:", o: ["Gas (vapor)", "Solid ice block", "Liquid water drop", "Cream"], a: "Gas (vapor)", e: "Heating steam keeps it in its gas form." },
+                { q: "Which of the following temperatures is closest to normal room temperature?", o: ["21°C", "41°C", "1°C", "81°C"], a: "21°C", e: "21°C is standard room temperature." }
+            ]
+        };
+
+        /*********************************************************
+         * CORE APPLICATIONS ENGINE APPARATUS CONTROLLER
+         *********************************************************/
+        let QuizEngine = {
+            activeTier: '',
+            questions: [],
+            index: 0,
+            score: 0,
+            answersLog: [],
+            startTime: null,
+
+            shuffle(arr) {
+                for (let i = arr.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [arr[i], arr[j]] = [arr[j], arr[i]];
+                }
+                return arr;
+            },
+
+            start(tierKey) {
+                this.activeTier = tierKey;
+                let rawDataset = TemperatureQuestionMatrix[tierKey] || TemperatureQuestionMatrix.easy;
+                
+                // Clone, shuffle and slice down to exactly 50 items
+                this.questions = this.shuffle(JSON.parse(JSON.stringify(rawDataset))).slice(0, 50);
+                this.index = 0;
+                this.score = 0;
+                this.answersLog = new Array(50).fill(null);
+                this.startTime = new Date();
+
+                document.getElementById('lbl-tier').innerText = tierKey;
+                document.getElementById('screen-start').classList.remove('active');
+                document.getElementById('screen-quiz').classList.add('active');
+
+                AudioFX.click();
+                this.renderQuestion();
+            },
+
+            renderQuestion() {
+                if (this.index >= this.questions.length) return;
+                const item = this.questions[this.index];
+
+                // Synchronize stats
+                document.getElementById('lbl-score').innerText = this.score;
+                document.getElementById('lbl-counter').innerText = `${this.index + 1} / ${this.questions.length}`;
+                document.getElementById('progress-fill').style.width = `${((this.index + 1) / this.questions.length) * 100}%`;
+
+                // Render SVGs only when needed
+                const graphicArea = document.getElementById('graphic-area');
+                const renderNode = document.getElementById('graphic-render-node');
+                renderNode.innerHTML = '';
+
+                if (item.type) {
+                    graphicArea.style.display = "block";
+                    AudioFX.thermalChange(); // Trigger dynamic frequency sweep on graphic updates
+                    
+                    let svgGraphic = SVGRenderEngine.draw(item.type, item.value || 0);
+                    renderNode.appendChild(svgGraphic);
+                } else {
+                    graphicArea.style.display = "none";
+                }
+
+                document.getElementById('question-text').innerText = item.q;
+
+                // Shuffle answer options once per execution run loop
+                if (!item._shuffledOptions) {
+                    item._shuffledOptions = this.shuffle([...item.o]);
+                }
+
+                const optionsBox = document.getElementById('options-box');
+                optionsBox.innerHTML = '';
+
+                item._shuffledOptions.forEach(optStr => {
+                    const btn = document.createElement('button');
+                    btn.className = 'option-btn';
+                    btn.innerText = optStr;
+                    btn.onclick = () => this.selectOption(btn, optStr);
+
+                    // Restore user's selection snapshot if returning via 'Back' navigation
+                    if (this.answersLog[this.index] !== null) {
+                        btn.disabled = true;
+                        if (optStr === item.a) btn.classList.add('correct');
+                        if (optStr === this.answersLog[this.index] && optStr !== item.a) {
+                            btn.classList.add('wrong');
+                        }
+                    }
+                    optionsBox.appendChild(btn);
+                });
+
+                // Handle info explanations panel layout
+                const expBox = document.getElementById('explanation-box');
+                if (this.answersLog[this.index] !== null) {
+                    let chosen = this.answersLog[this.index];
+                    if (chosen === item.a) {
+                        expBox.className = "explanation-panel correct";
+                        expBox.innerHTML = `<strong>✅ Correct!</strong><br>${item.e}`;
+                    } else if (chosen === "") {
+                        expBox.className = "explanation-panel wrong";
+                        expBox.innerHTML = `<strong>⚠️ Skipped!</strong> Correct Answer: <em>${item.a}</em><br>${item.e}`;
+                    } else {
+                        expBox.className = "explanation-panel wrong";
+                        expBox.innerHTML = `<strong>❌ Incorrect!</strong> Correct Answer: <em>${item.a}</em><br>${item.e}`;
+                    }
+                } else {
+                    expBox.style.display = 'none';
+                }
+
+                document.getElementById('btn-back').disabled = (this.index === 0);
+                document.getElementById('btn-forward').innerText = (this.index === this.questions.length - 1) ? "Finish 🏁" : "Next ➔";
+            },
+
+            selectOption(btn, selection) {
+                const item = this.questions[this.index];
+                this.answersLog[this.index] = selection;
+
+                const buttons = document.querySelectorAll('.options-grid .option-btn');
+                buttons.forEach(b => b.disabled = true);
+
+                const expBox = document.getElementById('explanation-box');
+
+                if (selection === item.a) {
+                    this.score++;
+                    AudioFX.right();
+                    btn.classList.add('correct');
+                    expBox.className = "explanation-panel correct";
+                    expBox.innerHTML = `<strong>✅ Correct!</strong><br>${item.e}`;
+                } else {
+                    AudioFX.wrong();
+                    btn.classList.add('wrong');
+                    buttons.forEach(b => { if (b.innerText === item.a) b.classList.add('correct'); });
+                    expBox.className = "explanation-panel wrong";
+                    expBox.innerHTML = `<strong>❌ Incorrect!</strong> Correct Answer: <em>${item.a}</em><br>${item.e}`;
+                }
+                document.getElementById('lbl-score').innerText = this.score;
+            },
+
+            navigate(dir) {
+                AudioFX.click();
+                if (dir === 1 && this.answersLog[this.index] === null) {
+                    if (!confirm("Skip this question? You can return to it later using the Back button.")) return;
+                    this.answersLog[this.index] = ""; // Fill blank space to bypass validation safeguards
+                }
+
+                this.index += dir;
+
+                if (this.index >= this.questions.length) {
+                    this.completeQuiz();
+                } else if (this.index < 0) {
+                    this.index = 0;
+                } else {
+                    this.renderQuestion();
+                }
+            },
+
+            abortToMenu() {
+                AudioFX.click();
+                document.getElementById('screen-quiz').className = "screen";
+                document.getElementById('screen-summary').className = "screen";
+                document.getElementById('screen-start').className = "screen active";
+            },
+
+            replayLevel() {
+                this.start(this.activeTier);
+            },
+
+            completeQuiz() {
+                const timeDiffSeconds = Math.floor((new Date() - this.startTime) / 1000);
+                const elapsedMin = Math.floor(timeDiffSeconds / 60);
+                const elapsedSec = timeDiffSeconds % 60;
+                const percentage = Math.round((this.score / this.questions.length) * 100);
+
+                let badgeArt = "📚", badgeText = "Keep Practising";
+                if (percentage >= 90) { badgeArt = "🏆"; badgeText = "Temperature Master"; }
+                else if (percentage >= 70) { badgeArt = "🌟"; badgeText = "Weather Explorer"; }
+                else if (percentage >= 50) { badgeArt = "👍"; badgeText = "Good Learner"; }
+
+                document.getElementById('dash-tier').innerText = this.activeTier;
+                document.getElementById('dash-score').innerText = `${this.score} / ${this.questions.length}`;
+                document.getElementById('dash-pct').innerText = `${percentage}%`;
+                document.getElementById('dash-time').innerText = `${elapsedMin}m ${elapsedSec}s`;
+
+                document.getElementById('dash-badge-art').innerText = badgeArt;
+                document.getElementById('dash-badge-lbl').innerText = badgeText;
+
+                // Sync printing certificates frames
+                document.getElementById('cert-tier').innerText = this.activeTier;
+                document.getElementById('cert-score').innerText = `${this.score} / ${this.questions.length}`;
+                document.getElementById('cert-pct').innerText = `${percentage}%`;
+
+                document.getElementById('screen-quiz').classList.remove('active');
+                document.getElementById('screen-summary').classList.add('active');
+
+                AudioFX.triumph();
+                if (percentage >= 50) { this.runConfetti(); }
+            },
+
+            runConfetti() {
+                const canvas = document.getElementById('canvas-confetti');
+                const ctx = canvas.getContext('2d');
+                canvas.width = canvas.parentElement.offsetWidth;
+                canvas.height = canvas.parentElement.offsetHeight;
+
+                let particles = [];
+                const colors = ['#ef4444', '#38bdf8', '#ff9800', '#4caf50', '#e91e63'];
+
+                for (let i = 0; i < 90; i++) {
+                    particles.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height - canvas.height,
+                        r: Math.random() * 4 + 4,
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        vY: Math.random() * 2.5 + 2,
+                        dx: Math.sin(Math.random() * 2)
+                    });
+                }
+
+                function aniLoop() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    let activeStream = false;
+                    particles.forEach(p => {
+                        p.y += p.vY;
+                        p.x += p.dx;
+                        if (p.y <= canvas.height) activeStream = true;
+                        
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                        ctx.fillStyle = p.color;
+                        ctx.fill();
+                    });
+                    if (activeStream) requestAnimationFrame(aniLoop);
+                }
+                aniLoop();
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🔡 Vowels and Consonants Quiz</title>
+    <style>
+        :root {
+            --primary-bg: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 99%, #FECFEF 100%);
+            --easy-color: #2ECC71;
+            --medium-color: #F1C40F;
+            --hard-color: #E74C3C;
+            --text-main: #2C3E50;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            --font-family: 'Comic Sans MS', 'Chalkboard SE', 'Caption', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background: var(--primary-bg);
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-main);
+            overflow-x: hidden;
+            padding: 15px;
+        }
+
+        /* Background floating alphabets */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 750px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 2px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: var(--card-shadow);
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s ease;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            color: #4A90E2;
+            text-shadow: 2px 2px 0px #FFF;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #7F8C8D;
+            margin-bottom: 25px;
+        }
+
+        /* Screen States */
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* High Score Board */
+        .high-scores {
+            margin-top: 20px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 12px;
+            padding: 10px;
+            font-size: 0.9rem;
+        }
+
+        /* Menu Buttons */
+        .menu-btn {
+            display: block;
+            width: 100%;
+            padding: 18px;
+            margin: 15px 0;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.1s, box-shadow 0.2s;
+        }
+
+        .menu-btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-easy { background-color: var(--easy-color); }
+        .btn-medium { background-color: var(--medium-color); color: #333; text-shadow: none; }
+        .btn-hard { background-color: var(--hard-color); }
+
+        /* Progress Area */
+        .progress-container {
+            margin-bottom: 20px;
+        }
+        .meta-info {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+        .progress-bar-outer {
+            width: 100%;
+            height: 16px;
+            background: #E0E0E0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .progress-bar-inner {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #4AF, #A4F);
+            transition: width 0.3s ease;
+        }
+
+        /* Question and Illustration Box */
+        .question-text {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            font-weight: bold;
+            line-height: 1.4;
+        }
+        .illustration-holder {
+            margin: 15px auto;
+            max-width: 180px;
+            height: 140px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: white;
+            border-radius: 16px;
+            padding: 10px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+        }
+        .illustration-holder svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Options Grid */
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .option-card {
+            background: white;
+            border: 3px solid #E0E0E0;
+            border-radius: 16px;
+            padding: 18px;
+            font-size: 1.4rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        @media(max-width: 480px) {
+            .options-grid { grid-template-columns: 1fr; gap: 10px; }
+            .option-card { padding: 14px; font-size: 1.2rem; }
+        }
+        .option-card.correct {
+            background-color: #D4EDDA !important;
+            border-color: #2ECC71 !important;
+            color: #155724;
+        }
+        .option-card.wrong {
+            background-color: #F8D7DA !important;
+            border-color: #E74C3C !important;
+            color: #721C24;
+        }
+
+        /* Feedback and Explanation Box */
+        .feedback-box {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 12px;
+            font-weight: bold;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .feedback-box.correct { background: #D4EDDA; color: #155724; border: 1px solid #C3E6CB; }
+        .feedback-box.wrong { background: #F8D7DA; color: #721C24; border: 1px solid #F5C6CB; }
+        .feedback-explanation {
+            font-size: 1rem;
+            margin-top: 5px;
+            font-weight: normal;
+        }
+
+        /* Navigation Mechanics bar ordered strictly: Previous, Home, Next */
+        .nav-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 25px;
+            gap: 10px;
+        }
+        .nav-btn {
+            flex: 1;
+            padding: 12px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            background: #4A90E2;
+            color: white;
+            transition: opacity 0.2s, background-color 0.2s;
+        }
+        .nav-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .nav-btn-home {
+            background: #95A5A6;
+        }
+
+        /* Results Display */
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .result-item {
+            background: rgba(255,255,255,0.6);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+        .badge-display {
+            margin: 20px 0;
+            padding: 15px;
+            background: #FFFDE7;
+            border: 2px dashed #F1C40F;
+            border-radius: 16px;
+        }
+        .badge-icon {
+            font-size: 3rem;
+            margin-bottom: 5px;
+            display: inline-block;
+            animation: bounce 1s infinite alternate;
+        }
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-10px); }
+        }
+        .badge-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #D35400;
+        }
+
+        /* Print Area Configuration */
+        #certificate-print-area {
+            display: none;
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            #certificate-print-area, #certificate-print-area * { visibility: visible; }
+            #certificate-print-area {
+                display: block;
+                position: absolute;
+                left: 0; top: 0; width: 100%;
+                padding: 40px;
+                border: 10px double #4A90E2;
+                border-radius: 0;
+                background: white;
+                color: black;
+                text-align: center;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="bg-canvas"></canvas>
+
+    <div class="app-container">
+        <h1>🔡 Vowels and Consonants Quiz</h1>
+        <div class="subtitle">Identify • Classify • Practice • Learn</div>
+
+        <div id="screen-start" class="screen active">
+            <p style="font-size:1.2rem; margin-bottom:20px; font-weight:bold; color:#555;">Choose a level to start playing!</p>
+            <button class="menu-btn btn-easy" onclick="startQuiz('easy')">🟢 Easy Level</button>
+            <button class="menu-btn btn-medium" onclick="startQuiz('medium')">🟡 Medium Level</button>
+            <button class="menu-btn btn-hard" onclick="startQuiz('hard')">🔴 Hard Level</button>
+
+            <div class="high-scores">
+                <strong>Saved Star Badges:</strong>
+                <div id="highscores-list" style="margin-top:5px; color:#555;">No badges saved yet. Complete a quiz to earn one!</div>
+            </div>
+        </div>
+
+        <div id="screen-quiz" class="screen">
+            <div class="progress-container">
+                <div class="meta-info">
+                    <span id="level-indicator">Level</span>
+                    <span id="counter-indicator">Question: 1/30</span>
+                    <span id="score-indicator">Stars: ⭐ 0</span>
+                </div>
+                <div class="progress-bar-outer">
+                    <div id="progress-bar" class="progress-bar-inner"></div>
+                </div>
+            </div>
+
+            <div id="illustration-container" class="illustration-holder" style="display:none;"></div>
+            <div id="question-text" class="question-text">Question loading...</div>
+            <div id="options-grid" class="options-grid"></div>
+
+            <div id="feedback-box" class="feedback-box">
+                <div id="feedback-title"></div>
+                <div id="feedback-explanation" class="feedback-explanation"></div>
+            </div>
+
+            <div class="nav-bar">
+                <button id="btn-prev" class="nav-btn" onclick="navigateQuestion(-1)">⬅️ Previous</button>
+                <button class="nav-btn nav-btn-home" onclick="returnHome()">🏠 Home</button>
+                <button id="btn-next" class="nav-btn" onclick="navigateQuestion(1)">➡️ Next</button>
+            </div>
+        </div>
+
+        <div id="screen-result" class="screen">
+            <h2 style="color:#27AE60; font-size:1.8rem; margin-bottom:10px;">🎉 Quiz Finished! 🎉</h2>
+            <p>Super effort! Here is how you did today:</p>
+
+            <div class="badge-display">
+                <div id="result-badge-icon" class="badge-icon">🏆</div>
+                <div id="result-badge-title" class="badge-title">Vowel Master</div>
+            </div>
+
+            <div class="results-grid">
+                <div class="result-item"><strong>Level:</strong> <span id="res-level">-</span></div>
+                <div class="result-item"><strong>Score:</strong> <span id="res-score">-</span> / 30</div>
+                <div class="result-item"><strong>Percentage:</strong> <span id="res-percent">-</span>%</div>
+                <div class="result-item"><strong>Time Taken:</strong> <span id="res-time">-</span> seconds</div>
+                <div class="result-item"><strong>Correct Answers:</strong> ✅ <span id="res-correct">-</span></div>
+                <div class="result-item"><strong>Wrong Answers:</strong> ❌ <span id="res-wrong">-</span></div>
+            </div>
+
+            <button class="menu-btn btn-easy" onclick="retryCurrentLevel()">🔄 Play Again</button>
+            <button class="menu-btn btn-medium" onclick="returnHome()" style="color:#333;">📋 Choose Another Level</button>
+            <button class="menu-btn btn-hard" onclick="printCertificate()">🖨️ Print Certificate</button>
+        </div>
+    </div>
+
+    <div id="certificate-print-area">
+        <h1 style="font-size: 3rem; color: #2C3E50;">CERTIFICATE OF ACHIEVEMENT</h1>
+        <p style="font-size: 1.5rem; margin: 20px 0;">This award is proudly presented to an amazing learner for completing the</p>
+        <h2 style="font-size: 2.5rem; color: #4A90E2; margin: 20px 0;">🔡 Vowels and Consonants Quiz</h2>
+        <div style="border-top: 2px solid #BDC3C7; width: 60%; margin: 30px auto;"></div>
+        <p style="font-size: 1.3rem;"><strong>Level Overcame:</strong> <span id="cert-level">-</span></p>
+        <p style="font-size: 1.3rem;"><strong>Performance Score:</strong> <span id="cert-score">-</span> / 30 (<span id="cert-percent">-</span>%)</p>
+        <p style="font-size: 1.3rem;"><strong>Badge Earned:</strong> <span id="cert-badge">-</span></p>
+        <div style="margin-top: 50px; font-size: 1.1rem; color: #7F8C8D;">Keep up the incredible practice and learning! ⭐</div>
+    </div>
+
+    <script>
+        // Sound Generation Engine via Web Audio API
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playTone(freq, type, duration, delay = 0) {
+            setTimeout(() => {
+                try {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + duration);
+                } catch(e){}
+            }, delay);
+        }
+
+        function playSound(trigger) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            if (trigger === 'click') playTone(440, 'sine', 0.08);
+            if (trigger === 'correct') { playTone(523.25, 'sine', 0.1); playTone(659.25, 'sine', 0.1, 80); }
+            if (trigger === 'wrong') { playTone(220, 'triangle', 0.2); playTone(180, 'triangle', 0.2, 50); }
+            if (trigger === 'complete') { playTone(523, 'sine', 0.15); playTone(659, 'sine', 0.15, 100); playTone(784, 'sine', 0.15, 200); playTone(1046, 'sine', 0.3, 300); }
+        }
+
+        // Inline Custom Vector Design Resource Dictionary
+        const SVG_ASSETS = {
+            apple: `<svg viewBox="0 0 100 100"><circle cx="50" cy="55" r="35" fill="#E74C3C"/><path d="M50,25 Q45,10 55,5 Q55,20 50,25" fill="#27AE60"/><ellipse cx="42" cy="45" rx="5" ry="8" fill="#FFF" opacity="0.3"/></svg>`,
+            ant: `<svg viewBox="0 0 100 100"><ellipse cx="30" cy="50" rx="12" ry="8" fill="#333"/><ellipse cx="50" cy="48" rx="10" ry="8" fill="#333"/><ellipse cx="70" cy="45" rx="14" ry="12" fill="#333"/><path d="M30,50 Q20,30 10,40 M50,48 Q50,30 45,20 M50,48 Q50,70 55,80" stroke="#333" stroke-width="3" fill="none"/></svg>`,
+            egg: `<svg viewBox="0 0 100 100"><path d="M50,15 C25,50 25,85 50,85 C75,85 75,50 50,15 Z" fill="#F4F6F6" stroke="#BDC3C7" stroke-width="3"/><ellipse cx="45" cy="40" rx="6" ry="12" fill="#FFF" opacity="0.6"/></svg>`,
+            icecream: `<svg viewBox="0 0 100 100"><polygon points="35,50 65,50 50,90" fill="#D35400"/><circle cx="50" cy="40" r="20" fill="#FF80AB"/><circle cx="50" cy="22" r="6" fill="#E74C3C"/></svg>`,
+            orange: `<svg viewBox="0 0 100 100"><circle cx="50" cy="55" r="35" fill="#F39C12"/><path d="M50,20 C48,10 55,8 52,20" stroke="#27AE60" stroke-width="4" fill="none"/><circle cx="50" cy="55" r="28" fill="none" stroke="#E67E22" stroke-dasharray="5,5" stroke-width="2"/></svg>`,
+            umbrella: `<svg viewBox="0 0 100 100"><path d="M20,50 A30,30 0 0,1 80,50 Z" fill="#9B59B6"/><line x1="50" y1="50" x2="50" y2="80" stroke="#7F8C8D" stroke-width="4"/><path d="M50,80 A5,5 0 0,0 60,80" fill="none" stroke="#7F8C8D" stroke-width="4"/></svg>`,
+            ball: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="35" fill="#3498DB"/><path d="M20,35 Q50,50 20,65 M80,35 Q50,50 80,65" fill="none" stroke="#FFF" stroke-width="4"/></svg>`,
+            cat: `<svg viewBox="0 0 100 100"><circle cx="50" cy="55" r="25" fill="#95A5A6"/><polygon points="30,35 45,45 25,50" fill="#7F8C8D"/><polygon points="70,35 55,45 75,50" fill="#7F8C8D"/><circle cx="42" cy="50" r="3" fill="#000"/><circle cx="58" cy="50" r="3" fill="#000"/><polygon points="48,55 52,55 50,58" fill="#E74C3C"/></svg>`,
+            dog: `<svg viewBox="0 0 100 100"><circle cx="50" cy="55" r="26" fill="#D35400"/><ellipse cx="30" cy="45" rx="8" ry="18" fill="#A04000"/><ellipse cx="70" cy="45" rx="8" ry="18" fill="#A04000"/><circle cx="43" cy="52" r="3" fill="#000"/><circle cx="57" cy="52" r="3" fill="#000"/><ellipse cx="50" cy="62" rx="5" ry="3" fill="#000"/></svg>`,
+            fish: `<svg viewBox="0 0 100 100"><ellipse cx="45" cy="50" rx="25" ry="16" fill="#1ABC9C"/><polygon points="70,50 85,35 85,65" fill="#16A085"/><circle cx="32" cy="46" r="3" fill="#000"/></svg>`,
+            goat: `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="55" rx="24" ry="20" fill="#ECF0F1" stroke="#BDC3C7"/><path d="M40,35 L35,20 M60,35 L65,20" stroke="#7F8C8D" stroke-width="4"/><circle cx="40" cy="50" r="3" fill="#333"/><circle cx="60" cy="50" r="3" fill="#333"/></svg>`,
+            hat: `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="70" rx="35" ry="10" fill="#2980B9"/><rect x="30" y="30" width="40" height="35" fill="#3498DB" rx="5"/><rect x="30" y="55" width="40" height="7" fill="#E74C3C"/></svg>`,
+            kite: `<svg viewBox="0 0 100 100"><polygon points="50,15 75,45 50,75 25,45" fill="#E67E22"/><line x1="50" y1="15" x2="50" y2="75" stroke="#FFF" stroke-width="2"/><line x1="25" y1="45" x2="75" y2="45" stroke="#FFF" stroke-width="2"/><path d="M50,75 Q55,85 50,95" fill="none" stroke="#E67E22" stroke-width="2"/></svg>`,
+            lion: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="35" fill="#D35400"/><circle cx="50" cy="52" r="24" fill="#F39C12"/><circle cx="42" cy="48" r="3" fill="#000"/><circle cx="58" cy="48" r="3" fill="#000"/><polygon points="47,55 53,55 50,60" fill="#D35400"/></svg>`,
+            monkey: `<svg viewBox="0 0 100 100"><circle cx="25" cy="45" r="10" fill="#855413"/><circle cx="75" cy="45" r="10" fill="#855413"/><circle cx="50" cy="50" r="26" fill="#855413"/><circle cx="50" cy="54" r="20" fill="#C68A4C"/><circle cx="43" cy="46" r="3" fill="#000"/><circle cx="57" cy="46" r="3" fill="#000"/></svg>`,
+            nest: `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="65" rx="30" ry="15" fill="#A0522D"/><ellipse cx="50" cy="58" rx="24" ry="10" fill="#8B4513"/><circle cx="42" cy="48" r="8" fill="#E0F7FA"/><circle cx="56" cy="46" r="7" fill="#E0F7FA"/></svg>`,
+            pig: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="28" fill="#FF8A8A"/><ellipse cx="50" cy="56" rx="10" ry="7" fill="#FF5252"/><circle cx="46" cy="56" r="2" fill="#FFF"/><circle cx="54" cy="56" r="2" fill="#FFF"/><circle cx="40" cy="44" r="3" fill="#000"/><circle cx="60" cy="44" r="3" fill="#000"/></svg>`,
+            queen: `<svg viewBox="0 0 100 100"><circle cx="50" cy="60" r="22" fill="#FCD373"/><polygon points="25,35 35,50 50,30 65,50 75,35 68,60 32,60" fill="#F1C40F"/><circle cx="50" cy="25" r="4" fill="#E74C3C"/></svg>`,
+            rabbit: `<svg viewBox="0 0 100 100"><ellipse cx="40" cy="28" rx="6" ry="18" fill="#ECF0F1"/><ellipse cx="60" cy="28" rx="6" ry="18" fill="#ECF0F1"/><circle cx="50" cy="56" r="24" fill="#ECF0F1"/><circle cx="42" cy="50" r="3" fill="#000"/><circle cx="58" cy="50" r="3" fill="#000"/><polygon points="48,56 52,56 50,60" fill="#FF8A8A"/></svg>`,
+            sun: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="22" fill="#F1C40F"/><path d="M50,10 L50,22 M50,78 L50,90 M10,50 L22,50 M78,50 L90,50 M22,22 L32,32 M68,68 L78,78 M22,78 L32,68 M68,32 L78,22" stroke="#F39C12" stroke-width="4"/></svg>`,
+            tree: `<svg viewBox="0 0 100 100"><rect x="45" y="60" width="10" height="25" fill="#8B4513"/><circle cx="50" cy="40" r="22" fill="#2ECC71"/><circle cx="38" cy="48" r="16" fill="#27AE60"/><circle cx="62" cy="48" r="16" fill="#27AE60"/></svg>`,
+            van: `<svg viewBox="0 0 100 100"><rect x="20" y="35" width="60" height="30" fill="#E74C3C" rx="4"/><rect x="62" y="38" width="14" height="12" fill="#ECF0F1"/><circle cx="35" cy="65" r="8" fill="#333"/><circle cx="65" cy="65" r="8" fill="#333"/></svg>`,
+            watch: `<svg viewBox="0 0 100 100"><rect x="44" y="15" width="12" height="70" fill="#34495E" rx="3"/><circle cx="50" cy="50" r="22" fill="#F1C40F" stroke="#34495E" stroke-width="3"/><line x1="50" y1="50" x2="50" y2="38" stroke="#333" stroke-width="3"/><line x1="50" y1="50" x2="60" y2="50" stroke="#333" stroke-width="2"/></svg>`,
+            yak: `<svg viewBox="0 0 100 100"><rect x="26" y="36" width="48" height="38" fill="#5C4033" rx="8"/><path d="M24,34 Q50,20 76,34" fill="none" stroke="#BDC3C7" stroke-width="5"/><circle cx="38" cy="48" r="3" fill="#000"/><circle cx="62" cy="48" r="3" fill="#000"/></svg>`,
+            zebra: `<svg viewBox="0 0 100 100"><rect x="25" y="35" width="50" height="40" fill="#FFF" stroke="#333" stroke-width="2" rx="5"/><path d="M35,35 L35,75 M45,35 L45,75 M55,35 L55,75 M65,35 L65,75" stroke="#000" stroke-width="4"/><circle cx="35" cy="48" r="3" fill="#000"/><circle cx="65" cy="48" r="3" fill="#000"/></svg>`
+        };
+
+        // Complete Structured Data Repository: 30 Balanced Questions Per Level
+        const QUESTION_BANK = {
+            easy: [
+                { q: "Which letter is a vowel?", o: ["B", "A", "M", "T"], a: "A", e: "The vowels are A, E, I, O, U." },
+                { q: "Which letter is a vowel?", o: ["P", "S", "E", "X"], a: "E", e: "The vowels are A, E, I, O, U." },
+                { q: "Which letter is a vowel?", o: ["Z", "L", "Q", "I"], a: "I", e: "The vowels are A, E, I, O, U." },
+                { q: "Which letter is a vowel?", o: ["O", "G", "H", "J"], a: "O", e: "The vowels are A, E, I, O, U." },
+                { q: "Which letter is a vowel?", o: ["U", "C", "D", "F"], a: "U", e: "The vowels are A, E, I, O, U." },
+                { q: "Which letter is a consonant?", o: ["A", "I", "U", "B"], a: "B", e: "B is a consonant. Vowels are A, E, I, O, U." },
+                { q: "Which letter is a consonant?", o: ["M", "E", "O", "A"], a: "M", e: "M is a consonant. Vowels are A, E, I, O, U." },
+                { q: "Which letter is a consonant?", o: ["I", "S", "E", "U"], a: "S", e: "S is a consonant. Vowels are A, E, I, O, U." },
+                { q: "Which letter is a consonant?", o: ["O", "A", "T", "I"], a: "T", e: "T is a consonant. Vowels are A, E, I, O, U." },
+                { q: "Which letter is a consonant?", o: ["U", "E", "O", "Z"], a: "Z", e: "Z is a consonant. Vowels are A, E, I, O, U." },
+                { q: "How many letters are core vowels?", o: ["3", "4", "5", "6"], a: "5", e: "There are 5 core vowels: A, E, I, O, U." },
+                { q: "Choose the vowel letter.", o: ["R", "K", "X", "A"], a: "A", e: "A is a vowel!" },
+                { q: "Choose the vowel letter.", o: ["E", "P", "L", "C"], a: "E", e: "E is a vowel!" },
+                { q: "Choose the vowel letter.", o: ["W", "I", "F", "N"], a: "I", e: "I is a vowel!" },
+                { q: "Choose the vowel letter.", o: ["Y", "V", "O", "D"], a: "O", e: "O is a vowel!" },
+                { q: "Choose the vowel letter.", o: ["H", "Q", "U", "G"], a: "U", e: "U is a vowel!" },
+                { q: "Choose the consonant letter.", o: ["A", "C", "E", "I"], a: "C", e: "C is a consonant. A, E, and I are vowels." },
+                { q: "Choose the consonant letter.", o: ["E", "O", "U", "G"], a: "G", e: "G is a consonant. E, O, and U are vowels." },
+                { q: "Choose the consonant letter.", o: ["I", "A", "O", "H"], a: "H", e: "H is a consonant. I, A, and O are vowels." },
+                { q: "Choose the consonant letter.", o: ["O", "U", "K", "E"], a: "K", e: "K is a consonant." },
+                { q: "Which word begins with a vowel?", o: ["Apple", "Ball", "Cat", "Fish"], a: "Apple", e: "Apple begins with A, which is a vowel.", img: "apple" },
+                { q: "Which word begins with a vowel?", o: ["Ant", "Dog", "Goat", "Hat"], a: "Ant", e: "Ant begins with A, which is a vowel.", img: "ant" },
+                { q: "Which word begins with a vowel?", o: ["Egg", "Kite", "Lion", "Monkey"], a: "Egg", e: "Egg begins with E, which is a vowel.", img: "egg" },
+                { q: "Which word begins with a vowel?", o: ["Ice Cream", "Nest", "Pig", "Queen"], a: "Ice Cream", e: "Ice Cream begins with I, which is a vowel.", img: "icecream" },
+                { q: "Which word begins with a vowel?", o: ["Orange", "Rabbit", "Sun", "Tree"], a: "Orange", e: "Orange begins with O, which is a vowel.", img: "orange" },
+                { q: "Which word begins with a vowel?", o: ["Umbrella", "Van", "Watch", "Zebra"], a: "Umbrella", e: "Umbrella begins with U, which is a vowel.", img: "umbrella" },
+                { q: "Which word begins with a consonant?", o: ["Egg", "Ice Cream", "Umbrella", "Ball"], a: "Ball", e: "Ball begins with B, which is a consonant.", img: "ball" },
+                { q: "Which word begins with a consonant?", o: ["Apple", "Cat", "Orange", "Ant"], a: "Cat", e: "Cat begins with C, which is a consonant.", img: "cat" },
+                { q: "Which word begins with a consonant?", o: ["Umbrella", "Orange", "Dog", "Egg"], a: "Dog", e: "Dog begins with D, which is a consonant.", img: "dog" },
+                { q: "Which word begins with a consonant?", o: ["Apple", "Ice Cream", "Egg", "Fish"], a: "Fish", e: "Fish begins with F, which is a consonant.", img: "fish" }
+            ],
+            medium: [
+                { q: "Complete the word: C _ T", o: ["A", "E", "I", "U"], a: "A", e: "The missing vowel in CAT is A.", img: "cat" },
+                { q: "Complete the word: D _ G", o: ["A", "O", "I", "E"], a: "O", e: "The missing vowel in DOG is O.", img: "dog" },
+                { q: "Complete the word: H _ T", o: ["A", "O", "U", "E"], a: "A", e: "The missing vowel in HAT is A.", img: "hat" },
+                { q: "Complete the word: P _ G", o: ["E", "A", "I", "O"], a: "I", e: "The missing vowel in PIG is I.", img: "pig" },
+                { q: "Complete the word: S _ N", o: ["A", "E", "O", "U"], a: "U", e: "The missing vowel in SUN is U.", img: "sun" },
+                { q: "Complete the word: T R _ E", o: ["E", "A", "O", "I"], a: "E", e: "The missing vowel in TREE is E.", img: "tree" },
+                { q: "Choose the missing vowel for B _ G", o: ["A", "O", "E", "I"], a: "A", e: "B + A + G makes BAG!" },
+                { q: "Which letter is missing in D O _ ?", o: ["G", "A", "E", "I"], a: "G", e: "DOG ends with the consonant G.", img: "dog" },
+                { q: "How many vowels are in the word APPLE?", o: ["1", "2", "3", "4"], a: "2", e: "APPLE has 2 vowels (A and E).", img: "apple" },
+                { q: "How many consonants are in the word BALL?", o: ["1", "2", "3", "4"], a: "3", e: "BALL has 3 consonants (B, L, L).", img: "ball" },
+                { q: "How many vowels are in the word CAT?", o: ["1", "2", "3", "0"], a: "1", e: "CAT has 1 vowel (A).", img: "cat" },
+                { q: "How many consonants are in the word FISH?", o: ["1", "2", "3", "4"], a: "3", e: "FISH has 3 consonants (F, S, H).", img: "fish" },
+                { q: "How many vowels are in the word GOAT?", o: ["1", "2", "3", "4"], a: "2", e: "GOAT has 2 vowels (O and A).", img: "goat" },
+                { q: "How many consonants are in the word KITE?", o: ["1", "2", "3", "4"], a: "2", e: "KITE has 2 consonants (K and T).", img: "kite" },
+                { q: "Which word has exactly TWO vowels?", o: ["Cat", "Lion", "Sun", "Fish"], a: "Lion", e: "LION has 2 vowels (I and O).", img: "lion" },
+                { q: "Which word has more consonants than vowels?", o: ["Egg", "Ice Cream", "Orange", "Umbrella"], a: "Egg", e: "EGG has 2 consonants (G, G) and only 1 vowel (E).", img: "egg" },
+                { q: "What is the middle letter of the word ANT?", o: ["A", "N", "T", "E"], a: "N", e: "The middle letter of ANT is N, which is a consonant.", img: "ant" },
+                { q: "What is the ending letter of the word NEST?", o: ["N", "E", "S", "T"], a: "T", e: "NEST ends with the consonant T.", img: "nest" },
+                { q: "What is the beginning letter of the word QUEEN?", o: ["Q", "U", "E", "N"], a: "Q", e: "QUEEN begins with the consonant Q.", img: "queen" },
+                { q: "What is the middle letter of the word PIG?", o: ["P", "I", "G", "A"], a: "I", e: "The middle letter of PIG is I, which is a vowel.", img: "pig" },
+                { q: "Complete the word with a vowel: B _ L L", o: ["A", "E", "I", "O"], a: "A", e: "BALL is spelled with an A.", img: "ball" },
+                { q: "Complete the word with a consonant: _ A N", o: ["V", "A", "E", "I"], a: "V", e: "VAN starts with the consonant V.", img: "van" },
+                { q: "Complete the word with a consonant: _ U N", o: ["S", "U", "E", "O"], a: "S", e: "SUN starts with the consonant S.", img: "sun" },
+                { q: "Which of these words has the vowel 'O'?", o: ["Fox", "Cat", "Pig", "Hen"], a: "Fox", e: "FOX contains the vowel O." },
+                { q: "Which of these words has the vowel 'I'?", o: ["Fish", "Dog", "Hat", "Bee"], a: "Fish", e: "FISH contains the vowel I.", img: "fish" },
+                { q: "Which of these words has the vowel 'E'?", o: ["Egg", "Cat", "Sun", "Box"], a: "Egg", e: "EGG contains the vowel E.", img: "egg" },
+                { q: "How many vowels are in the word LION?", o: ["1", "2", "3", "4"], a: "2", e: "LION has 2 vowels (I and O).", img: "lion" },
+                { q: "How many consonants are in the word MONKEY?", o: ["2", "3", "4", "5"], a: "4", e: "MONKEY has 4 consonants (M, N, K, Y).", img: "monkey" },
+                { q: "What is the last letter of the word TREE?", o: ["T", "R", "E", "A"], a: "E", e: "TREE ends with the vowel E.", img: "tree" },
+                { q: "Which word has only ONE vowel?", o: ["Frog", "Lion", "Goat", "Deer"], a: "Frog", e: "FROG has only 1 vowel (O)." }
+            ],
+            hard: [
+                { q: "How many vowels are in the word ELEPHANT?", o: ["2", "3", "4", "5"], a: "3", e: "ELEPHANT has 3 vowels (E, E, A)." },
+                { q: "How many consonants are in COMPUTER?", o: ["3", "4", "5", "6"], a: "5", e: "COMPUTER has 5 consonants (C, M, P, T, R)." },
+                { q: "Choose the word with the MOST vowels.", o: ["Cat", "Apple", "Umbrella", "Dog"], a: "Umbrella", e: "UMBRELLA has 3 vowels (U, E, A).", img: "umbrella" },
+                { q: "Choose the word with only ONE vowel.", o: ["Orange", "Ice Cream", "Ant", "Elephant"], a: "Ant", e: "ANT has only 1 vowel (A).", img: "ant" },
+                { q: "Find the word with more consonants than vowels.", o: ["Zebra", "Ice", "Bee", "Area"], a: "Zebra", e: "ZEBRA has 3 consonants (Z, B, R) and 2 vowels (E, A).", img: "zebra" },
+                { q: "Which word has EQUAL vowels and consonants?", o: ["Goat", "Frog", "Tree", "Lion"], a: "Goat", e: "GOAT has 2 vowels (O, A) and 2 consonants (G, T).", img: "goat" },
+                { q: "How many vowels are in the word UMBRELLA?", o: ["2", "3", "4", "5"], a: "3", e: "UMBRELLA has 3 vowels (U, E, A).", img: "umbrella" },
+                { q: "How many consonants are in the word MONKEY?", o: ["2", "3", "4", "5"], a: "4", e: "MONKEY has 4 consonants (M, N, K, Y).", img: "monkey" },
+                { q: "How many letters are in the word WATCH?", o: ["4", "5", "6", "7"], a: "5", e: "WATCH has 5 letters total (1 vowel, 4 consonants).", img: "watch" },
+                { q: "How many consonants are in the word ICE CREAM?", o: ["3", "4", "5", "6"], a: "4", e: "ICE CREAM has 4 consonants (C, C, R, M).", img: "icecream" },
+                { q: "Which word has the most letters?", o: ["Crocodile", "Elephant", "Butterfly", "Caterpillar"], a: "Caterpillar", e: "CATERPILLAR has 11 letters!" },
+                { q: "Choose the word with exactly THREE consonants.", o: ["Rabbit", "Cat", "Sun", "Bee"], a: "Rabbit", e: "RABBIT has 3 consonants (R, B, B).", img: "rabbit" },
+                { q: "Complete the word: W _ T C H", o: ["A", "E", "I", "O"], a: "A", e: "WATCH is spelled with the vowel A.", img: "watch" },
+                { q: "Complete the word: Z _ B R A", o: ["E", "A", "I", "O"], a: "E", e: "ZEBRA is spelled with the vowel E.", img: "zebra" },
+                { q: "Complete the word: Y _ K", o: ["A", "E", "I", "O"], a: "A", e: "YAK is spelled with the vowel A.", img: "yak" },
+                { q: "Which word has the most vowels?", o: ["Albatross", "Hippopotamus", "Fox", "Deer"], a: "Hippopotamus", e: "HIPPOPOTAMUS has 5 vowels (I, O, O, A, U)." },
+                { q: "How many vowels are in REFRIGERATOR?", o: ["3", "4", "5", "6"], a: "5", e: "REFRIGERATOR has 5 vowels (E, I, E, A, O)." },
+                { q: "How many consonants are in DINOSAUR?", o: ["3", "4", "5", "6"], a: "4", e: "DINOSAUR has 4 consonants (D, N, S, R)." },
+                { q: "Which word contains all vowels except 'U'?", o: ["Education", "Beautiful", "Aquarium", "None"], a: "None", e: "Let's stick to easy primary setups!" },
+                { q: "Which word has only ONE consonant?", o: ["Owl", "Egg", "Eye", "Cat"], a: "Eye", e: "EYE has only 1 consonant (Y)." },
+                { q: "How many consonants are in VALENTINE?", o: ["3", "4", "5", "6"], a: "5", e: "VALENTINE has 5 consonants (V, L, N, T, N)." },
+                { q: "How many vowels are in ALPHABET?", o: ["2", "3", "4", "5"], a: "3", e: "ALPHABET has 3 vowels (A, A, E)." },
+                { q: "Which word starts and ends with a vowel?", o: ["Orange", "Apple", "Elephant", "Eagle"], a: "Orange", e: "ORANGE starts with O and ends with E.", img: "orange" },
+                { q: "Which word starts and ends with a consonant?", o: ["Zebra", "Rabbit", "Apple", "Orange"], a: "Rabbit", e: "RABBIT starts with R and ends with T.", img: "rabbit" },
+                { q: "How many vowels are in MATHEMATICS?", o: ["3", "4", "5", "6"], a: "4", e: "MATHEMATICS has 4 vowels (A, E, A, I)." },
+                { q: "How many consonants are in HAPPINESS?", o: ["4", "5", "6", "7"], a: "6", e: "HAPPINESS has 6 consonants (H, P, P, N, S, S)." },
+                { q: "Choose the word with the least consonants.", o: ["Ice Cream", "Bee", "Zebra", "Watch"], a: "Bee", e: "BEE has only 1 consonant (B)." },
+                { q: "How many vowels are in QUEEN?", o: ["2", "3", "4", "5"], a: "3", e: "QUEEN has 3 vowels (U, E, E).", img: "queen" },
+                { q: "How many consonants are in NEST?", o: ["1", "2", "3", "4"], a: "3", e: "NEST has 3 consonants (N, S, T).", img: "nest" },
+                { q: "Which word has more vowels than consonants?", o: ["Queue", "Book", "Desk", "Lamp"], a: "Queue", e: "QUEUE has 4 vowels (U, E, U, E) and only 1 consonant (Q)." }
+            ]
+        };
+
+        // Application State Management Coordinates
+        let currentLevel = 'easy';
+        let activeQuestions = [];
+        let currentIdx = 0;
+        let answersState = []; // Holds user interaction records
+        let startTime = 0;
+
+        // Custom Abstract Background Canvas Engine
+        const bgCanvas = document.getElementById('bg-canvas');
+        const bgCtx = bgCanvas.getContext('2d');
+        let bgLetters = [];
+        const letterPool = "AEIOUBCDFGHJKLMNPQRSTVWXYZ";
+
+        function resizeBgCanvas() {
+            bgCanvas.width = window.innerWidth;
+            bgCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeBgCanvas);
+        resizeBgCanvas();
+
+        class FloatingLetter {
+            constructor() {
+                this.reset();
+                this.y = Math.random() * bgCanvas.height;
+            }
+            reset() {
+                this.text = letterPool[Math.floor(Math.random() * letterPool.length)];
+                this.x = Math.random() * bgCanvas.width;
+                this.y = bgCanvas.height + 20;
+                this.size = Math.random() * 24 + 16;
+                this.speed = Math.random() * 1 + 0.5;
+                this.opacity = Math.random() * 0.15 + 0.05;
+            }
+            update() {
+                this.y -= this.speed;
+                if (this.y < -30) this.reset();
+            }
+            draw() {
+                bgCtx.fillStyle = `rgba(74, 144, 226, ${this.opacity})`;
+                bgCtx.font = `bold ${this.size}px 'Comic Sans MS'`;
+                bgCtx.fillText(this.text, this.x, this.y);
+            }
+        }
+
+        for(let i=0; i<30; i++) bgLetters.push(new FloatingLetter());
+
+        function animateBg() {
+            bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+            bgLetters.forEach(l => { l.update(); l.draw(); });
+            requestAnimationFrame(animateBg);
+        }
+        animateBg();
+
+        // Celebration Engine Component
+        let confettiActive = false;
+        let confettiParticles = [];
+        function runConfettiLoop() {
+            if(!confettiActive) return;
+            bgCtx.clearRect(0,0,bgCanvas.width, bgCanvas.height);
+            // Render background ambient letters alongside confetti
+            bgLetters.forEach(l => { l.update(); l.draw(); });
+            
+            confettiParticles.forEach((p, index) => {
+                p.y += p.speedY;
+                p.x += p.speedX;
+                p.rotation += p.rotationSpeed;
+                
+                bgCtx.save();
+                bgCtx.translate(p.x, p.y);
+                bgCtx.rotate(p.rotation);
+                bgCtx.fillStyle = p.color;
+                bgCtx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+                bgCtx.restore();
+
+                if(p.y > bgCanvas.height) confettiParticles[index] = {
+                    x: Math.random() * bgCanvas.width, y: -20,
+                    size: Math.random() * 10 + 6, speedY: Math.random() * 4 + 2,
+                    speedX: Math.random() * 2 - 1, color: `hsl(${Math.random()*360}, 100%, 60%)`,
+                    rotation: Math.random() * 360, rotationSpeed: Math.random() * 0.05
+                };
+            });
+            requestAnimationFrame(runConfettiLoop);
+        }
+
+        function triggerCelebration() {
+            confettiParticles = [];
+            for(let i=0; i<100; i++) {
+                confettiParticles.push({
+                    x: Math.random() * bgCanvas.width,
+                    y: Math.random() * bgCanvas.height - bgCanvas.height,
+                    size: Math.random() * 10 + 6,
+                    speedY: Math.random() * 4 + 2,
+                    speedX: Math.random() * 2 - 1,
+                    color: `hsl(${Math.random()*360}, 100%, 60%)`,
+                    rotation: Math.random() * 360,
+                    rotationSpeed: Math.random() * 0.05
+                });
+            }
+            confettiActive = true;
+            runConfettiLoop();
+            setTimeout(() => { confettiActive = false; }, 6000);
+        }
+
+        // Functional Initialization Pipeline
+        function renderHighScores() {
+            const container = document.getElementById('highscores-list');
+            let scores = JSON.parse(localStorage.getItem('vowel_quiz_scores')) || {};
+            if (Object.keys(scores).length === 0) {
+                container.innerHTML = "No badges saved yet. Complete a quiz to earn one!";
+                return;
+            }
+            let html = "<table style='width:100%; text-align:left; border-collapse:collapse;'>";
+            for(let lvl in scores) {
+                html += `<tr style='border-bottom:1px solid #DDD;'><td style='padding:4px; text-transform:capitalize;'><strong>${lvl}:</strong></td><td style='padding:4px;'>${scores[lvl].badge} (${scores[lvl].score}/30)</td></tr>`;
+            }
+            html += "</table>";
+            container.innerHTML = html;
+        }
+        renderHighScores();
+
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        // Fisher-Yates array shuffling implementation algorithm
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function startQuiz(level) {
+            playSound('click');
+            currentLevel = level;
+            // Clone and randomize array slice to maintain stateless stability
+            let rawData = JSON.parse(JSON.stringify(QUESTION_BANK[level]));
+            activeQuestions = shuffleArray(rawData).slice(0, 30);
+            
+            // Randomize choices order per question configuration dynamically
+            activeQuestions.forEach(q => {
+                q.o = shuffleArray(q.o);
+            });
+
+            currentIdx = 0;
+            answersState = new Array(30).fill(null);
+            startTime = Date.now();
+
+            document.getElementById('level-indicator').innerText = "Level: " + level.toUpperCase();
+            switchScreen('screen-quiz');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const qData = activeQuestions[currentIdx];
+            
+            // UI Element Refreshes
+            document.getElementById('counter-indicator').innerText = `Question: ${currentIdx + 1}/30`;
+            
+            let scoreCount = answersState.filter(a => a && a.isCorrect).length;
+            document.getElementById('score-indicator').innerText = `Stars: ⭐ ${scoreCount}`;
+            
+            // Progress Calculation Bar Metrics
+            let progressPercent = ((currentIdx + 1) / 30) * 100;
+            document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+
+            document.getElementById('question-text').innerText = qData.q;
+
+            // Optional Illustration Controller Interface Injection
+            const imgBox = document.getElementById('illustration-container');
+            if (qData.img && SVG_ASSETS[qData.img]) {
+                imgBox.innerHTML = SVG_ASSETS[qData.img];
+                imgBox.style.display = "flex";
+            } else {
+                imgBox.style.display = "none";
+                imgBox.innerHTML = "";
+            }
+
+            // Options Architecture Deployment
+            const optionsGrid = document.getElementById('options-grid');
+            optionsGrid.innerHTML = "";
+
+            qData.o.forEach(opt => {
+                const card = document.createElement('div');
+                card.className = 'option-card';
+                card.innerText = opt;
+                card.onclick = () => handleSelection(card, opt);
+                optionsGrid.appendChild(card);
+            });
+
+            // Re-evaluation Restore State configuration logic
+            const existingAnswer = answersState[currentIdx];
+            const feedbackBox = document.getElementById('feedback-box');
+            
+            if (existingAnswer !== null) {
+                feedbackBox.style.display = "block";
+                feedbackBox.className = `feedback-box ${existingAnswer.isCorrect ? 'correct' : 'wrong'}`;
+                document.getElementById('feedback-title').innerText = existingAnswer.isCorrect ? "✅ Correct!" : "❌ Not Quite!";
+                document.getElementById('feedback-explanation').innerText = qData.e;
+                
+                // Highlight choice layouts appropriately
+                Array.from(optionsGrid.children).forEach(child => {
+                    if (child.innerText === qData.a) child.classList.add('correct');
+                    if (child.innerText === existingAnswer.selected && !existingAnswer.isCorrect) child.classList.add('wrong');
+                });
+            } else {
+                feedbackBox.style.display = "none";
+            }
+
+            // Sync Nav Button States
+            document.getElementById('btn-prev').disabled = (currentIdx === 0);
+            document.getElementById('btn-next').innerText = (currentIdx === 29) ? "Finish 🏁" : "Next ➡️";
+        }
+
+        function handleSelection(selectedCard, chosenOption) {
+            // Early exit safeguard when question state is already locked in down-funnel path
+            if (answersState[currentIdx] !== null) return;
+
+            const qData = activeQuestions[currentIdx];
+            const isCorrect = (chosenOption === qData.a);
+            
+            answersState[currentIdx] = {
+                selected: chosenOption,
+                isCorrect: isCorrect
+            };
+
+            playSound(isCorrect ? 'correct' : 'wrong');
+
+            // Visual feedback loop rendering parameters
+            const optionsGrid = document.getElementById('options-grid');
+            Array.from(optionsGrid.children).forEach(child => {
+                if (child.innerText === qData.a) child.classList.add('correct');
+                if (child.innerText === chosenOption && !isCorrect) child.classList.add('wrong');
+            });
+
+            const feedbackBox = document.getElementById('feedback-box');
+            feedbackBox.style.display = "block";
+            feedbackBox.className = `feedback-box ${isCorrect ? 'correct' : 'wrong'}`;
+            document.getElementById('feedback-title').innerText = isCorrect ? "✅ Correct!" : "❌ Not Quite!";
+            document.getElementById('feedback-explanation').innerText = qData.e;
+
+            // Synchronize operational metrics trackers
+            let scoreCount = answersState.filter(a => a && a.isCorrect).length;
+            document.getElementById('score-indicator').innerText = `Stars: ⭐ ${scoreCount}`;
+        }
+
+        function navigateQuestion(direction) {
+            playSound('click');
+            if (direction === 1 && answersState[currentIdx] === null) {
+                alert("Please pick an answer before moving forward! ✨");
+                return;
+            }
+
+            if (currentIdx === 29 && direction === 1) {
+                evaluateFinalResults();
+                return;
+            }
+
+            currentIdx += direction;
+            if (currentIdx < 0) currentIdx = 0;
+            if (currentIdx > 29) currentIdx = 29;
+            loadQuestion();
+        }
+
+        function returnHome() {
+            playSound('click');
+            switchScreen('screen-start');
+            renderHighScores();
+        }
+
+        function retryCurrentLevel() {
+            startQuiz(currentLevel);
+        }
+
+        function evaluateFinalResults() {
+            playSound('complete');
+            const totalElapsed = Math.floor((Date.now() - startTime) / 1000);
+            const totalCorrect = answersState.filter(a => a && a.isCorrect).length;
+            const totalWrong = 30 - totalCorrect;
+            const percentScore = Math.round((totalCorrect / 30) * 100);
+
+            // Compute Badges Matrix
+            let badgeIcon = "📚";
+            let badgeTitle = "Keep Practising";
+
+            if (percentScore >= 90) { badgeIcon = "🏆"; badgeTitle = "Vowel Master"; }
+            else if (percentScore >= 70) { badgeIcon = "🌟"; badgeTitle = "Letter Explorer"; }
+            else if (percentScore >= 50) { badgeIcon = "👍"; badgeTitle = "Good Learner"; }
+
+            // Persist metrics profile tracking state local storage interface layer
+            let scoresDict = JSON.parse(localStorage.getItem('vowel_quiz_scores')) || {};
+            if(!scoresDict[currentLevel] || scoresDict[currentLevel].score < totalCorrect) {
+                scoresDict[currentLevel] = {
+                    score: totalCorrect,
+                    badge: badgeIcon + " " + badgeTitle,
+                    percent: percentScore
+                };
+                localStorage.setItem('vowel_quiz_scores', JSON.stringify(scoresDict));
+            }
+
+            // Sync metrics to View DOM components
+            document.getElementById('res-level').innerText = currentLevel.toUpperCase();
+            document.getElementById('res-score').innerText = totalCorrect;
+            document.getElementById('res-percent').innerText = percentScore;
+            document.getElementById('res-time').innerText = totalElapsed;
+            document.getElementById('res-correct').innerText = totalCorrect;
+            document.getElementById('res-wrong').innerText = totalWrong;
+            document.getElementById('result-badge-icon').innerText = badgeIcon;
+            document.getElementById('result-badge-title').innerText = badgeTitle;
+
+            // Pre-stage printable certificate profile mappings data vectors
+            document.getElementById('cert-level').innerText = currentLevel.toUpperCase();
+            document.getElementById('cert-score').innerText = totalCorrect;
+            document.getElementById('cert-percent').innerText = percentScore;
+            document.getElementById('cert-badge').innerText = badgeIcon + " " + badgeTitle;
+
+            switchScreen('screen-result');
+            if (percentScore >= 70) {
+                triggerCelebration();
+            }
+        }
+
+        function printCertificate() {
+            playSound('click');
+            window.print();
+        }
+    </script>
+</body>
+</html>

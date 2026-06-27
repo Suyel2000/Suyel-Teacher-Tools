@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🔤 Alphabetical Order Quiz</title>
+    <style>
+        :root {
+            --primary-bg: linear-gradient(135deg, #A8CABA 0%, #5D4157 100%);
+            --play-bg: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 100%);
+            --easy-color: #2ECC71;
+            --medium-color: #F1C40F;
+            --hard-color: #E74C3C;
+            --text-main: #2C3E50;
+            --glass-bg: rgba(255, 255, 255, 0.9);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --card-shadow: 0 12px 32px rgba(31, 38, 135, 0.15);
+            --font-family: 'Comic Sans MS', 'Chalkboard SE', 'Caption', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background: var(--play-bg);
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-main);
+            overflow-x: hidden;
+            padding: 15px;
+        }
+
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 750px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 3px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: var(--card-shadow);
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s ease;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            color: #2C3E50;
+            text-shadow: 2px 2px 0px #FFF;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #7F8C8D;
+            margin-bottom: 25px;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .high-scores {
+            margin-top: 25px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 16px;
+            padding: 15px;
+            font-size: 0.95rem;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .menu-btn {
+            display: block;
+            width: 100%;
+            padding: 18px;
+            margin: 15px 0;
+            font-size: 1.4rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+            transition: transform 0.1s, box-shadow 0.2s;
+        }
+
+        .menu-btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-easy { background-color: var(--easy-color); }
+        .btn-medium { background-color: var(--medium-color); color: #2C3E50; text-shadow: none; }
+        .btn-hard { background-color: var(--hard-color); }
+
+        .progress-container {
+            margin-bottom: 20px;
+        }
+        .meta-info {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+        .progress-bar-outer {
+            width: 100%;
+            height: 16px;
+            background: #E0E0E0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .progress-bar-inner {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #3498DB, #9B59B6);
+            transition: width 0.3s ease;
+        }
+
+        .question-text {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            font-weight: bold;
+            line-height: 1.4;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .option-card {
+            background: white;
+            border: 3px solid #E0E0E0;
+            border-radius: 16px;
+            padding: 18px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        @media(max-width: 550px) {
+            .options-grid { grid-template-columns: 1fr; gap: 10px; }
+            .option-card { padding: 14px; font-size: 1.2rem; }
+        }
+        .option-card.correct {
+            background-color: #D4EDDA !important;
+            border-color: #2ECC71 !important;
+            color: #155724;
+        }
+        .option-card.wrong {
+            background-color: #F8D7DA !important;
+            border-color: #E74C3C !important;
+            color: #721C24;
+        }
+
+        .feedback-box {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 12px;
+            font-weight: bold;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .feedback-box.correct { background: #D4EDDA; color: #155724; border: 1px solid #C3E6CB; }
+        .feedback-box.wrong { background: #F8D7DA; color: #721C24; border: 1px solid #F5C6CB; }
+        .feedback-explanation {
+            font-size: 1.05rem;
+            margin-top: 5px;
+            font-weight: normal;
+        }
+
+        .nav-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 25px;
+            gap: 10px;
+        }
+        .nav-btn {
+            flex: 1;
+            padding: 14px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            background: #3498DB;
+            color: white;
+            transition: opacity 0.2s, background-color 0.2s;
+        }
+        .nav-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .nav-btn-home {
+            background: #95A5A6;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .result-item {
+            background: rgba(255,255,255,0.7);
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+        .badge-display {
+            margin: 20px 0;
+            padding: 20px;
+            background: #FFFDE7;
+            border: 3px dashed #F1C40F;
+            border-radius: 16px;
+        }
+        .badge-icon {
+            font-size: 3.5rem;
+            margin-bottom: 5px;
+            display: inline-block;
+            animation: bounce 1s infinite alternate;
+        }
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-8px); }
+        }
+        .badge-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #D35400;
+        }
+
+        #certificate-print-area {
+            display: none;
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            #certificate-print-area, #certificate-print-area * { visibility: visible; }
+            #certificate-print-area {
+                display: block;
+                position: absolute;
+                left: 0; top: 0; width: 100%;
+                padding: 40px;
+                border: 10px double #3498DB;
+                background: white;
+                color: black;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="bg-canvas"></canvas>
+
+    <div class="app-container">
+        <h1>🔤 Alphabetical Order Quiz</h1>
+        <div class="subtitle">Compare • Arrange • Think • Learn</div>
+
+        <div id="screen-start" class="screen active">
+            <p style="font-size:1.2rem; margin-bottom:20px; font-weight:bold; color:#555;">Choose your level to start the game!</p>
+            <button class="menu-btn btn-easy" onclick="startQuiz('easy')">🟢 Easy Level</button>
+            <button class="menu-btn btn-medium" onclick="startQuiz('medium')">🟡 Medium Level</button>
+            <button class="menu-btn btn-hard" onclick="startQuiz('hard')">🔴 Hard Level</button>
+
+            <div class="high-scores">
+                <strong>Your Saved Badges:</strong>
+                <div id="highscores-list" style="margin-top:8px; color:#555;">No badges saved yet. Finish a quiz to win one!</div>
+            </div>
+        </div>
+
+        <div id="screen-quiz" class="screen">
+            <div class="progress-container">
+                <div class="meta-info">
+                    <span id="level-indicator">Level</span>
+                    <span id="counter-indicator">Question: 1/30</span>
+                    <span id="score-indicator">Stars: ⭐ 0</span>
+                </div>
+                <div class="progress-bar-outer">
+                    <div id="progress-bar" class="progress-bar-inner"></div>
+                </div>
+            </div>
+
+            <div id="question-text" class="question-text">Question loading...</div>
+            <div id="options-grid" class="options-grid"></div>
+
+            <div id="feedback-box" class="feedback-box">
+                <div id="feedback-title"></div>
+                <div id="feedback-explanation" class="feedback-explanation"></div>
+            </div>
+
+            <div class="nav-bar">
+                <button id="btn-prev" class="nav-btn" onclick="navigateQuestion(-1)">⬅️ Previous</button>
+                <button class="nav-btn nav-btn-home" onclick="returnHome()">🏠 Home</button>
+                <button id="btn-next" class="nav-btn" onclick="navigateQuestion(1)">➡️ Next</button>
+            </div>
+        </div>
+
+        <div id="screen-result" class="screen">
+            <h2 style="color:#2ECC71; font-size:1.8rem; margin-bottom:10px;">🎉 Quiz Completed! 🎉</h2>
+            <p>Fantastic job! Look at your achievements:</p>
+
+            <div class="badge-display">
+                <div id="result-badge-icon" class="badge-icon">🏆</div>
+                <div id="result-badge-title" class="badge-title">Alphabet Master</div>
+            </div>
+
+            <div class="results-grid">
+                <div class="result-item"><strong>Level:</strong> <span id="res-level">-</span></div>
+                <div class="result-item"><strong>Final Score:</strong> <span id="res-score">-</span> / 30</div>
+                <div class="result-item"><strong>Percentage:</strong> <span id="res-percent">-</span>%</div>
+                <div class="result-item"><strong>Time Taken:</strong> <span id="res-time">-</span> seconds</div>
+                <div class="result-item"><strong>Correct Answers:</strong> ✅ <span id="res-correct">-</span></div>
+                <div class="result-item"><strong>Wrong Answers:</strong> ❌ <span id="res-wrong">-</span></div>
+            </div>
+
+            <button class="menu-btn btn-easy" onclick="retryCurrentLevel()">🔄 Play Again</button>
+            <button class="menu-btn btn-medium" onclick="returnHome()" style="color:#2C3E50;">📋 Choose Another Level</button>
+            <button class="menu-btn btn-hard" onclick="printCertificate()">🖨️ Print Certificate</button>
+        </div>
+    </div>
+
+    <div id="certificate-print-area">
+        <h1 style="font-size: 3rem; color: #2C3E50;">CERTIFICATE OF ACHIEVEMENT</h1>
+        <p style="font-size: 1.5rem; margin: 20px 0;">This award is proudly presented for successfully completing the</p>
+        <h2 style="font-size: 2.5rem; color: #3498DB; margin: 20px 0;">🔤 Alphabetical Order Quiz</h2>
+        <div style="border-top: 4px double #BDC3C7; width: 60%; margin: 30px auto;"></div>
+        <p style="font-size: 1.4rem; margin: 10px 0;"><strong>Level Overcame:</strong> <span id="cert-level">-</span></p>
+        <p style="font-size: 1.4rem; margin: 10px 0;"><strong>Performance Score:</strong> <span id="cert-score">-</span> / 30 (<span id="cert-percent">-</span>%)</p>
+        <p style="font-size: 1.4rem; margin: 10px 0;"><strong>Badge Earned:</strong> <span id="cert-badge">-</span></p>
+        <div style="margin-top: 60px; font-size: 1.2rem; color: #7F8C8D;">Keep reading, learning, and exploring! ⭐</div>
+    </div>
+
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playTone(freq, type, duration, delay = 0) {
+            setTimeout(() => {
+                try {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + duration);
+                } catch(e){}
+            }, delay);
+        }
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            if (type === 'click') playTone(400, 'sine', 0.08);
+            if (type === 'correct') { playTone(523, 'sine', 0.08); playTone(659, 'sine', 0.08, 60); }
+            if (type === 'wrong') { playTone(220, 'triangle', 0.15); playTone(180, 'triangle', 0.15, 60); }
+            if (type === 'complete') { playTone(440, 'sine', 0.1); playTone(554, 'sine', 0.1, 80); playTone(659, 'sine', 0.1, 160); playTone(880, 'sine', 0.25, 240); }
+        }
+
+        const QUESTION_BANK = {
+            easy: [
+                { q: "Which letter comes after D?", o: ["C", "E", "F", "B"], a: "E", e: "The alphabet runs A, B, C, D, E. So E comes next!" },
+                { q: "Which letter comes before P?", o: ["O", "Q", "N", "R"], a: "O", e: "O comes right before P in the ABC sequence." },
+                { q: "Which letter comes between M and O?", o: ["L", "N", "P", "K"], a: "N", e: "Counting up: M, N, O. N sits right in the middle." },
+                { q: "Which letter comes after H?", o: ["G", "I", "J", "F"], a: "I", e: "The alphabet goes F, G, H, I. So I is next!" },
+                { q: "Which letter comes before G?", o: ["H", "F", "E", "I"], a: "F", e: "F comes right before G." },
+                { q: "Which letter comes between R and T?", o: ["Q", "S", "U", "P"], a: "S", e: "The order is R, S, T. S is in the middle." },
+                { q: "Which letter comes after W?", o: ["V", "X", "Y", "U"], a: "X", e: "We say U, V, W, X. So X is right after W." },
+                { q: "Which letter comes before K?", o: ["J", "L", "I", "M"], a: "J", e: "J comes just before K." },
+                { q: "Which letter comes between B and D?", o: ["A", "C", "E", "F"], a: "C", e: "The letters are A, B, C, D. C is between B and D." },
+                { q: "Which letter comes after S?", o: ["R", "T", "U", "Q"], a: "T", e: "T comes directly after S." },
+                { q: "Which word comes first in the alphabet?", o: ["Apple", "Ball", "Cat", "Dog"], a: "Apple", e: "Apple starts with A, which comes before B, C, and D." },
+                { q: "Which word comes first in the alphabet?", o: ["Dog", "Cat", "Egg", "Frog"], a: "Cat", e: "Cat starts with C, which comes before D, E, and F." },
+                { q: "Which word comes first in the alphabet?", o: ["Sun", "Tree", "Van", "Zoo"], a: "Sun", e: "S comes before T, V, and Z in the alphabet, so Sun comes first." },
+                { q: "Which word comes first in the alphabet?", o: ["Van", "Watch", "Yak", "Zebra"], a: "Van", e: "V comes before W, Y, and Z, so Van wins!" },
+                { q: "Choose the correct alphabetical order:", o: ["Apple, Ball, Cat", "Ball, Cat, Apple", "Cat, Apple, Ball", "Apple, Cat, Ball"], a: "Apple, Ball, Cat", e: "A, B, C is the true alphabet sequence." },
+                { q: "Choose the correct alphabetical order:", o: ["Dog, Fish, Goat", "Fish, Dog, Goat", "Goat, Dog, Fish", "Dog, Goat, Fish"], a: "Dog, Fish, Goat", e: "D, F, G matches correct alphabetical sequencing." },
+                { q: "Which word comes first?", o: ["Sun", "Tree", "Umbrella", "Van"], a: "Sun", e: "Comparing S, T, U, and V: S comes first." },
+                { q: "Which word comes last?", o: ["Hat", "Ice Cream", "Juice", "Kite"], a: "Kite", e: "Comparing H, I, J, and K: K comes last." },
+                { q: "Which item comes first in the alphabet?", o: ["Line", "Monkey", "Nest", "Owl"], a: "Line", e: "L comes before M, N, and O." },
+                { q: "Which word comes first?", o: ["Parrot", "Queen", "Rabbit", "Sun"], a: "Parrot", e: "P comes before Q, R, and S." },
+                { q: "Which letter comes between F and H?", o: ["E", "G", "I", "J"], a: "G", e: "The alphabet goes E, F, G, H. So G is in the middle." },
+                { q: "Which letter comes directly before Z?", o: ["X", "Y", "W", "V"], a: "Y", e: "Y is the 25th letter, coming right before Z." },
+                { q: "Which word comes first in the dictionary?", o: ["Boat", "Coat", "Goat", "Float"], a: "Boat", e: "B comes before C, F, and G." },
+                { q: "Which letter comes after T?", o: ["S", "U", "V", "R"], a: "U", e: "The order is R, S, T, U. So U comes next." },
+                { q: "Which word comes last in alphabetical order?", o: ["Lamp", "Map", "Net", "Pen"], a: "Pen", e: "P comes after L, M, and N." },
+                { q: "Which letter comes between U and W?", o: ["T", "V", "X", "Y"], a: "V", e: "The order is U, V, W. V sits right between them." },
+                { q: "Which letter comes first in the alphabet?", o: ["M", "K", "L", "N"], a: "K", e: "K comes before L, M, and N." },
+                { q: "Which letter comes last in the alphabet?", o: ["Q", "R", "P", "O"], a: "R", e: "R comes after O, P, and Q." },
+                { q: "Which word comes first in alphabetical order?", o: ["Milk", "Nest", "Open", "Pink"], a: "Milk", e: "M comes before N, O, and P." },
+                { q: "Which word comes last in alphabetical order?", o: ["Game", "Home", "Ink", "Jar"], a: "Jar", e: "J comes last when comparing G, H, I, and J." }
+            ],
+            medium: [
+                { q: "Which word comes first in alphabetical order?", o: ["Ant", "Apple", "Aeroplane", "Arrow"], a: "Aeroplane", e: "All start with A. Compare the second letters: e (Aeroplane) comes before n (Ant), p (Apple), and r (Arrow)." },
+                { q: "Which word comes last in alphabetical order?", o: ["Cat", "Car", "Cup", "Cow"], a: "Cup", e: "Compare the second letters: u in Cup comes after a in Cat/Car and o in Cow." },
+                { q: "Which word should come first?", o: ["Bag", "Ball", "Bat", "Bee"], a: "Bag", e: "Look closely at the letters: Ba- comes before Be-, and g in Bag comes before l and t." },
+                { q: "Arrange these animals correctly: Dog, Elephant, Cat, Bear", o: ["Bear, Cat, Dog, Elephant", "Cat, Bear, Dog, Elephant", "Bear, Dog, Cat, Elephant", "Dog, Bear, Cat, Elephant"], a: "Bear, Cat, Dog, Elephant", e: "Look at the first letters: B, C, D, E is the right order." },
+                { q: "Which word comes second in ABC order?", o: ["Goat", "Hat", "Fish", "Frog"], a: "Frog", e: "The order is Fish, Frog, Goat, Hat. So Frog is second." },
+                { q: "Which word comes last?", o: ["Lion", "Leopard", "Lizard", "Light"], a: "Lizard", e: "All start with L. Comparing the second and third letters, Lizard comes last." },
+                { q: "Choose the word that goes first:", o: ["Monkey", "Mouse", "Melon", "Milk"], a: "Melon", e: "Compare second letters: e in Melon comes before o and i." },
+                { q: "Which word comes first?", o: ["Nest", "Net", "New", "Nut"], a: "Nest", e: "Comparing third letters: s comes before t and w." },
+                { q: "Which word comes last?", o: ["Orange", "Owl", "Onion", "Open"], a: "Owl", e: "Compare second letters: w comes after r, n, and p." },
+                { q: "Which word should come first?", o: ["Parrot", "Pen", "Pig", "Pot"], a: "Parrot", e: "Compare second letters: a comes before e, i, and o." },
+                { q: "Arrange these items correctly: Queen, Rabbit, Parrot, Sun", o: ["Parrot, Queen, Rabbit, Sun", "Queen, Parrot, Rabbit, Sun", "Parrot, Rabbit, Queen, Sun", "Sun, Rabbit, Queen, Parrot"], a: "Parrot, Queen, Rabbit, Sun", e: "First letters tell us the order: P, Q, R, S." },
+                { q: "Which word comes first?", o: ["Sun", "Star", "Sky", "Ship"], a: "Ship", e: "Compare second letters: h comes before u, t, and y." },
+                { q: "Which word comes last?", o: ["Tree", "Tent", "Toad", "Tiger"], a: "Tree", e: "Compare second letters: r comes after e, o, and i." },
+                { q: "Which word comes first?", o: ["Umbrella", "Uncle", "Under", "Up"], a: "Umbrella", e: "Compare third letters: b comes before c, d, and nothing." },
+                { q: "Which word should come first?", o: ["Van", "Vase", "Vest", "Vine"], a: "Van", e: "Compare third letters: n comes before s and i." },
+                { q: "Which word comes last?", o: ["Watch", "Window", "Water", "White"], a: "Window", e: "Compare second letters: i comes after a." },
+                { q: "Which word should come first?", o: ["Box", "Boy", "Bow", "Bus"], a: "Bow", e: "Compare third letters: w comes before x and y." },
+                { q: "Which word comes last?", o: ["Cake", "Candy", "Camel", "Camp"], a: "Candy", e: "Comparing third and fourth letters, Candy comes last." },
+                { q: "Which word should come first?", o: ["Door", "Desk", "Doll", "Duck"], a: "Desk", e: "Compare second letters: e comes before o and u." },
+                { q: "Which word comes last?", o: ["Frog", "Fly", "Fox", "Fish"], a: "Frog", e: "Compare second letters: r comes after l, o, and i." },
+                { q: "Which word comes second in alphabetical order?", o: ["Deer", "Desk", "Dirt", "Door"], a: "Desk", e: "The order is Deer, Desk, Dirt, Door. So Desk is second." },
+                { q: "Which word comes first in alphabetical order?", o: ["Gold", "Game", "Gift", "Glue"], a: "Game", e: "Comparing second letters, a comes before i, o, and l." },
+                { q: "Which word comes last in alphabetical order?", o: ["Hand", "Help", "Hill", "Horn"], a: "Horn", e: "Comparing second letters, o comes after a, e, and i." },
+                { q: "Which word comes third in alphabetical order?", o: ["Jamp", "Jeep", "Join", "Just"], a: "Join", e: "The order is Jamp, Jeep, Join, Just. Join is third." },
+                { q: "Which word should come first?", o: ["King", "Kite", "Kitten", "Kiwi"], a: "King", e: "Comparing the fourth letters, n comes before t and w." },
+                { q: "Which word comes last in alphabetical order?", o: ["Page", "Paper", "Path", "Park"], a: "Path", e: "Comparing the third and fourth letters, Path comes last." },
+                { q: "Which word should come first?", o: ["Read", "Rice", "Road", "Rope"], a: "Read", e: "Comparing second letters, e comes first." },
+                { q: "Which word comes second in alphabetical order?", o: ["Soap", "Song", "Soup", "Step"], a: "Song", e: "The order is Soap, Song, Soup, Step. Song is second." },
+                { q: "Which word comes last in alphabetical order?", o: ["Tank", "Team", "Time", "Toad"], a: "Toad", e: "Comparing second letters, o comes last." },
+                { q: "Which word comes first in alphabetical order?", o: ["Yard", "Yell", "Yoga", "Your"], a: "Yard", e: "Comparing second letters, a comes before e and o." }
+            ],
+            hard: [
+                { q: "Arrange these words in alphabetical order: School, Scale, Scarf, Science", o: ["Scale, Scarf, School, Science", "Scarf, Scale, School, Science", "Scale, School, Scarf, Science", "Science, School, Scarf, Scale"], a: "Scale, Scarf, School, Science", e: "All start with Sc. Look at the 3rd and 4th letters to arrange them correctly." },
+                { q: "Which word comes last in alphabetical order?", o: ["Plate", "Plant", "Play", "Plane"], a: "Play", e: "Compare the 4th letters: y comes after a and n." },
+                { q: "Which word should come first?", o: ["Tiger", "Table", "Tap", "Train"], a: "Table", e: "Compare the second letters: a comes first, and b in Table comes before p in Tap." },
+                { q: "Arrange these fruits correctly: Banana, Apple, Orange, Mango, Grapes", o: ["Apple, Banana, Grapes, Mango, Orange", "Apple, Grapes, Banana, Mango, Orange", "Banana, Apple, Grapes, Mango, Orange", "Apple, Banana, Mango, Grapes, Orange"], a: "Apple, Banana, Grapes, Mango, Orange", e: "Compare the first letters: A, B, G, M, O is the correct order!" },
+                { q: "Which word comes third in alphabetical order?", o: ["Chair", "Chalk", "Chain", "Chase"], a: "Chalk", e: "The correct sequence is Chain, Chair, Chalk, Chase. So Chalk is third." },
+                { q: "Which word should come first?", o: ["Bright", "Bread", "Brick", "Brown"], a: "Bread", e: "Compare the 3rd letters: e comes before i, o, and y." },
+                { q: "Which word comes last in dictionary order?", o: ["Spring", "Spray", "Spread", "Sprout"], a: "Sprout", e: "Compare the 4th letters: u in Sprout comes last." },
+                { q: "Which word should come first?", o: ["Clock", "Class", "Clean", "Cloud"], a: "Class", e: "Compare the 3rd letters: a comes before e, o, and u." },
+                { q: "Arrange these words: Flash, Flag, Flame, Flat", o: ["Flag, Flame, Flash, Flat", "Flag, Flash, Flame, Flat", "Flame, Flag, Flash, Flat", "Flat, Flash, Flame, Flag"], a: "Flag, Flame, Flash, Flat", e: "Look carefully at the 4th letters: g, m, s, t." },
+                { q: "Which word comes last?", o: ["Glow", "Glass", "Globe", "Glide"], a: "Glow", e: "Compare the 3rd letters: o is late, and w comes after b." },
+                { q: "Which word should come first?", o: ["Truck", "Train", "Trick", "Tray"], a: "Train", e: "Compare the 3rd letters: a comes first, and i comes before y." },
+                { q: "Which word comes second in alphabetical order?", o: ["Shirt", "Shoes", "Sheep", "Shark"], a: "Shark", e: "The correct order is Shark, Sheep, Shirt, Shoes. So Shark is second!" },
+                { q: "Which word should come first?", o: ["Snail", "Snake", "Snack", "Snap"], a: "Snack", e: "Compare the 4th letters: c comes before a, k, and p." },
+                { q: "Which word comes last?", o: ["Toast", "Toad", "Tower", "Total"], a: "Tower", e: "Compare the 3rd and 4th letters to find that Tower comes last." },
+                { q: "Which word should come first?", o: ["Whale", "Wheel", "White", "Wheat"], a: "Whale", e: "Compare the 4th letters: a comes before e and i." },
+                { q: "Arrange these correctly: Crab, Crane, Crayon, Crash", o: ["Crab, Crane, Crash, Crayon", "Crab, Crash, Crane, Crayon", "Crane, Crab, Crash, Crayon", "Crayon, Crane, Crash, Crab"], a: "Crab, Crane, Crash, Crayon", e: "Compare the 4th letters: b, n, s, y." },
+                { q: "Which word comes last?", o: ["Draw", "Draft", "Drain", "Drank"], a: "Draw", e: "Compare the 4th letters: w comes last after f, i, and k." },
+                { q: "Which word should come first?", o: ["Grape", "Grass", "Grand", "Grain"], a: "Grain", e: "Compare the 4th letters: i comes before n, p, and s." },
+                { q: "Which word comes second?", o: ["Light", "Lemon", "Lizard", "Lion"], a: "Light", e: "The order is Lemon, Light, Lion, Lizard. Light is second." },
+                { q: "Which word comes last?", o: ["Pencil", "Penny", "Peach", "Peace"], a: "Penny", e: "Compare the 3rd and 4th letters; Penny comes last." },
+                { q: "Which word comes first in alphabetical order?", o: ["Bake", "Baker", "Bakery", "Baking"], a: "Bake", e: "Shorter base words come before their longer extensions." },
+                { q: "Which word comes last in alphabetical order?", o: ["Dance", "Dancer", "Dancing", "Dances"], a: "Dancing", e: "Comparing suffixes, i in Dancing comes after e and r." },
+                { q: "Which word should come first?", o: ["Flight", "Flightless", "Flew", "Flyer"], a: "Flew", e: "The letter e in Flew comes before i and y." },
+                { q: "Which word comes third in alphabetical order?", o: ["Grand", "Grandchild", "Grandfather", "Grandmother"], a: "Grandfather", e: "The sequence is Grand, Grandchild, Grandfather, Grandmother. Grandfather is third." },
+                { q: "Which word should come first?", o: ["Light", "Lightning", "Lighter", "Lighthouse"], a: "Light", e: "The root word 'Light' always stands first before extensions." },
+                { q: "Which word comes last in alphabetical order?", o: ["Prank", "Prankster", "Praise", "Prawn"], a: "Prankster", e: "Comparing letter combinations, k in Prankster puts it after Praise and Prank." },
+                { q: "Which word comes second in alphabetical order?", o: ["Scout", "Scouter", "Scouting", "Scouts"], a: "Scouter", e: "The order is Scout, Scouter, Scouting, Scouts. Scouter is second." },
+                { q: "Which word should come first?", o: ["Short", "Shortage", "Shorthand", "Shortly"], a: "Short", e: "The base root word with zero trailing letters comes first." },
+                { q: "Which word comes last in alphabetical order?", o: ["Water", "Waterfall", "Watermelon", "Waterproof"], a: "Waterproof", e: "Comparing trailing elements, p in Waterproof comes after f and m." },
+                { q: "Which word comes third in alphabetical order?", o: ["Zip", "Zipper", "Zipping", "Zipped"], a: "Zipping", e: "The order is Zip, Zipped, Zipping, Zipper. Zipping is third." }
+            ]
+        };
+
+        let currentLevel = 'easy';
+        let activeQuestions = [];
+        let currentIdx = 0;
+        let answersState = []; 
+        let startTime = 0;
+
+        const bgCanvas = document.getElementById('bg-canvas');
+        const bgCtx = bgCanvas.getContext('2d');
+        let bgElements = [];
+        const floatPool = "ABCDEFGHIJKLMNOPQRSTUVWXYZ⭐📚✏️";
+
+        function resizeBgCanvas() {
+            bgCanvas.width = window.innerWidth;
+            bgCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeBgCanvas);
+        resizeBgCanvas();
+
+        class FloatingObject {
+            constructor() {
+                this.reset();
+                this.y = Math.random() * bgCanvas.height;
+            }
+            reset() {
+                this.text = floatPool[Math.floor(Math.random() * floatPool.length)];
+                this.x = Math.random() * bgCanvas.width;
+                this.y = bgCanvas.height + 30;
+                this.size = Math.random() * 26 + 16;
+                this.speed = Math.random() * 0.8 + 0.4;
+                this.opacity = Math.random() * 0.12 + 0.04;
+            }
+            update() {
+                this.y -= this.speed;
+                if (this.y < -40) this.reset();
+            }
+            draw() {
+                bgCtx.fillStyle = `rgba(52, 152, 219, ${this.opacity})`;
+                bgCtx.font = `bold ${this.size}px 'Comic Sans MS'`;
+                bgCtx.fillText(this.text, this.x, this.y);
+            }
+        }
+
+        for(let i=0; i<25; i++) bgElements.push(new FloatingObject());
+
+        function animateBg() {
+            bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+            bgElements.forEach(el => { el.update(); el.draw(); });
+            requestAnimationFrame(animateBg);
+        }
+        animateBg();
+
+        let confettiActive = false;
+        let confettiParticles = [];
+        function runConfettiLoop() {
+            if(!confettiActive) return;
+            bgCtx.clearRect(0,0,bgCanvas.width, bgCanvas.height);
+            bgElements.forEach(el => { el.update(); el.draw(); });
+            
+            confettiParticles.forEach((p, index) => {
+                p.y += p.speedY;
+                p.x += p.speedX;
+                p.rotation += p.rotationSpeed;
+                
+                bgCtx.save();
+                bgCtx.translate(p.x, p.y);
+                bgCtx.rotate(p.rotation);
+                bgCtx.fillStyle = p.color;
+                bgCtx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+                bgCtx.restore();
+
+                if(p.y > bgCanvas.height) {
+                    confettiParticles[index] = {
+                        x: Math.random() * bgCanvas.width, y: -20,
+                        size: Math.random() * 10 + 6, speedY: Math.random() * 4 + 2,
+                        speedX: Math.random() * 2 - 1, color: `hsl(${Math.random()*360}, 100%, 60%)`,
+                        rotation: Math.random() * 360, rotationSpeed: Math.random() * 0.05
+                    };
+                }
+            });
+            requestAnimationFrame(runConfettiLoop);
+        }
+
+        function triggerCelebration() {
+            confettiParticles = [];
+            for(let i=0; i<100; i++) {
+                confettiParticles.push({
+                    x: Math.random() * bgCanvas.width,
+                    y: Math.random() * bgCanvas.height - bgCanvas.height,
+                    size: Math.random() * 10 + 6, speedY: Math.random() * 4 + 2,
+                    speedX: Math.random() * 2 - 1, color: `hsl(${Math.random()*360}, 100%, 60%)`,
+                    rotation: Math.random() * 360, rotationSpeed: Math.random() * 0.05
+                });
+            }
+            confettiActive = true;
+            runConfettiLoop();
+            setTimeout(() => { confettiActive = false; }, 5000);
+        }
+
+        function renderHighScores() {
+            const container = document.getElementById('highscores-list');
+            let scores = JSON.parse(localStorage.getItem('alpha_quiz_scores')) || {};
+            if (Object.keys(scores).length === 0) {
+                container.innerHTML = "No badges saved yet. Finish a quiz to win one! ✨";
+                return;
+            }
+            let html = "<table style='width:100%; text-align:left; border-collapse:collapse;'>";
+            for(let lvl in scores) {
+                html += `<tr style='border-bottom:1px solid rgba(0,0,0,0.05);'><td style='padding:6px; text-transform:capitalize;'><strong>${lvl}:</strong></td><td style='padding:6px;'>${scores[lvl].badge} (${scores[lvl].score}/30)</td></tr>`;
+            }
+            html += "</table>";
+            container.innerHTML = html;
+        }
+        renderHighScores();
+
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function startQuiz(level) {
+            playSound('click');
+            currentLevel = level;
+            let rawData = JSON.parse(JSON.stringify(QUESTION_BANK[level]));
+            activeQuestions = shuffleArray(rawData).slice(0, 30);
+            
+            activeQuestions.forEach(q => {
+                q.o = shuffleArray(q.o);
+            });
+
+            currentIdx = 0;
+            answersState = new Array(30).fill(null);
+            startTime = Date.now();
+
+            document.getElementById('level-indicator').innerText = "Level: " + level.toUpperCase();
+            switchScreen('screen-quiz');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const qData = activeQuestions[currentIdx];
+            
+            document.getElementById('counter-indicator').innerText = `Question: ${currentIdx + 1}/30`;
+            
+            let scoreCount = answersState.filter(a => a && a.isCorrect).length;
+            document.getElementById('score-indicator').innerText = `Stars: ⭐ ${scoreCount}`;
+            
+            let progressPercent = ((currentIdx + 1) / 30) * 100;
+            document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+
+            document.getElementById('question-text').innerText = qData.q;
+
+            const optionsGrid = document.getElementById('options-grid');
+            optionsGrid.innerHTML = "";
+
+            qData.o.forEach(opt => {
+                const card = document.createElement('div');
+                card.className = 'option-card';
+                card.innerText = opt;
+                card.onclick = () => handleSelection(card, opt);
+                optionsGrid.appendChild(card);
+            });
+
+            const existingAnswer = answersState[currentIdx];
+            const feedbackBox = document.getElementById('feedback-box');
+            
+            if (existingAnswer !== null) {
+                feedbackBox.style.display = "block";
+                feedbackBox.className = `feedback-box ${existingAnswer.isCorrect ? 'correct' : 'wrong'}`;
+                document.getElementById('feedback-title').innerText = existingAnswer.isCorrect ? "✅ Correct!" : "❌ Not Quite!";
+                document.getElementById('feedback-explanation').innerText = qData.e;
+                
+                Array.from(optionsGrid.children).forEach(child => {
+                    if (child.innerText === qData.a) child.classList.add('correct');
+                    if (child.innerText === existingAnswer.selected && !existingAnswer.isCorrect) child.classList.add('wrong');
+                });
+            } else {
+                feedbackBox.style.display = "none";
+            }
+
+            document.getElementById('btn-prev').disabled = (currentIdx === 0);
+            document.getElementById('btn-next').innerText = (currentIdx === 29) ? "Finish 🏁" : "Next ➡️";
+        }
+
+        function handleSelection(selectedCard, chosenOption) {
+            if (answersState[currentIdx] !== null) return;
+
+            const qData = activeQuestions[currentIdx];
+            const isCorrect = (chosenOption === qData.a);
+            
+            answersState[currentIdx] = {
+                selected: chosenOption,
+                isCorrect: isCorrect
+            };
+
+            playSound(isCorrect ? 'correct' : 'wrong');
+
+            const optionsGrid = document.getElementById('options-grid');
+            Array.from(optionsGrid.children).forEach(child => {
+                if (child.innerText === qData.a) child.classList.add('correct');
+                if (child.innerText === chosenOption && !isCorrect) child.classList.add('wrong');
+            });
+
+            const feedbackBox = document.getElementById('feedback-box');
+            feedbackBox.style.display = "block";
+            feedbackBox.className = `feedback-box ${isCorrect ? 'correct' : 'wrong'}`;
+            document.getElementById('feedback-title').innerText = isCorrect ? "✅ Correct!" : "❌ Not Quite!";
+            document.getElementById('feedback-explanation').innerText = qData.e;
+
+            let scoreCount = answersState.filter(a => a && a.isCorrect).length;
+            document.getElementById('score-indicator').innerText = `Stars: ⭐ ${scoreCount}`;
+        }
+
+        function navigateQuestion(direction) {
+            playSound('click');
+            if (direction === 1 && answersState[currentIdx] === null) {
+                alert("Please pick an answer first! ✨");
+                return;
+            }
+
+            if (currentIdx === 29 && direction === 1) {
+                evaluateFinalResults();
+                return;
+            }
+
+            currentIdx += direction;
+            loadQuestion();
+        }
+
+        function returnHome() {
+            playSound('click');
+            switchScreen('screen-start');
+            renderHighScores();
+        }
+
+        function retryCurrentLevel() {
+            startQuiz(currentLevel);
+        }
+
+        function evaluateFinalResults() {
+            playSound('complete');
+            const totalElapsed = Math.floor((Date.now() - startTime) / 1000);
+            const totalCorrect = answersState.filter(a => a && a.isCorrect).length;
+            const totalWrong = 30 - totalCorrect;
+            const percentScore = Math.round((totalCorrect / 30) * 100);
+
+            let badgeIcon = "📚";
+            let badgeTitle = "Keep Practising";
+
+            if (percentScore >= 90) { badgeIcon = "🏆"; badgeTitle = "Alphabet Order Master"; }
+            else if (percentScore >= 70) { badgeIcon = "🌟"; badgeTitle = "Dictionary Explorer"; }
+            else if (percentScore >= 50) { badgeIcon = "👍"; badgeTitle = "Good Learner"; }
+
+            let scoresDict = JSON.parse(localStorage.getItem('alpha_quiz_scores')) || {};
+            if(!scoresDict[currentLevel] || scoresDict[currentLevel].score < totalCorrect) {
+                scoresDict[currentLevel] = {
+                    score: totalCorrect,
+                    badge: badgeIcon + " " + badgeTitle,
+                    percent: percentScore
+                };
+                localStorage.setItem('alpha_quiz_scores', JSON.stringify(scoresDict));
+            }
+
+            document.getElementById('res-level').innerText = currentLevel.toUpperCase();
+            document.getElementById('res-score').innerText = totalCorrect;
+            document.getElementById('res-percent').innerText = percentScore;
+            document.getElementById('res-time').innerText = totalElapsed;
+            document.getElementById('res-correct').innerText = totalCorrect;
+            document.getElementById('res-wrong').innerText = totalWrong;
+            document.getElementById('result-badge-icon').innerText = badgeIcon;
+            document.getElementById('result-badge-title').innerText = badgeTitle;
+
+            document.getElementById('cert-level').innerText = currentLevel.toUpperCase();
+            document.getElementById('cert-score').innerText = totalCorrect;
+            document.getElementById('cert-percent').innerText = percentScore;
+            document.getElementById('cert-badge').innerText = badgeIcon + " " + badgeTitle;
+
+            switchScreen('screen-result');
+            if (percentScore >= 70) {
+                triggerCelebration();
+            }
+        }
+
+        function printCertificate() {
+            playSound('click');
+            window.print();
+        }
+    </script>
+</body>
+</html>

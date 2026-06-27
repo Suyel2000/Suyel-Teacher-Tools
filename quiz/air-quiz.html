@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💨 Air Quiz</title>
+    <style>
+        /* CSS RESET & SYSTEM THEME VARIABLES */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --sky-gradient: linear-gradient(180deg, #a1c4fd 0%, #c2e9fb 100%);
+            --card-bg: rgba(255, 255, 255, 0.6);
+            --card-border: rgba(255, 255, 255, 0.45);
+            --text-dark: #1e293b;
+            --text-muted: #475569;
+            --easy-color: #2ecc71;
+            --medium-color: #f1c40f;
+            --hard-color: #e74c3c;
+            --correct-color: #27ae60;
+            --wrong-color: #c0392b;
+            --sky-blue: #3498db;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --shadow-sm: 0 4px 15px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 8px 32px 0 rgba(31, 38, 135, 0.12);
+        }
+
+        body {
+            min-height: 100vh;
+            background: var(--sky-gradient);
+            background-size: 200% 200%;
+            animation: skyShift 15s ease infinite;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-dark);
+            padding: 16px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        @keyframes skyShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* BACKGROUND SKY ANIMATION DECORATIONS */
+        .sky-element {
+            position: absolute;
+            pointer-events: none;
+            opacity: 0.25;
+            z-index: 1;
+            animation: floatLinear infinite linear;
+        }
+
+        @keyframes floatLinear {
+            from { transform: translateX(-150px); }
+            to { transform: translateX(calc(100vw + 150px)); }
+        }
+
+        /* CARD ARCHITECTURE LAYOUT */
+        .app-container {
+            width: 100%;
+            max-width: 840px;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            padding: 35px;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            text-align: center;
+            margin-bottom: 4px;
+            color: #0f172a;
+            font-weight: 800;
+        }
+
+        .tagline {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #334155;
+            margin-bottom: 35px;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        /* VIEW PANEL DISPLAY RULES */
+        .quiz-view {
+            display: none;
+        }
+
+        .quiz-view.active-panel {
+            display: block;
+            animation: panelFadeUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes panelFadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* RUNTIME MENUS & CHANNELS */
+        .menu-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            margin-top: 10px;
+        }
+
+        .level-selection-btn {
+            padding: 24px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .level-selection-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+        }
+
+        .level-selection-btn:active { transform: translateY(-1px); }
+        .btn-tier-easy { background-color: var(--easy-color); }
+        .btn-tier-medium { background-color: var(--medium-color); color: #1e293b; }
+        .btn-tier-hard { background-color: var(--hard-color); }
+
+        /* QUIZ PLAYER ENGINE TRACKS */
+        .player-header-bar {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .active-level-pill {
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-weight: 800;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            color: white;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .progress-track-container {
+            width: 100%;
+            height: 16px;
+            background: rgba(0, 0, 0, 0.06);
+            border-radius: 8px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .progress-fluid-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #3498db, #a1c4fd);
+            border-radius: 8px;
+            transition: width 0.4s ease-out;
+        }
+
+        .live-statistics-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+
+        /* VECTOR GRAPHICS DISPLAY LOGIC */
+        .vector-illustration-frame {
+            width: 100%;
+            max-width: 280px;
+            height: 240px;
+            margin: 0 auto 25px auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.03), var(--shadow-sm);
+        }
+
+        .vector-illustration-frame svg {
+            width: 100%;
+            height: 100%;
+            max-height: 210px;
+        }
+
+        .question-statement-text {
+            font-size: 1.55rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 28px;
+            line-height: 1.4;
+        }
+
+        /* INTERACTIVE OPTIONS PANELS */
+        .options-grid-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        @media (min-width: 640px) {
+            .options-grid-container { grid-template-columns: 1fr 1fr; }
+        }
+
+        .interactive-choice-node {
+            background: rgba(255, 255, 255, 0.85);
+            border: 2px solid transparent;
+            border-radius: var(--radius-md);
+            padding: 22px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+            box-shadow: var(--shadow-sm);
+            color: var(--text-dark);
+        }
+
+        .interactive-choice-node:hover:not([disabled]) {
+            background: #ffffff;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+            border-color: var(--sky-blue);
+        }
+
+        .interactive-choice-node:disabled { cursor: not-allowed; }
+
+        .interactive-choice-node.state-correct {
+            background-color: #d1fae5 !important;
+            border-color: var(--correct-color) !important;
+            color: #065f46 !important;
+            font-weight: 700;
+        }
+
+        .interactive-choice-node.state-wrong {
+            background-color: #fee2e2 !important;
+            border-color: var(--wrong-color) !important;
+            color: #991b1b !important;
+        }
+
+        /* EXPLANATION PANEL PIPELINE */
+        .explanation-alert-wrapper {
+            background: rgba(255, 255, 255, 0.95);
+            border-left: 6px solid var(--sky-blue);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 28px;
+            display: none;
+        }
+
+        .explanation-alert-wrapper.revealed-state {
+            display: block;
+            animation: paneSlideDown 0.3s ease;
+        }
+
+        @keyframes paneSlideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .explanation-heading-text {
+            font-weight: 800;
+            font-size: 1.25rem;
+            margin-bottom: 6px;
+        }
+
+        .explanation-heading-text.ui-success { color: var(--correct-color); }
+        .explanation-heading-text.ui-failure { color: var(--wrong-color); }
+        .explanation-body-narrative { font-size: 1.1rem; color: #334155; line-height: 1.5; }
+
+        /* PIPELINE ACTION PANEL BUTTONS */
+        .navigation-control-block {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .step-navigation-btn {
+            flex: 1;
+            padding: 16px 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s, opacity 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            text-align: center;
+        }
+
+        .step-navigation-btn:active { transform: scale(0.97); }
+        
+        .btn-direction-backwards { background: #e2e8f0; color: #475569; }
+        .btn-direction-backwards:hover:not([disabled]) { background: #cbd5e1; }
+        .btn-direction-backwards:disabled { opacity: 0.4; cursor: not-allowed; }
+        
+        .btn-action-home-nav { background: rgba(255, 255, 255, 0.9); border: 1px solid rgba(0,0,0,0.12); color: var(--text-dark); }
+        .btn-action-home-nav:hover { background: #ffffff; box-shadow: var(--shadow-sm); }
+        
+        .btn-direction-forwards { background: var(--sky-blue); color: white; }
+        .btn-direction-forwards:hover { background: #2980b9; }
+
+        /* METRIC SUMMARY SHOWCASE PANEL */
+        .summary-dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 25px 0;
+        }
+
+        @media(max-width: 560px) {
+            .summary-dashboard-grid { grid-template-columns: 1fr; }
+        }
+
+        .dashboard-tile-item {
+            background: rgba(255,255,255,0.75);
+            padding: 18px;
+            border-radius: var(--radius-md);
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+
+        .dashboard-metric-output {
+            font-size: 1.9rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-top: 6px;
+        }
+
+        .achievement-badge-card {
+            text-align: center;
+            margin: 25px 0;
+            padding: 26px;
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            border-radius: var(--radius-md);
+            border: 3px dashed #0284c7;
+        }
+
+        .badge-icon-element {
+            font-size: 4rem;
+            margin-bottom: 10px;
+            animation: iconBobbing 2.2s ease-in-out infinite;
+        }
+
+        @keyframes iconBobbing {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .badge-title-output {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #0369a1;
+        }
+
+        .summary-action-block {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-top: 25px;
+        }
+
+        .core-action-trigger {
+            padding: 18px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .btn-action-replay { background: #2ecc71; color: white; }
+        .btn-action-replay:hover { background: #27ae60; }
+        .btn-action-swap { background: #3498db; color: white; }
+        .btn-action-swap:hover { background: #1d4ed8; }
+        .btn-action-print { background: transparent; border: 2px solid #475569; color: #1e293b; }
+        .btn-action-print:hover { background: rgba(0,0,0,0.05); }
+
+        /* CONFETTI GRAPHICS ENGINE CANVAS STYLING */
+        #celebration-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 100;
+            display: none;
+        }
+
+        /* PRINT SYSTEM MEDIA STYLING RULES */
+        #printable-certificate-container { display: none; }
+
+        @media print {
+            body * { visibility: hidden; }
+            #printable-certificate-container, #printable-certificate-container * { visibility: visible; }
+            #printable-certificate-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                display: block !important;
+                padding: 60px 40px;
+                border: 14px double #0284c7;
+                background: #ffffff;
+                text-align: center;
+                font-family: 'Georgia', serif;
+                color: #111111;
+            }
+            .cert-header-main { font-size: 3.5rem; color: #0284c7; margin-bottom: 20px; font-weight: bold; }
+            .cert-sub-main { font-size: 1.6rem; font-style: italic; margin-bottom: 50px; color: #333333; }
+            .cert-recipient-line { font-size: 2.4rem; font-weight: bold; text-decoration: underline; margin-bottom: 30px; color: #000000; }
+            .cert-body-narrative { font-size: 1.4rem; line-height: 1.8; margin-bottom: 50px; max-width: 700px; margin-left: auto; margin-right: auto; }
+            .cert-base-signatures-row { display: flex; justify-content: space-around; margin-top: 80px; font-weight: bold; font-size: 1.2rem; }
+            .cert-watermark-icon { font-size: 6rem; position: absolute; right: 50px; bottom: 50px; opacity: 0.12; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="celebration-canvas"></canvas>
+
+    <div class="sky-element" style="top: 10%; animation-duration: 32s; height: 60px; width: 120px;"><svg viewBox="0 0 100 100"><path d="M20 60 A 10 10 0 0 1 26 40 A 15 15 0 0 1 58 35 A 12 12 0 0 1 75 60 Z" fill="#ffffff"/></svg></div>
+    <div class="sky-element" style="top: 25%; animation-duration: 48s; height: 80px; width: 160px; opacity: 0.15;"><svg viewBox="0 0 100 100"><path d="M20 60 A 10 10 0 0 1 26 40 A 15 15 0 0 1 58 35 A 12 12 0 0 1 75 60 Z" fill="#ffffff"/></svg></div>
+    <div class="sky-element" style="top: 65%; animation-duration: 25s; height: 50px; width: 100px;"><svg viewBox="0 0 100 100"><path d="M20 60 A 10 10 0 0 1 26 40 A 15 15 0 0 1 58 35 A 12 12 0 0 1 75 60 Z" fill="#ffffff"/></svg></div>
+
+    <div class="app-container">
+        <div id="view-landing" class="quiz-view active-panel">
+            <h1>💨 Air Quiz</h1>
+            <div class="tagline">Breathe • Observe • Explore • Learn</div>
+            <div style="text-align:center; font-size: 1.3rem; font-weight: 700; color: #0f172a; margin-bottom: 22px;">
+                Choose a difficulty level to start testing your knowledge!
+            </div>
+            <div class="menu-layout">
+                <button class="level-selection-btn btn-tier-easy" onclick="bootQuizEngineInstance('easy')">🟢 Easy Level (Classes 1–2)</button>
+                <button class="level-selection-btn btn-tier-medium" onclick="bootQuizEngineInstance('medium')">🟡 Medium Level (Classes 3–4)</button>
+                <button class="level-selection-btn btn-tier-hard" onclick="bootQuizEngineInstance('hard')">🔴 Hard Level (Classes 4–5)</button>
+            </div>
+        </div>
+
+        <div id="view-player" class="quiz-view">
+            <div class="player-header-bar">
+                <span id="lbl-active-tier" class="active-level-pill">Level</span>
+            </div>
+
+            <div class="progress-track-container">
+                <div id="engine-fluid-bar" class="progress-fluid-fill"></div>
+            </div>
+
+            <div class="live-statistics-row">
+                <span id="txt-live-count-index">Question: 1/30</span>
+                <span id="txt-live-score-value">Score: 0</span>
+            </div>
+
+            <div id="graphics-rendering-frame" class="vector-illustration-frame" style="display: none;">
+                </div>
+
+            <div id="txt-active-question-string" class="question-statement-text">Loading...</div>
+
+            <div id="box-options-layout-grid" class="options-grid-container">
+                </div>
+
+            <div id="box-dynamic-explanation" class="explanation-alert-wrapper">
+                <div id="txt-explanation-title-label" class="explanation-heading-text">Correct!</div>
+                <div id="txt-explanation-body-text" class="explanation-body-narrative">Educational proofing text placeholder.</div>
+            </div>
+
+            <div class="navigation-control-block">
+                <button id="btn-action-prev" class="step-navigation-btn btn-direction-backwards" onclick="stepToPreviousQuestionBlock()" disabled>⬅️ Prev</button>
+                <button id="btn-action-home" class="step-navigation-btn btn-action-home-nav" onclick="triggerMainLandingAbort()">🏠 Home</button>
+                <button id="btn-action-next" class="step-navigation-btn btn-direction-forwards" onclick="stepToNextQuestionBlock()">Next ➡️</button>
+            </div>
+        </div>
+
+        <div id="view-wrapup" class="quiz-view">
+            <h1>🎉 Quiz Completed!</h1>
+            <div class="tagline">Excellent job investigating the science of air!</div>
+
+            <div class="achievement-badge-card">
+                <div id="txt-summary-badge-icon" class="badge-icon-element">🏆</div>
+                <div id="txt-summary-badge-title" class="badge-title-output">Air Expert</div>
+            </div>
+
+            <div class="summary-dashboard-grid">
+                <div class="dashboard-tile-item"><div>Selected Level</div><div id="out-summary-level" class="dashboard-metric-output">-</div></div>
+                <div class="dashboard-tile-item"><div>Final Score</div><div id="out-summary-score" class="dashboard-metric-output">0/30</div></div>
+                <div class="dashboard-tile-item"><div>Accuracy Percentage</div><div id="out-summary-percent" class="dashboard-metric-output">0%</div></div>
+                <div class="dashboard-tile-item"><div>Time Taken</div><div id="out-summary-duration" class="dashboard-metric-output">0s</div></div>
+                <div class="dashboard-tile-item"><div>Correct Answers</div><div id="out-summary-correct" class="dashboard-metric-output" style="color:var(--correct-color)">0</div></div>
+                <div class="dashboard-tile-item"><div>Wrong Answers</div><div id="out-summary-wrong" class="dashboard-metric-output" style="color:var(--wrong-color)">0</div></div>
+            </div>
+
+            <div class="summary-action-block">
+                <button class="core-action-trigger btn-action-replay" onclick="reloadCurrentDifficultyTier()">🔄 Play This Level Again</button>
+                <button class="core-action-trigger btn-action-swap" onclick="navigateBackToLandingMenu()">🌈 Choose Another Level</button>
+                <button class="core-action-trigger btn-action-print" onclick="window.print()">🖨️ Print My Certificate</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="printable-certificate-container">
+        <div class="cert-header-main">Certificate of Achievement</div>
+        <div class="cert-sub-main">Junior Environmental Studies Science Award</div>
+        <p class="cert-body-narrative">This document proudly certifies that an outstanding young eco-learner has successfully completed the interactive scientific challenge and educational assessment on</p>
+        <div class="cert-recipient-line">The Atmosphere & Science of Air</div>
+        <p class="cert-body-narrative">
+            Assessed Difficulty Tier: <span id="lbl-print-cert-level" style="font-weight: bold; text-transform: uppercase;">-</span><br>
+            Evaluation Score Obtained: <span id="lbl-print-cert-score" style="font-weight: bold;">0/30</span> (<span id="lbl-print-cert-pct">0%</span> Verification Grade)<br>
+            Earned Distinction Title: <span id="lbl-print-cert-badge" style="font-weight: bold;">-</span>
+        </p>
+        <p class="cert-body-narrative" style="font-size:1.15rem; margin-top:20px; font-style: italic;">"Air is all around us, keeping planet Earth alive. By understanding its properties and preventing pollution, you help protect our global ecosystem!"</p>
+        <div class="cert-base-signatures-row">
+            <div>📅 Examination Date: <span id="lbl-print-cert-date">2026</span></div>
+            <div>✍️ System Verification: Interactive EVS Quiz App</div>
+        </div>
+        <div class="cert-watermark-icon">💨🪁🎈🪁</div>
+    </div>
+
+    <script>
+        /* WEB AUDIO API SYSTEM REALTIME SIGNAL SYNTHESIZER */
+        let globalAudioCtxInstance = null;
+
+        function initializeAudioInfrastructure() {
+            if (!globalAudioCtxInstance) {
+                globalAudioCtxInstance = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSynthesizedAudioSignal(signalType) {
+            initializeAudioInfrastructure();
+            if (!globalAudioCtxInstance) return;
+
+            const timeAnchor = globalAudioCtxInstance.currentTime;
+
+            switch(signalType) {
+                case 'click':
+                    let clickOsc = globalAudioCtxInstance.createOscillator();
+                    let clickGain = globalAudioCtxInstance.createGain();
+                    clickOsc.connect(clickGain);
+                    clickGain.connect(globalAudioCtxInstance.destination);
+                    clickOsc.frequency.setValueAtTime(620, timeAnchor);
+                    clickGain.gain.setValueAtTime(0.05, timeAnchor);
+                    clickGain.gain.exponentialRampToValueAtTime(0.001, timeAnchor + 0.05);
+                    clickOsc.start(timeAnchor);
+                    clickOsc.stop(timeAnchor + 0.05);
+                    break;
+
+                case 'wind':
+                    let bufferSize = globalAudioCtxInstance.sampleRate * 0.4;
+                    let noiseBuffer = globalAudioCtxInstance.createBuffer(1, bufferSize, globalAudioCtxInstance.sampleRate);
+                    let outputData = noiseBuffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) {
+                        outputData[i] = Math.random() * 2 - 1;
+                    }
+                    let noiseNode = globalAudioCtxInstance.createBufferSource();
+                    noiseNode.buffer = noiseBuffer;
+
+                    let lowpassFilter = globalAudioCtxInstance.createBiquadFilter();
+                    lowpassFilter.type = 'lowpass';
+                    lowpassFilter.frequency.setValueAtTime(400, timeAnchor);
+                    lowpassFilter.frequency.linearRampToValueAtTime(900, timeAnchor + 0.2);
+                    lowpassFilter.frequency.linearRampToValueAtTime(300, timeAnchor + 0.4);
+
+                    let windGain = globalAudioCtxInstance.createGain();
+                    windGain.gain.setValueAtTime(0.12, timeAnchor);
+                    windGain.gain.linearRampToValueAtTime(0.001, timeAnchor + 0.4);
+
+                    noiseNode.connect(lowpassFilter);
+                    lowpassFilter.connect(windGain);
+                    windGain.connect(globalAudioCtxInstance.destination);
+                    noiseNode.start(timeAnchor);
+                    noiseNode.stop(timeAnchor + 0.4);
+                    break;
+
+                case 'correct':
+                    [523.25, 659.25].forEach((freqVal, stepOffset) => {
+                        let osc = globalAudioCtxInstance.createOscillator();
+                        let gainNode = globalAudioCtxInstance.createGain();
+                        osc.type = 'sine';
+                        osc.connect(gainNode);
+                        gainNode.connect(globalAudioCtxInstance.destination);
+                        osc.frequency.setValueAtTime(freqVal, timeAnchor + (stepOffset * 0.06));
+                        gainNode.gain.setValueAtTime(0.08, timeAnchor + (stepOffset * 0.06));
+                        gainNode.gain.exponentialRampToValueAtTime(0.001, timeAnchor + (stepOffset * 0.06) + 0.22);
+                        osc.start(timeAnchor + (stepOffset * 0.06));
+                        osc.stop(timeAnchor + (stepOffset * 0.06) + 0.22);
+                    });
+                    break;
+
+                case 'wrong':
+                    let failOsc = globalAudioCtxInstance.createOscillator();
+                    let failGain = globalAudioCtxInstance.createGain();
+                    failOsc.type = 'triangle';
+                    failOsc.connect(failGain);
+                    failGain.connect(globalAudioCtxInstance.destination);
+                    failOsc.frequency.setValueAtTime(160, timeAnchor);
+                    failOsc.frequency.linearRampToValueAtTime(100, timeAnchor + 0.3);
+                    failGain.gain.setValueAtTime(0.18, timeAnchor);
+                    failGain.gain.linearRampToValueAtTime(0.001, timeAnchor + 0.3);
+                    failOsc.start(timeAnchor);
+                    failOsc.stop(timeAnchor + 0.3);
+                    break;
+
+                case 'completion':
+                    const notesArray = [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50];
+                    notesArray.forEach((freq, noteIdx) => {
+                        let stepOsc = globalAudioCtxInstance.createOscillator();
+                        let stepGain = globalAudioCtxInstance.createGain();
+                        stepOsc.type = 'sine';
+                        stepOsc.connect(stepGain);
+                        stepGain.connect(globalAudioCtxInstance.destination);
+                        stepOsc.frequency.setValueAtTime(freq, timeAnchor + (noteIdx * 0.08));
+                        stepGain.gain.setValueAtTime(0.06, timeAnchor + (noteIdx * 0.08));
+                        stepGain.gain.exponentialRampToValueAtTime(0.001, timeAnchor + (noteIdx * 0.08) + 0.25);
+                        stepOsc.start(timeAnchor + (noteIdx * 0.08));
+                        stepOsc.stop(timeAnchor + (noteIdx * 0.08) + 0.25);
+                    });
+                    break;
+            }
+        }
+
+        /* PROGRAMMATIC EMBEDDED INLINE SVG VECTOR ILLUSTRATION DIRECTORY */
+        const EmbeddedVectorMap = {
+            balloon: `<svg viewBox="0 0 100 100"><path d="M50 15 C25 15 25 55 50 75 C75 55 75 15 50 15 Z" fill="#e74c3c"/><path d="M50 75 L46 80 H54 Z" fill="#c0392b"/><path d="M50 80 Q48 90 52 95" stroke="#7f8c8d" stroke-width="2" fill="none"/></svg>`,
+            kite: `<svg viewBox="0 0 100 100"><path d="M50 10 L85 45 L50 80 L15 45 Z" fill="#f1c40f" stroke="#d35400" stroke-width="2"/><line x1="15" y1="45" x2="85" y2="45" stroke="#d35400" stroke-width="2"/><line x1="50" y1="10" x2="50" y2="80" stroke="#d35400" stroke-width="2"/><path d="M50 80 L42 90 H58 Z" fill="#e67e22"/><path d="M50 90 Q55 95 48 100" stroke="#7f8c8d" stroke-width="1.5" fill="none"/></svg>`,
+            windmill: `<svg viewBox="0 0 100 100"><polygon points="46,90 54,90 52,45 48,45" fill="#7f8c8d"/><circle cx="50" cy="45" r="4" fill="#34495e"/><g fill="#bdc3c7" stroke="#95a5a6" stroke-width="1"><path d="M50 45 L50 10 C52 20 54 30 50 45 Z"/><path d="M50 45 L85 45 C75 47 65 49 50 45 Z"/><path d="M50 45 L50 80 C48 70 46 60 50 45 Z"/><path d="M50 45 L15 45 C25 43 35 41 50 45 Z"/></g></svg>`,
+            fan: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="10" fill="#34495e"/><rect x="47" y="0" width="6" height="40" fill="#7f8c8d"/><g fill="#95a5a6"><path d="M50 40 C35 25 20 40 50 48 Z"/><path d="M60 50 C75 35 60 20 52 50 Z"/><path d="M50 60 C65 75 80 60 50 52 Z"/><path d="M40 50 C25 65 40 80 48 50 Z"/></g></svg>`,
+            tree: `<svg viewBox="0 0 100 100"><rect x="46" y="60" width="8" height="30" fill="#8b5a2b"/><circle cx="50" cy="40" r="25" fill="#2ecc71"/><circle cx="38" cy="48" r="18" fill="#27ae60"/><circle cx="62" cy="45" r="18" fill="#27ae60"/></svg>`,
+            clouds: `<svg viewBox="0 0 100 100"><path d="M20 65 A 12 12 0 0 1 28 42 A 18 18 0 0 1 64 36 A 14 14 0 0 1 82 65 Z" fill="#ecf0f1"/><path d="M40 75 A 14 14 0 0 1 48 52 A 22 22 0 0 1 84 46 A 16 16 0 0 1 98 75 Z" fill="#cbd5e1" opacity="0.7"/></svg>`,
+            bird: `<svg viewBox="0 0 100 100"><path d="M15 40 Q35 20 50 45 Q65 20 85 40 Q65 55 50 48 Q35 55 15 40 Z" fill="#3498db"/><circle cx="50" cy="42" r="5" fill="#2980b9"/><polygon points="48,42 52,42 50,36" fill="#f1c40f"/></svg>`,
+            aeroplane: `<svg viewBox="0 0 100 100"><path d="M10 50 L80 45 L90 50 L80 55 Z" fill="#ecf0f1"/><path d="M50 48 L60 15 L70 47 Z" fill="#bdc3c7"/><path d="M50 52 L60 85 L70 53 Z" fill="#bdc3c7"/><path d="M15 50 L10 35 L20 49 Z" fill="#95a5a6"/></svg>`,
+            tyre: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="#2c3e50" stroke="#1a252f" stroke-width="4"/><circle cx="50" cy="50" r="24" fill="#bdc3c7"/><circle cx="50" cy="50" r="8" fill="#7f8c8d"/><line x1="50" y1="8" x2="50" y2="24" stroke="#1a252f" stroke-width="2"/></svg>`,
+            smoke: `<svg viewBox="0 0 100 100"><rect x="40" y="70" width="20" height="25" fill="#7f8c8d"/><circle cx="50" cy="55" r="14" fill="#bdc3c7" opacity="0.8"/><circle cx="62" cy="40" r="18" fill="#95a5a6" opacity="0.6"/><circle cx="44" cy="25" r="22" fill="#7f8c8d" opacity="0.4"/></svg>`,
+            factory: `<svg viewBox="0 0 100 100"><polygon points="10,90 35,90 35,60 22,65 10,60" fill="#34495e"/><rect x="60" y="30" width="15" height="60" fill="#7f8c8d"/><path d="M60 30 C60 15 75 15 75 5" stroke="#bdc3c7" stroke-width="6" fill="none" opacity="0.5"/><rect x="15" y="70" width="6" height="10" fill="#f1c40f"/></svg>`,
+            green_park: `<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#7ed321"/><circle cx="25" cy="50" r="20" fill="#2ecc71"/><circle cx="75" cy="50" r="20" fill="#2ecc71"/><rect x="22" y="65" width="6" height="20" fill="#8b5a2b"/><rect x="72" y="65" width="6" height="20" fill="#8b5a2b"/><path d="M0 80 Q50 65 100 80 L100 100 H0 Z" fill="#55b000"/></svg>`,
+            dust_storm: `<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#f5f5dc"/><path d="M10 20 Q50 40 90 20 T10 40 T90 60 T10 80" stroke="#d2b48c" stroke-width="8" fill="none" stroke-linecap="round" opacity="0.7"/><circle cx="30" cy="50" r="15" fill="#caae86" opacity="0.4"/></svg>`
+        };
+
+        /* ROBUST LEVEL QUESTION COMPOSITION DATA MATRIX (90 DISTINCT CHANNELS) */
+        const UniversalQuestionMatrix = {
+            easy: [
+                { q: "What do humans and animals need to breathe every single second?", options: ["Water", "Air", "Food", "Juice"], correct: 1, exp: "All living things must breathe air continuously to stay alive and active!" },
+                { q: "Can we see the air surrounding us in the room?", options: ["Yes, it is bright blue", "No, air is completely invisible", "Only at night", "Only inside a kitchen"], correct: 1, exp: "Air is transparent and clear, making it invisible to our bare eyes." },
+                { q: "What do we call air when it moves fast outside?", options: ["Rain", "Wind", "Cloud", "Snow"], correct: 1, exp: "Moving air is called wind. It can turn pages and shake leaves!" },
+                { q: "What is trapped inside a rubber balloon to make it grow large?", options: ["Water", "Air", "Sand", "Paper"], correct: 1, exp: "Blowing air into a balloon fills it up and expands the rubber body.", visual: "balloon" },
+                { q: "What helps a paper kite fly high up in the sky?", options: ["The hot Sun", "The moving wind", "Heavy clouds", "A flying bird"], correct: 1, exp: "Wind pushes against the flat surface of the kite, lifting it skyward.", visual: "kite" },
+                { q: "Which of these living organisms requires air to survive?", options: ["Only wild animals", "Only small garden plants", "All living plants and animals", "No living things need air"], correct: 2, exp: "Every plant and animal on Earth depends on gases in the air to live." },
+                { q: "Green trees help keep our surrounding air...", options: ["Hot and dirty", "Clean and fresh", "Smoky and gray", "Wet and salty"], correct: 1, exp: "Leaves trap dust and supply fresh oxygen, keeping the air pristine.", visual: "tree" },
+                { q: "What is pumped tightly inside bicycle and car tyres?", options: ["Cold water", "Compressed air", "Dry leaves", "Soft mud"], correct: 1, exp: "Air under high pressure makes the rubber tyre round and sturdy for rolling.", visual: "tyre" },
+                { q: "Birds spread out their wings to move through the...", options: ["Soil", "Air", "Water", "Rocks"], correct: 1, exp: "Air supports a bird's wings, allowing it to fly and glide.", visual: "bird" },
+                { q: "What shape does air have when it is outside in nature?", options: ["A square box shape", "A round ball shape", "It has no fixed shape of its own", "A triangle pattern"], correct: 2, exp: "Air is a gas, so it takes the shape of whatever container or space it fills." },
+                { q: "Where can we find air on our planet Earth?", options: ["Only on high mountains", "Everywhere around us", "Only inside plastic bottles", "Only near oceans"], correct: 1, exp: "Air forms a thick blanket completely surrounding everything on Earth." },
+                { q: "Clean, fresh air has which natural smell?", options: ["A sweet strawberry odor", "It has no smell at all", "A sharp smoky stench", "Like wet chemical soap"], correct: 1, exp: "Pure and clean air is naturally odorless, colorless, and tasteless." },
+                { q: "Can we feel air when we run fast or sit in front of a fan?", options: ["Yes", "No, never", "Only when it rains", "Only during winter"], correct: 0, exp: "When we move fast against air, we feel it rushing across our faces.", visual: "fan" },
+                { q: "What happens when you blow air into an empty paper bag?", options: ["It shrinks into a flat line", "It expands and becomes bigger", "It catches fire", "It turns green"], correct: 1, exp: "The injected air molecules require physical space, pushing the bag open." },
+                { q: "Which indoor appliance uses air currents to cool a bedroom?", options: ["An iron box", "A spinning ceiling fan", "A television set", "A wooden wardrobe"], correct: 1, exp: "Fan blades spin to force room air downward, making a cool breeze.", visual: "fan" },
+                { q: "What massive vehicle flies through air to travel across continents?", options: ["A railway train", "An aeroplane", "A cargo submarine", "A modern electric bus"], correct: 1, exp: "Aeroplanes use high-speed wings to cruise through upper air currents.", visual: "aeroplane" },
+                { q: "What elements float in the high sky, carried by air currents?", options: ["Large gray stones", "White and gray clouds", "Heavy brick houses", "Iron cars"], correct: 1, exp: "Clouds are lightweight moisture bundles floating easily on air.", visual: "clouds" },
+                { q: "Why do family pets like dogs and cats breathe air?", options: ["To change their skin coat", "To stay alive and healthy", "To sleep better at night", "To run backwards"], correct: 1, exp: "Oxygen from clean air is processed by animal lungs to generate life energy." },
+                { q: "Is there any air inside an empty cardboard box sitting in your room?", options: ["No, it is totally empty", "Yes, air fills up all seemingly empty spaces", "Only if it has holes", "Only if it is painted white"], correct: 1, exp: "Air fills up all open spatial structures immediately; nothing is truly empty." },
+                { q: "When strong wind blows, what part of a tree shakes visibly?", options: ["The deep underground roots", "The green leaves and branches", "The solid wood trunk", "The shadow on grass"], correct: 1, exp: "Lightweight leaves trap moving air energy, making them dance and flutter.", visual: "tree" },
+                { q: "Which toy needs to be pumped with air before you can bounce it?", options: ["A wooden doll", "A basketball", "A metal toy train", "A plastic video game console"], correct: 1, exp: "Inflatable sports balls rely on trapped air pressure to create rebound bounce." },
+                { q: "Breathing in fresh, clean air daily is excellent for our...", options: ["Lungs and general health", "Classroom textbooks", "Bicycle metal chains", "Shoes and clothes"], correct: 0, exp: "Clean air prevents coughing and keeps our respiratory respiratory tracts strong." },
+                { q: "What helps wet clothes dry quickly when hung on an outdoor line?", options: ["Dark shadows", "Moving air and solar heat", "Heavy morning fog", "The sound of wind chimes"], correct: 1, exp: "Air currents sweep moisture particles away from fabrics, drying them out." },
+                { q: "Where do swimming fish capture the air they need?", options: ["By leaping into the sky", "From the air bubbles dissolved inside the water", "They do not need air at all", "From underwater mud holes"], correct: 1, exp: "Fish pass water through gills to strain out dissolved oxygen gases." },
+                { q: "Can we trap a handful of air tightly inside our bare fingers?", options: ["Yes, easily", "No, air will slip out through any gap", "Only during a storm", "Only under deep water"], correct: 1, exp: "Air molecules slip through microscopic openings because they form a free gas." },
+                { q: "What forces a tall sailing boat to move across an open lake?", options: ["A rowing paddle machine", "Wind pushing against the wide cloth sails", "Swimming lake fish", "Underground water heat"], correct: 1, exp: "Sails trap kinetic energy from wind currents, dragging the hull forward." },
+                { q: "Scientifically, the air surrounding our planet is a mixture of...", options: ["Different liquid juices", "Many different invisible gases", "Fine colored sand grains", "Pure water droplets only"], correct: 1, exp: "Air consists of Nitrogen, Oxygen, Carbon Dioxide, and minor trace element gases." },
+                { q: "What are soapy water bubbles filled with when they float away?", options: ["Sweet water syrup", "Invisible air", "Thick white glue", "Yellow paint dust"], correct: 1, exp: "Blowing into soapy water traps pocket volumes of air inside a thin film." },
+                { q: "Does a heavy granite stone require air to breathe?", options: ["Yes, once a day", "No, because it is a non-living object", "Only in the summer", "Only if it breaks down"], correct: 1, exp: "Non-living items have no cells and consume zero energetic resources like air." },
+                { q: "Where does rain water fall from when high air columns cool down?", options: ["From the solar surface", "From overhead clouds", "From dry mountain tops", "From flying aeroplanes"], correct: 1, exp: "Clouds drop condensed atmospheric water moisture down as precipitation rain.", visual: "clouds" }
+            ],
+            medium: [
+                { q: "Which specific gas do human beings extract from air during inhalation?", options: ["Nitrogen gas", "Oxygen gas", "Carbon Dioxide gas", "Hydrogen gas"], correct: 1, exp: "Oxygen is critical for cell metabolism, keeping animals alive." },
+                { q: "During bright daytime hours, green leaves absorb which gas to create food?", options: ["Pure Helium", "Carbon Dioxide", "Argon gas", "Methane vapor"], correct: 1, exp: "Plants consume Carbon Dioxide gas for the process of photosynthesis." },
+                { q: "What essential gas do green plants release back into the atmosphere for us?", options: ["Carbon Dioxide", "Oxygen", "Nitrogen", "Smoke particles"], correct: 1, exp: "Photosynthetic processes generate oxygen, sustaining the animal kingdom.", visual: "tree" },
+                { q: "Which human activity causes heavy pollution to outdoor air?", options: ["Riding a pedal bicycle", "Burning chemical plastic and garbage heaps", "Watering backyard flowers", "Planting fruit tree seeds"], correct: 1, exp: "Burning synthetic materials releases noxious, toxic gases into air currents.", visual: "smoke" },
+                { q: "What community action can we scale up to ensure our city air stays clean?", options: ["Paving open parks with concrete", "Planting more green trees and vegetation", "Driving large diesel cars short distances", "Burning autumn leaf piles"], correct: 1, exp: "Trees actively filter pollutants and convert carbon dioxide into oxygen.", visual: "green_park" },
+                { q: "Inflating a flat rubber inner tube proves that air...", options: ["Has no mass or weight", "Occupies real physical space", "Can turn into liquid water", "Is a heavy solid block"], correct: 1, exp: "Air fills structural dimensions, proving that gas occupies real physical volume.", visual: "tyre" },
+                { q: "What property is shown when a fully pumped football weighs more than a flat one?", options: ["Air can float easily", "Air possesses real physical weight", "Air changes color with pressure", "Air does not occupy space"], correct: 1, exp: "Even as a gas, air is made of matter and adds weight to objects when compressed." },
+                { q: "What tall eco-friendly structure uses large rotating blades to harness moving air?", options: ["A factory chimney tower", "An industrial windmill", "A water well pump", "A concrete building pillar"], correct: 1, exp: "Windmills or wind turbines trap wind currents to spin power generators.", visual: "windmill" },
+                { q: "Thick black fumes escaping from large industrial factories create...", options: ["Fresh mountain air", "Dangerous air pollution", "Beautiful weather clouds", "Salty coastal wind"], correct: 1, exp: "Factory smoke dumps soot, dust, and toxic compounds into local air columns.", visual: "factory" },
+                { q: "Why is breathing heavily polluted air bad for human school children?", options: ["It improves eyesight speed", "It triggers throat irritation, coughing, and breathing problems", "It turns skin green", "It has no effect at all"], correct: 1, exp: "Particulate pollution and soot irritate lung tissue and cause illnesses." },
+                { q: "Can we find trace pockets of air hidden down inside loose garden soil?", options: ["No, soil is totally solid", "Yes, air fills up spaces between dirt grains", "Only right after a flood", "Only during cold winters"], correct: 1, exp: "Porous spaces in soil hold air, allowing roots and earthworms to breathe easily." },
+                { q: "What do meteorologists call a very fast, hazardous vortex of wind?", options: ["A light summer breeze", "A destructive storm or tornado", "A morning mist patch", "A gentle dew layer"], correct: 1, exp: "Storms represent high-energy air mass movements that can break structures.", visual: "dust_storm" },
+                { q: "Which gas is most abundant, making up nearly 78% of Earth's atmosphere?", options: ["Oxygen gas", "Nitrogen gas", "Carbon Dioxide", "Water vapor"], correct: 1, exp: "Nitrogen gas makes up the absolute largest structural portion of global air." },
+                { q: "What is the scientific name for the full protective layer of air surrounding Earth?", options: ["The Hydrosphere", "The Atmosphere", "The Biosphere", "The Lithosphere"], correct: 1, exp: "The atmosphere is the collection of gas layers wrapped around our planet." },
+                { q: "How do botanical plants help regulate urban air quality?", options: ["They trap sunlight inside the soil", "They consume excess Carbon Dioxide and give out clean Oxygen", "They block wind from blowing entirely", "They turn rain into fog layers"], correct: 1, exp: "Plants function as natural air filters by processing greenhouse gases.", visual: "tree" },
+                { q: "Why must high-altitude mountain climbers carry metal oxygen tanks?", options: ["To stay balanced on steep rocks", "Because air layers get very thin and lack sufficient oxygen up high", "To protect their backpacks from wind", "To boil drinking water faster"], correct: 1, exp: "Atmospheric density decreases with altitude, making it hard to breathe up high." },
+                { q: "Which component uses compressed air cushioning to support transportation vehicles?", options: ["A heavy iron engine block", "A pneumatic rubber tyre", "A wooden seat cushion", "A glass window pane"], correct: 1, exp: "Tyres hold high-pressure air to support heavy vehicular weights safely.", visual: "tyre" },
+                { q: "When you switch on an indoor electric table fan, what are you doing?", options: ["Creating new air out of nothing", "Setting the existing room air into motion", "Freezing the surrounding air molecules", "Removing oxygen from the room"], correct: 1, exp: "Fans don't create air; they simply move it to speed up skin cooling.", visual: "fan" },
+                { q: "What dynamic allows eagles and hang-gliders to soar without flapping?", options: ["Magnetic lines on mountains", "Rising warm air currents and wind forces", "The light weight of feathers alone", "Cloud suction forces"], correct: 1, exp: "Thermal air columns and wind give aerodynamic lift to wings and gliders.", visual: "bird" },
+                { q: "What invisible component must be present in air for a fire candle to burn?", options: ["Carbon dioxide gas", "Oxygen gas", "Nitrogen gas", "Fine dust particles"], correct: 1, exp: "Oxygen is the required chemical oxidizer that allows combustion to occur." },
+                { q: "What makes the air hazy and brown during a dry summer field event?", options: ["Blowing smoke from kitchens", "Suspended dust and sand particles blown by wind", "Excessive oxygen gas loading", "Water vapor condensing into ice"], correct: 1, exp: "Wind sweeps fine dry soil particles upwards, creating a dusty haze.", visual: "dust_storm" },
+                { q: "Where can you visit to experience highly oxygenated, crisp, fresh air?", options: ["A busy vehicle traffic junction", "A dense green park away from factories", "An indoor chemical warehouse", "A closed underground basement parking lot"], correct: 1, exp: "Areas rich in plant life feature clean air with minimal pollution.", visual: "green_park" },
+                { q: "What dangerous substance do old diesel trucks emit from exhaust pipes?", options: ["Clean water steam", "Polluting smoke and fine soot particles", "Pure liquid oxygen", "Fresh garden soil dust"], correct: 1, exp: "Fuel combustion in engines releases unburnt carbon soot and bad exhaust gases.", visual: "smoke" },
+                { q: "Why does a lit candle instantly extinguish when covered with a glass jar?", options: ["The wind inside blows it out", "It uses up all the available oxygen trapped inside", "The glass cools the wax too fast", "The light gets trapped inside the jar"], correct: 1, exp: "Sealing the jar caps the oxygen supply. Once consumed, the fire stops." },
+                { q: "Can acoustic sound waves travel across a space with absolutely zero air?", options: ["Yes, sound doesn't need air", "No, sound needs an air medium to bounce and travel", "Only high-pitched sounds can", "Only during the day time"], correct: 1, exp: "Sound travels by vibrating air molecules. In a vacuum with no air, it is silent." },
+                { q: "What happens to a volume of air when it gets heated intensely by the sun?", options: ["It shrinks and sinks down", "It expands, becomes lighter, and rises upward", "It turns into solid crystals", "It turns into nitrogen gas instantly"], correct: 1, exp: "Warm air molecules scatter apart, lowering density and causing them to rise." },
+                { q: "Which transportation choice helps minimize urban air contamination?", options: ["Driving a large family SUV", "Riding an eco-friendly pedal bicycle", "Idling a diesel truck engine", "Flying a personal helicopter"], correct: 1, exp: "Bicycles operate on human muscle power, releasing zero exhaust smoke." },
+                { q: "Why do modern schools recommend opening classroom windows during breaks?", options: ["To let dust settle on desks", "To allow fresh air to circulate and flush out stale air", "To make students feel tired", "To prevent outdoor birds from looking inside"], correct: 1, exp: "Ventilation replaces carbon dioxide buildup with clean, fresh outdoor air." },
+                { q: "How does the air blanket surrounding Earth protect us from freezing at night?", options: ["It catches fire under shadows", "It traps solar heat like a greenhouse blanket", "It turns into hot water columns", "It generates electricity naturally"], correct: 1, exp: "The atmosphere acts like an insulating layer, trapping heat so nights stay warm." },
+                { q: "What fills up the structural gaps inside loose, dry sand piles?", options: ["Microscopic rocks", "Invisible air", "Liquid water syrup", "Nothing, it is absolute space"], correct: 1, exp: "Air molecules occupy all structural gaps between solid particles of sand." }
+            ],
+            hard: [
+                { q: "What is the approximate concentration of Oxygen gas in Earth's clean atmosphere?", options: ["Around 1%", "Around 21%", "Around 50%", "Around 78%"], correct: 1, exp: "Clean air contains roughly 21% Oxygen, which is the perfect balance for animal life." },
+                { q: "Which gas occupies the greatest chunk (78%) of our natural atmospheric composition?", options: ["Carbon Dioxide", "Nitrogen", "Oxygen", "Hydrogen"], correct: 1, exp: "Nitrogen is the primary gas component of Earth's atmosphere." },
+                { q: "Industrial wind turbines are arranged in large farms to generate...", options: ["Noxious smoke clouds", "Clean, renewable electricity", "Pure chemical oxygen", "High thermal solar heat"], correct: 1, exp: "Wind turbines convert the kinetic energy of moving air into clean electrical energy.", visual: "windmill" },
+                { q: "What hazardous gas is produced from the incomplete combustion of fossil fuels?", options: ["Pure Oxygen", "Carbon Monoxide", "Water vapor", "Nitrogen gas"], correct: 1, exp: "Incomplete fuel burning creates Carbon Monoxide, a toxic, odorless gas.", visual: "smoke" },
+                { q: "What are the microscopic breathing pores on the underside of plant leaves called?", options: ["Gills", "Stomata", "Trachea", "Pores"], correct: 1, exp: "Plants use stomata openings to absorb carbon dioxide and release oxygen.", visual: "tree" },
+                { q: "Why is burning plastic waste considered an environmental crime?", options: ["It uses up too much soil space", "It releases highly toxic, poisonous gases into the air", "It creates too much fresh air", "It causes winter to start early"], correct: 1, exp: "Plastics contain synthetic chemicals that release toxic smoke when burned.", visual: "factory" },
+                { q: "What is the structural term for the entire multi-layered gas envelope of Earth?", options: ["The Biosphere layer", "The Atmosphere", "The Hydrosphere bowl", "The Core zone"], correct: 1, exp: "The atmosphere wraps around the globe, bound by Earth's gravitational pull.", visual: "clouds" },
+                { q: "How does harmful acid rain originate over industrial manufacturing zones?", options: ["When rain mixes with sulfur and nitrogen oxides from factory smoke", "From high-altitude aeroplane exhaust leaks", "When sunlight burns cloud moisture", "From seawater freezing up high"], correct: 0, exp: "Factory fumes mix with cloud moisture to create mild, damaging acids.", visual: "factory" },
+                { q: "How do extensive global forests limit the acceleration of global warming?", options: ["By cooling the core of the Earth", "By acting as carbon sinks that absorb excess Carbon Dioxide", "By blocking wind movements across countries", "By reducing the total volume of rainfall"], correct: 1, exp: "Forests capture carbon dioxide, a major heat-trapping greenhouse gas.", visual: "green_park" },
+                { q: "What engineering device is added to factory smokestacks to capture soot particles?", options: ["High power fans", "Electrostatic precipitators or air filters", "Water heating tanks", "Wooden safety fences"], correct: 1, exp: "Industrial air filters and scrubbers strain out hazardous soot particles before release.", visual: "factory" },
+                { q: "Why does atmospheric air pressure drop significantly as one climbs a high mountain?", options: ["Gravity pull increases up high", "The air columns become less dense and thinner with altitude", "Wind blows all the gases downward", "The sun consumes the air layers"], correct: 1, exp: "Fewer air molecules sit above you at high altitudes, lowering the air pressure." },
+                { q: "Which resource represents a clean, inexhaustible source of kinetic energy?", options: ["Coal combustion pits", "Wind energy harvested by turbines", "Petroleum diesel fuel", "Natural wood burning logs"], correct: 1, exp: "Wind energy is powered by solar heating cycles, making it clean and renewable.", visual: "windmill" },
+                { q: "What shifts happen inside a tightly sealed, overcrowded room with zero ventilation?", options: ["Oxygen spikes upwards", "Oxygen drops while Carbon Dioxide concentrations rise", "Nitrogen gas vanishes completely", "The air changes into pure water vapor"], correct: 1, exp: "Respiration consumes limited oxygen and accumulates exhaled carbon dioxide." },
+                { q: "What is the scientific name for tiny liquid or solid particles suspended in air?", options: ["Aquifers", "Aerosols", "Gases", "Crystals"], correct: 1, exp: "Aerosols include fine dust, smoke, sea spray, and volcanic ash particles.", visual: "smoke" },
+                { q: "Why are vast public city parks described as the 'lungs' of urban centers?", options: ["They create cold winter storms", "They filter out urban soot and enrich the air with Oxygen", "They block the noise of cars completely", "They decrease local rainfall levels"], correct: 1, exp: "Urban plant life cleans polluted city air and keeps oxygen levels healthy.", visual: "green_park" },
+                { q: "What does a high rating number on the official 'Air Quality Index' (AQI) indicate?", options: ["The air is highly pure and safe", "The air is heavily polluted and hazardous to health", "The wind speed is incredibly fast", "The air contains too much water vapor"], correct: 1, exp: "Higher AQI scores mean worse pollution, warning people to stay indoors." },
+                { q: "How does a severe dust storm threaten urban public transportation safety?", options: ["It turns vehicle tyres into dust", "It drops visibility to near zero, making driving hazardous", "It stops vehicle engines from running", "It increases atmospheric oxygen to unsafe levels"], correct: 1, exp: "Suspended sand grains scatter light, blinding drivers and causing accidents.", visual: "dust_storm" },
+                { q: "What physical process generates local sea breezes along coastal zones?", options: ["The ocean waves pushing air mechanically", "Differential heating rates between coastal land and water surfaces", "The breathing cycles of marine life", "Evaporation of salt crystals"], correct: 1, exp: "Land heats up faster than water during the day, drawing in cool sea air.", visual: "clouds" },
+                { q: "Why must scuba divers carry compressed air tanks underwater?", options: ["To make them sink faster", "Because human lungs cannot extract dissolved oxygen from water", "To keep their suits warm", "To store fish specimens safely"], correct: 1, exp: "Human lungs require gas-phase oxygen to exchange lifecycle vital elements." },
+                { q: "Which gas do animals cast off into the air as a waste product of breathing?", options: ["Pure Oxygen", "Carbon Dioxide", "Methane gas", "Argon"], correct: 1, exp: "Respiration breaks down nutrients, releasing carbon dioxide as an exhaust gas." },
+                { q: "How does wind support the survival and reproduction of forest trees?", options: ["By cooling the soil around roots", "By enabling wind dispersal of seeds and pollen grains", "By washing dirt off tree trunks", "By accelerating branch shedding"], correct: 1, exp: "Many plants rely on wind currents to carry seeds and pollen to new areas.", visual: "tree" },
+                { q: "What chronic medical condition can be aggravated by breathing smoky city air?", options: ["Strong muscle growth", "Respiratory conditions like asthma and bronchitis", "Digestive system speedups", "Improved lung capacity"], correct: 1, exp: "Soot and fine particulates trigger immune flare-ups and damage lung tissue.", visual: "smoke" },
+                { q: "What carbon-based gas do green plant cells require to run photosynthesis?", options: ["Carbon Monoxide", "Carbon Dioxide", "Pure Carbon soot", "Carbohydrate gas"], correct: 1, exp: "Plants use carbon dioxide, water, and sunlight to synthesize sugars." },
+                { q: "What does an outdoor wind vane instrument measure?", options: ["The speed of air movement", "The geographical direction the wind is blowing from", "The moisture level of clouds", "The chemical purity of air"], correct: 1, exp: "Wind vanes rotate to show the direction from which the wind originates." },
+                { q: "Why do birds have internal air sacs connected directly to their lungs?", options: ["To store drinking water for long flights", "To decrease body density and ensure constant oxygen supply", "To make their voices louder", "To store extra food grains"], correct: 1, exp: "Air sacs provide continuous oxygen flow and keep birds lightweight for flight.", visual: "bird" },
+                { q: "What is the primary cause of wind currents across the globe?", options: ["The rotation of the moon around Earth", "Uneven heating of Earth's surface by the Sun", "The migration patterns of birds", "The evaporation of sea water waves"], correct: 1, exp: "The Sun warms the equator more than the poles, creating large air currents." },
+                { q: "What happens to the internal pressure of air when it is compressed into a tyre?", options: ["The pressure drops to zero", "The air pressure increases significantly", "The air pressure stays exactly the same", "The air turns into a solid layer"], correct: 1, exp: "Squeezing air into a smaller space forces molecules closer, raising pressure.", visual: "tyre" },
+                { q: "Why do environmental agencies push for electric transit buses over diesel?", options: ["Electric buses travel much faster", "They produce zero tailpipe emissions, keeping city air clean", "They require less air in their tyres", "They don't use the atmosphere to move"], correct: 1, exp: "Electric vehicles emit no smoke or particulates, reducing urban smog.", visual: "aeroplane" },
+                { q: "What is 'smog' on winter mornings in industrial cities?", options: ["A layer of clean white snow", "A dangerous combination of smoke and dense fog", "Pure condensed water vapor layers", "Dust blown from sandy deserts"], correct: 1, exp: "Smog forms when smoke pollutants stick to cold morning fog droplets.", visual: "smoke" },
+                { q: "Which everyday practice reduces indoor chemical air pollution?", options: ["Burning plastic waste in indoor stoves", "Ensuring proper ventilation and avoiding chemical sprays indoors", "Keeping all windows sealed shut forever", "Using old diesel generators inside rooms"], correct: 1, exp: "Good ventilation dilutes indoor pollutants and keeps the air safe to breathe." }
+            ]
+        };
+
+        /* QUIZ STATE ENGINE CONTROLLER VARIABLES */
+        let designatedLevelTier = 'easy';
+        let questionDataPool = [];
+        let questionIndexCounter = 0;
+        let cumulativeScoreTracker = 0;
+        let historicAnswersMap = [];
+        let systemSessionStartTime = 0;
+
+        /* KNUTH/FISHER-YATES DATA DATA ARRAY SHUFFLING UTILITY */
+        function scrambleDataArray(targetArray) {
+            for (let cursor = targetArray.length - 1; cursor > 0; cursor--) {
+                const randomTargetIndex = Math.floor(Math.random() * (cursor + 1));
+                [targetArray[cursor], targetArray[randomTargetIndex]] = [targetArray[randomTargetIndex], targetArray[cursor]];
+            }
+            return targetArray;
+        }
+
+        /* SCREEN ROUTING & PROCESS ENGINE CONTROL PLATFORM */
+        function bootQuizEngineInstance(chosenLevelString) {
+            playSynthesizedAudioSignal('wind');
+            designatedLevelTier = chosenLevelString;
+
+            let rawSourceBuffer = UniversalQuestionMatrix[chosenLevelString];
+            questionDataPool = JSON.parse(JSON.stringify(rawSourceBuffer));
+            scrambleDataArray(questionDataPool);
+
+            questionDataPool = questionDataPool.slice(0, 30);
+
+            questionDataPool.forEach(itemNode => {
+                let mappedOptionsList = itemNode.options.map((optionString, initialIndex) => {
+                    return { text: optionString, targetCorrectState: initialIndex === itemNode.correct };
+                });
+                scrambleDataArray(mappedOptionsList);
+                itemNode.randomizedOptionsList = mappedOptionsList;
+            });
+
+            questionIndexCounter = 0;
+            cumulativeScoreTracker = 0;
+            historicAnswersMap = new Array(30).fill(null);
+            systemSessionStartTime = Date.now();
+
+            document.getElementById('view-landing').classList.remove('active-panel');
+            document.getElementById('view-wrapup').classList.remove('active-panel');
+            document.getElementById('view-player').classList.add('active-panel');
+
+            styleDifficultyIndicatorPill();
+            deployActiveQuestionPayload();
+        }
+
+        function styleDifficultyIndicatorPill() {
+            const indicatorNode = document.getElementById('lbl-active-tier');
+            indicatorNode.innerText = designatedLevelTier + " level";
+            if(designatedLevelTier === 'easy') indicatorNode.style.backgroundColor = 'var(--easy-color)';
+            if(designatedLevelTier === 'medium') indicatorNode.style.backgroundColor = 'var(--medium-color)';
+            if(designatedLevelTier === 'hard') indicatorNode.style.backgroundColor = 'var(--hard-color)';
+        }
+
+        function deployActiveQuestionPayload() {
+            document.getElementById('box-dynamic-explanation').classList.remove('revealed-state');
+
+            let currentPayload = questionDataPool[questionIndexCounter];
+
+            document.getElementById('txt-live-count-index').innerText = `Question: ${questionIndexCounter + 1}/30`;
+            document.getElementById('txt-live-score-value').innerText = `Score: ${cumulativeScoreTracker}`;
+
+            let trackingPercentageValue = (questionIndexCounter / 30) * 100;
+            document.getElementById('engine-fluid-bar').style.width = `${trackingPercentageValue}%`;
+            document.getElementById('txt-active-question-string').innerText = currentPayload.q;
+
+            const graphicFrameNode = document.getElementById('graphics-rendering-frame');
+            if (currentPayload.visual && EmbeddedVectorMap[currentPayload.visual]) {
+                graphicFrameNode.innerHTML = EmbeddedVectorMap[currentPayload.visual];
+                graphicFrameNode.style.display = 'flex';
+            } else {
+                graphicFrameNode.innerHTML = '';
+                graphicFrameNode.style.display = 'none';
+            }
+
+            const choicesPanelBox = document.getElementById('box-options-layout-grid');
+            choicesPanelBox.innerHTML = '';
+
+            currentPayload.randomizedOptionsList.forEach((optionData, loopIdx) => {
+                const choiceButton = document.createElement('button');
+                choiceButton.className = 'interactive-choice-node';
+                choiceButton.innerText = optionData.text;
+                choiceButton.onclick = () => validateSelectionTrigger(loopIdx);
+                choicesPanelBox.appendChild(choiceButton);
+            });
+
+            document.getElementById('btn-action-prev').disabled = questionIndexCounter === 0;
+
+            if (historicAnswersMap[questionIndexCounter] !== null) {
+                rebuildHistoricalStateSnapshot();
+            } else {
+                document.getElementById('btn-action-next').style.visibility = 'hidden';
+            }
+        }
+
+        function validateSelectionTrigger(selectedIndex) {
+            let currentPayload = questionDataPool[questionIndexCounter];
+            historicAnswersMap[questionIndexCounter] = selectedIndex;
+
+            let buttonElementsArray = document.getElementById('box-options-layout-grid').children;
+            let currentSelectedNodeData = currentPayload.randomizedOptionsList[selectedIndex];
+
+            if (currentSelectedNodeData.targetCorrectState) {
+                cumulativeScoreTracker++;
+                document.getElementById('txt-live-score-value').innerText = `Score: ${cumulativeScoreTracker}`;
+                buttonElementsArray[selectedIndex].classList.add('state-correct');
+                revealExplanationFeedbackCard(true, currentPayload.exp);
+                playSynthesizedAudioSignal('correct');
+            } else {
+                buttonElementsArray[selectedIndex].classList.add('state-wrong');
+                for(let searchIdx = 0; searchIdx < currentPayload.randomizedOptionsList.length; searchIdx++) {
+                    if(currentPayload.randomizedOptionsList[searchIdx].targetCorrectState) {
+                        buttonElementsArray[searchIdx].classList.add('state-correct');
+                        break;
+                    }
+                }
+                revealExplanationFeedbackCard(false, currentPayload.exp);
+                playSynthesizedAudioSignal('wrong');
+            }
+
+            for (let targetBtn of buttonElementsArray) {
+                targetBtn.disabled = true;
+            }
+
+            document.getElementById('btn-action-next').style.visibility = 'visible';
+        }
+
+        function rebuildHistoricalStateSnapshot() {
+            let currentPayload = questionDataPool[questionIndexCounter];
+            let historicalSelectedIndex = historicAnswersMap[questionIndexCounter];
+            let buttonElementsList = document.getElementById('box-options-layout-grid').children;
+
+            for(let i = 0; i < currentPayload.randomizedOptionsList.length; i++) {
+                buttonElementsList[i].disabled = true;
+                if(currentPayload.randomizedOptionsList[i].targetCorrectState) {
+                    buttonElementsList[i].classList.add('state-correct');
+                }
+            }
+
+            let validatedChoiceMeta = currentPayload.randomizedOptionsList[historicalSelectedIndex];
+            if (!validatedChoiceMeta.targetCorrectState) {
+                buttonElementsList[historicalSelectedIndex].classList.add('state-wrong');
+                revealExplanationFeedbackCard(false, currentPayload.exp);
+            } else {
+                revealExplanationFeedbackCard(true, currentPayload.exp);
+            }
+
+            document.getElementById('btn-action-next').style.visibility = 'visible';
+        }
+
+        function revealExplanationFeedbackCard(isCorrectAnswer, explanationMessageString) {
+            const containerBox = document.getElementById('box-dynamic-explanation');
+            const titleField = document.getElementById('txt-explanation-title-label');
+            const messageField = document.getElementById('txt-explanation-body-text');
+
+            if (isCorrectAnswer) {
+                titleField.innerText = "✅ Correct!";
+                titleField.className = "explanation-heading-text ui-success";
+            } else {
+                titleField.innerText = "❌ Incorrect";
+                titleField.className = "explanation-heading-text ui-failure";
+            }
+
+            messageField.innerText = explanationMessageString;
+            containerBox.classList.add('revealed-state');
+        }
+
+        function stepToNextQuestionBlock() {
+            playSynthesizedAudioSignal('click');
+            if (questionIndexCounter < 29) {
+                questionIndexCounter++;
+                deployActiveQuestionPayload();
+            } else {
+                collateAndPresentFinalMetrics();
+            }
+        }
+
+        function stepToPreviousQuestionBlock() {
+            playSynthesizedAudioSignal('click');
+            if (questionIndexCounter > 0) {
+                questionIndexCounter--;
+                deployActiveQuestionPayload();
+            }
+        }
+
+        function triggerMainLandingAbort() {
+            playSynthesizedAudioSignal('click');
+            navigateBackToLandingMenu();
+        }
+
+        function navigateBackToLandingMenu() {
+            document.getElementById('view-player').classList.remove('active-panel');
+            document.getElementById('view-wrapup').classList.remove('active-panel');
+            document.getElementById('view-landing').classList.add('active-panel');
+            stopConfettiParticlesLoop();
+        }
+
+        function reloadCurrentDifficultyTier() {
+            bootQuizEngineInstance(designatedLevelTier);
+        }
+
+        /* METRICS ENGINE & CERTIFICATE DOCK ARCHITECTURE */
+        function collateAndPresentFinalMetrics() {
+            document.getElementById('view-player').classList.remove('active-panel');
+            document.getElementById('view-wrapup').classList.add('active-panel');
+            playSynthesizedAudioSignal('completion');
+
+            let totalElapsedTimeInSeconds = Math.floor((Date.now() - systemSessionStartTime) / 1000);
+            let targetPercentageValue = Math.round((cumulativeScoreTracker / 30) * 100);
+            let scoreFailuresCounter = 30 - cumulativeScoreTracker;
+
+            let generatedBadgeIcon = "📚";
+            let generatedBadgeLabel = "Keep Practising";
+            if (targetPercentageValue >= 90) { 
+                generatedBadgeIcon = "🏆"; generatedBadgeLabel = "Air Expert"; initializeConfettiSimulation(); 
+            } else if (targetPercentageValue >= 70) { 
+                generatedBadgeIcon = "🌟"; generatedBadgeLabel = "Clean Air Champion"; initializeConfettiSimulation(); 
+            } else if (targetPercentageValue >= 50) { 
+                generatedBadgeIcon = "👍"; generatedBadgeLabel = "Nature Learner"; 
+            }
+
+            document.getElementById('out-summary-level').innerText = designatedLevelTier.toUpperCase();
+            document.getElementById('out-summary-score').innerText = `${cumulativeScoreTracker} / 30`;
+            document.getElementById('out-summary-percent').innerText = `${targetPercentageValue}%`;
+            document.getElementById('out-summary-duration').innerText = `${totalElapsedTimeInSeconds}s`;
+            document.getElementById('out-summary-correct').innerText = cumulativeScoreTracker;
+            document.getElementById('out-summary-wrong').innerText = scoreFailuresCounter;
+
+            document.getElementById('txt-summary-badge-icon').innerText = generatedBadgeIcon;
+            document.getElementById('txt-summary-badge-title').innerText = generatedBadgeLabel;
+
+            document.getElementById('lbl-print-cert-level').innerText = designatedLevelTier;
+            document.getElementById('lbl-print-cert-score').innerText = `${cumulativeScoreTracker}/30`;
+            document.getElementById('lbl-print-cert-pct').innerText = `${targetPercentageValue}%`;
+            document.getElementById('lbl-print-cert-badge').innerText = `${generatedBadgeIcon} ${generatedBadgeLabel}`;
+            document.getElementById('lbl-print-cert-date').innerText = new Date().toLocaleDateString();
+        }
+
+        /* SECURE CANVAS-BASED CONFETTI ANIMATION ENGINE */
+        const canvasElement = document.getElementById("celebration-canvas");
+        const ctxNode = canvasElement.getContext("2d");
+        let confettiArrayPool = [];
+        let rAFHandleRef = null;
+
+        function initializeConfettiSimulation() {
+            canvasElement.style.display = "block";
+            handleCanvasResizeConfig();
+            confettiArrayPool = [];
+            for (let i = 0; i < 150; i++) {
+                confettiArrayPool.push({
+                    x: Math.random() * canvasElement.width,
+                    y: Math.random() * canvasElement.height - canvasElement.height,
+                    radius: Math.random() * 6 + 4,
+                    weight: Math.random() * canvasElement.height,
+                    color: `hsl(${Math.random() * 360}, 90%, 50%)`,
+                    rotationTilt: Math.random() * 10 - 5,
+                    rotationSpeed: Math.random() * 0.05 + 0.02,
+                    angle: 0
+                });
+            }
+            window.addEventListener('resize', handleCanvasResizeConfig);
+            executeConfettiRenderTick();
+        }
+
+        function handleCanvasResizeConfig() {
+            canvasElement.width = window.innerWidth;
+            canvasElement.height = window.innerHeight;
+        }
+
+        function executeConfettiRenderTick() {
+            ctxNode.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            let activeParticlesRemaining = false;
+
+            for (let i = 0; i < confettiArrayPool.length; i++) {
+                let p = confettiArrayPool[i];
+                p.angle += p.rotationSpeed;
+                p.y += (Math.cos(p.weight) + 3 + p.radius / 2) / 2;
+                p.x += Math.sin(p.angle);
+                p.rotationTilt = Math.sin(p.angle - i / 4) * 15;
+
+                if (p.y <= canvasElement.height) {
+                    activeParticlesRemaining = true;
+                }
+
+                ctxNode.beginPath();
+                ctxNode.lineWidth = p.radius;
+                ctxNode.strokeStyle = p.color;
+                ctxNode.moveTo(p.x + p.rotationTilt + p.radius / 2, p.y);
+                ctxNode.lineTo(p.x + p.rotationTilt, p.y + p.rotationTilt + p.radius / 2);
+                ctxNode.stroke();
+            }
+
+            if (activeParticlesRemaining) {
+                rAFHandleRef = requestAnimationFrame(executeConfettiRenderTick);
+            } else {
+                stopConfettiParticlesLoop();
+            }
+        }
+
+        function stopConfettiParticlesLoop() {
+            if(rAFHandleRef) cancelAnimationFrame(rAFHandleRef);
+            canvasElement.style.display = "none";
+            window.removeEventListener('resize', handleCanvasResizeConfig);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🔠 Missing Letters Quiz</title>
+    <style>
+        :root {
+            --primary-bg: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 100%);
+            --easy-color: #2ECC71;
+            --medium-color: #F1C40F;
+            --hard-color: #E74C3C;
+            --text-main: #2C3E50;
+            --glass-bg: rgba(255, 255, 255, 0.92);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --card-shadow: 0 12px 32px rgba(31, 38, 135, 0.15);
+            --font-family: 'Comic Sans MS', 'Chalkboard SE', 'Caption', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background: var(--primary-bg);
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-main);
+            overflow-x: hidden;
+            padding: 15px;
+        }
+
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 750px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 3px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: var(--card-shadow);
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s ease;
+        }
+
+        h1 {
+            font-size: 2.4rem;
+            color: #2C3E50;
+            text-shadow: 2px 2px 0px #FFF;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #7F8C8D;
+            margin-bottom: 25px;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .menu-btn {
+            display: block;
+            width: 100%;
+            padding: 18px;
+            margin: 15px 0;
+            font-size: 1.4rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+            transition: transform 0.1s, box-shadow 0.2s;
+        }
+
+        .menu-btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-easy { background-color: var(--easy-color); }
+        .btn-medium { background-color: var(--medium-color); color: #2C3E50; text-shadow: none; }
+        .btn-hard { background-color: var(--hard-color); }
+
+        .high-scores {
+            margin-top: 25px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 16px;
+            padding: 15px;
+            font-size: 0.95rem;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .progress-container {
+            margin-bottom: 20px;
+        }
+        .meta-info {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+        .progress-bar-outer {
+            width: 100%;
+            height: 16px;
+            background: #E0E0E0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .progress-bar-inner {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #FF6B6B, #FFD166);
+            transition: width 0.3s ease;
+        }
+
+        .question-text {
+            font-size: 1.8rem;
+            margin: 30px 0;
+            font-weight: bold;
+            line-height: 1.4;
+            letter-spacing: 1px;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .option-card {
+            background: white;
+            border: 3px solid #E0E0E0;
+            border-radius: 16px;
+            padding: 18px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        @media(max-width: 550px) {
+            .options-grid { grid-template-columns: 1fr; gap: 10px; }
+            .option-card { padding: 14px; font-size: 1.3rem; }
+            h1 { font-size: 1.8rem; }
+            .question-text { font-size: 1.4rem; margin: 20px 0; }
+        }
+        .option-card.correct {
+            background-color: #D4EDDA !important;
+            border-color: #2ECC71 !important;
+            color: #155724;
+        }
+        .option-card.wrong {
+            background-color: #F8D7DA !important;
+            border-color: #E74C3C !important;
+            color: #721C24;
+        }
+
+        .feedback-box {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 12px;
+            font-weight: bold;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .feedback-box.correct { background: #D4EDDA; color: #155724; border: 1px solid #C3E6CB; }
+        .feedback-box.wrong { background: #F8D7DA; color: #721C24; border: 1px solid #F5C6CB; }
+        .feedback-explanation {
+            font-size: 1.1rem;
+            margin-top: 5px;
+            font-weight: normal;
+        }
+
+        .nav-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 25px;
+            gap: 10px;
+        }
+        .nav-btn {
+            flex: 1;
+            padding: 14px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            background: #3498DB;
+            color: white;
+            transition: opacity 0.2s, background-color 0.2s;
+        }
+        .nav-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .nav-btn-home {
+            background: #95A5A6;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 20px 0; text-align: left;
+        }
+        .result-item {
+            background: rgba(255,255,255,0.7);
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+        .badge-display {
+            margin: 20px 0;
+            padding: 20px;
+            background: #FFFDE7;
+            border: 3px dashed #F1C40F;
+            border-radius: 16px;
+        }
+        .badge-icon {
+            font-size: 3.5rem;
+            margin-bottom: 5px;
+            display: inline-block;
+            animation: bounce 1s infinite alternate;
+        }
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-8px); }
+        }
+        .badge-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #D35400;
+        }
+
+        #certificate-print-area { display: none; }
+
+        @media print {
+            body * { visibility: hidden; }
+            #certificate-print-area, #certificate-print-area * { visibility: visible; }
+            #certificate-print-area {
+                display: block;
+                position: absolute;
+                left: 0; top: 0; width: 100%;
+                padding: 40px;
+                border: 10px double #F1C40F;
+                background: white;
+                color: black;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="bg-canvas"></canvas>
+
+    <div class="app-container">
+        <h1>🔠 Missing Letters Quiz</h1>
+        <div class="subtitle">Observe • Think • Complete • Learn</div>
+
+        <!-- START SCREEN -->
+        <div id="screen-start" class="screen active">
+            <p style="font-size:1.2rem; margin-bottom:20px; font-weight:bold; color:#555;">Choose your level to start the quiz!</p>
+            <button class="menu-btn btn-easy" onclick="startQuiz('easy')">🟢 Easy Level</button>
+            <button class="menu-btn btn-medium" onclick="startQuiz('medium')">🟡 Medium Level</button>
+            <button class="menu-btn btn-hard" onclick="startQuiz('hard')">🔴 Hard Level</button>
+
+            <div class="high-scores">
+                <strong>Your Saved Badges:</strong>
+                <div id="highscores-list" style="margin-top:8px; color:#555;">No achievements saved yet. Complete a quiz to win one!</div>
+            </div>
+        </div>
+
+        <!-- QUIZ ENGINE INTERFACE -->
+        <div id="screen-quiz" class="screen">
+            <div class="progress-container">
+                <div class="meta-info">
+                    <span id="level-indicator">Level</span>
+                    <span id="counter-indicator">Question: 1/30</span>
+                    <span id="score-indicator">Stars: ⭐ 0</span>
+                </div>
+                <div class="progress-bar-outer">
+                    <div id="progress-bar" class="progress-bar-inner"></div>
+                </div>
+            </div>
+
+            <div id="question-text" class="question-text">Question loading...</div>
+            <div id="options-grid" class="options-grid"></div>
+
+            <div id="feedback-box" class="feedback-box">
+                <div id="feedback-title"></div>
+                <div id="feedback-explanation" class="feedback-explanation"></div>
+            </div>
+
+            <div class="nav-bar">
+                <button id="btn-prev" class="nav-btn" onclick="navigateQuestion(-1)">⬅️ Previous</button>
+                <button class="nav-btn nav-btn-home" onclick="returnHome()">🏠 Home</button>
+                <button id="btn-next" class="nav-btn" onclick="navigateQuestion(1)">➡️ Next</button>
+            </div>
+        </div>
+
+        <!-- SUMMARY REPORT SCREEN -->
+        <div id="screen-result" class="screen">
+            <h2 style="color:#2ECC71; font-size:1.8rem; margin-bottom:10px;">🎉 Quiz Completed! 🎉</h2>
+            <p>Fantastic job! Look at your achievements:</p>
+
+            <div class="badge-display">
+                <div id="result-badge-icon" class="badge-icon">🏆</div>
+                <div id="result-badge-title" class="badge-title">-</div>
+            </div>
+
+            <div class="results-grid">
+                <div class="result-item"><strong>Selected Level:</strong> <span id="res-level">-</span></div>
+                <div class="result-item"><strong>Final Score:</strong> <span id="res-score">-</span> / 30</div>
+                <div class="result-item"><strong>Percentage:</strong> <span id="res-percent">-</span>%</div>
+                <div class="result-item"><strong>Time Taken:</strong> <span id="res-time">-</span> seconds</div>
+                <div class="result-item"><strong>Correct Answers:</strong> ✅ <span id="res-correct">-</span></div>
+                <div class="result-item"><strong>Wrong Answers:</strong> ❌ <span id="res-wrong">-</span></div>
+            </div>
+
+            <button class="menu-btn btn-easy" onclick="retryCurrentLevel()">🔄 Play Again</button>
+            <button class="menu-btn btn-medium" onclick="returnHome()" style="color:#2C3E50;">📋 Choose Another Level</button>
+            <button class="menu-btn btn-hard" onclick="printCertificate()">🖨️ Print Certificate</button>
+        </div>
+    </div>
+
+    <!-- PRINT WORKSPACE -->
+    <div id="certificate-print-area">
+        <h1 style="font-size: 3rem; color: #2C3E50;">CERTIFICATE OF ACHIEVEMENT</h1>
+        <p style="font-size: 1.5rem; margin: 20px 0;">This award is proudly presented for successfully completing the</p>
+        <h2 style="font-size: 2.5rem; color: #E67E22; margin: 20px 0;">🔠 Missing Letters Quiz</h2>
+        <div style="border-top: 4px double #BDC3C7; width: 60%; margin: 30px auto;"></div>
+        <p style="font-size: 1.4rem; margin: 10px 0;"><strong>Level Overcame:</strong> <span id="cert-level">-</span></p>
+        <p style="font-size: 1.4rem; margin: 10px 0;"><strong>Performance Score:</strong> <span id="cert-score">-</span> / 30 (<span id="cert-percent">-</span>%)</p>
+        <p style="font-size: 1.4rem; margin: 10px 0;"><strong>Badge Earned:</strong> <span id="cert-badge">-</span></p>
+        <div style="margin-top: 60px; font-size: 1.2rem; color: #7F8C8D;">Keep learning, observing, and exploring! ⭐</div>
+    </div>
+
+    <script>
+        // Web Audio Synthesizer Engine
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playTone(freq, type, duration, delay = 0) {
+            setTimeout(() => {
+                try {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + duration);
+                } catch(e){}
+            }, delay);
+        }
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            if (type === 'click') playTone(450, 'sine', 0.08);
+            if (type === 'correct') { playTone(523.25, 'sine', 0.08); playTone(659.25, 'sine', 0.08, 60); }
+            if (type === 'wrong') { playTone(220, 'sawtooth', 0.15); playTone(170, 'sawtooth', 0.15, 60); }
+            if (type === 'complete') { 
+                playTone(523, 'sine', 0.1); playTone(659, 'sine', 0.1, 80); 
+                playTone(784, 'sine', 0.1, 160); playTone(1046, 'sine', 0.3, 240); 
+            }
+        }
+
+        // Entirely Textual, 100% Curated 30/30/30 Question Matrix
+        const QUESTION_BANK = {
+            easy: [
+                { q: "Complete the alphabet sequence: \n A  B  __  D", o: ["C", "E", "F", "M"], a: "C", e: "The pattern goes A, B, C, D!" },
+                { q: "Complete the alphabet sequence: \n M  N  __  P", o: ["O", "Q", "R", "L"], a: "O", e: "The pattern goes M, N, O, P!" },
+                { q: "What letter comes right after G?", o: ["H", "F", "I", "J"], a: "H", e: "H comes right after G!" },
+                { q: "Complete the word: \n C  _  T", o: ["A", "E", "O", "X"], a: "A", e: "C + A + T makes CAT!" },
+                { q: "Complete the word: \n D  O  _", o: ["G", "B", "M", "Z"], a: "G", e: "D + O + G makes DOG!" },
+                { q: "Fill in the missing letter for the fruit: \n A  P  P  _  E", o: ["L", "B", "R", "K"], a: "L", e: "The word is APPLE!" },
+                { q: "Fill in the missing letter for a round toy: \n B  A  _  L", o: ["L", "M", "T", "P"], a: "L", e: "The word is BALL!" },
+                { q: "Complete the alphabet sequence: \n E  F  __  H", o: ["G", "I", "J", "E"], a: "G", e: "The pattern is E, F, G, H!" },
+                { q: "Complete the alphabet sequence: \n W  X  Y  __", o: ["Z", "V", "U", "W"], a: "Z", e: "Z is the final letter after Y!" },
+                { q: "What letter comes immediately before B?", o: ["A", "C", "D", "X"], a: "A", e: "A is the very first letter before B!" },
+                { q: "Complete the word for something we sleep on: \n B  _  D", o: ["E", "O", "U", "I"], a: "E", e: "B + E + D makes BED!" },
+                { q: "Complete the word for something we write with: \n P  _  n", o: ["E", "O", "U", "A"], a: "E", e: "P + E + N makes PEN!" },
+                { q: "Fill in the missing letter for a farm animal: \n P  I  _", o: ["G", "D", "X", "M"], a: "G", e: "P + I + G makes PIG!" },
+                { q: "Complete the alphabet sequence: \n H  I  J  __", o: ["K", "L", "M", "I"], a: "K", e: "K comes right after J!" },
+                { q: "Complete the alphabet sequence: \n R  S  __  U", o: ["T", "Q", "V", "P"], a: "T", e: "The sequence is R, S, T, U!" },
+                { q: "What letter comes directly after M?", o: ["N", "L", "O", "P"], a: "N", e: "N comes directly after M!" },
+                { q: "Complete the word for the hot star in the sky: \n S  _  N", o: ["U", "A", "E", "O"], a: "U", e: "S + U + N makes SUN!" },
+                { q: "Complete the word for something worn on your head: \n H  _  T", o: ["A", "O", "U", "I"], a: "A", e: "H + A + T makes HAT!" },
+                { q: "Complete the alphabet sequence: \n __  B  C  D", o: ["A", "E", "Z", "X"], a: "A", e: "The alphabet starts with A!" },
+                { q: "Complete the alphabet sequence: \n J  K  L  __", o: ["M", "N", "O", "K"], a: "M", e: "M comes after J, K, L!" },
+                { q: "What letter comes right before K?", o: ["J", "L", "I", "H"], a: "J", e: "J comes right before K!" },
+                { q: "Complete the word for a clever wild animal: \n F  _  X", o: ["O", "A", "E", "I"], a: "O", e: "F + O + X makes FOX!" },
+                { q: "Complete the word for a flat chart of the world: \n M  _  P", o: ["A", "E", "O", "U"], a: "A", e: "M + A + P makes MAP!" },
+                { q: "Fill in the missing vowel: \n B  _  S", o: ["U", "E", "I", "Q"], a: "U", e: "B + U + S makes BUS!" },
+                { q: "Fill in the missing vowel: \n N  _  T", o: ["U", "O", "A", "E"], a: "U", e: "N + U + T makes NUT!" },
+                { q: "Complete the alphabet sequence: \n T  U  __  W", o: ["V", "X", "Y", "S"], a: "V", e: "The sequence is T, U, V, W!" },
+                { q: "What letter comes right after X?", o: ["Y", "Z", "W", "V"], a: "Y", e: "Y comes right after X!" },
+                { q: "What letter comes right before Z?", o: ["Y", "X", "W", "U"], a: "Y", e: "Y comes right before Z!" },
+                { q: "Complete the alphabet sequence: \n O  P  __  R", o: ["Q", "S", "N", "T"], a: "Q", e: "The sequence is O, P, Q, R!" },
+                { q: "Complete the alphabet sequence: \n Q  R  S  __", o: ["T", "U", "V", "P"], a: "T", e: "T comes right after S!" }
+            ],
+            medium: [
+                { q: "Complete the missing vowel: \n B  _  G", o: ["A", "X", "Z", "J"], a: "A", e: "B + A + G makes BAG!" },
+                { q: "Find the missing starting letter for a swimming animal: \n _  I  S  H", o: ["F", "B", "M", "S"], a: "F", e: "F completes the word FISH!" },
+                { q: "Find the missing middle vowel for a sweet treat: \n C  _  K  E", o: ["A", "O", "I", "E"], a: "A", e: "C + A + K + E makes CAKE!" },
+                { q: "Find the missing letter for a tall plant: \n T  R  _  E", o: ["E", "A", "O", "U"], a: "E", e: "T + R + E + E makes TREE!" },
+                { q: "Complete the word for a green jumping animal: \n F  R  _  G", o: ["O", "I", "A", "E"], a: "O", e: "F + R + O + G makes FROG!" },
+                { q: "Find the missing starting letter for a farm animal: \n _  O  A  T", o: ["G", "B", "C", "M"], a: "G", e: "G + O + A + T makes GOAT!" },
+                { q: "Complete the word for a bird's home: \n N  E  _  T", o: ["S", "B", "M", "R"], a: "S", e: "N + E + S + T makes NEST!" },
+                { q: "Complete the word for the place where you live: \n H  O  _  E", o: ["M", "X", "Z", "P"], a: "M", e: "H + O + M + E makes HOME!" },
+                { q: "Complete the word for the king of the jungle: \n L  _  O  N", o: ["I", "E", "A", "O"], a: "I", e: "L + I + O + N makes LION!" },
+                { q: "Find the missing letter for a flying paper toy: \n K  I  _  E", o: ["T", "H", "B", "G"], a: "T", e: "K + I + T + E makes KITE!" },
+                { q: "Complete the word for a white drink from cows: \n M  I  _  K", o: ["L", "P", "T", "R"], a: "L", e: "M + I + L + K makes MILK!" },
+                { q: "Complete the word for a classroom table: \n D  E  _  K", o: ["S", "M", "T", "B"], a: "S", e: "D + E + S + K makes DESK!" },
+                { q: "Complete the word for a thick string: \n R  O  _  E", o: ["P", "X", "Z", "M"], a: "P", e: "R + O + P + E makes ROPE!" },
+                { q: "Complete the word for a furry forest animal: \n B  E  _  R", o: ["A", "O", "I", "U"], a: "A", e: "B + E + A + R makes BEAR!" },
+                { q: "Complete the word for a flying animal with feathers: \n B  I  R  _", o: ["D", "G", "T", "P"], a: "D", e: "B + I + R + D makes BIRD!" },
+                { q: "Complete the word for something you read: \n B  _  O  K", o: ["O", "E", "A", "U"], a: "O", e: "B + O + O + K makes BOOK!" },
+                { q: "Complete the word for where crops grow: \n F  A  _  M", o: ["R", "W", "C", "T"], a: "R", e: "F + A + R + M makes FARM!" },
+                { q: "Complete the word for a tiny water drop: \n R  _  I  N", o: ["A", "E", "O", "U"], a: "A", e: "R + A + I + N makes RAIN!" },
+                { q: "Complete the word for an outdoor space with flowers: \n Y  A  _  D", o: ["R", "N", "L", "P"], a: "R", e: "Y + A + R + D makes YARD!" },
+                { q: "Complete the word for sailing on water: \n B  O  _  T", o: ["A", "E", "I", "O"], a: "A", e: "B + O + A + T makes BOAT!" },
+                { q: "Complete the word for a cold seasonal time: \n S  N  _  W", o: ["O", "A", "I", "E"], a: "O", e: "S + N + O + W makes SNOW!" },
+                { q: "Complete the word for a beautiful circular jewelry: \n R  _  N  G", o: ["I", "E", "A", "U"], a: "I", e: "R + I + N + G makes RING!" },
+                { q: "Complete the word for a bright sky flash: \n S  _  A  R", o: ["T", "P", "M", "K"], a: "T", e: "S + T + A + R makes STAR!" },
+                { q: "Complete the word for something sweet: \n C  _  O  N", o: ["O", "A", "I", "U"], a: "O", e: "C + O + R + N makes CORN!" },
+                { q: "Complete the word for a pink structural blocks: \n B  R  _  C  K", o: ["I", "A", "E", "O"], a: "I", e: "B + R + I + C + K makes BRICK!" },
+                { q: "Complete the word for a clock alert sound: \n B  _  L  L", o: ["E", "O", "A", "U"], a: "E", e: "B + E + L + L makes BELL!" },
+                { q: "Complete the word for a glowing fire space: \n L  A  _  P", o: ["M", "N", "T", "S"], a: "M", e: "L + A + M + P makes LAMP!" },
+                { q: "Complete the word for ocean sandy edges: \n B  E  _  C  H", o: ["A", "O", "I", "U"], a: "A", e: "B + E + A + C + H makes BEACH!" },
+                { q: "Complete the word for the sound a mouse makes: \n S  _  U  E  A  K", o: ["Q", "K", "P", "C"], a: "Q", e: "S + Q + U + E + A + K makes SQUEAK!" },
+                { q: "Complete the word for a primary pathway: \n R  O  _  D", o: ["A", "E", "I", "O"], a: "A", e: "R + O + A + D makes ROAD!" }
+            ],
+            hard: [
+                { q: "Complete the double vowels: \n E  L  _  P  H  _  N  T", o: ["E, A", "A, E", "E, E", "O, A"], a: "E, A", e: "ELEPHANT uses E and A in the blanks!" },
+                { q: "Complete the missing letters: \n H  O  S  _  I  T  A  _", o: ["P, L", "T, R", "P, M", "B, L"], a: "P, L", e: "HOSPITAL finishes with P and L!" },
+                { q: "Complete the missing duplicate consonant: \n B  A  N  A  _  A", o: ["N", "M", "L", "T"], a: "N", e: "BANANA uses N to connect syllables!" },
+                { q: "Complete the missing vowel: \n C  O  M  P  U  T  _  R", o: ["E", "A", "O", "I"], a: "E", e: "COMPUTER ends with E-R!" },
+                { q: "Complete the double vowel blanks: \n S  C  H  _  _  L", o: ["O, O", "A, A", "E, E", "U, U"], a: "O, O", e: "SCHOOL uses two O letters!" },
+                { q: "Complete the missing structural letters: \n P  _  _  C  I  L", o: ["E, N", "A, M", "I, N", "O, R"], a: "E, N", e: "PENCIL uses E and N near the start!" },
+                { q: "Complete the word for a huge rain protection shelter: \n _  M  B  R  E  L  L  _", o: ["U, A", "O, E", "E, A", "A, O"], a: "U, A", e: "UMBRELLA starts with U and ends with A!" },
+                { q: "Complete the missing double vowels: \n W  I  N  D  _  _", o: ["O, W", "A, E", "E, O", "I, A"], a: "O, W", e: "WINDOW is completed by O and W!" },
+                { q: "Complete the word for an outdoor backyard space: \n G  A  R  D  _  _", o: ["E, N", "A, R", "O, M", "I, T"], a: "E, N", e: "GARDEN finishes with E and N!" },
+                { q: "Complete the word for an insect with eight legs: \n S  _  I  D  _  R", o: ["P, E", "M, O", "T, A", "N, I"], a: "P, E", e: "SPIDER matches this layout perfectly!" },
+                { q: "Complete the word for a bright yellow spring blossom: \n F  _  O  W  _  R", o: ["L, E", "R, O", "A, M", "I, N"], a: "L, E", e: "FLOWER is the complete word!" },
+                { q: "Complete the word for a dangerous water reptile: \n C  _  O  C  O  D  _  L  E", o: ["R, I", "A, M", "I, N", "E, L"], a: "R, I", e: "CROCODILE matches this structural layout!" },
+                { q: "Complete the word for a container holding drinks: \n B  _  _  T  L  E", o: ["O, T", "U, T", "E, R", "A, N"], a: "O, T", e: "BOTTLE uses O and T!" },
+                { q: "Complete the missing vowel combo: \n P  _  P  _  R", o: ["A, E", "O, O", "I, I", "U, U"], a: "A, E", e: "PAPER is the correctly spelled option!" },
+                { q: "Complete the word for a heavy wind event: \n S  _  O  R  _", o: ["T, M", "A, R", "E, E", "I, N"], a: "T, M", e: "STORM uses T and M!" },
+                { q: "Complete the missing consonants: \n _  U  _  _  E  R", o: ["S, M, M", "R, N, T", "B, L, L", "P, T, T"], a: "S, M, M", e: "SUMMER uses S followed by double M!" },
+                { q: "Complete the missing compound consonants: \n W  I  _  _  E  R", o: ["N, T", "M, B", "R, R", "P, L"], a: "N, T", e: "WINTER is spelled with N and T!" },
+                { q: "Complete the missing outer vowels: \n Z  _  B  R  _", o: ["E, A", "A, E", "I, O", "O, I"], a: "E, A", e: "ZEBRA is constructed with E and A!" },
+                { q: "Complete the word for a fast striped horse-like animal: \n _  E  B  _  A", o: ["Z, R", "X, L", "S, M", "C, T"], a: "Z, R", e: "ZEBRA uses Z and R!" },
+                { q: "Complete the word for a shiny metal prize: \n M  _  D  _  L", o: ["E, A", "A, E", "O, O", "I, I"], a: "E, A", e: "MEDAL uses E and A!" },
+                { q: "Complete the word for an outdoor cooked food feast: \n B  _  R  B  _  C  U  E", o: ["A, E", "O, I", "E, A", "I, O"], a: "A, E", e: "BARBECUE is spelled with A and E!" },
+                { q: "Complete the word for a colorful structural arc in the sky: \n R  _  I  N  B  _  W", o: ["A, O", "E, I", "U, E", "O, A"], a: "A, O", e: "RAINBOW matches perfectly!" },
+                { q: "Complete the word for a dynamic plastic toy block: \n _  L  A  S  T  _  C", o: ["P, I", "M, O", "B, A", "F, E"], a: "P, I", e: "PLASTIC is the clear match!" },
+                { q: "Complete the word for a huge white floating ice block: \n I  C  _  B  _  R  G", o: ["E, E", "A, O", "O, I", "U, U"], a: "E, E", e: "ICEBERG uses two E letters!" },
+                { q: "Complete the word for a small flying space vehicle: \n R  _  C  K  _  T", o: ["O, E", "A, A", "I, I", "U, O"], a: "O, E", e: "ROCKET uses O and E!" },
+                { q: "Complete the word for a sweet morning breakfast pastry: \n P  _  N  C  _  K  E", o: ["A, A", "E, E", "O, O", "I, I"], a: "A, A", e: "PANCAKE requires two A letters!" },
+                { q: "Complete the word for a protective headgear element: \n H  _  L  M  _  T", o: ["E, E", "A, A", "O, O", "I, I"], a: "E, E", e: "HELMET uses two E letters!" },
+                { q: "Complete the word for a giant flying safety craft: \n A  _  R  P  _  A  N  E", o: ["I, L", "A, R", "O, M", "E, T"], a: "I, L", e: "AIRPLANE matches the layout perfectly!" },
+                { q: "Complete the word for a brilliant precious stone piece: \n D  _  A  M  _  N  D", o: ["I, O", "E, A", "O, E", "A, I"], a: "I, O", e: "DIAMOND is completed with I and O!" },
+                { q: "Complete the word for an astronomical starry framework: \n G  _  L  _  X  Y", o: ["A, A", "E, E", "O, O", "I, I"], a: "A, A", e: "GALAXY uses two A letters!" }
+            ]
+        };
+
+        let currentLevel = 'easy';
+        let activeQuestions = [];
+        let currentIdx = 0;
+        let answersState = []; 
+        let startTime = 0;
+
+        // Clean Canvas Background Particles
+        const bgCanvas = document.getElementById('bg-canvas');
+        const bgCtx = bgCanvas.getContext('2d');
+        let bgElements = [];
+        const floatPool = "ABCDEFGHIJKLMNOPQRSTUVWXYZ⭐📚✏️🧩";
+
+        function resizeBgCanvas() {
+            bgCanvas.width = window.innerWidth;
+            bgCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeBgCanvas);
+        resizeBgCanvas();
+
+        class FloatingObject {
+            constructor() {
+                this.reset();
+                this.y = Math.random() * bgCanvas.height;
+            }
+            reset() {
+                this.text = floatPool[Math.floor(Math.random() * floatPool.length)];
+                this.x = Math.random() * bgCanvas.width;
+                this.y = bgCanvas.height + 40;
+                this.size = Math.random() * 28 + 18;
+                this.speed = Math.random() * 0.9 + 0.4;
+                this.opacity = Math.random() * 0.14 + 0.04;
+            }
+            update() {
+                this.y -= this.speed;
+                if (this.y < -40) this.reset();
+            }
+            draw() {
+                bgCtx.fillStyle = `rgba(155, 89, 182, ${this.opacity})`;
+                bgCtx.font = `bold ${this.size}px 'Comic Sans MS'`;
+                bgCtx.fillText(this.text, this.x, this.y);
+            }
+        }
+
+        for(let i=0; i<25; i++) bgElements.push(new FloatingObject());
+
+        function animateBg() {
+            bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+            bgElements.forEach(el => { el.update(); el.draw(); });
+            requestAnimationFrame(animateBg);
+        }
+        animateBg();
+
+        let confettiActive = false;
+        let confettiParticles = [];
+        function runConfettiLoop() {
+            if(!confettiActive) return;
+            bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+            bgElements.forEach(el => { el.update(); el.draw(); });
+            
+            confettiParticles.forEach((p, index) => {
+                p.y += p.speedY;
+                p.x += p.speedX;
+                p.rotation += p.rotationSpeed;
+                
+                bgCtx.save();
+                bgCtx.translate(p.x, p.y);
+                bgCtx.rotate(p.rotation);
+                bgCtx.fillStyle = p.color;
+                bgCtx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+                bgCtx.restore();
+
+                if(p.y > bgCanvas.height) {
+                    confettiParticles[index] = {
+                        x: Math.random() * bgCanvas.width, y: -20,
+                        size: Math.random() * 10 + 6, speedY: Math.random() * 4 + 2,
+                        speedX: Math.random() * 2 - 1, color: `hsl(${Math.random()*360}, 100%, 60%)`,
+                        rotation: Math.random() * 360, rotationSpeed: Math.random() * 0.05
+                    };
+                }
+            });
+            requestAnimationFrame(runConfettiLoop);
+        }
+
+        function triggerCelebration() {
+            confettiParticles = [];
+            for(let i=0; i<100; i++) {
+                confettiParticles.push({
+                    x: Math.random() * bgCanvas.width,
+                    y: Math.random() * bgCanvas.height - bgCanvas.height,
+                    size: Math.random() * 10 + 6, speedY: Math.random() * 4 + 2,
+                    speedX: Math.random() * 2 - 1, color: `hsl(${Math.random()*360}, 100%, 60%)`,
+                    rotation: Math.random() * 360, rotationSpeed: Math.random() * 0.05
+                });
+            }
+            confettiActive = true;
+            runConfettiLoop();
+            setTimeout(() => { confettiActive = false; }, 5000);
+        }
+
+        function renderHighScores() {
+            const container = document.getElementById('highscores-list');
+            let scores = JSON.parse(localStorage.getItem('missing_letters_scores')) || {};
+            if (Object.keys(scores).length === 0) {
+                container.innerHTML = "No achievements saved yet. Complete a quiz to win one! ✨";
+                return;
+            }
+            let html = "<table style='width:100%; text-align:left; border-collapse:collapse;'>";
+            for(let lvl in scores) {
+                html += `<tr style='border-bottom:1px solid rgba(0,0,0,0.05);'><td style='padding:6px; text-transform:capitalize;'><strong>${lvl}:</strong></td><td style='padding:6px;'>${scores[lvl].badge} (${scores[lvl].score}/30)</td></tr>`;
+            }
+            html += "</table>";
+            container.innerHTML = html;
+        }
+        renderHighScores();
+
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function startQuiz(level) {
+            playSound('click');
+            currentLevel = level;
+            let rawData = JSON.parse(JSON.stringify(QUESTION_BANK[level]));
+            activeQuestions = shuffleArray(rawData).slice(0, 30);
+            
+            activeQuestions.forEach(q => {
+                q.o = shuffleArray(q.o);
+            });
+
+            currentIdx = 0;
+            answersState = new Array(30).fill(null);
+            startTime = Date.now();
+
+            document.getElementById('level-indicator').innerText = "Level: " + level.toUpperCase();
+            switchScreen('screen-quiz');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const qData = activeQuestions[currentIdx];
+            
+            document.getElementById('counter-indicator').innerText = `Question: ${currentIdx + 1}/30`;
+            
+            let scoreCount = answersState.filter(a => a && a.isCorrect).length;
+            document.getElementById('score-indicator').innerText = `Stars: ⭐ ${scoreCount}`;
+            
+            let progressPercent = ((currentIdx + 1) / 30) * 100;
+            document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+
+            document.getElementById('question-text').innerText = qData.q;
+
+            const optionsGrid = document.getElementById('options-grid');
+            optionsGrid.innerHTML = "";
+
+            qData.o.forEach(opt => {
+                const card = document.createElement('div');
+                card.className = 'option-card';
+                card.innerText = opt;
+                card.onclick = () => handleSelection(card, opt);
+                optionsGrid.appendChild(card);
+            });
+
+            const existingAnswer = answersState[currentIdx];
+            const feedbackBox = document.getElementById('feedback-box');
+            
+            if (existingAnswer !== null) {
+                feedbackBox.style.display = "block";
+                feedbackBox.className = `feedback-box ${existingAnswer.isCorrect ? 'correct' : 'wrong'}`;
+                document.getElementById('feedback-title').innerText = existingAnswer.isCorrect ? "✅ Correct!" : "❌ Not Quite!";
+                document.getElementById('feedback-explanation').innerText = qData.e;
+                
+                Array.from(optionsGrid.children).forEach(child => {
+                    if (child.innerText === qData.a) child.classList.add('correct');
+                    if (child.innerText === existingAnswer.selected && !existingAnswer.isCorrect) child.classList.add('wrong');
+                });
+            } else {
+                feedbackBox.style.display = "none";
+            }
+
+            document.getElementById('btn-prev').disabled = (currentIdx === 0);
+            document.getElementById('btn-next').innerText = (currentIdx === 29) ? "Finish 🏁" : "Next ➡️";
+        }
+
+        function handleSelection(selectedCard, chosenOption) {
+            if (answersState[currentIdx] !== null) return;
+
+            const qData = activeQuestions[currentIdx];
+            const isCorrect = (chosenOption === qData.a);
+            
+            answersState[currentIdx] = {
+                selected: chosenOption,
+                isCorrect: isCorrect
+            };
+
+            playSound(isCorrect ? 'correct' : 'wrong');
+
+            const optionsGrid = document.getElementById('options-grid');
+            Array.from(optionsGrid.children).forEach(child => {
+                if (child.innerText === qData.a) child.classList.add('correct');
+                if (child.innerText === chosenOption && !isCorrect) child.classList.add('wrong');
+            });
+
+            const feedbackBox = document.getElementById('feedback-box');
+            feedbackBox.style.display = "block";
+            feedbackBox.className = `feedback-box ${isCorrect ? 'correct' : 'wrong'}`;
+            document.getElementById('feedback-title').innerText = isCorrect ? "✅ Correct!" : "❌ Not Quite!";
+            document.getElementById('feedback-explanation').innerText = qData.e;
+
+            let scoreCount = answersState.filter(a => a && a.isCorrect).length;
+            document.getElementById('score-indicator').innerText = `Stars: ⭐ ${scoreCount}`;
+        }
+
+        function navigateQuestion(direction) {
+            playSound('click');
+            if (direction === 1 && answersState[currentIdx] === null) {
+                alert("Please select an answer first! 🌟");
+                return;
+            }
+
+            if (currentIdx === 29 && direction === 1) {
+                evaluateFinalResults();
+                return;
+            }
+
+            currentIdx += direction;
+            loadQuestion();
+        }
+
+        function returnHome() {
+            playSound('click');
+            switchScreen('screen-start');
+            renderHighScores();
+        }
+
+        function retryCurrentLevel() {
+            startQuiz(currentLevel);
+        }
+
+        function evaluateFinalResults() {
+            playSound('complete');
+            const totalElapsed = Math.floor((Date.now() - startTime) / 1000);
+            const totalCorrect = answersState.filter(a => a && a.isCorrect).length;
+            const totalWrong = 30 - totalCorrect;
+            const percentScore = Math.round((totalCorrect / 30) * 100);
+
+            let badgeIcon = "📚";
+            let badgeTitle = "Keep Practising";
+
+            if (percentScore >= 90) { badgeIcon = "🏆"; badgeTitle = "Word Builder"; }
+            else if (percentScore >= 70) { badgeIcon = "🌟"; badgeTitle = "Letter Detective"; }
+            else if (percentScore >= 50) { badgeIcon = "👍"; badgeTitle = "Good Learner"; }
+
+            let scoresDict = JSON.parse(localStorage.getItem('missing_letters_scores')) || {};
+            if(!scoresDict[currentLevel] || scoresDict[currentLevel].score < totalCorrect) {
+                scoresDict[currentLevel] = {
+                    score: totalCorrect,
+                    badge: badgeIcon + " " + badgeTitle,
+                    percent: percentScore
+                };
+                localStorage.setItem('missing_letters_scores', JSON.stringify(scoresDict));
+            }
+
+            document.getElementById('res-level').innerText = currentLevel.toUpperCase();
+            document.getElementById('res-score').innerText = totalCorrect;
+            document.getElementById('res-percent').innerText = percentScore;
+            document.getElementById('res-time').innerText = totalElapsed;
+            document.getElementById('res-correct').innerText = totalCorrect;
+            document.getElementById('res-wrong').innerText = totalWrong;
+            document.getElementById('result-badge-icon').innerText = badgeIcon;
+            document.getElementById('result-badge-title').innerText = badgeTitle;
+
+            document.getElementById('cert-level').innerText = currentLevel.toUpperCase();
+            document.getElementById('cert-score').innerText = totalCorrect;
+            document.getElementById('cert-percent').innerText = percentScore;
+            document.getElementById('cert-badge').innerText = badgeIcon + " " + badgeTitle;
+
+            switchScreen('screen-result');
+            if (percentScore >= 70) {
+                triggerCelebration();
+            }
+        }
+
+        function printCertificate() {
+            playSound('click');
+            window.print();
+        }
+    </script>
+</body>
+</html>

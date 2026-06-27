@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧊 Volume Quiz</title>
+    <style>
+        :root {
+            --easy: #4caf50;
+            --medium: #ff9800;
+            --hard: #e91e63;
+            --primary: #0284c7;
+            --shape-stroke: #1e293b;
+            --cube-top: #bae6fd;
+            --cube-front: #38bdf8;
+            --cube-side: #0284c7;
+            --bg-gradient: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0fdf4 100%);
+            --text-main: #1e293b;
+            --glass: rgba(255, 255, 255, 0.96);
+            --correct-bg: #ecfdf5;
+            --correct-text: #065f46;
+            --wrong-bg: #fef2f2;
+            --wrong-text: #991b1b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Segoe UI', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .bg-decorations {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0; left: 0;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .floating-cube {
+            position: absolute;
+            opacity: 0.06;
+            background: linear-gradient(135deg, var(--cube-front), var(--cube-side));
+            animation: floatAnim 10s ease-in-out infinite alternate;
+            border-radius: 4px;
+        }
+        @keyframes floatAnim {
+            0% { transform: translateY(0) rotate(0deg) scale(1); }
+            100% { transform: translateY(-40px) rotate(35deg) scale(1.15); }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 780px;
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            border-radius: 28px;
+            box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.08);
+            border: 4px solid #ffffff;
+            padding: 28px;
+            z-index: 10;
+            position: relative;
+        }
+
+        .title {
+            font-size: 2.6rem;
+            color: #0369a1;
+            text-align: center;
+            margin-bottom: 4px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #475569;
+            text-align: center;
+            margin-bottom: 28px;
+            font-weight: 600;
+        }
+
+        .screen {
+            display: none;
+            animation: fadeIn 0.35s ease-out;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .level-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 20px 24px;
+            margin: 16px 0;
+            border: none;
+            border-radius: 20px;
+            color: white;
+            font-size: 1.4rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            transition: all 0.2s ease;
+        }
+
+        .level-btn:hover {
+            transform: scale(1.01);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+        }
+        .level-btn span { font-size: 0.95rem; font-weight: normal; display: block; margin-top: 4px; opacity: 0.9; }
+        .btn-easy { background: linear-gradient(135deg, #4caf50, #2e7d32); }
+        .btn-medium { background: linear-gradient(135deg, #ff9800, #e65100); }
+        .btn-hard { background: linear-gradient(135deg, #e91e63, #ad1457); }
+
+        .meta-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        .score-box {
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 4px 14px;
+            border-radius: 12px;
+            border: 2px solid #bae6fd;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 14px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #0284c7, #10b981);
+            transition: width 0.2s ease;
+        }
+
+        .graphic-host {
+            display: none;
+            width: 100%;
+            text-align: center;
+            margin: 0 auto 24px auto;
+        }
+
+        .graphic-flex {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 12px;
+        }
+
+        .graphic-card {
+            background: white;
+            padding: 16px;
+            border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            border: 2px solid #e2e8f0;
+        }
+
+        .question-box {
+            font-size: 1.35rem;
+            font-weight: bold;
+            color: var(--text-main);
+            margin-bottom: 24px;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 540px) {
+            .options-grid { grid-template-columns: 1fr; }
+            .title { font-size: 2.1rem; }
+        }
+
+        .option-btn {
+            background: #ffffff;
+            border: 2px solid #cbd5e1;
+            border-radius: 16px;
+            padding: 16px;
+            font-size: 1.15rem;
+            font-weight: bold;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.1s ease;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            border-color: var(--primary);
+            background: #f8fafc;
+            transform: translateY(-2px);
+        }
+
+        .option-btn.correct {
+            background-color: var(--correct-bg) !important;
+            border-color: #10b981 !important;
+            color: var(--correct-text) !important;
+        }
+
+        .option-btn.wrong {
+            background-color: var(--wrong-bg) !important;
+            border-color: #ef4444 !important;
+            color: var(--wrong-text) !important;
+        }
+
+        .explanation-panel {
+            display: none;
+            padding: 16px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            font-size: 1.05rem;
+            line-height: 1.5;
+        }
+        .explanation-panel.correct { display: block; background: var(--correct-bg); color: var(--correct-text); border-left: 6px solid #10b981; }
+        .explanation-panel.wrong { display: block; background: var(--wrong-bg); color: var(--wrong-text); border-left: 6px solid #ef4444; }
+
+        .nav-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .action-btn {
+            background: #475569;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .action-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+        .btn-prime { background: var(--primary); }
+
+        .badge-box {
+            background: #f0f9ff;
+            border: 3px dashed #0369a1;
+            padding: 16px;
+            border-radius: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .badge-art { font-size: 4rem; margin-bottom: 6px; }
+        .badge-lbl { font-size: 1.5rem; font-weight: bold; color: #0369a1; }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 20px 0;
+        }
+        .result-card {
+            background: white;
+            padding: 14px;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        .res-val { font-size: 1.4rem; font-weight: bold; color: #0f172a; }
+        .res-lbl { font-size: 0.9rem; color: #64748b; }
+
+        #canvas-confetti {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 99; border-radius: 28px;
+        }
+
+        #printable-certificate {
+            display: none;
+            background: #ffffff;
+            color: #000000;
+            padding: 40px;
+            border: 10px double var(--primary);
+            text-align: center;
+            border-radius: 14px;
+            margin-top: 24px;
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            #printable-certificate, #printable-certificate * { visibility: visible; }
+            #printable-certificate { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-decorations">
+        <div class="floating-cube" style="top:7%; left:5%; width:35px; height:35px;"></div>
+        <div class="floating-cube" style="bottom:12%; left:10%; width:45px; height:45px; animation-delay: 1.5s;"></div>
+        <div class="floating-cube" style="top:22%; right:8%; width:40px; height:40px; animation-delay: 0.5s;"></div>
+        <div class="floating-cube" style="bottom:8%; right:12%; width:50px; height:50px; animation-delay: 2.5s;"></div>
+    </div>
+
+    <div class="container">
+        <canvas id="canvas-confetti"></canvas>
+        <h1 class="title">🧊 Volume Quiz</h1>
+        <p class="subtitle">Build • Count • Measure • Master Volume</p>
+
+        <div id="screen-start" class="screen active">
+            <button class="level-btn btn-easy" onclick="QuizEngine.start('easy')">
+                <div>
+                    <div>🟢 Easy Level</div>
+                    <span>Class 4 • Space Meaning, Counting Cubes & Comparing Solid Blocks</span>
+                </div>
+                <div>➔</div>
+            </button>
+            <button class="level-btn btn-medium" onclick="QuizEngine.start('medium')">
+                <div>
+                    <div>🟡 Medium Level</div>
+                    <span>Class 5 • Length × Width × Height, Cuboids & Missing Sides</span>
+                </div>
+                <div>➔</div>
+            </button>
+            <button class="level-btn btn-hard" onclick="QuizEngine.start('hard')">
+                <div>
+                    <div>🔴 Hard Level</div>
+                    <span>Advanced Class 5 • Solid Packing, Packing Boxes & Logic Puzzles</span>
+                </div>
+                <div>➔</div>
+            </button>
+        </div>
+
+        <div id="screen-quiz" class="screen">
+            <div class="meta-bar">
+                <div>Tier: <span id="lbl-tier" style="text-transform: capitalize; color:var(--primary);">-</span></div>
+                <div class="score-box">Score: <span id="lbl-score">0</span></div>
+                <div>Q: <span id="lbl-counter">1/50</span></div>
+            </div>
+
+            <div class="progress-container">
+                <div id="progress-fill" class="progress-fill"></div>
+            </div>
+
+            <div class="graphic-host" id="graphic-area">
+                <div class="graphic-flex" id="graphic-render-node"></div>
+            </div>
+
+            <div class="question-box" id="question-text"></div>
+            <div class="options-grid" id="options-box"></div>
+            <div id="explanation-box" class="explanation-panel"></div>
+
+            <div class="nav-row">
+                <button class="action-btn" onclick="QuizEngine.abortToMenu()">Menu</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="action-btn" id="btn-back" onclick="QuizEngine.navigate(-1)">Back</button>
+                    <button class="action-btn btn-prime" id="btn-forward" onclick="QuizEngine.navigate(1)">Next ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-summary" class="screen">
+            <div class="badge-box">
+                <div id="dash-badge-art" class="badge-art">🏆</div>
+                <div id="dash-badge-lbl" class="badge-lbl">-</div>
+            </div>
+
+            <div class="results-grid">
+                <div class="result-card"><div id="dash-tier" class="res-val" style="text-transform: capitalize;">-</div><div class="res-lbl">Quiz Level</div></div>
+                <div class="result-card"><div id="dash-score" class="res-val">-</div><div class="res-lbl">Correct Points</div></div>
+                <div class="result-card"><div id="dash-pct" class="res-val">-</div><div class="res-lbl">Total Score</div></div>
+                <div class="result-card"><div id="dash-time" class="res-val">-</div><div class="res-lbl">Timer</div></div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 24px;">
+                <button class="level-btn btn-medium" style="margin:0; justify-content:center; font-size:1.1rem; padding:12px;" onclick="window.print()">🖨️ Print Volume Certificate</button>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button class="action-btn" style="padding:12px;" onclick="QuizEngine.replayLevel()">Play Again</button>
+                    <button class="action-btn btn-prime" style="padding:12px;" onclick="QuizEngine.abortToMenu()">Main Menu</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="printable-certificate">
+            <h1 style="font-size: 2.4rem; color: #0369a1;">CERTIFICATE OF VOLUME MASTERY</h1>
+            <p style="font-size: 1.2rem; margin: 16px 0; font-style: italic;">Honoring outstanding skill in counting cubes and calculating 3D space.</p>
+            <h2 style="font-size: 1.8rem; margin-bottom: 12px; color: #0284c7;">3D Geometry Expert</h2>
+            <p style="font-size: 1.1rem;">Assessed Rank: <strong id="cert-tier" style="text-transform: capitalize;"></strong></p>
+            <p style="font-size: 1.4rem; color: #0369a1; font-weight: bold; margin: 20px 0;">Total Verified: <span id="cert-score"></span> Correct Answers (<span id="cert-pct"></span> Accuracy)</p>
+            <div style="margin-top: 60px; display: flex; justify-content: space-around; font-size: 1rem;">
+                <div style="border-top: 2px dashed #64748b; width: 200px; padding-top: 6px;">Evaluation Date</div>
+                <div style="border-top: 2px dashed #64748b; width: 200px; padding-top: 6px;">Teacher Signature</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /*********************************************************
+         * WEB AUDIO SYNTHESIZER UNIT
+         *********************************************************/
+        const AudioFX = {
+            audioCtx: null,
+            init() { if (!this.audioCtx) this.audioCtx = new (window.AudioContext || window.webkitAudioContext)(); },
+            play(freq, type, duration, vol) {
+                try {
+                    this.init();
+                    let osc = this.audioCtx.createOscillator();
+                    let gain = this.audioCtx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.audioCtx.currentTime);
+                    gain.gain.setValueAtTime(vol, this.audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, this.audioCtx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.audioCtx.destination);
+                    osc.start();
+                    osc.stop(this.audioCtx.currentTime + duration);
+                } catch(e){}
+            },
+            click() { this.play(600, 'sine', 0.05, 0.04); },
+            right() {
+                this.play(523.25, 'sine', 0.08, 0.05);
+                setTimeout(() => this.play(659.25, 'sine', 0.08, 0.05), 60);
+                setTimeout(() => this.play(783.99, 'sine', 0.18, 0.05), 120);
+            },
+            wrong() {
+                this.play(150, 'sawtooth', 0.15, 0.06);
+                setTimeout(() => this.play(110, 'sawtooth', 0.25, 0.06), 90);
+            },
+            triumph() {
+                let scale = [261.6, 329.6, 392.0, 523.3, 783.9, 1046.5];
+                scale.forEach((f, i) => setTimeout(() => this.play(f, 'sine', 0.22, 0.04), i * 70));
+            }
+        };
+
+        /*********************************************************
+         * 3D VECTOR SVG CUBE ENGINE
+         *********************************************************/
+        const SVGCubeEngine = {
+            renderCube(x, y, size) {
+                const fTop = "var(--cube-top)";
+                const fFront = "var(--cube-front)";
+                const fSide = "var(--cube-side)";
+                const sColor = "var(--shape-stroke)";
+                const sWidth = "1.5";
+
+                const skew = size * 0.4;
+
+                // Front Face
+                let html = `<path d="M ${x} ${y} L ${x+size} ${y} L ${x+size} ${y+size} L ${x} ${y+size} Z" fill="${fFront}" stroke="${sColor}" stroke-width="${sWidth}" />`;
+                // Top Face
+                html += `<path d="M ${x} ${y} L ${x+skew} ${y-skew} L ${x+size+skew} ${y-skew} L ${x+size} ${y} Z" fill="${fTop}" stroke="${sColor}" stroke-width="${sWidth}" />`;
+                // Right Side Face
+                html += `<path d="M ${x+size} ${y} L ${x+size+skew} ${y-skew} L ${x+size+skew} ${y+size-skew} L ${x+size} ${y+size} Z" fill="${fSide}" stroke="${sColor}" stroke-width="${sWidth}" />`;
+                
+                return html;
+            },
+
+            render(type, params = {}) {
+                let svg = `<svg width="240" height="180" viewBox="0 0 240 180" xmlns="http://www.w3.org/2000/svg" style="display:block; margin:0 auto;">`;
+                
+                if (type === 'stack') {
+                    let cols = params.cols || 3;
+                    let rows = params.rows || 2;
+                    let layers = params.layers || 1;
+                    let size = params.cubeSize || 30;
+
+                    let startX = 40;
+                    let startY = 120;
+
+                    // Draw from back layer to front layer to preserve 3D sorting order
+                    for (let z = layers - 1; z >= 0; z--) {
+                        for (let y = 0; y < rows; y++) {
+                            for (let x = 0; x < cols; x++) {
+                                // Apply offset projection
+                                let px = startX + (x * size) + (z * size * 0.4);
+                                let py = startY - (y * size) - (z * size * 0.4);
+                                svg += this.renderCube(px, py, size);
+                            }
+                        }
+                    }
+                }
+                else if (type === 'labeled_box') {
+                    let w = params.boxW || 110;
+                    let h = params.boxH || 70;
+                    let d = params.boxD || 40;
+                    
+                    let cx = 50, cy = 90;
+
+                    // Outline a complete transparent-style cuboid block
+                    svg += `
+                        <path d="M ${cx} ${cy} L ${cx+w} ${cy} L ${cx+w} ${cy+h} L ${cx} ${cy+h} Z" fill="rgba(56,189,248,0.15)" stroke="var(--shape-stroke)" stroke-width="2.5" />
+                        <path d="M ${cx} ${cy} L ${cx+d} ${cy-d} L ${cx+w+d} ${cy-d} L ${cx+w} ${cy} Z" fill="rgba(186,230,253,0.25)" stroke="var(--shape-stroke)" stroke-width="2.5" />
+                        <path d="M ${cx+w} ${cy} L ${cx+w+d} ${cy-d} L ${cx+w+d} ${cy+h-d} L ${cx+w} ${cy+h} Z" fill="rgba(2,132,199,0.2)" stroke="var(--shape-stroke)" stroke-width="2.5" />
+                    `;
+
+                    // Measurement metadata tags
+                    if (params.labelL) svg += `<text x="${cx + w/2}" y="${cy + h + 18}" text-anchor="middle" font-size="13" font-weight="bold" fill="#0f172a">Length = ${params.labelL}</text>`;
+                    if (params.labelH) svg += `<text x="${cx - 10}" y="${cy + h/2 + 4}" text-anchor="end" font-size="13" font-weight="bold" fill="#0f172a">Height = ${params.labelH}</text>`;
+                    if (params.labelW) svg += `<text x="${cx + w + d/2 + 10}" y="${cy - d/2 + h/2}" text-anchor="start" font-size="13" font-weight="bold" fill="#0f172a">Width = ${params.labelW}</text>`;
+                }
+                else if (type === 'compare_two') {
+                    // Two clear labeled boxes sitting side-by-side
+                    svg += `
+                        <rect x="20" y="60" width="60" height="50" fill="#bae6fd" stroke="var(--shape-stroke)" stroke-width="2" rx="3" />
+                        <text x="50" y="45" text-anchor="middle" font-size="12" font-weight="bold">Box A</text>
+                        <text x="50" y="90" text-anchor="middle" font-size="10">Vol: 12 cubes</text>
+
+                        <rect x="130" y="45" width="75" height="65" fill="#fbcfe8" stroke="var(--shape-stroke)" stroke-width="2" rx="3" />
+                        <text x="167" y="32" text-anchor="middle" font-size="12" font-weight="bold">Box B</text>
+                        <text x="167" y="82" text-anchor="middle" font-size="10">Vol: 20 cubes</text>
+                    `;
+                }
+
+                svg += `</svg>`;
+                let el = document.createElement('div');
+                el.className = "graphic-card";
+                el.innerHTML = svg;
+                return el;
+            }
+        };
+
+        /*********************************************************
+         * DATASET MATRIX: 150 DIVERSE UNIQUE VOLUME QUESTIONS
+         *********************************************************/
+        const VolumeQuestionMatrix = {
+            easy: [
+                { q: "What does the word 'volume' mean?", o: ["The total space inside a 3D solid object", "The distance around the flat outer edges", "How tall a flat shape is", "The weight of a glass of water"], a: "The total space inside a 3D solid object", e: "Volume represents the complete physical 3D space contained inside a solid structure." },
+                { q: "What basic units do we use to measure volume?", o: ["Cubic units", "Square units", "Long lines", "Grams"], a: "Cubic units", e: "Volume measures three-dimensional space, so we use cubes (cubic units) to fill and count it." },
+                { type: 'stack', cols: 3, rows: 1, layers: 1, q: "Count the unit blocks in this straight stack. What is its volume?", o: ["3 cubic units", "2 cubic units", "4 cubic units", "6 cubic units"], a: "3 cubic units", e: "There is exactly 1 row of 3 blocks, which means 3 cubic units." },
+                { type: 'stack', cols: 2, rows: 2, layers: 1, q: "Count the unit cubes in this flat block stack.", o: ["4 cubic units", "2 cubic units", "6 cubic units", "8 cubic units"], a: "4 cubic units", e: "There are 2 rows of 2 cubes, giving 4 cubic units altogether." },
+                { type: 'stack', cols: 4, rows: 2, layers: 1, q: "How many unit cubes are used to build this simple block stack?", o: ["8 cubic units", "6 cubic units", "10 cubic units", "4 cubic units"], a: "8 cubic units", e: "2 rows of 4 cubes equals 8 total cubic blocks." },
+                { type: 'stack', cols: 3, rows: 3, layers: 1, q: "Count all the cubes in this square layer stack.", o: ["9 cubic units", "6 cubic units", "12 cubic units", "8 cubic units"], a: "9 cubic units", e: "3 columns across by 3 rows up gives exactly 9 cubic units." },
+                { type: 'stack', cols: 2, rows: 2, layers: 2, q: "This block structure has 2 layers. Count all the cubes inside.", o: ["8 cubic units", "4 cubic units", "6 cubic units", "12 cubic units"], a: "8 cubic units", e: "The front layer has 4 cubes and the back layer has 4 cubes. 4 + 4 = 8 cubic units." },
+                { type: 'compare_two', q: "Look at the diagram. Box A holds 12 cubes. Box B holds 20 cubes. Which box has the larger volume?", o: ["Box B", "Box A", "They have the same volume"], a: "Box B", e: "Box B holds 20 cubes, which is more space than 12 cubes." },
+                { q: "A single building cube is 1 unit on every side. What is its individual volume?", o: ["1 cubic unit", "3 cubic units", "6 cubic units", "0 cubic units"], a: "1 cubic unit", e: "A single unit block is the basic building brick, representing 1 cubic unit." },
+                { q: "True or False: An empty lunchbox has volume because it has space inside to hold things.", o: ["True", "False"], a: "True", e: "Any 3D object that can hold items inside has volume." },
+                { type: 'stack', cols: 5, rows: 1, layers: 1, q: "Count the simple row of blocks. What is the total volume?", o: ["5 cubic units", "4 cubic units", "6 cubic units", "1 cubic unit"], a: "5 cubic units", e: "There are 5 small unit cubes lined up in a row." },
+                { type: 'stack', cols: 3, rows: 2, layers: 1, q: "Count the blocks inside this structure.", o: ["6 cubic units", "5 cubic units", "8 cubic units", "9 cubic units"], a: "6 cubic units", e: "2 rows of 3 blocks = 6 cubic units." },
+                { q: "Which item has a smaller volume: a tiny matchbox or a large school backpack?", o: ["The matchbox", "The school backpack", "They are exactly the same"], a: "The matchbox", e: "A tiny matchbox holds much less 3D space inside than a school backpack." },
+                { type: 'stack', cols: 5, rows: 2, layers: 1, q: "Find the total volume by counting all the cubes.", o: ["10 cubic units", "7 cubic units", "12 cubic units", "15 cubic units"], a: "10 cubic units", e: "2 rows of 5 blocks equals 10 cubic units." },
+                { q: "If Box X holds 15 small blocks and Box Y holds 11 small blocks, then:", o: ["Box X has more volume", "Box Y has more volume", "They have the exact same volume"], a: "Box X has more volume", e: "15 blocks is greater than 11 blocks, so Box X contains more space." },
+                { type: 'stack', cols: 2, rows: 3, layers: 1, q: "Count the vertical columns of cubes. What is the total volume?", o: ["6 cubic units", "5 cubic units", "7 cubic units", "8 cubic units"], a: "6 cubic units", e: "3 rows of 2 cubes equals 6 cubic units." },
+                { q: "To find out how much water fits inside a swimming pool, you are measuring its:", o: ["Volume", "Perimeter", "Area", "Weight"], a: "Volume", e: "The space inside a 3D pool structure that holds water is called its volume." },
+                { type: 'stack', cols: 4, rows: 3, layers: 1, q: "Count all the small blocks in this model.", o: ["12 cubic units", "7 cubic units", "14 cubic units", "16 cubic units"], a: "12 cubic units", e: "3 rows × 4 columns = 12 total cubes." },
+                { q: "A solid block structure is made from exactly 7 unit cubes. What is its volume?", o: ["7 cubic units", "14 cubic units", "1 cubic unit", "21 cubic units"], a: "7 cubic units", e: "Each unit cube counts as 1 cubic unit. 7 cubes = 7 cubic units." },
+                { q: "Which box holds less space: a box with a volume of 30 cubes or a box with a volume of 45 cubes?", o: ["The box with 30 cubes", "The box with 45 cubes", "They are equal"], a: "The box with 30 cubes", e: "30 cubic units is smaller than 45 cubic units." },
+                { type: 'stack', cols: 6, rows: 2, layers: 1, q: "What is the volume of this two-row block structure?", o: ["12 cubic units", "8 cubic units", "14 cubic units", "16 cubic units"], a: "12 cubic units", e: "2 rows of 6 blocks = 12 blocks total." },
+                { q: "If you pack a box tightly with 18 toy blocks, what is the interior volume of the box?", o: ["18 cubic units", "9 cubic units", "36 cubic units", "12 cubic units"], a: "18 cubic units", e: "Since 18 building units fill the interior space, the volume is 18." },
+                { type: 'stack', cols: 3, rows: 1, layers: 2, q: "Count the cubes in this double-row deep block model.", o: ["6 cubic units", "5 cubic units", "4 cubic units", "8 cubic units"], a: "6 cubic units", e: "1 row of 3 cubes in the front, and 3 cubes directly behind. 3 + 3 = 6 cubes." },
+                { q: "Volume is measured in 'cubic' units because it takes ________ to fill up a 3D object.", o: ["3D cubes", "Flat squares", "Straight lines", "Round circles"], a: "3D cubes", e: "Cubes have width, length, and height, making them perfect for measuring 3D space." },
+                { type: 'stack', cols: 4, rows: 4, layers: 1, q: "Count the blocks in this large square wall.", o: ["16 cubic units", "8 cubic units", "12 cubic units", "20 cubic units"], a: "16 cubic units", e: "4 rows of 4 blocks = 16 cubic units." },
+                { q: "A tissue box is filled with 25 identical cubic dice. What is its volume?", o: ["25 cubic units", "50 cubic units", "10 cubic units", "5 cubic units"], a: "25 cubic units", e: "The space holds 25 unit blocks, so the volume is 25 cubic units." },
+                { q: "Which object has a larger volume: a family car or a pencil sharpener?", o: ["The family car", "The pencil sharpener", "They have the same volume"], a: "The family car", e: "A car takes up much more physical 3D space than a sharpener." },
+                { type: 'stack', cols: 5, rows: 3, layers: 1, q: "Count the total cubes in this large flat structure.", o: ["15 cubic units", "8 cubic units", "12 cubic units", "18 cubic units"], a: "15 cubic units", e: "3 rows of 5 blocks equals 15 cubic units." },
+                { q: "A drawer holds exactly 10 unit blocks. What is the total volume of the drawer?", o: ["10 cubic units", "20 cubic units", "5 cubic units", "1 cubic unit"], a: "10 cubic units", e: "The count of matching unit cubes gives the volume value directly." },
+                { q: "True or False: A flat drawing of a square on a sheet of paper has volume.", o: ["False", "True"], a: "False", e: "A flat square has no height or depth, so it has area but no volume." },
+                { type: 'stack', cols: 2, rows: 4, layers: 1, q: "Count the blocks in this tall stack.", o: ["8 cubic units", "6 cubic units", "10 cubic units", "12 cubic units"], a: "8 cubic units", e: "4 rows of 2 blocks = 8 cubic units." },
+                { q: "What is the volume of a box that is completely filled by 40 unit cubes?", o: ["40 cubic units", "20 cubic units", "80 cubic units", "10 cubic units"], a: "40 cubic units", e: "40 cubes fill the space perfectly, so the volume is 40." },
+                { type: 'stack', cols: 7, rows: 1, layers: 1, q: "Count the single row of cubes.", o: ["7 cubic units", "6 cubic units", "8 cubic units", "14 cubic units"], a: "7 cubic units", e: "There are 7 cubes placed in a row." },
+                { q: "Which has a greater volume: a kitchen refrigerator or a juice box?", o: ["The refrigerator", "The juice box", "They are the same"], a: "The refrigerator", e: "A refrigerator contains a much larger amount of space inside." },
+                { type: 'stack', cols: 3, rows: 2, layers: 2, q: "Count all the cubes in this 2-layer deep model.", o: ["12 cubic units", "6 cubic units", "8 cubic units", "10 cubic units"], a: "12 cubic units", e: "Each layer has 3×2=6 cubes. With 2 layers, 6 + 6 = 12 cubic units." },
+                { q: "A treasure chest fits 50 gold cubic blocks inside it perfectly. Its volume is:", o: ["50 cubic units", "25 cubic units", "100 cubic units", "15 cubic units"], a: "50 cubic units", e: "It can hold 50 unit cubes of space, so its volume is 50." },
+                { q: "If you empty out a toy box, does its volume change?", o: ["No, the space inside stays the same", "Yes, it gets smaller", "Yes, it has zero volume now"], a: "No, the space inside stays the same", e: "Volume is the amount of space inside an object, whether it is empty or full." },
+                { type: 'stack', cols: 8, rows: 2, layers: 1, q: "Count the long rows of cubes.", o: ["16 cubic units", "10 cubic units", "14 cubic units", "12 cubic units"], a: "16 cubic units", e: "2 rows of 8 cubes = 16 cubic units." },
+                { q: "A brick is made of 12 cubic blocks. Another block structure uses 14 cubic blocks. Which uses more space?", o: ["The 14 blocks structure", "The 12 blocks structure", "They use the same space"], a: "The 14 blocks structure", e: "14 cubic units is a larger amount of space than 12." },
+                { type: 'stack', cols: 4, rows: 2, layers: 2, q: "Count all the blocks in this double-layer cube model.", o: ["16 cubic units", "8 cubic units", "12 cubic units", "20 cubic units"], a: "16 cubic units", e: "Front layer has 8 cubes, back layer has 8 cubes. 8 + 8 = 16 cubic units." },
+                { q: "To describe the amount of space inside a delivery truck, we use the term:", o: ["Volume", "Weight", "Area", "Length"], a: "Volume", e: "The capacity of a 3D truck container to hold cargo boxes is its volume." },
+                { q: "A cube structure has 3 columns and 2 rows. It has only 1 layer. What is the volume?", o: ["6 cubic units", "5 cubic units", "12 cubic units", "8 cubic units"], a: "6 cubic units", e: "3 × 2 × 1 = 6 cubic units." },
+                { type: 'stack', cols: 5, rows: 4, layers: 1, q: "Count the blocks in this large block arrangement.", o: ["20 cubic units", "9 cubic units", "15 cubic units", "25 cubic units"], a: "20 cubic units", e: "4 rows of 5 blocks = 20 cubic units." },
+                { q: "A pencil box is packed with 12 unit blocks. What is its volume?", o: ["12 cubic units", "6 cubic units", "24 cubic units", "4 cubic units"], a: "12 cubic units", e: "The volume matches the total number of unit cubes inside." },
+                { q: "Which container has a smaller volume: a playground sandbox or a teacup?", o: ["The teacup", "The sandbox", "They are equal"], a: "The teacup", e: "A teacup holds a very small amount of space compared to a sandbox." },
+                { type: 'stack', cols: 2, rows: 5, layers: 1, q: "Count the cubes in this double vertical tower.", o: ["10 cubic units", "7 cubic units", "12 cubic units", "8 cubic units"], a: "10 cubic units", e: "5 rows of 2 cubes = 10 blocks." },
+                { q: "A solid shape is made from two separate pieces. Piece A is 4 cubes. Piece B is 5 cubes. What is the total volume?", o: ["9 cubic units", "20 cubic units", "1 cubic unit", "8 cubic units"], a: "9 cubic units", e: "Add the two parts together: 4 + 5 = 9 cubic units." },
+                { q: "A square crate can hold exactly 8 cubic boxes. What is its volume?", o: ["8 cubic units", "4 cubic units", "16 cubic units", "12 cubic units"], a: "8 cubic units", e: "The total capacity in cubic units is 8." },
+                { type: 'stack', cols: 9, rows: 1, layers: 1, q: "Count the cubes in this long single row.", o: ["9 cubic units", "10 cubic units", "8 cubic units", "18 cubic units"], a: "9 cubic units", e: "There are exactly 9 unit blocks lined up." },
+                { q: "If a wooden box has a volume of 100 cubic units, it means it can hold exactly ________ 1-unit cubes inside.", o: ["100", "50", "10", "400"], a: "100", e: "Volume tells you exactly how many unit cubes fit inside the space." }
+            ],
+            medium: [
+                { q: "What is the standard formula used to calculate the volume of a cuboid box?", o: ["Length × Width × Height", "Length + Width + Height", "Length × Width", "Length + Width × Height"], a: "Length × Width × Height", e: "Multiplying length, width, and height together gives the total cubic space inside a cuboid." },
+                { q: "A cardboard box is 5 units long, 3 units wide, and 2 units high. What is its volume?", o: ["30 cubic units", "10 cubic units", "15 cubic units", "25 cubic units"], a: "30 cubic units", e: "Volume = 5 × 3 × 2 = 30 cubic units." },
+                { q: "A wooden cube block has sides that are 3 cm long. Find its volume.", o: ["27 cubic cm", "9 cubic cm", "12 cubic cm", "18 cubic cm"], a: "27 cubic cm", e: "For a cube, multiply side × side × side: 3 × 3 × 3 = 27 cubic cm." },
+                { type: 'labeled_box', boxW: 120, boxH: 60, boxD: 30, labelL: "6 cm", labelH: "3 cm", labelW: "2 cm", q: "Look at the diagram. Compute the total volume of this labeled box.", o: ["36 cubic cm", "11 cubic cm", "22 cubic cm", "18 cubic cm"], a: "36 cubic cm", e: "Volume = 6 × 2 × 3 = 36 cubic cm." },
+                { q: "The total volume of a cuboid is 24 cubic units. Its length is 4 units and its width is 2 units. Find its height.", o: ["3 units", "6 units", "4 units", "2 units"], a: "3 units", e: "Length × Width = 4 × 2 = 8. Since 8 × Height = 24, divide 24 by 8 to get 3 units." },
+                { q: "A storage box has a length of 10 cm, a width of 4 cm, and a height of 2 cm. Find its volume.", o: ["80 cubic cm", "16 cubic cm", "40 cubic cm", "20 cubic cm"], a: "80 cubic cm", e: "Volume = 10 × 4 × 2 = 80 cubic cm." },
+                { q: "A cube container has side lengths of 2 meters. What is its total volume?", o: ["8 cubic meters", "4 cubic meters", "6 cubic meters", "12 cubic meters"], a: "8 cubic meters", e: "Volume = 2 × 2 × 2 = 8 cubic meters." },
+                { q: "Which cuboid box has a greater volume: Box A (4 × 3 × 2) or Box B (5 × 2 × 2)?", o: ["Box A (24 cubic units)", "Box B (20 cubic units)", "They have the exact same volume"], a: "Box A (24 cubic units)", e: "Vol A = 4×3×2 = 24. Vol B = 5×2×2 = 20. 24 is greater than 20." },
+                { type: 'labeled_box', boxW: 90, boxH: 90, boxD: 40, labelL: "4 m", labelH: "4 m", labelW: "3 m", q: "Find the volume of this large heavy storage container.", o: ["48 cubic meters", "11 cubic meters", "16 cubic meters", "36 cubic meters"], a: "48 cubic meters", e: "Volume = 4 × 3 × 4 = 48 cubic meters." },
+                { q: "A shipping crate has an area of 20 square units on its bottom floor. If its height is 4 units, what is its volume?", o: ["80 cubic units", "24 cubic units", "40 cubic units", "5 cubic units"], a: "80 cubic units", e: "Volume can be calculated by multiplying the base area by the height: 20 × 4 = 80 cubic units." },
+                { q: "A rectangular tissue box is 8 units long, 2 units wide, and 3 units high. Find its volume.", o: ["48 cubic units", "13 cubic units", "24 cubic units", "36 cubic units"], a: "48 cubic units", e: "Volume = 8 × 2 × 3 = 48 cubic units." },
+                { q: "The volume of a long cuboid is 40 cubic units. Its length is 10 units and its height is 2 units. What is its width?", o: ["2 units", "4 units", "5 units", "8 units"], a: "2 units", e: "Length × Height = 10 × 2 = 20. Width = 40 ÷ 20 = 2 units." },
+                { q: "A cube toy box has sides of 4 cm. What is its volume?", o: ["64 cubic cm", "16 cubic cm", "24 cubic cm", "12 cubic cm"], a: "64 cubic cm", e: "Volume = 4 × 4 × 4 = 64 cubic cm." },
+                { q: "A water tank is 5 meters long, 4 meters wide, and 3 meters deep. How much space is inside the tank?", o: ["60 cubic meters", "12 cubic meters", "24 cubic meters", "50 cubic meters"], a: "60 cubic meters", e: "Volume = 5 × 4 × 3 = 60 cubic meters." },
+                { q: "The volume of a box is 30 cubic units. Its width is 3 units and its height is 2 units. Find its length.", o: ["5 units", "10 units", "6 units", "4 units"], a: "5 units", e: "Width × Height = 3 × 2 = 6. Length = 30 ÷ 6 = 5 units." },
+                { q: "A solid locker is 6 units long, 2 units wide, and 5 units high. What is its volume?", o: ["60 cubic units", "13 cubic units", "30 cubic units", "45 cubic units"], a: "60 cubic units", e: "Volume = 6 × 2 × 5 = 60 cubic units." },
+                { q: "A cube-shaped ice block has a side length of 5 cm. What is its volume?", o: ["125 cubic cm", "25 cubic cm", "30 cubic cm", "75 cubic cm"], a: "125 cubic cm", e: "Volume = 5 × 5 × 5 = 125 cubic cm." },
+                { q: "A pencil box has a length of 7 inches, a width of 2 inches, and a height of 2 inches. Find its volume.", o: ["28 cubic inches", "11 cubic inches", "14 cubic inches", "20 cubic inches"], a: "28 cubic inches", e: "Volume = 7 × 2 × 2 = 28 cubic inches." },
+                { q: "The volume of a box is 18 cubic units. Its length is 3 units and its width is 3 units. What is its height?", o: ["2 units", "9 units", "4 units", "3 units"], a: "2 units", e: "Length × Width = 3 × 3 = 9. Height = 18 ÷ 9 = 2 units." },
+                { q: "A rectangular container is 9 cm long, 2 cm wide, and 4 cm high. Find its volume.", o: ["72 cubic cm", "15 cubic cm", "36 cubic cm", "54 cubic cm"], a: "72 cubic cm", e: "Volume = 9 × 2 × 4 = 72 cubic cm." },
+                { q: "A building block shape is 10 units long, 3 units wide, and 3 units high. Find its volume.", o: ["90 cubic units", "16 cubic units", "30 cubic units", "60 cubic units"], a: "90 cubic units", e: "Volume = 10 × 3 × 3 = 90 cubic units." },
+                { q: "The volume of a cuboid is 56 cubic units. Its width is 2 units and its height is 4 units. Find its length.", o: ["7 units", "8 units", "6 units", "14 units"], a: "7 units", e: "Width × Height = 2 × 4 = 8. Length = 56 ÷ 8 = 7 units." },
+                { q: "A large square cube box has sides of 6 cm. What is its volume?", o: ["216 cubic cm", "36 cubic cm", "24 cubic cm", "144 cubic cm"], a: "216 cubic cm", e: "Volume = 6 × 6 × 6 = 216 cubic cm." },
+                { q: "A gift box is 8 inches long, 4 inches wide, and 2 inches high. Find its volume.", o: ["64 cubic inches", "14 cubic inches", "32 cubic inches", "48 cubic inches"], a: "64 cubic inches", e: "Volume = 8 × 4 × 2 = 64 cubic inches." },
+                { q: "The volume of a box is 42 cubic units. Its length is 7 units and its width is 3 units. Find its height.", o: ["2 units", "6 units", "4 units", "3 units"], a: "2 units", e: "Length × Width = 7 × 3 = 21. Height = 42 ÷ 21 = 2 units." },
+                { q: "A small drawer is 5 inches long, 4 inches wide, and 4 inches deep. Find its volume.", o: ["80 cubic inches", "13 cubic inches", "40 cubic inches", "60 cubic inches"], a: "80 cubic inches", e: "Volume = 5 × 4 × 4 = 80 cubic inches." },
+                { q: "A large heavy cuboid beam is 12 meters long, 2 meters wide, and 2 meters high. What is its volume?", o: ["48 cubic meters", "16 cubic meters", "24 cubic meters", "36 cubic meters"], a: "48 cubic meters", e: "Volume = 12 × 2 × 2 = 48 cubic meters." },
+                { q: "The volume of a box is 48 cubic units. Its length is 6 units and its height is 4 units. Find its width.", o: ["2 units", "4 units", "3 units", "6 units"], a: "2 units", e: "6 × 4 = 24. Width = 48 ÷ 24 = 2 units." },
+                { q: "A cube-shaped container has a side length of 1 unit. What is its volume?", o: ["1 cubic unit", "3 cubic units", "2 cubic units", "0 cubic units"], a: "1 cubic unit", e: "Volume = 1 × 1 × 1 = 1 cubic unit." },
+                { q: "A flat tray is 10 cm long, 5 cm wide, and 1 cm high. What is its volume?", o: ["50 cubic cm", "16 cubic cm", "25 cubic cm", "15 cubic cm"], a: "50 cubic cm", e: "Volume = 10 × 5 × 1 = 50 cubic cm." },
+                { q: "The volume of a box is 60 cubic units. Its width is 5 units and its height is 3 units. Find its length.", o: ["4 units", "12 units", "5 units", "6 units"], a: "4 units", e: "5 × 3 = 15. Length = 60 ÷ 15 = 4 units." },
+                { q: "A jewelry box has a length of 6 cm, a width of 4 cm, and a height of 3 cm. Find its volume.", o: ["72 cubic cm", "13 cubic cm", "24 cubic cm", "48 cubic cm"], a: "72 cubic cm", e: "Volume = 6 × 4 × 3 = 72 cubic cm." },
+                { q: "A storage cabinet is 4 feet long, 3 feet wide, and 5 feet high. Find its volume.", o: ["60 cubic feet", "12 cubic feet", "24 cubic feet", "35 cubic feet"], a: "60 cubic feet", e: "Volume = 4 × 3 × 5 = 60 cubic feet." },
+                { q: "The volume of a cuboid is 36 cubic units. Its length is 9 units and its width is 2 units. Find its height.", o: ["2 units", "4 units", "3 units", "6 units"], a: "2 units", e: "9 × 2 = 18. Height = 36 ÷ 18 = 2 units." },
+                { q: "A cubic cement block has a side length of 10 cm. Find its volume.", o: ["1000 cubic cm", "100 cubic cm", "30 cubic cm", "300 cubic cm"], a: "1000 cubic cm", e: "Volume = 10 × 10 × 10 = 1000 cubic cm." },
+                { q: "A heavy suitcase is 8 units long, 5 units wide, and 3 units high. Find its volume.", o: ["120 cubic units", "16 cubic units", "40 cubic units", "60 cubic units"], a: "120 cubic units", e: "Volume = 8 × 5 × 3 = 120 cubic units." },
+                { q: "The volume of a box is 70 cubic units. Its length is 10 units and its height is 7 units. Find its width.", o: ["1 unit", "2 units", "7 units", "5 units"], a: "1 unit", e: "10 × 7 = 70. Width = 70 ÷ 70 = 1 unit." },
+                { q: "A rectangular carton is 5 cm long, 5 cm wide, and 4 cm high. Find its volume.", o: ["100 cubic cm", "14 cubic cm", "25 cubic cm", "50 cubic cm"], a: "100 cubic cm", e: "Volume = 5 × 5 × 4 = 100 cubic cm." },
+                { q: "A wooden planter box is 8 feet long, 3 feet wide, and 2 feet high. Find its volume.", o: ["48 cubic feet", "13 cubic feet", "24 cubic feet", "36 cubic feet"], a: "48 cubic feet", e: "Volume = 8 × 3 × 2 = 48 cubic feet." },
+                { q: "The volume of a box is 32 cubic units. Its width is 4 units and its height is 2 units. Find its length.", o: ["4 units", "8 units", "6 units", "5 units"], a: "4 units", e: "4 × 2 = 8. Length = 32 ÷ 8 = 4 units." },
+                { q: "A cube-shaped gift container has a side length of 7 inches. Find its volume.", o: ["343 cubic inches", "49 cubic inches", "21 cubic inches", "147 cubic inches"], a: "343 cubic inches", e: "Volume = 7 × 7 × 7 = 343 cubic inches." },
+                { q: "A rectangular block is 11 units long, 2 units wide, and 3 units high. Find its volume.", o: ["66 cubic units", "16 cubic units", "22 cubic units", "33 cubic units"], a: "66 cubic units", e: "Volume = 11 × 2 × 3 = 66 cubic units." },
+                { q: "The volume of a box is 90 cubic units. Its length is 9 units and its width is 5 units. Find its height.", o: ["2 units", "4 units", "10 units", "3 units"], a: "2 units", e: "9 × 5 = 45. Height = 90 ÷ 45 = 2 units." },
+                { q: "A container is 6 cm long, 6 cm wide, and 2 cm high. Find its volume.", o: ["72 cubic cm", "14 cubic cm", "36 cubic cm", "48 cubic cm"], a: "72 cubic cm", e: "Volume = 6 × 6 × 2 = 72 cubic cm." },
+                { q: "A storage bench is 5 feet long, 2 feet wide, and 2 feet high. Find its volume.", o: ["20 cubic feet", "9 cubic feet", "10 cubic feet", "14 cubic feet"], a: "20 cubic feet", e: "Volume = 5 × 2 × 2 = 20 cubic feet." },
+                { q: "The volume of a box is 105 cubic units. Its length is 7 units and its width is 5 units. Find its height.", o: ["3 units", "5 units", "4 units", "7 units"], a: "3 units", e: "7 × 5 = 35. Height = 105 ÷ 35 = 3 units." },
+                { q: "A rectangular tank is 8 meters long, 4 meters wide, and 4 meters high. Find its volume.", o: ["128 cubic meters", "16 cubic meters", "32 cubic meters", "64 cubic meters"], a: "128 cubic meters", e: "Volume = 8 × 4 × 4 = 128 cubic meters." },
+                { q: "The volume of a box is 84 cubic units. Its length is 12 units and its height is 1 unit. Find its width.", o: ["7 units", "6 units", "8 units", "10 units"], a: "7 units", e: "12 × 1 = 12. Width = 84 ÷ 12 = 7 units." },
+                { q: "A cube-shaped block has a side of 8 cm. What is its volume?", o: ["512 cubic cm", "64 cubic cm", "24 cubic cm", "256 cubic cm"], a: "512 cubic cm", e: "Volume = 8 × 8 × 8 = 512 cubic cm." },
+                { q: "A glass aquarium is 10 inches long, 6 inches wide, and 5 inches high. Find its volume.", o: ["300 cubic inches", "21 cubic inches", "60 cubic inches", "150 cubic inches"], a: "300 cubic inches", e: "Volume = 10 × 6 × 5 = 300 cubic inches." }
+            ],
+            hard: [
+                { q: "A large square cube container has a side length of 4 units. What is its volume?", o: ["64 cubic units", "16 cubic units", "48 cubic units", "32 cubic units"], a: "64 cubic units", e: "For a cube, Volume = side × side × side = 4 × 4 × 4 = 64 cubic units." },
+                { q: "A rectangular storage unit is 8 meters long, 5 meters wide, and 3 meters high. Find its total volume.", o: ["120 cubic meters", "40 cubic meters", "16 cubic meters", "80 cubic meters"], a: "120 cubic meters", e: "Volume = 8 × 5 × 3 = 120 cubic meters." },
+                { q: "The volume of a delivery box is 60 cubic units. Its length is 5 units and its width is 3 units. Find its height.", o: ["4 units", "15 cubic units", "12 units", "5 units"], a: "4 units", e: "Length × Width = 5 × 3 = 15. Height = 60 ÷ 15 = 4 units." },
+                { type: 'compare_two', q: "Compare Box A (a cube with 4 cm sides) and Box B (a cuboid 8 cm long, 4 cm wide, and 2 cm high). Which box holds more?", o: ["They have the exact same volume", "Box A has a greater volume", "Box B has a greater volume"], a: "They have the exact same volume", e: "Vol A = 4×4×4 = 64 cubic cm. Vol B = 8×4×2 = 64 cubic cm. Both hold exactly the same space!" },
+                { q: "A toy chest with a volume of 96 cubic feet has a base area of 24 square feet. How tall is the chest?", o: ["4 feet", "6 feet", "3 feet", "5 feet"], a: "4 feet", e: "Height = Total Volume ÷ Base Area = 96 ÷ 24 = 4 feet." },
+                { q: "A box is 12 cm long, 5 cm wide, and 2 cm high. How many 1-cm unit cubes can you pack inside it?", o: ["120 cubes", "60 cubes", "24 cubes", "19 cubes"], a: "120 cubes", e: "Volume = 12 × 5 × 2 = 120 cubic cm, so it fits exactly 120 individual 1-cm cubes." },
+                { q: "A solid cube structure has a volume of 27 cubic meters. What is the length of one side of this cube?", o: ["3 meters", "9 meters", "6 meters", "4 meters"], a: "3 meters", e: "Since 3 × 3 × 3 = 27, the side length of the cube must be 3 meters." },
+                { q: "Two identical cuboid boxes, each 5 units long, 2 units wide, and 3 units high, are stacked together. What is their combined volume?", o: ["60 cubic units", "30 cubic units", "40 cubic units", "20 cubic units"], a: "60 cubic units", e: "The volume of one box is 5 × 2 × 3 = 30 cubic units. Two boxes together equal 30 + 30 = 60 cubic units." },
+                { q: "A rectangle-based fish tank has a volume of 80 cubic feet. Its length is 8 feet and its width is 5 feet. Find its height.", o: ["2 feet", "4 feet", "10 feet", "5 feet"], a: "2 feet", e: "Length × Width = 8 × 5 = 40. Height = 80 ÷ 40 = 2 feet." },
+                { type: 'stack', cols: 3, rows: 2, layers: 3, q: "Look at this large solid block arrangement. Calculate the total number of cubes used.", o: ["18 cubes", "12 cubes", "9 cubes", "27 cubes"], a: "18 cubes", e: "The block has a length of 3, a height of 2, and a depth layer of 3. Total volume = 3 × 2 × 3 = 18 cubes." },
+                { q: "A metal cuboid box has an area of 45 square units on its bottom face. If it is 10 units high, find its total volume.", o: ["450 cubic units", "55 cubic units", "90 cubic units", "225 cubic units"], a: "450 cubic units", e: "Volume = Base Area × Height = 45 × 10 = 450 cubic units." },
+                { q: "A small closet has a length of 4 feet, a width of 3 feet, and a height of 6 feet. Find its total volume.", o: ["72 cubic feet", "13 cubic feet", "24 cubic feet", "36 cubic feet"], a: "72 cubic feet", e: "Volume = 4 × 3 × 6 = 72 cubic feet." },
+                { q: "The volume of a concrete beam is 144 cubic meters. Its width is 4 meters and its height is 3 meters. Find its length.", o: ["12 meters", "120 meters", "8 meters", "16 meters"], a: "12 meters", e: "Width × Height = 4 × 3 = 12. Length = 144 ÷ 12 = 12 meters." },
+                { q: "A perfectly square cube box has a volume of 1000 cubic centimeters. How long is one of its outer edges?", o: ["10 cm", "100 cm", "20 cm", "50 cm"], a: "10 cm", e: "Since 10 × 10 × 10 = 1000, each side edge measures 10 cm." },
+                { q: "An empty packing box has a length of 15 units, a width of 2 units, and a height of 4 units. Find its total volume.", o: ["120 cubic units", "21 cubic units", "60 cubic units", "80 cubic units"], a: "120 cubic units", e: "Volume = 15 × 2 × 4 = 120 cubic units." },
+                { q: "A small box has a volume of 24 cubic cm. A large box is twice as long, twice as wide, and twice as high. What is the volume of the large box?", o: ["192 cubic cm", "48 cubic cm", "96 cubic cm", "72 cubic cm"], a: "192 cubic cm", e: "Doubling all three dimensions makes the volume 8 times larger (2 × 2 × 2 = 8). 24 × 8 = 192 cubic cm." },
+                { q: "A square cube shipping crate has an area of 36 square units on its bottom floor. What is its volume?", o: ["216 cubic units", "144 cubic units", "72 cubic units", "36 cubic units"], a: "216 cubic units", e: "If the base area of a cube is 36, its side length is 6 units (6×6=36). Volume = 6 × 6 × 6 = 216 cubic units." },
+                { q: "A shallow display case is 20 cm long, 10 cm wide, and 2 cm high. What is its volume?", o: ["400 cubic cm", "32 cubic cm", "200 cubic cm", "100 cubic cm"], a: "400 cubic cm", e: "Volume = 20 × 10 × 2 = 400 cubic cm." },
+                { q: "The total volume of a long trunk is 110 cubic units. Its width is 5 units and its height is 2 units. Find its length.", o: ["11 units", "100 units", "10 units", "22 units"], a: "11 units", e: "Width × Height = 5 × 2 = 10. Length = 110 ÷ 10 = 11 units." },
+                { q: "A massive block has a length of 7 meters, a width of 6 meters, and a height of 5 meters. What is its volume?", o: ["210 cubic meters", "42 cubic meters", "35 cubic meters", "180 cubic meters"], a: "210 cubic meters", e: "Volume = 7 × 6 × 5 = 210 cubic meters." },
+                { type: 'stack', cols: 4, rows: 2, layers: 2, q: "A double-layer building layout has 4 columns and 2 rows. What is the count of building blocks used?", o: ["16 blocks", "8 blocks", "12 blocks", "24 blocks"], a: "16 blocks", e: "Each layer has 4 × 2 = 8 blocks. With 2 layers, 8 × 2 = 16 blocks." },
+                { q: "A rectangular container holds 150 cubic cm of sand. If its length is 10 cm and its width is 5 cm, find its height.", o: ["3 cm", "15 cm", "5 cm", "4 cm"], a: "3 cm", e: "Length × Width = 10 × 5 = 50. Height = 150 ÷ 50 = 3 cm." },
+                { q: "The volume of a box is 84 cubic units. Its length is 7 units and its height is 3 units. Find its width.", o: ["4 units", "21 units", "6 units", "12 units"], a: "4 units", e: "Length × Height = 7 × 3 = 21. Width = 84 ÷ 21 = 4 units." },
+                { q: "A heavy square cube stone has an area of 64 square cm on its front face. Find its total 3D volume.", o: ["512 cubic cm", "256 cubic cm", "64 cubic cm", "192 cubic cm"], a: "512 cubic cm", e: "Since the face area is 64, the side length is 8 cm (8×8=64). Volume = 8 × 8 × 8 = 512 cubic cm." },
+                { q: "A container box is 13 units long, 2 units wide, and 5 units high. Find its volume.", o: ["130 cubic units", "20 cubic units", "65 cubic units", "26 cubic units"], a: "130 cubic units", e: "Volume = 13 × 2 × 5 = 130 cubic units." },
+                { q: "The volume of a box is 90 cubic units. Its width is 3 units and its height is 3 units. Find its length.", o: ["10 units", "81 units", "9 units", "6 units"], a: "10 units", e: "Width × Height = 3 × 3 = 9. Length = 90 ÷ 9 = 10 units." },
+                { q: "A cube box has side lengths of 9 inches. What is its total volume?", o: ["729 cubic inches", "81 cubic inches", "27 cubic inches", "243 cubic inches"], a: "729 cubic inches", e: "Volume = 9 × 9 × 9 = 729 cubic inches." },
+                { q: "A rectangular pool is 25 meters long, 4 meters wide, and 2 meters deep. Find its volume.", o: ["200 cubic meters", "31 cubic meters", "100 cubic meters", "50 cubic meters"], a: "200 cubic meters", e: "Volume = 25 × 4 × 2 = 200 cubic meters." },
+                { q: "The volume of a cabinet is 105 cubic units. Its length is 5 units and its height is 7 units. Find its width.", o: ["3 units", "35 units", "5 units", "4 units"], a: "3 units", e: "Length × Height = 5 × 7 = 35. Width = 105 ÷ 35 = 3 units." },
+                { q: "You pack small 1-inch gift cubes into a larger box that is 6 inches long, 4 inches wide, and 5 inches high. How many cubes fit inside?", o: ["120 cubes", "60 cubes", "24 cubes", "150 cubes"], a: "120 cubes", e: "Volume = 6 × 4 × 5 = 120 cubic inches, so it fits exactly 120 1-inch cubes." },
+                { q: "A rectangular banner crate has a length of 30 cm, a width of 3 cm, and a height of 4 cm. What is its volume?", o: ["360 cubic cm", "37 cubic cm", "90 cubic cm", "120 cubic cm"], a: "360 cubic cm", e: "Volume = 30 × 3 × 4 = 360 cubic cm." },
+                { q: "A box has a volume of 48 cubic units. Its width is 4 units and its length is 6 units. Find its height.", o: ["2 units", "24 units", "4 units", "3 units"], a: "2 units", e: "Width × Length = 4 × 6 = 24. Height = 48 ÷ 24 = 2 units." },
+                { q: "A square cube container has a volume of 8 cubic meters. What is its side length?", o: ["2 meters", "4 meters", "1 meter", "3 meters"], a: "2 meters", e: "Since 2 × 2 × 2 = 8, the side length is 2 meters." },
+                { q: "A delivery truck cargo bed is 14 meters long, 5 meters wide, and 2 meters high. What is its volume?", o: ["140 cubic meters", "21 cubic meters", "70 cubic meters", "90 cubic meters"], a: "140 cubic meters", e: "Volume = 14 × 5 × 2 = 140 cubic meters." },
+                { q: "The volume of a box is 72 cubic units. Its length is 12 units and its width is 3 units. Find its height.", o: ["2 units", "36 units", "3 units", "4 units"], a: "2 units", e: "12 × 3 = 36. Height = 72 ÷ 36 = 2 units." },
+                { q: "A square cube has a volume of 125 cubic centimeters. What is the area of its bottom face?", o: ["25 square cm", "5 square cm", "50 square cm", "15 square cm"], a: "25 square cm", e: "The side length is 5 cm (since 5×5×5=125). The area of its flat bottom face is side × side = 5 × 5 = 25 square cm." },
+                { q: "A storage locker is 16 meters long, 2 meters wide, and 3 meters high. Find its volume.", o: ["96 cubic meters", "21 cubic meters", "32 cubic meters", "48 cubic meters"], a: "96 cubic meters", e: "Volume = 16 × 2 × 3 = 96 cubic meters." },
+                { q: "The volume of a box is 63 cubic units. Its length is 9 units and its height is 1 unit. Find its width.", o: ["7 units", "54 units", "6 units", "8 units"], a: "7 units", e: "9 × 1 = 9. Width = 63 ÷ 9 = 7 units." },
+                { q: "A cube box has side lengths of 5 inches. If you put 2 of these cubes side-by-side, what is their combined volume?", o: ["250 cubic inches", "125 cubic inches", "50 cubic inches", "150 cubic inches"], a: "250 cubic inches", e: "The volume of one cube is 5 × 5 × 5 = 125 cubic inches. Two cubes combined have a volume of 125 + 125 = 250 cubic inches." },
+                { q: "A long box is 20 meters long, 2 meters wide, and 4 meters high. Find its volume.", o: ["160 cubic meters", "26 cubic meters", "80 cubic meters", "120 cubic meters"], a: "160 cubic meters", e: "Volume = 20 × 2 × 4 = 160 cubic meters." },
+                { q: "The volume of a box is 28 cubic units. Its length is 7 units and its width is 2 units. Find its height.", o: ["2 units", "14 units", "4 units", "3 units"], a: "2 units", e: "7 × 2 = 14. Height = 28 ÷ 14 = 2 units." },
+                { q: "A wooden block has a volume of 64 cubic inches. If its length is 8 inches and its width is 4 inches, find its height.", o: ["2 inches", "32 inches", "4 inches", "3 inches"], a: "2 inches", e: "Length × Width = 8 × 4 = 32. Height = 64 ÷ 32 = 2 inches." },
+                { q: "A cargo container is 15 meters long, 4 meters wide, and 3 meters high. What is its volume?", o: ["180 cubic meters", "22 cubic meters", "60 cubic meters", "120 cubic meters"], a: "180 cubic meters", e: "Volume = 15 × 4 × 3 = 180 cubic meters." },
+                { q: "The volume of a box is 44 cubic units. Its width is 11 units and its height is 2 units. Find its length.", o: ["2 units", "22 units", "4 units", "3 units"], a: "2 units", e: "11 × 2 = 22. Length = 44 ÷ 22 = 2 units." },
+                { q: "A perfectly square cube block has a side length of 12 cm. Find its volume.", o: ["1728 cubic cm", "144 cubic cm", "36 cubic cm", "576 cubic cm"], a: "1728 cubic cm", e: "Volume = 12 × 12 × 12 = 1728 cubic cm." },
+                { q: "A brick is 18 cm long, 5 cm wide, and 2 cm high. Find its volume.", o: ["180 cubic cm", "25 cubic cm", "90 cubic cm", "72 cubic cm"], a: "180 cubic cm", e: "Volume = 18 × 5 × 2 = 180 cubic cm." },
+                { q: "The volume of a box is 110 cubic units. Its length is 10 units and its width is 11 units. Find its height.", o: ["1 unit", "99 units", "10 units", "2 units"], a: "1 unit", e: "10 × 11 = 110. Height = 110 ÷ 110 = 1 unit." },
+                { q: "A small box has a length of 6 inches, a width of 5 inches, and a height of 4 inches. Find its volume.", o: ["120 cubic inches", "15 cubic inches", "30 cubic inches", "60 cubic inches"], a: "120 cubic inches", e: "Volume = 6 × 5 × 4 = 120 cubic inches." },
+                { q: "A garden soil box is 14 meters long, 5 meters wide, and 2 meters deep. Find its volume.", o: ["140 cubic meters", "21 cubic meters", "70 cubic meters", "90 cubic meters"], a: "140 cubic meters", e: "Volume = 14 × 5 × 2 = 140 cubic meters." },
+                { q: "The volume of a box is 121 cubic units. Its length is 11 units and its height is 11 units. Find its width.", o: ["1 unit", "110 units", "11 units", "2 units"], a: "1 unit", e: "11 × 11 = 121. Width = 121 ÷ 121 = 1 unit." }
+            ]
+        };
+
+        /*********************************************************
+         * CORE NAVIGATION & ENGINE QUIZ CONTROLLER
+         *********************************************************/
+        let QuizEngine = {
+            activeTier: '',
+            questions: [],
+            index: 0,
+            score: 0,
+            answersLog: [],
+            startTime: null,
+
+            shuffle(arr) {
+                for (let i = arr.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [arr[i], arr[j]] = [arr[j], arr[i]];
+                }
+                return arr;
+            },
+
+            start(tierKey) {
+                this.activeTier = tierKey;
+                let rawDataset = VolumeQuestionMatrix[tierKey] || VolumeQuestionMatrix.easy;
+                
+                // Clone, fully shuffle options and question sequences, then slice down to exactly 50
+                this.questions = this.shuffle(JSON.parse(JSON.stringify(rawDataset))).slice(0, 50);
+                this.index = 0;
+                this.score = 0;
+                this.answersLog = new Array(50).fill(null);
+                this.startTime = new Date();
+
+                document.getElementById('lbl-tier').innerText = tierKey;
+                document.getElementById('screen-start').classList.remove('active');
+                document.getElementById('screen-quiz').classList.add('active');
+
+                AudioFX.click();
+                this.renderQuestion();
+            },
+
+            renderQuestion() {
+                if (this.index >= this.questions.length) return;
+                const item = this.questions[this.index];
+
+                // Sync UI metrics panel
+                document.getElementById('lbl-score').innerText = this.score;
+                document.getElementById('lbl-counter').innerText = `${this.index + 1} / ${this.questions.length}`;
+                document.getElementById('progress-fill').style.width = `${((this.index + 1) / this.questions.length) * 100}%`;
+
+                // Handle interactive 3D SVG block projections
+                const graphicArea = document.getElementById('graphic-area');
+                const renderNode = document.getElementById('graphic-render-node');
+                renderNode.innerHTML = '';
+
+                if (item.type) {
+                    graphicArea.style.display = "block";
+                    let svgGraphic = SVGCubeEngine.render(item.type, item);
+                    renderNode.appendChild(svgGraphic);
+                } else {
+                    graphicArea.style.display = "none";
+                }
+
+                document.getElementById('question-text').innerText = item.q;
+
+                // Lock initial answer choices configuration
+                if (!item._shuffledOptions) {
+                    item._shuffledOptions = this.shuffle([...item.o]);
+                }
+
+                const optionsBox = document.getElementById('options-box');
+                optionsBox.innerHTML = '';
+
+                item._shuffledOptions.forEach(optStr => {
+                    const btn = document.createElement('button');
+                    btn.className = 'option-btn';
+                    btn.innerText = optStr;
+                    btn.onclick = () => this.selectOption(btn, optStr);
+
+                    // Restore past choices when jumping with backward navigation buttons
+                    if (this.answersLog[this.index] !== null) {
+                        btn.disabled = true;
+                        if (optStr === item.a) btn.classList.add('correct');
+                        if (optStr === this.answersLog[this.index] && optStr !== item.a) {
+                            btn.classList.add('wrong');
+                        }
+                    }
+                    optionsBox.appendChild(btn);
+                });
+
+                // Display detailed feedback box after selection
+                const expBox = document.getElementById('explanation-box');
+                if (this.answersLog[this.index] !== null) {
+                    let chosen = this.answersLog[this.index];
+                    if (chosen === item.a) {
+                        expBox.className = "explanation-panel correct";
+                        expBox.innerHTML = `<strong>✅ Correct!</strong><br>${item.e}`;
+                    } else if (chosen === "") {
+                        expBox.className = "explanation-panel wrong";
+                        expBox.innerHTML = `<strong>⚠️ Skipped!</strong> Correct Answer: <em>${item.a}</em><br>${item.e}`;
+                    } else {
+                        expBox.className = "explanation-panel wrong";
+                        expBox.innerHTML = `<strong>❌ Incorrect!</strong> Correct Answer: <em>${item.a}</em><br>${item.e}`;
+                    }
+                } else {
+                    expBox.style.display = 'none';
+                }
+
+                document.getElementById('btn-back').disabled = (this.index === 0);
+                document.getElementById('btn-forward').innerText = (this.index === this.questions.length - 1) ? "Finish 🏁" : "Next ➔";
+            },
+
+            selectOption(btn, selection) {
+                const item = this.questions[this.index];
+                this.answersLog[this.index] = selection;
+
+                const buttons = document.querySelectorAll('.options-grid .option-btn');
+                buttons.forEach(b => b.disabled = true);
+
+                const expBox = document.getElementById('explanation-box');
+
+                if (selection === item.a) {
+                    this.score++;
+                    AudioFX.right();
+                    btn.classList.add('correct');
+                    expBox.className = "explanation-panel correct";
+                    expBox.innerHTML = `<strong>✅ Correct!</strong><br>${item.e}`;
+                } else {
+                    AudioFX.wrong();
+                    btn.classList.add('wrong');
+                    buttons.forEach(b => { if (b.innerText === item.a) b.classList.add('correct'); });
+                    expBox.className = "explanation-panel wrong";
+                    expBox.innerHTML = `<strong>❌ Incorrect!</strong> Correct Answer: <em>${item.a}</em><br>${item.e}`;
+                }
+                document.getElementById('lbl-score').innerText = this.score;
+            },
+
+            navigate(dir) {
+                AudioFX.click();
+                if (dir === 1 && this.answersLog[this.index] === null) {
+                    if (!confirm("Do you want to skip this question? You can return to it later.")) return;
+                    this.answersLog[this.index] = ""; // Set clear skip tracking token anchor
+                }
+
+                this.index += dir;
+
+                if (this.index >= this.questions.length) {
+                    this.completeQuiz();
+                } else if (this.index < 0) {
+                    this.index = 0;
+                } else {
+                    this.renderQuestion();
+                }
+            },
+
+            abortToMenu() {
+                AudioFX.click();
+                document.getElementById('screen-quiz').className = "screen";
+                document.getElementById('screen-summary').className = "screen";
+                document.getElementById('screen-start').className = "screen active";
+            },
+
+            replayLevel() {
+                this.start(this.activeTier);
+            },
+
+            completeQuiz() {
+                const elapsedSecTotal = Math.floor((new Date() - this.startTime) / 1000);
+                const elapsedMin = Math.floor(elapsedSecTotal / 60);
+                const elapsedSec = elapsedSecTotal % 60;
+                const percentage = Math.round((this.score / this.questions.length) * 100);
+
+                let badgeArt = "📚", badgeText = "Keep Practising";
+                if (percentage >= 90) { badgeArt = "🏆"; badgeText = "Volume Master"; }
+                else if (percentage >= 70) { badgeArt = "🌟"; badgeText = "Space Explorer"; }
+                else if (percentage >= 50) { badgeArt = "👍"; badgeText = "Good Learner"; }
+
+                document.getElementById('dash-tier').innerText = this.activeTier;
+                document.getElementById('dash-score').innerText = `${this.score} / ${this.questions.length}`;
+                document.getElementById('dash-pct').innerText = `${percentage}%`;
+                document.getElementById('dash-time').innerText = `${elapsedMin}m ${elapsedSec}s`;
+
+                document.getElementById('dash-badge-art').innerText = badgeArt;
+                document.getElementById('dash-badge-lbl').innerText = badgeText;
+
+                // Sync printable certificate elements
+                document.getElementById('cert-tier').innerText = this.activeTier;
+                document.getElementById('cert-score').innerText = `${this.score} / ${this.questions.length}`;
+                document.getElementById('cert-pct').innerText = `${percentage}%`;
+
+                document.getElementById('screen-quiz').classList.remove('active');
+                document.getElementById('screen-summary').classList.add('active');
+
+                AudioFX.triumph();
+                if (percentage >= 50) { this.runConfetti(); }
+            },
+
+            runConfetti() {
+                const canvas = document.getElementById('canvas-confetti');
+                const ctx = canvas.getContext('2d');
+                canvas.width = canvas.parentElement.offsetWidth;
+                canvas.height = canvas.parentElement.offsetHeight;
+
+                let items = [];
+                const colorPalette = ['#38bdf8', '#0284c7', '#bae6fd', '#ff9800', '#10b981'];
+
+                for (let i = 0; i < 120; i++) {
+                    items.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height - canvas.height,
+                        r: Math.random() * 5 + 4,
+                        color: colorPalette[Math.floor(Math.random() * colorPalette.length)],
+                        vY: Math.random() * 2 + 2,
+                        dx: Math.sin(Math.random() * 2)
+                    });
+                }
+
+                function frames() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    let alive = false;
+                    items.forEach(p => {
+                        p.y += p.vY;
+                        p.x += p.dx;
+                        if (p.y <= canvas.height) alive = true;
+                        
+                        ctx.beginPath();
+                        // Draw square particles to match our 3D block theme
+                        ctx.rect(p.x, p.y, p.r * 1.4, p.r * 1.4);
+                        ctx.fillStyle = p.color;
+                        ctx.fill();
+                    });
+                    if (alive) requestAnimationFrame(frames);
+                }
+                frames();
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🥛 Capacity Quiz</title>
+    <style>
+        :root {
+            --easy: #4caf50;
+            --medium: #ff9800;
+            --hard: #e91e63;
+            --primary: #2563eb;
+            --water-blue: #38bdf8;
+            --water-deep: #0284c7;
+            --bg-gradient: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 50%, #e0e7ff 100%);
+            --text-main: #1e293b;
+            --glass: rgba(255, 255, 255, 0.94);
+            --correct-bg: #ecfdf5;
+            --correct-text: #065f46;
+            --wrong-bg: #fef2f2;
+            --wrong-text: #991b1b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Segoe UI', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 12px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .bg-drop {
+            position: absolute;
+            opacity: 0.06;
+            pointer-events: none;
+            z-index: 1;
+            animation: floatDrop 8s ease-in-out infinite alternate;
+        }
+        @keyframes floatDrop {
+            0% { transform: translateY(0) scale(1); }
+            100% { transform: translateY(-30px) scale(1.15); }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 740px;
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+            border: 4px solid #ffffff;
+            padding: 24px;
+            z-index: 10;
+            position: relative;
+        }
+
+        .title {
+            font-size: 2.4rem;
+            color: #1e3a8a;
+            text-align: center;
+            margin-bottom: 4px;
+        }
+
+        .subtitle {
+            font-size: 1.05rem;
+            color: #475569;
+            text-align: center;
+            margin-bottom: 24px;
+            font-weight: 600;
+        }
+
+        .screen {
+            display: none;
+            animation: screenFadeIn 0.4s ease-out;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes screenFadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .level-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 20px 24px;
+            margin: 14px 0;
+            border: none;
+            border-radius: 18px;
+            color: white;
+            font-size: 1.4rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.07);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .level-btn:hover {
+            transform: scale(1.015);
+            box-shadow: 0 12px 20px rgba(0,0,0,0.12);
+        }
+        .level-btn span { font-size: 0.95rem; font-weight: normal; display: block; margin-top: 4px; opacity: 0.9; }
+        .btn-easy { background: linear-gradient(135deg, #4caf50, #2e7d32); }
+        .btn-medium { background: linear-gradient(135deg, #ff9800, #e65100); }
+        .btn-hard { background: linear-gradient(135deg, #e91e63, #ad1457); }
+
+        .meta-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        .score-capsule {
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 4px 14px;
+            border-radius: 12px;
+            border: 2px solid #bae6fd;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 14px;
+            background: #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            border: 1px solid #cbd5e1;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #0284c7, #3b82f6);
+            transition: width 0.25s ease;
+        }
+
+        /* Interactive Graphic Frame Rendering Node */
+        .graphic-host {
+            display: none;
+            width: 100%;
+            text-align: center;
+            margin: 0 auto 20px auto;
+            animation: bounceIn 0.5s ease-out;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.9); opacity: 0; }
+            70% { transform: scale(1.02); opacity: 0.9; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .graphic-flex {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 30px;
+            padding: 10px;
+        }
+
+        .graphic-label {
+            margin-top: 6px;
+            font-weight: bold;
+            color: #334155;
+            font-size: 1.1rem;
+        }
+
+        .question-box {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--text-main);
+            margin-bottom: 20px;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 520px) {
+            .options-grid { grid-template-columns: 1fr; }
+            .title { font-size: 2rem; }
+        }
+
+        .option-btn {
+            background: #ffffff;
+            border: 2px solid #cbd5e1;
+            border-radius: 14px;
+            padding: 16px;
+            font-size: 1.15rem;
+            font-weight: bold;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            border-color: #0284c7;
+            background: #f8fafc;
+            transform: translateY(-2px);
+        }
+
+        .option-btn.correct {
+            background-color: var(--correct-bg) !important;
+            border-color: #10b981 !important;
+            color: var(--correct-text) !important;
+        }
+
+        .option-btn.wrong {
+            background-color: var(--wrong-bg) !important;
+            border-color: #ef4444 !important;
+            color: var(--wrong-text) !important;
+        }
+
+        .explanation-panel {
+            display: none;
+            padding: 16px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            font-size: 1.05rem;
+            line-height: 1.4;
+        }
+        .explanation-panel.correct { display: block; background: var(--correct-bg); color: var(--correct-text); border-left: 6px solid #10b981; }
+        .explanation-panel.wrong { display: block; background: var(--wrong-bg); color: var(--wrong-text); border-left: 6px solid #ef4444; }
+
+        .nav-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .action-btn {
+            background: #475569;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .action-btn:hover:not(:disabled) { background: #334155; }
+        .action-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+        .btn-prime { background: #0284c7; }
+        .btn-prime:hover:not(:disabled) { background: #0369a1; }
+
+        .badge-box {
+            background: #fffbeb;
+            border: 3px dashed #d97706;
+            padding: 18px;
+            border-radius: 18px;
+            margin: 16px 0;
+            text-align: center;
+        }
+        .badge-art { font-size: 4rem; margin-bottom: 6px; }
+        .badge-lbl { font-size: 1.5rem; font-weight: bold; color: #d97706; }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 16px 0;
+        }
+        .result-card {
+            background: white;
+            padding: 14px;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        .res-val { font-size: 1.4rem; font-weight: bold; color: #0f172a; }
+        .res-lbl { font-size: 0.9rem; color: #64748b; margin-top: 2px; }
+
+        #canvas-confetti {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 99; border-radius: 24px;
+        }
+
+        #printable-certificate {
+            display: none;
+            background: #ffffff;
+            color: #000000;
+            padding: 40px;
+            border: 10px double #0284c7;
+            text-align: center;
+            border-radius: 14px;
+            margin-top: 20px;
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            #printable-certificate, #printable-certificate * { visibility: visible; }
+            #printable-certificate { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-drop" style="top:8%; left:8%; font-size:4rem;">💧</div>
+    <div class="bg-drop" style="bottom:12%; left:10%; font-size:3.5rem;">🥛</div>
+    <div class="bg-drop" style="top:15%; right:10%; font-size:3.5rem;">🪣</div>
+    <div class="bg-drop" style="bottom:10%; right:8%; font-size:4rem;">💧</div>
+
+    <div class="container">
+        <canvas id="canvas-confetti"></canvas>
+        <h1 class="title">🥛 Capacity Quiz</h1>
+        <p class="subtitle">Measure • Compare • Estimate • Master Capacity</p>
+
+        <div id="screen-start" class="screen active">
+            <button class="level-btn btn-easy" onclick="QuizEngine.start('easy')">
+                <div>
+                    <div>🟢 Easy Level</div>
+                    <span>Classes 2–3 • Full/Empty, More/Less, Simple Units</span>
+                </div>
+                <div>➔</div>
+            </button>
+            <button class="level-btn btn-medium" onclick="QuizEngine.start('medium')">
+                <div>
+                    <div>🟡 Medium Level</div>
+                    <span>Classes 3–4 • Jug Scales, Conversions, Basic Arithmetic</span>
+                </div>
+                <div>➔</div>
+            </button>
+            <button class="level-btn btn-hard" onclick="QuizEngine.start('hard')">
+                <div>
+                    <div>🔴 Hard Level</div>
+                    <span>Classes 4–5 • Advanced Mixed Word Problems &amp; Estimations</span>
+                </div>
+                <div>➔</div>
+            </button>
+        </div>
+
+        <div id="screen-quiz" class="screen">
+            <div class="meta-bar">
+                <div>Tier: <span id="lbl-tier" style="text-transform: capitalize; color:#0284c7;">-</span></div>
+                <div class="score-capsule">Score: <span id="lbl-score">0</span></div>
+                <div>Q: <span id="lbl-counter">1/50</span></div>
+            </div>
+
+            <div class="progress-container">
+                <div id="progress-fill" class="progress-fill"></div>
+            </div>
+
+            <div class="graphic-host" id="graphic-area">
+                <div class="graphic-flex" id="graphic-render-node"></div>
+            </div>
+
+            <div class="question-box" id="question-text"></div>
+            <div class="options-grid" id="options-box"></div>
+            <div id="explanation-box" class="explanation-panel"></div>
+
+            <div class="nav-row">
+                <button class="action-btn" onclick="QuizEngine.abortToMenu()">Menu</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="action-btn" id="btn-back" onclick="QuizEngine.navigate(-1)">Back</button>
+                    <button class="action-btn btn-prime" id="btn-forward" onclick="QuizEngine.navigate(1)">Next ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-summary" class="screen">
+            <h2 style="text-align: center; color: #0284c7; margin-bottom: 8px;">🎉 Quiz Finished!</h2>
+            
+            <div class="badge-box">
+                <div id="dash-badge-art" class="badge-art">🏆</div>
+                <div id="dash-badge-lbl" class="badge-lbl">Capacity Master</div>
+            </div>
+
+            <div class="results-grid">
+                <div class="result-card"><div id="dash-tier" class="res-val" style="text-transform: capitalize;">-</div><div class="res-lbl">Level Completed</div></div>
+                <div class="result-card"><div id="dash-score" class="res-val">-</div><div class="res-lbl">Correct Answers</div></div>
+                <div class="result-card"><div id="dash-pct" class="res-val">-</div><div class="res-lbl">Accuracy</div></div>
+                <div class="result-card"><div id="dash-time" class="res-val">-</div><div class="res-lbl">Time Spent</div></div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+                <button class="level-btn btn-easy" style="margin:0; justify-content:center; font-size:1.1rem; padding:12px;" onclick="window.print()">🖨️ Print Capacity Certificate</button>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <button class="action-btn" style="padding:12px;" onclick="QuizEngine.replayLevel()">Play Again</button>
+                    <button class="action-btn btn-prime" style="padding:12px;" onclick="QuizEngine.abortToMenu()">Main Menu</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="printable-certificate">
+            <h1 style="font-size: 2.5rem; color: #0284c7;">CERTIFICATE OF MATHEMATICAL CAPACITY Mastery</h1>
+            <p style="font-size: 1.2rem; margin: 16px 0; font-style: italic;">This document acknowledges that the student has successfully run, calculated, and answered liquid measure vectors.</p>
+            <h2 style="font-size: 1.9rem; margin-bottom: 12px;">Capacity Quiz Champion</h2>
+            <p style="font-size: 1.1rem;">Selected Difficulty: <strong id="cert-tier" style="text-transform: capitalize;"></strong></p>
+            <p style="font-size: 1.4rem; color: #059669; font-weight: bold; margin: 22px 0;">Final Mark Score: <span id="cert-score"></span> Correct (<span id="cert-pct"></span> Percentage)</p>
+            <div style="margin-top: 60px; display: flex; justify-content: space-around; font-size: 1.05rem;">
+                <div style="border-top: 2px dashed #64748b; width: 220px; padding-top: 6px;">Date Checked</div>
+                <div style="border-top: 2px dashed #64748b; width: 220px; padding-top: 6px;">Instructor Sign</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /*********************************************************
+         * AUDIO ROUTINES VIA WEB AUDIO SYNTHESIZER
+         *********************************************************/
+        const AudioFX = {
+            audioCtx: null,
+            init() { if (!this.audioCtx) this.audioCtx = new (window.AudioContext || window.webkitAudioContext)(); },
+            playTone(freq, type, duration, vol) {
+                try {
+                    this.init();
+                    let osc = this.audioCtx.createOscillator();
+                    let gainNode = this.audioCtx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.audioCtx.currentTime);
+                    gainNode.gain.setValueAtTime(vol, this.audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.0001, this.audioCtx.currentTime + duration);
+                    osc.connect(gainNode);
+                    gainNode.connect(this.audioCtx.destination);
+                    osc.start();
+                    osc.stop(this.audioCtx.currentTime + duration);
+                } catch(e){}
+            },
+            click() { this.playTone(550, 'sine', 0.05, 0.08); },
+            right() {
+                this.playTone(523.25, 'sine', 0.1, 0.1);
+                setTimeout(() => this.playTone(659.25, 'sine', 0.1, 0.1), 70);
+                setTimeout(() => this.playTone(783.99, 'sine', 0.25, 0.1), 140);
+            },
+            wrong() {
+                this.playTone(200, 'triangle', 0.15, 0.15);
+                setTimeout(() => this.playTone(150, 'triangle', 0.25, 0.15), 90);
+            },
+            pour() {
+                // Synthesizes a bubbly liquid filling sound effect
+                for(let i=0; i<6; i++) {
+                    setTimeout(() => {
+                        this.playTone(400 + (i * 80) + Math.random()*40, 'sine', 0.12, 0.06);
+                    }, i * 60);
+                }
+            },
+            triumph() {
+                let notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((f, idx) => {
+                    setTimeout(() => this.playTone(f, 'sine', 0.3, 0.08), idx * 70);
+                });
+            }
+        };
+
+        /*********************************************************
+         * PROGRAMMATIC SVG ILLUSTRATION RENDER ENGINE
+         *********************************************************/
+        const SVGRenderEngine = {
+            drawContainer(type, fillPct, label = "") {
+                let innerFillHeight = 80 * (fillPct / 100);
+                let liquidY = 100 - innerFillHeight;
+                let fillCol = "url(#waterGrad)";
+                
+                let svgHtml = `<svg width="120" height="130" viewBox="0 0 120 130" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">
+                    <defs>
+                        <linearGradient id="waterGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#38bdf8" />
+                            <stop offset="100%" stop-color="#0284c7" />
+                        </linearGradient>
+                    </defs>`;
+
+                if (type === 'glass') {
+                    svgHtml += `
+                        <polygon points="30,100 90,100 82.5,${liquidY} 37.5,${liquidY}" fill="${fillCol}" />
+                        <polygon points="25,20 95,20 85,105 35,105" fill="none" stroke="#64748b" stroke-width="4" stroke-linejoin="round"/>
+                        <line x1="30" y1="105" x2="90" y2="105" stroke="#475569" stroke-width="6" stroke-linecap="round"/>`;
+                } 
+                else if (type === 'cup') {
+                    let cFillH = 60 * (fillPct / 100);
+                    let cLiqY = 100 - cFillH;
+                    svgHtml += `
+                        <path d="M 85 50 A 20 20 0 0 1 85 90" fill="none" stroke="#64748b" stroke-width="4" />
+                        <polygon points="35,100 85,100 85,${cLiqY} 35,${cLiqY}" fill="${fillCol}" />
+                        <path d="M 30 40 L 35 102 L 85 102 L 90 40" fill="none" stroke="#475569" stroke-width="4" stroke-linejoin="round" />`;
+                }
+                else if (type === 'bottle') {
+                    let bFillH = 85 * (fillPct / 100);
+                    let bLiqY = 110 - bFillH;
+                    svgHtml += `
+                        <path d="M 40 110 L 80 110 L 80,${Math.max(bLiqY, 50)} Q 80,50 70,45 L 70,${bLiqY} L 50,${bLiqY} L 50,45 Q 40,50 40,${Math.max(bLiqY, 50)} Z" fill="${fillCol}" />
+                        <path d="M 50 20 L 70 20 L 70 40 L 82 50 L 82 112 L 38 112 L 38 50 L 50 40 Z" fill="none" stroke="#334155" stroke-width="4" stroke-linejoin="round" />
+                        <rect x="47" y="12" width="26" height="8" fill="#ef4444" rx="2" />`;
+                }
+                else if (type === 'bucket') {
+                    let buFillH = 80 * (fillPct / 100);
+                    let buLiqY = 105 - buFillH;
+                    svgHtml += `
+                        <path d="M 20 50 A 40 40 0 0 1 100 50" fill="none" stroke="#94a3b8" stroke-width="2" />
+                        <polygon points="32,105 88,105 96.5,${buLiqY} 23.5,${buLiqY}" fill="${fillCol}" />
+                        <polygon points="15,25 105,25 90,108 30,108" fill="none" stroke="#475569" stroke-width="4" stroke-linejoin="round" />`;
+                }
+                else if (type === 'jug') {
+                    // Render interactive custom measuring lines on scaled vector jug containers
+                    svgHtml += `
+                        <rect x="35" y="${110 - (80 * (fillPct / 100))}" width="55" height="${80 * (fillPct / 100)}" fill="${fillCol}" />
+                        <path d="M 35 45 Q 15 65 35 90" fill="none" stroke="#475569" stroke-width="4" />
+                        <rect x="35" y="25" width="55" height="87" fill="none" stroke="#334155" stroke-width="4" />
+                        <path d="M 90 25 L 98 20 L 90 40" fill="none" stroke="#334155" stroke-width="4" />
+                        <line x1="75" y1="95" x2="88" y2="95" stroke="#1e293b" stroke-width="2"/>
+                        <line x1="70" y1="75" x2="88" y2="75" stroke="#1e293b" stroke-width="2"/>
+                        <line x1="75" y1="55" x2="88" y2="55" stroke="#1e293b" stroke-width="2"/>
+                        <line x1="70" y1="35" x2="88" y2="35" stroke="#1e293b" stroke-width="2"/>
+                        <text x="60" y="98" font-size="9" font-weight="bold" fill="#475569">250mL</text>
+                        <text x="60" y="78" font-size="9" font-weight="bold" fill="#475569">500mL</text>
+                        <text x="60" y="58" font-size="9" font-weight="bold" fill="#475569">750mL</text>
+                        <text x="60" y="38" font-size="9" font-weight="bold" fill="#475569">1L</text>
+                    `;
+                }
+
+                svgHtml += `</svg>`;
+                
+                let wrapper = document.createElement('div');
+                wrapper.innerHTML = svgHtml;
+                if(label !== "") {
+                    let labelDiv = document.createElement('div');
+                    labelDiv.className = "graphic-label";
+                    labelDiv.innerText = label;
+                    wrapper.appendChild(labelDiv);
+                }
+                return wrapper;
+            }
+        };
+
+        /*********************************************************
+         * INLINE QUESTION MATRIX DATASET (150 DISTINCT ENTRIES)
+         *********************************************************/
+        const CapacityQuestionMatrix = {
+            easy: [
+                { type: 'glass', fill: [100], lbl: ["Glass A"], q: "Look at the picture. Which choice correctly describes this glass?", o: ["It is completely full", "It is completely empty", "It is half full", "It contains zero water"], a: "It is completely full", e: "The liquid reaches all the way to the top lip, meaning it is full!" },
+                { type: 'glass', fill: [0], lbl: ["Glass A"], q: "Look at the container. What can you say about it?", o: ["It is completely empty", "It is full to the top", "It contains milk", "It holds 100 litres"], a: "It is completely empty", e: "There is no colored liquid inside the lines, so it is empty." },
+                { type: 'glass', fill: [100, 25], lbl: ["Glass A", "Glass B"], q: "Compare the two glasses shown. Which container holds MORE water?", o: ["Glass A", "Glass B", "They hold the same", "Both are totally empty"], a: "Glass A", e: "Glass A's liquid level is visibly higher up than Glass B." },
+                { type: 'glass', fill: [10, 90], lbl: ["Glass A", "Glass B"], q: "Which glass container holds LESS liquid?", o: ["Glass A", "Glass B", "They are equal", "Neither container has liquid"], a: "Glass A", e: "Glass A has only a tiny amount at the base, meaning it has less." },
+                { type: 'bottle', fill: [100, 0], lbl: ["Bottle A", "Bottle B"], q: "Which of the bottles is empty?", o: ["Bottle B", "Bottle A", "Both are full", "Neither is empty"], a: "Bottle B", e: "Bottle B has zero liquid fill volume inside it." },
+                { type: 'cup', fill: [100, 100], lbl: ["Cup", "Bucket"], customType: ['cup','bucket'], q: "In real life, which of these two objects holds MORE total liquid?", o: ["The Bucket", "The Cup", "They hold the same", "Cups are bigger than buckets"], a: "The Bucket", e: "A large water bucket is much bigger than a small drinking cup!" },
+                { type: 'cup', fill: [100, 100], lbl: ["Spoon", "Mug"], customType: ['glass','cup'], q: "In your kitchen, which item has the SMALLEST capacity?", o: ["A Spoon", "A Mug", "A Jug", "A Water Tank"], a: "A Spoon", e: "A small spoon holds only a tiny sip of medicine or water." },
+                { cal: null, q: "Milk packets and large juice cartons are usually measured using which unit?", o: ["Litre (L)", "Kilometre (km)", "Gram (g)", "Centimetre (cm)"], a: "Litre (L)", e: "Liquids like milk, juice, and petrol are measured using Litres or millilitres." },
+                { cal: null, q: "A tiny medicine dropper or a small teaspoon holds liquid measured in which unit?", o: ["Millilitre (mL)", "Litre (L)", "Kilogram (kg)", "Metre (m)"], a: "Millilitre (mL)", e: "We use millilitres (mL) for very small amounts of liquids." },
+                { cal: null, q: "Complete the statement: 1 Litre (L) is exactly equal to how many millilitres (mL)?", o: ["1000 mL", "100 mL", "10 mL", "500 mL"], a: "1000 mL", e: "Remember this rule: 1 Litre = 1000 millilitres." },
+                { cal: null, q: "Which holds more liquid: a 2 Litre bottle of fizzy drink or a 500 mL box of milk?", o: ["2 Litre bottle", "500 mL box", "They are equal", "The milk box"], a: "2 Litre bottle", e: "2 Litres equals 2000 mL, which is much more than 500 mL!" },
+                { type: 'bucket', fill: [100], lbl: ["Bucket"], q: "What is the best unit to measure the amount of water needed to fill a swimming pool?", o: ["Litres (L)", "Millilitres (mL)", "Grams (g)", "Centimetres (cm)"], a: "Litres (L)", e: "Large water volumes require the Litre (L) metric unit." },
+                { cal: null, q: "Which is the correct short abbreviation written for the unit 'millilitre'?", o: ["mL", "L", "m", "g"], a: "mL", e: "Millilitre is written as 'mL' with a capital L." },
+                { cal: null, q: "Which is the correct short abbreviation written for the unit 'Litre'?", o: ["L", "mL", "kg", "lr"], a: "L", e: "Litre is represented by the single letter symbol 'L'." },
+                { type: 'cup', fill: [50], lbl: ["Cup A"], q: "Look at Cup A. The liquid is exactly halfway up. What is this called?", o: ["Half full", "Completely empty", "Overfilling", "Totally full"], a: "Half full", e: "Halfway filled means the container is half full (or half empty)." },
+                { cal: null, q: "Choose the container that has the BIGGEST capacity in an everyday home:", o: ["Water Tank on the roof", "Soup Bowl", "Coffee Mug", "Water Bottle"], a: "Water Tank on the roof", e: "A household water tank holds hundreds of litres of liquid." },
+                { cal: null, q: "If you take a bath, the amount of water in the bathtub is best estimated as:", o: ["150 Litres", "150 millilitres", "5 millilitres", "1 Litre"], a: "150 Litres", e: "Bathtubs hold a large volume, so 150 Litres makes perfect sense." },
+                { cal: null, q: "A standard small juice box given in school lunchboxes holds about how much liquid?", o: ["200 mL", "200 L", "2 mL", "20 L"], a: "200 mL", e: "Lunchbox cartons hold a small volume, around 200 mL." },
+                { cal: null, q: "Which item holds LESS water than a standard drinking glass?", o: ["A small spoon", "A garden bucket", "A kitchen sink", "A water jug"], a: "A small spoon", e: "A spoon is much smaller than a glass container." },
+                { cal: null, q: "Yes or No: Can a tiny soup bowl hold 50 Litres of hot soup?", o: ["No, that is too much", "Yes, easily", "Only if it has vegetables", "Maybe"], a: "No, that is too much", e: "50 Litres would fill several large buckets, far too much for a bowl." },
+                { cal: null, q: "Which unit would you use to measure the ink inside a ballpoint pen?", o: ["Millilitre (mL)", "Litre (L)", "Metre (m)", "Kilogram (kg)"], a: "Millilitre (mL)", e: "Pen ink is a tiny volume of liquid, so we use mL." },
+                { type: 'bottle', fill: [30, 85], lbl: ["Bottle 1", "Bottle 2"], q: "Which container has MORE empty space left inside it?", o: ["Bottle 1", "Bottle 2", "Both are fully packed", "Neither"], a: "Bottle 1", e: "Bottle 1 has a lower liquid line, leaving more empty space at the top." },
+                { cal: null, q: "Which item can hold about 1 Litre of water?", o: ["A school water bottle", "A medicine dropper", "A kitchen tablespoon", "A large swimming pool"], a: "A school water bottle", e: "Most reusable school water bottles hold around 1 Litre." },
+                { type: 'glass', fill: [100, 100], lbl: ["Glass", "Spoon"], customType: ['glass','cup'], q: "Which container holds LESS liquid in real life?", o: ["Spoon", "Glass", "They are equal", "Glasses are smaller"], a: "Spoon", e: "A spoon holds very little liquid compared to a full glass." },
+                { cal: null, q: "What does the word 'capacity' mean?", o: ["How much a container can hold", "How heavy an object is", "How tall a bottle is", "The color of the water"], a: "How much a container can hold", e: "Capacity is the amount of room inside a container for liquid." },
+                { cal: null, q: "If you empty a 1 Litre flask into a bowl, how much water is now in the bowl?", o: ["Exactly 1 Litre", "More than 1 Litre", "Less than 1 Litre", "Zero"], a: "Exactly 1 Litre", e: "Moving water doesn't change its volume. It stays 1 Litre!" },
+                { cal: null, q: "Your teacher has a large bucket of paint. It likely holds:", o: ["5 Litres", "5 millilitres", "500 Litres", "1 millilitre"], a: "5 Litres", e: "Paint buckets are large but manageable, so 5 L is appropriate." },
+                { type: 'glass', fill: [100], lbl: ["Glass X"], q: "If you drink all the juice from full Glass X, how much is left?", o: ["It becomes empty", "It stays full", "It has more juice", "It doubles"], a: "It becomes empty", e: "Drinking everything leaves zero liquid, making it empty." },
+                { cal: null, q: "Which of these is a liquid that we measure using capacity units?", o: ["Apple Juice", "An Apple fruit", "A metal spoon", "A wooden table"], a: "Apple Juice", e: "Juice is a liquid, so we measure its capacity." },
+                { cal: null, q: "To fill a large watering can for garden plants, we measure water in:", o: ["Litres (L)", "Millilitres (mL)", "Grams (g)", "Millimetres (mm)"], a: "Litres (L)", e: "Watering cans are large, holding several Litres." },
+                { type: 'bottle', fill: [10], lbl: ["Bottle"], q: "This bottle has only a tiny drop of water at the bottom. It is:", o: ["Almost empty", "Almost full", "Completely full", "Half full"], a: "Almost empty", e: "With just a tiny bit at the bottom, it is almost empty." },
+                { type: 'bottle', fill: [95], lbl: ["Bottle"], q: "This bottle is filled almost to the very top cap. It is:", o: ["Almost full", "Completely empty", "Half full", "Almost empty"], a: "Almost full", e: "Near the top rim means the container is almost full." },
+                { cal: null, q: "A carton of milk says '1 L'. How many mL is that?", o: ["1000 mL", "100 mL", "10 mL", "1000 L"], a: "1000 mL", e: "1 L is exactly equal to 1000 mL." },
+                { cal: null, q: "True or False: A standard teacup holds more than a garden bucket.", o: ["False", "True"], a: "False", e: "Buckets are much larger than teacup containers." },
+                { cal: null, q: "True or False: Millilitre is used for smaller amounts of liquid than Litre.", o: ["True", "False"], a: "True", e: "mL measures small amounts; Litres measure larger amounts." },
+                { cal: null, q: "Which unit would you use to measure a bottle of perfume?", o: ["Millilitres (mL)", "Litres (L)", "Kilometres (km)", "Kilograms (kg)"], a: "Millilitres (mL)", e: "Perfume comes in small decorative bottles measured in mL." },
+                { cal: null, q: "Which container holds MORE liquid than a 1 Litre bottle?", o: ["A 3 Litre jug", "A 500 mL flask", "A 250 mL cup", "A 100 mL bottle"], a: "A 3 Litre jug", e: "3 Litres is greater than 1 Litre." },
+                { cal: null, q: "Which container holds LESS liquid than a 500 mL mug?", o: ["A 50 mL perfume vial", "A 1 Litre bottle", "A 2 Litre carton", "A 10 Litre bucket"], a: "A 50 mL perfume vial", e: "50 mL is much less than 500 mL." },
+                { cal: null, q: "A recipe asks for 5 mL of vanilla extract. What should you use to measure it?", o: ["A small teaspoon", "A large bucket", "A big soup pot", "A water tank"], a: "A small teaspoon", e: "5 mL is a very small volume, perfect for a teaspoon." },
+                { cal: null, q: "If a container can hold a lot of liquid, we say it has a ________ capacity.", o: ["Large", "Small", "Tiny", "Short"], a: "Large", e: "Large capacity means it can hold a lot of liquid volume." },
+                { cal: null, q: "If a container can only hold a tiny bit of water, it has a ________ capacity.", o: ["Small", "Huge", "Giant", "Large"], a: "Small", e: "Small capacity means it fills up very quickly with little liquid." },
+                { cal: null, q: "You want to share a bottle of juice equally with a friend. What should you do?", o: ["Pour equal amounts into two identical glasses", "Give them the empty bottle", "Pour all of it into one glass", "Drink it all yourself"], a: "Pour equal amounts into two identical glasses", e: "Equal sharing means both glasses get the same volume level." },
+                { type: 'glass', fill: [50, 50], lbl: ["Glass 1", "Glass 2"], q: "Look at the two glasses. What can you say about the liquid inside them?", o: ["They have equal amounts", "Glass 1 has more", "Glass 2 has more", "Both are totally empty"], a: "They have equal amounts", e: "Both have the exact same liquid line level." },
+                { cal: null, q: "Which of these is the LARGEST volume of liquid?", o: ["10 Litres", "10 millilitres", "1 Litre", "500 millilitres"], a: "10 Litres", e: "10 Litres is equal to 10,000 mL, making it the largest option." },
+                { cal: null, q: "Which of these is the SMALLEST volume of liquid?", o: ["5 millilitres", "5 Litres", "500 millilitres", "1 Litre"], a: "5 millilitres", e: "5 mL is just a few small drops of liquid." },
+                { cal: null, q: "Your water bottle is full. You drink half of it. What is left?", o: ["The bottle is half full", "The bottle is empty", "The bottle is still completely full", "It has more water now"], a: "The bottle is half full", e: "Taking away half leaves the other half behind." },
+                { cal: null, q: "To fill a fish tank for your pet fish, you measure the water in:", o: ["Litres (L)", "Millilitres (mL)", "Grams (g)", "Centimetres (cm)"], a: "Litres (L)", e: "Fish tanks need a substantial volume of water, measured in Litres." },
+                { cal: null, q: "A medicine bottle for a baby holds around:", o: ["100 mL", "100 L", "1 L", "10 L"], a: "100 mL", e: "Baby medicine doses are tiny, so the bottles are small mL sizes." },
+                { cal: null, q: "True or False: 500 L is smaller than 500 mL.", o: ["False", "True"], a: "False", e: "Litres are 1000 times larger than millilitres, so 500 L is huge!" },
+                { cal: null, q: "When a container is filled past its capacity, the liquid will:", o: ["Overflow and spill", "Disappear", "Turn into ice", "Shrink"], a: "Overflow and spill", e: "If you add more liquid than a container's capacity, it overflows." }
+            ],
+            medium: [
+                { cal: null, q: "How many millilitres (mL) are there inside exactly 2 Litres (L)?", o: ["2000 mL", "200 mL", "20 mL", "2000 L"], a: "2000 mL", e: "Multiply by 1000: 2 x 1000 = 2000 mL." },
+                { cal: null, q: "Convert 5 Litres into millilitres (mL):", o: ["5000 mL", "500 mL", "50 mL", "5500 mL"], a: "5000 mL", e: "5 L = 5 x 1000 = 5000 mL." },
+                { cal: null, q: "If you have 3000 mL of pure water, how many Litres is that equal to?", o: ["3 L", "30 L", "300 L", "0.3 L"], a: "3 L", e: "Divide by 1000 to convert mL back to Litres: 3000 / 1000 = 3 L." },
+                { cal: null, q: "Convert 7000 mL into Litres (L):", o: ["7 L", "70 L", "700 L", "75 L"], a: "7 L", e: "7000 mL divided by 1000 gives exactly 7 Litres." },
+                { type: 'jug', fill: [50], lbl: ["Jug 1"], q: "Look at the measuring jug. How much liquid is inside?", o: ["500 mL", "250 mL", "750 mL", "1 L"], a: "500 mL", e: "The water line stops exactly at the 500 mL marker line." },
+                { type: 'jug', fill: [25], lbl: ["Jug 1"], q: "Read the scale on this measuring jug. What is the volume?", o: ["250 mL", "500 mL", "750 mL", "1 L"], a: "250 mL", e: "The liquid matches the bottom 250 mL line mark." },
+                { type: 'jug', fill: [75], lbl: ["Jug 1"], q: "What is the liquid measurement shown in this jug?", o: ["750 mL", "500 mL", "250 mL", "1 L"], a: "750 mL", e: "The fluid line aligns directly with the 750 mL mark." },
+                { type: 'jug', fill: [100], lbl: ["Jug 1"], q: "Look at the jug indicator. How much water is inside?", o: ["1 L", "500 mL", "250 mL", "750 mL"], a: "1 L", e: "The level reaches the top mark labeled 1 L (which is 1000 mL)." },
+                { cal: null, q: "Which of these capacities is the LARGEST?", o: ["1 L", "500 mL", "750 mL", "900 mL"], a: "1 L", e: "1 L equals 1000 mL, which is greater than 900 mL." },
+                { cal: null, q: "Which capacity value is smaller than 1 Litre?", o: ["450 mL", "2 L", "1500 mL", "3000 mL"], a: "450 mL", e: "1 Litre is 1000 mL, so 450 mL is less than 1 Litre." },
+                { cal: null, q: "Add these capacities together: 400 mL + 300 mL = ?", o: ["700 mL", "100 mL", "700 L", "800 mL"], a: "700 mL", e: "400 plus 300 equals 700. Keep the unit as mL." },
+                { cal: null, q: "Calculate the sum: 12 L + 8 L = ?", o: ["20 L", "4 L", "200 L", "20 mL"], a: "20 L", e: "12 plus 8 equals 20 Litres." },
+                { cal: null, q: "Subtract the values: 950 mL - 400 mL = ?", o: ["550 mL", "650 mL", "450 mL", "500 mL"], a: "550 mL", e: "950 minus 400 equals 550 mL." },
+                { cal: null, q: "Solve this subtraction: 15 L - 7 L = ?", o: ["8 L", "7 L", "9 L", "22 L"], a: "8 L", e: "15 minus 7 leaves 8 Litres." },
+                { cal: null, q: "A bottle contains 750 mL of mango juice. How much juice is that?", o: ["Three-quarters of a Litre", "Exactly 1 Litre", "Half a Litre", "More than 1 Litre"], a: "Three-quarters of a Litre", e: "750 mL is 3/4 of a full Litre (1000 mL)." },
+                { cal: null, q: "A bucket holds 12 Litres. A bottle holds 2 Litres. How many bottles does it take to fill the bucket?", o: ["6 bottles", "5 bottles", "10 bottles", "14 bottles"], a: "6 bottles", e: "12 divided by 2 equals 6 bottles total." },
+                { cal: null, q: "If a glass holds 250 mL of water, how many glasses do you need to get 1 Litre?", o: ["4 glasses", "2 glasses", "3 glasses", "5 glasses"], a: "4 glasses", e: "250 mL + 250 mL + 250 mL + 250 mL = 1000 mL (1 L). That's 4 glasses!" },
+                { cal: null, q: "You have 1 Litre of milk. You drink 200 mL. How much milk is left?", o: ["800 mL", "700 mL", "600 mL", "900 mL"], a: "800 mL", e: "Change 1 L to 1000 mL. 1000 - 200 = 800 mL." },
+                { cal: null, q: "A small carton contains 250 mL of milk. If you buy 2 cartons, what is the total capacity?", o: ["500 mL", "300 mL", "600 mL", "1 L"], a: "500 mL", e: "250 mL + 250 mL = 500 mL (which is half a Litre)." },
+                { cal: null, q: "Which of the following is exactly equal to Half a Litre?", o: ["500 mL", "50 mL", "250 mL", "750 mL"], a: "500 mL", e: "Since a full Litre is 1000 mL, half of it is exactly 500 mL." },
+                { cal: null, q: "A jug holds 3 L of water. How many mL is this?", o: ["3000 mL", "300 mL", "30 mL", "3500 mL"], a: "3000 mL", e: "3 x 1000 = 3000 mL." },
+                { cal: null, q: "An ink capsule has 2 mL of ink. How many capsules do you need to get 10 mL?", o: ["5 capsules", "2 capsules", "4 capsules", "10 capsules"], a: "5 capsules", e: "10 divided by 2 is 5 capsules." },
+                { cal: null, q: "A car fuel tank holds 45 Litres of fuel. If it already has 20 Litres, how much more can it hold?", o: ["25 Litres", "35 Litres", "15 Litres", "65 Litres"], a: "25 Litres", e: "45 - 20 = 25 Litres can be added." },
+                { cal: null, q: "Add these capacities together: 1 L 500 mL + 2 L = ?", o: ["3 L 500 mL", "2 L 500 mL", "3 L", "4 L"], a: "3 L 500 mL", e: "Add the Litres together: 1 L + 2 L = 3 L. The 500 mL stays the same." },
+                { cal: null, q: "A bowl contains 600 mL of soup. If Rahul eats 150 mL, how much soup remains?", o: ["450 mL", "550 mL", "350 mL", "500 mL"], a: "450 mL", e: "600 - 150 = 450 mL." },
+                { cal: null, q: "Which value is the same as 1 Litre and 250 millilitres?", o: ["1250 mL", "1025 mL", "125 mL", "1250 L"], a: "1250 mL", e: "1 L = 1000 mL. 1000 + 250 = 1250 mL." },
+                { cal: null, q: "Subtract 300 mL from 1 Litre. What is the correct answer?", o: ["700 mL", "800 mL", "600 mL", "700 L"], a: "700 mL", e: "1000 mL - 300 mL = 700 mL." },
+                { cal: null, q: "A flower watering can holds 4 L. If you use 1 L 500 mL, how much is left?", o: ["2 L 500 mL", "3 L 500 mL", "2 L", "1 L 500 mL"], a: "2 L 500 mL", e: "4000 mL - 1500 mL = 2500 mL, which is 2 L 500 mL." },
+                { cal: null, q: "How many 100 mL cups of water does it take to fill a 1 Litre bottle?", o: ["10 cups", "5 cups", "100 cups", "20 cups"], a: "10 cups", e: "1000 mL / 100 mL = 10 cups." },
+                { cal: null, q: "True or False: 1500 mL is greater than 2 L.", o: ["False", "True"], a: "False", e: "2 L is 2000 mL, so 1500 mL is actually smaller than 2 L." },
+                { cal: null, q: "Convert 8 L into mL:", o: ["8000 mL", "800 mL", "80 mL", "8500 mL"], a: "8000 mL", e: "8 x 1000 = 8000 mL." },
+                { cal: null, q: "Convert 4000 mL into L:", o: ["4 L", "40 L", "400 L", "44 L"], a: "4 L", e: "4000 divided by 1000 is 4 Litres." },
+                { cal: null, q: "A medicine bottle holds 60 mL. Each dose is 5 mL. How many doses are in the bottle?", o: ["12 doses", "10 doses", "15 doses", "8 doses"], a: "12 doses", e: "60 divided by 5 equals 12." },
+                { cal: null, q: "A flask has 850 mL of tea. 350 mL is poured into a mug. How much tea stays in the flask?", o: ["500 mL", "400 mL", "600 mL", "450 mL"], a: "500 mL", e: "850 - 350 = 500 mL." },
+                { cal: null, q: "If you add 250 mL of water to a jug that already has 750 mL, what is the total volume?", o: ["1000 mL", "900 mL", "800 mL", "1200 mL"], a: "1000 mL", e: "750 + 250 = 1000 mL (which is exactly 1 Litre)." },
+                { cal: null, q: "An aquarium holds 25 L of water. If 5 L evaporates, how much water is left?", o: ["20 L", "15 L", "30 L", "22 L"], a: "20 L", e: "25 - 5 = 20 Litres." },
+                { cal: null, q: "A giant bottle holds 10 L of drinking water. How many 1 L flasks can it fill?", o: ["10 flasks", "5 flasks", "20 flasks", "1 flask"], a: "10 flasks", e: "10 L divided into 1 L sections equals 10 flasks." },
+                { cal: null, q: "Which unit is best to measure the fuel tank capacity of an airplane?", o: ["Litres (L)", "Millilitres (mL)", "Grams (g)", "Centimetres (cm)"], a: "Litres (L)", e: "Airplanes hold a large volume of fuel, measured in Litres." },
+                { cal: null, q: "A perfume bottle holds 75 mL. Is this more or less than 1 Litre?", o: ["Less than 1 Litre", "More than 1 Litre", "Exactly equal", "It is 75 Litres"], a: "Less than 1 Litre", e: "75 mL is far below the 1000 mL needed for 1 Litre." },
+                { cal: null, q: "Add these values: 350 mL + 250 mL = ?", o: ["600 mL", "500 mL", "700 mL", "650 mL"], a: "600 mL", e: "350 + 250 = 600 mL." },
+                { cal: null, q: "Subtract: 10 L - 4.5 L = ?", o: ["5.5 L", "6.5 L", "4.5 L", "5 L"], a: "5.5 L", e: "10 minus 4.5 leaves 5.5 Litres." },
+                { cal: null, q: "How many mL are in one-quarter (1/4) of a Litre?", o: ["250 mL", "500 mL", "750 mL", "100 mL"], a: "250 mL", e: "1000 mL divided by 4 equals 250 mL." },
+                { cal: null, q: "A carton of soup is 500 mL. If you use 250 mL for dinner, how much is left?", o: ["250 mL", "150 mL", "300 mL", "200 mL"], a: "250 mL", e: "500 - 250 = 250 mL." },
+                { cal: null, q: "Which capacity is equivalent to 6000 mL?", o: ["6 L", "60 L", "0.6 L", "600 L"], a: "6 L", e: "6000 / 1000 = 6 L." },
+                { cal: null, q: "A large bottle of soda is 2 L. How many 500 mL glasses can it fill?", o: ["4 glasses", "2 glasses", "5 glasses", "3 glasses"], a: "4 glasses", e: "2 L = 2000 mL. 2000 divided by 500 is 4 glasses." },
+                { cal: null, q: "If you take 3 doses of medicine that are 10 mL each, what is the total volume taken?", o: ["30 mL", "20 mL", "40 mL", "13 mL"], a: "30 mL", e: "3 times 10 mL equals 30 mL." },
+                { cal: null, q: "A kettle holds 1 L 200 mL of water. Convert this completely into mL:", o: ["1200 mL", "1020 mL", "2100 mL", "120 mL"], a: "1200 mL", e: "1 L = 1000 mL. 1000 + 200 = 1200 mL." },
+                { cal: null, q: "A thermal flask holds 1500 mL. Convert this into Litres and mL:", o: ["1 L 500 mL", "15 L 0 mL", "1 L 50 mL", "15 L"], a: "1 L 500 mL", e: "1000 mL becomes 1 L, leaving 500 mL over." },
+                { cal: null, q: "A dynamic spray bottle holds 400 mL. If 120 mL is sprayed, how much liquid stays inside?", o: ["280 mL", "380 mL", "180 mL", "300 mL"], a: "280 mL", e: "400 - 120 = 280 mL." },
+                { cal: null, q: "True or False: 9 L is equal to 900 mL.", o: ["False", "True"], a: "False", e: "9 L is equal to 9000 mL, not 900 mL." }
+            ],
+            hard: [
+                { cal: null, q: "Convert 3450 mL into Litres and millilitres:", o: ["3 L 450 mL", "34 L 50 mL", "3 L 45 mL", "0.3 L 450 mL"], a: "3 L 450 mL", e: "3000 mL makes 3 L, leaving 450 mL remaining." },
+                { cal: null, q: "Convert 6 L 75 mL into total millilitres (mL):", o: ["6075 mL", "6750 mL", "675 mL", "60075 mL"], a: "6075 mL", e: "6 L = 6000 mL. 6000 + 75 = 6075 mL. Pay attention to the placeholder zero!" },
+                { cal: null, q: "A bucket holds 15 L of water. A leakage spills 3 L 400 mL. How much water is left inside?", o: ["11 L 600 mL", "12 L 600 mL", "11 L 400 mL", "12 L 400 mL"], a: "11 L 600 mL", e: "15,000 mL - 3,400 mL = 11,600 mL, which is 11 L 600 mL." },
+                { cal: null, q: "A tank has 250 L of liquid. 120 L 500 mL is drained away. What volume remains?", o: ["129 L 500 mL", "130 L 500 mL", "129 L 0 mL", "120 L 500 mL"], a: "129 L 500 mL", e: "250,000 mL - 120,500 mL = 129,500 mL = 129 L 500 mL." },
+                { cal: null, q: "Add these mixed units: 4 L 350 mL + 3 L 800 mL = ?", o: ["8 L 150 mL", "7 L 150 mL", "8 L 250 mL", "7 L 1100 mL"], a: "8 L 150 mL", e: "350 mL + 800 mL = 1150 mL (which is 1 L 150 mL). 4 L + 3 L + 1 L carryover = 8 L 150 mL." },
+                { cal: null, q: "A large drum holds 45 L 200 mL of oil. Another tank contains 23 L 900 mL. Find the total capacity.", o: ["69 L 100 mL", "68 L 1100 mL", "69 L 200 mL", "68 L 100 mL"], a: "69 L 100 mL", e: "200 + 900 = 1100 mL (1 L 100 mL). 45 + 23 + 1 = 69 L 100 mL." },
+                { cal: null, q: "An empty water tank has a capacity of 500 Litres. If an input hose pumps in 345 Litres, how much more is needed to fill it completely?", o: ["155 Litres", "165 Litres", "255 Litres", "145 Litres"], a: "155 Litres", e: "500 - 345 = 155 Litres." },
+                { cal: null, q: "A chef prepares 5 Litres of tomato soup. He serves 12 identical bowls, each holding 300 mL. How much soup is left over in his pot?", o: ["1400 mL", "1500 mL", "1600 mL", "2000 mL"], a: "1400 mL", e: "12 bowls x 300 mL = 3600 mL served. 5000 mL - 3600 mL = 1400 mL (1 L 400 mL) left." },
+                { type: 'jug', fill: [75], lbl: ["Measuring Jug"], q: "Look at the measuring jug. If you pour out exactly 250 mL of liquid, where will the new water line drop to?", o: ["500 mL", "250 mL", "750 mL", "0 mL"], a: "500 mL", e: "The jug is currently at 750 mL. 750 mL - 250 mL = 500 mL." },
+                { type: 'jug', fill: [50], lbl: ["Measuring Jug"], q: "Look at the measuring jug. If you double the amount of water inside, what will the new total volume be?", o: ["1 L", "750 mL", "500 mL", "1500 mL"], a: "1 L", e: "The jug is at 500 mL. 500 mL x 2 = 1000 mL, which equals 1 L." },
+                { cal: null, q: "A medical syringe contains 0.05 L of fluid vaccine. How many mL is this equal to?", o: ["50 mL", "5 mL", "500 mL", "0.5 mL"], a: "50 mL", e: "Multiply 0.05 by 1000 to convert to mL, giving 50 mL." },
+                { cal: null, q: "A scientist mixes 450 mL of chemical A, 350 mL of chemical B, and 400 mL of water. What is the total volume of the mixture?", o: ["1200 mL", "1 L", "1100 mL", "1 L 500 mL"], a: "1200 mL", e: "450 + 350 + 400 = 1200 mL (or 1 L 200 mL)." },
+                { cal: null, q: "Which everyday item can hold closest to 20 Litres of water?", o: ["A standard floor cleaning bucket", "A coffee cup", "A small soup spoon", "A household roof tank"], a: "A standard floor cleaning bucket", e: "A standard large household bucket holds around 15 to 20 Litres." },
+                { cal: null, q: "How many 250 mL milk cartons are needed to collect exactly 5 Litres of milk?", o: ["20 cartons", "10 cartons", "15 cartons", "25 cartons"], a: "20 cartons", e: "4 cartons make 1 Litre. So, 4 x 5 = 20 cartons are needed." },
+                { cal: null, q: "A juice pack is 1 L 500 mL. If 4 children share it equally, how many mL does each child receive?", o: ["375 mL", "350 mL", "400 mL", "425 mL"], a: "375 mL", e: "1500 mL divided by 4 equals 375 mL each." },
+                { cal: null, q: "A bucket is 3/4 full. Its total capacity is 12 Litres. How many Litres of water are inside it right now?", o: ["9 Litres", "6 Litres", "8 Litres", "10 Litres"], a: "9 Litres", e: "Divide 12 by 4 to get 3, then multiply by 3 to find three-quarters: 3 x 3 = 9 Litres." },
+                { cal: null, q: "A fuel tank holds 60 L. The gauge shows it is only 1/4 full. How many Litres of fuel are inside?", o: ["15 Litres", "20 Litres", "30 Litres", "10 Litres"], a: "15 Litres", e: "60 divided by 4 equals 15 Litres." },
+                { cal: null, q: "Subtract: 5 L - 850 mL = ?", o: ["4 L 150 mL", "4 L 850 mL", "3 L 150 mL", "4 L 50 mL"], a: "4 L 150 mL", e: "5000 mL - 850 mL = 4150 mL, which translates to 4 L 150 mL." },
+                { cal: null, q: "A bottle of cough syrup holds 150 mL. If a child takes 5 mL three times a day, how many days will the bottle last?", o: ["10 days", "15 days", "20 days", "30 days"], a: "10 days", e: "Daily consumption is 5 mL x 3 = 15 mL. 150 mL / 15 mL = 10 days." },
+                { cal: null, q: "A large oil container holds 9 L 400 mL. If 2 L 650 mL is used up, how much oil is left?", o: ["6 L 750 mL", "7 L 250 mL", "6 L 250 mL", "7 L 750 mL"], a: "6 L 750 mL", e: "9400 mL - 2650 mL = 6750 mL, which equals 6 L 750 mL." },
+                { cal: null, q: "Convert 8 L 5 mL into millilitres:", o: ["8005 mL", "8050 mL", "8500 mL", "80005 mL"], a: "8005 mL", e: "8 L = 8000 mL. 8000 + 5 = 8005 mL." },
+                { cal: null, q: "Which represents the SMALLEST capacity value?", o: ["1200 mL", "1 L 50 mL", "1.5 L", "1060 mL"], a: "1 L 50 mL", e: "1 L 50 mL is 1050 mL, making it the smallest value among the options." },
+                { cal: null, q: "True or False: 2 Litres is exactly 8 times larger than 250 mL.", o: ["True", "False"], a: "True", e: "8 x 250 mL = 2000 mL = 2 Litres. The statement is true!" },
+                { cal: null, q: "A water dispenser holds 20 L. If it fills 40 flasks of 400 mL each, how much water is left inside the dispenser?", o: ["4 Litres", "16 Litres", "2 Litres", "0 Litres"], a: "4 Litres", e: "40 x 400 mL = 16,000 mL = 16 L used. 20 L - 16 L = 4 Litres remaining." },
+                { cal: null, q: "A punch recipe calls for 2 L of orange juice, 1 L 500 mL of pineapple juice, and 750 mL of soda. What is the final total capacity?", o: ["4 L 250 mL", "3 L 250 mL", "4 L 750 mL", "4 L 500 mL"], a: "4 L 250 mL", e: "2000 + 1500 + 750 = 4250 mL, which equals 4 Litres and 250 mL." },
+                { cal: null, q: "How many 50 mL test tubes can be completely filled from a 1.5 Litre beaker of saline?", o: ["30 tubes", "15 tubes", "25 tubes", "40 tubes"], a: "30 tubes", e: "1.5 L = 1500 mL. 1500 mL divided by 50 mL = 30 tubes." },
+                { cal: null, q: "A water filter drops 50 mL of water every minute. How much water passes through it in 1 hour?", o: ["3 Litres", "300 mL", "30 Litres", "1.5 Litres"], a: "3 Litres", e: "1 hour has 60 minutes. 60 x 50 mL = 3000 mL, which equals 3 Litres." },
+                { cal: null, q: "A small family consumes 4 L 200 mL of milk daily. How much milk do they consume in 3 days?", o: ["12 L 600 mL", "12 L 200 mL", "13 L", "12 L"], a: "12 L 600 mL", e: "Multiply both parts by 3: 4 L x 3 = 12 L, and 200 mL x 3 = 600 mL." },
+                { cal: null, q: "An industrial container holds 100 L of chemical solution. If 44 L 250 mL is siphoned out, how much is left?", o: ["55 L 750 mL", "56 L 750 mL", "55 L 250 mL", "56 L 250 mL"], a: "55 L 750 mL", e: "100,000 mL - 44,250 mL = 55,750 mL = 55 L 750 mL." },
+                { cal: null, q: "Convert 9020 mL into Litres and mL:", o: ["9 L 20 mL", "9 L 200 mL", "90 L 20 mL", "0.9 L 20 mL"], a: "9 L 20 mL", e: "9000 mL = 9 L, leaving exactly 20 mL." },
+                { cal: null, q: "Add: 750 mL + 750 mL + 500 mL. What is the total in Litres?", o: ["2 Litres", "1.5 Litres", "2.5 Litres", "3 Litres"], a: "2 Litres", e: "750 + 750 + 500 = 2000 mL = 2 Litres." },
+                { cal: null, q: "A cow gives 6 L 800 mL of milk in the morning and 5 L 450 mL in the evening. What is the total daily milk yield?", o: ["12 L 250 mL", "11 L 1250 mL", "12 L 350 mL", "11 L 250 mL"], a: "12 L 250 mL", e: "800 + 450 = 1250 mL (1 L 250 mL). 6 + 5 + 1 = 12 L 250 mL." },
+                { cal: null, q: "A dynamic garden pool holds 80 Litres of rainwater. If you pump out 15 Litres every 10 minutes, how much remains after half an hour?", o: ["35 Litres", "45 Litres", "50 Litres", "30 Litres"], a: "35 Litres", e: "Half an hour is 30 minutes (three 10-minute blocks). 3 x 15 L = 45 L removed. 80 L - 45 L = 35 Litres left." },
+                { cal: null, q: "A bottle is filled with 1 L 250 mL of sports drink. If Leo drinks 400 mL, how much stays in the bottle?", o: ["850 mL", "750 mL", "950 mL", "650 mL"], a: "850 mL", e: "1250 mL - 400 mL = 850 mL." },
+                { cal: null, q: "Four jars are filled with 350 mL of honey each. What is the total honey volume?", o: ["1 L 400 mL", "1 L 200 mL", "1 L 500 mL", "2 L"], a: "1 L 400 mL", e: "4 x 350 mL = 1400 mL = 1 L 400 mL." },
+                { cal: null, q: "If a slow leaking tap loses 5 mL of water every single minute, how much water is wasted in 2 hours?", o: ["600 mL", "300 mL", "1 Litre", "1.2 Litres"], a: "600 mL", e: "2 hours = 120 minutes. 120 minutes x 5 mL = 600 mL." },
+                { cal: null, q: "A thermos holds 2 Litres of tea. If 6 mugs of 250 mL are poured, how much tea is left inside?", o: ["500 mL", "400 mL", "300 mL", "600 mL"], a: "500 mL", e: "6 x 250 mL = 1500 mL used. 2000 mL - 1500 mL = 500 mL left." },
+                { cal: null, q: "An essence oil bottle holds 0.01 Litres. How many mL is this?", o: ["10 mL", "1 mL", "100 mL", "0.1 mL"], a: "10 mL", e: "0.01 x 1000 = 10 mL." },
+                { cal: null, q: "Solve this addition calculation: 14 L 60 mL + 3 L 950 mL = ?", o: ["18 L 10 mL", "17 L 1010 mL", "17 L 10 mL", "18 L 100 mL"], a: "18 L 10 mL", e: "60 + 950 = 1010 mL (1 L 10 mL). 14 + 3 + 1 carryover = 18 L 10 mL." },
+                { cal: null, q: "A bucket of car soap is 18 L. If you use up 9 L 150 mL during cleaning, how much is left?", o: ["8 L 850 mL", "9 L 850 mL", "8 L 150 mL", "9 L 150 mL"], a: "8 L 850 mL", e: "18,000 mL - 9,150 mL = 8,850 mL = 8 L 850 mL." },
+                { cal: null, q: "Convert 7403 mL into Litres and mL:", o: ["7 L 403 mL", "74 L 3 mL", "7 L 43 mL", "7 L 430 mL"], a: "7 L 403 mL", e: "7000 mL = 7 L, leaving 403 mL remaining." },
+                { cal: null, q: "Add these capacities: 500 mL + 2 L + 1500 mL = ?", o: ["4 L", "3 L 500 mL", "4.5 L", "3 L"], a: "4 L", e: "500 mL + 1500 mL = 2000 mL (2 L). Add the other 2 L to get 4 L total." },
+                { cal: null, q: "A canteen holds 3 L 200 mL of soup. If the kitchen staff adds 1 L 900 mL more, what is the new total?", o: ["5 L 100 mL", "4 L 1100 mL", "5 L", "4 L 100 mL"], a: "5 L 100 mL", e: "200 + 900 = 1100 mL (1 L 100 mL). 3 L + 1 L + 1 L carryover = 5 L 100 mL." },
+                { cal: null, q: "A large bottle holds 2.5 Litres of water. How many 125 mL sample cups can it fill?", o: ["20 cups", "10 cups", "15 cups", "25 cups"], a: "20 cups", e: "2500 mL divided by 125 mL = 20 cups." },
+                { cal: null, q: "A bucket contains 10 L of water. A cup holding 200 mL is used to scoop out water 7 times. How much water is left in the bucket?", o: ["8 L 600 mL", "8 L 400 mL", "9 L 300 mL", "7 L 600 mL"], a: "8 L 600 mL", e: "7 scoops x 200 mL = 1400 mL = 1 L 400 mL removed. 10 L - 1 L 400 mL = 8 L 600 mL." },
+                { cal: null, q: "An ink box holds 1 Litre of liquid ink. If it is split equally into 50 tiny pen cartridges, how much ink goes into each cartridge?", o: ["20 mL", "10 mL", "5 mL", "50 mL"], a: "20 mL", e: "1000 mL divided by 50 equals 20 mL." },
+                { cal: null, q: "A container is 20% full of liquid. If its total maximum capacity is 5 Litres, how many mL of liquid are inside?", o: ["1000 mL", "2000 mL", "500 mL", "250 mL"], a: "1000 mL", e: "20% of 5000 mL = (20/100) * 5000 = 1000 mL (or 1 Litre)." },
+                { cal: null, q: "Convert 12 Litres 8 mL into total millilitres:", o: ["12008 mL", "12080 mL", "12800 mL", "120008 mL"], a: "12008 mL", e: "12 L = 12000 mL. 12000 + 8 = 12008 mL." },
+                { cal: null, q: "A small pond holds 950 L of water. During a hot week, 85 L 500 mL evaporates. What is the remaining water volume?", o: ["864 L 500 mL", "865 L 500 mL", "864 L", "850 L 500 mL"], a: "864 L 500 mL", e: "950,000 mL - 85,500 mL = 864,500 mL = 864 L 500 mL." },
+                { cal: null, q: "If you add 4500 mL to a container holding 5 L 500 mL, what is the combined total volume?", o: ["10 L", "9 L 500 mL", "10 L 500 mL", "9 L"], a: "10 L", e: "4500 mL = 4 L 500 mL. 4 L 500 mL + 5 L 500 mL = 9 L + 1000 mL = 10 L total." }
+            ]
+        };
+
+        /*********************************************************
+         * CORE ENGINE APPARATUS AND APPLICATION STATE CONTROLLER
+         *********************************************************/
+        let QuizEngine = {
+            activeTier: '',
+            questions: [],
+            index: 0,
+            score: 0,
+            answersLog: [],
+            timer: null,
+
+            shuffleArray(arr) {
+                for (let i = arr.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [arr[i], arr[j]] = [arr[j], arr[i]];
+                }
+                return arr;
+            },
+
+            start(tierKey) {
+                this.activeTier = tierKey;
+                let rawData = CapacityQuestionMatrix[tierKey] || CapacityQuestionMatrix.easy;
+                
+                // Shuffle and pick exactly 50 items
+                this.questions = this.shuffleArray(JSON.parse(JSON.stringify(rawData))).slice(0, 50);
+                this.index = 0;
+                this.score = 0;
+                this.answersLog = new Array(50).fill(null);
+                this.timer = new Date();
+
+                document.getElementById('lbl-tier').innerText = tierKey;
+                document.getElementById('screen-start').classList.remove('active');
+                document.getElementById('screen-quiz').classList.add('active');
+
+                AudioFX.click();
+                this.renderQuestion();
+            },
+
+            renderQuestion() {
+                if (this.index >= this.questions.length) return;
+                const item = this.questions[this.index];
+
+                // Synchronize stats bars
+                document.getElementById('lbl-score').innerText = this.score;
+                document.getElementById('lbl-counter').innerText = `${this.index + 1} / ${this.questions.length}`;
+                document.getElementById('progress-fill').style.width = `${((this.index + 1) / this.questions.length) * 100}%`;
+
+                // Handle SVG canvas display conditions
+                const graphicArea = document.getElementById('graphic-area');
+                const renderNode = document.getElementById('graphic-render-node');
+                renderNode.innerHTML = '';
+
+                if (item.type) {
+                    graphicArea.style.display = "block";
+                    AudioFX.pour(); // Play pouring sound effect when rendering visual containers
+
+                    item.fill.forEach((fillPct, idx) => {
+                        let cType = item.type;
+                        if(item.customType && item.customType[idx]) {
+                            cType = item.customType[idx];
+                        }
+                        let labelText = (item.lbl && item.lbl[idx]) ? item.lbl[idx] : "";
+                        let generatedSvg = SVGRenderEngine.drawContainer(cType, fillPct, labelText);
+                        renderNode.appendChild(generatedSvg);
+                    });
+                } else {
+                    graphicArea.style.display = "none";
+                }
+
+                document.getElementById('question-text').innerText = item.q;
+
+                // Shuffle choice options once per execution run loop
+                if (!item._shuffledOptions) {
+                    item._shuffledOptions = this.shuffleArray([...item.o]);
+                }
+
+                const optionsBox = document.getElementById('options-box');
+                optionsBox.innerHTML = '';
+
+                item._shuffledOptions.forEach(optStr => {
+                    const btn = document.createElement('button');
+                    btn.className = 'option-btn';
+                    btn.innerText = optStr;
+                    btn.onclick = () => this.selectOption(btn, optStr);
+
+                    // Restore state snapshot layout if question was previously answered
+                    if (this.answersLog[this.index] !== null) {
+                        btn.disabled = true;
+                        if (optStr === item.a) btn.classList.add('correct');
+                        if (optStr === this.answersLog[this.index] && optStr !== item.a) {
+                            btn.classList.add('wrong');
+                        }
+                    }
+                    optionsBox.appendChild(btn);
+                });
+
+                // Handle information panel updates
+                const expBox = document.getElementById('explanation-box');
+                if (this.answersLog[this.index] !== null) {
+                    let chosen = this.answersLog[this.index];
+                    if (chosen === item.a) {
+                        expBox.className = "explanation-panel correct";
+                        expBox.innerHTML = `<strong>✅ Correct!</strong><br>${item.e}`;
+                    } else if (chosen === "") {
+                        expBox.className = "explanation-panel wrong";
+                        expBox.innerHTML = `<strong>⚠️ Skipped!</strong> Correct Answer: <em>${item.a}</em><br>${item.e}`;
+                    } else {
+                        expBox.className = "explanation-panel wrong";
+                        expBox.innerHTML = `<strong>❌ Incorrect!</strong> Correct Answer: <em>${item.a}</em><br>${item.e}`;
+                    }
+                } else {
+                    expBox.style.display = 'none';
+                }
+
+                document.getElementById('btn-back').disabled = (this.index === 0);
+                document.getElementById('btn-forward').innerText = (this.index === this.questions.length - 1) ? "Finish 🏁" : "Next ➔";
+            },
+
+            selectOption(btn, selection) {
+                const item = this.questions[this.index];
+                this.answersLog[this.index] = selection;
+
+                const allOptionButtons = document.querySelectorAll('.options-grid .option-btn');
+                allOptionButtons.forEach(b => b.disabled = true);
+
+                const expBox = document.getElementById('explanation-box');
+
+                if (selection === item.a) {
+                    this.score++;
+                    AudioFX.right();
+                    btn.classList.add('correct');
+                    expBox.className = "explanation-panel correct";
+                    expBox.innerHTML = `<strong>✅ Correct!</strong><br>${item.e}`;
+                } else {
+                    AudioFX.wrong();
+                    btn.classList.add('wrong');
+                    allOptionButtons.forEach(b => { if (b.innerText === item.a) b.classList.add('correct'); });
+                    expBox.className = "explanation-panel wrong";
+                    expBox.innerHTML = `<strong>❌ Incorrect!</strong> Correct Answer: <em>${item.a}</em><br>${item.e}`;
+                }
+                document.getElementById('lbl-score').innerText = this.score;
+            },
+
+            navigate(dir) {
+                AudioFX.click();
+                if (dir === 1 && this.answersLog[this.index] === null) {
+                    if (!confirm("Skip this question? You can return to it later via the Back button.")) return;
+                    this.answersLog[this.index] = ""; // Fill blank to bypass validation safeguards
+                }
+
+                this.index += dir;
+
+                if (this.index >= this.questions.length) {
+                    this.completeQuiz();
+                } else if (this.index < 0) {
+                    this.index = 0;
+                } else {
+                    this.renderQuestion();
+                }
+            },
+
+            abortToMenu() {
+                AudioFX.click();
+                document.getElementById('screen-quiz').className = "screen";
+                document.getElementById('screen-summary').className = "screen";
+                document.getElementById('screen-start').className = "screen active";
+            },
+
+            replayLevel() {
+                this.start(this.activeTier);
+            },
+
+            completeQuiz() {
+                const timeDiffSeconds = Math.floor((new Date() - this.timer) / 1000);
+                const elapsedMin = Math.floor(timeDiffSeconds / 60);
+                const elapsedSec = timeDiffSeconds % 60;
+                const percentage = Math.round((this.score / this.questions.length) * 100);
+
+                let badgeArt = "📚", badgeText = "Keep Practising";
+                if (percentage >= 90) { badgeArt = "🏆"; badgeText = "Capacity Master"; }
+                else if (percentage >= 70) { badgeArt = "🌟"; badgeText = "Measurement Explorer"; }
+                else if (percentage >= 50) { badgeArt = "👍"; badgeText = "Good Learner"; }
+
+                document.getElementById('dash-tier').innerText = this.activeTier;
+                document.getElementById('dash-score').innerText = `${this.score} / ${this.questions.length}`;
+                document.getElementById('dash-pct').innerText = `${percentage}%`;
+                document.getElementById('dash-time').innerText = `${elapsedMin}m ${elapsedSec}s`;
+
+                document.getElementById('dash-badge-art').innerText = badgeArt;
+                document.getElementById('dash-badge-lbl').innerText = badgeText;
+
+                // Sync printing certificates frames
+                document.getElementById('cert-tier').innerText = this.activeTier;
+                document.getElementById('cert-score').innerText = `${this.score} / ${this.questions.length}`;
+                document.getElementById('cert-pct').innerText = `${percentage}%`;
+
+                document.getElementById('screen-quiz').classList.remove('active');
+                document.getElementById('screen-summary').classList.add('active');
+
+                AudioFX.triumph();
+                if (percentage >= 50) { this.runConfetti(); }
+            },
+
+            runConfetti() {
+                const canvas = document.getElementById('canvas-confetti');
+                const ctx = canvas.getContext('2d');
+                canvas.width = canvas.parentElement.offsetWidth;
+                canvas.height = canvas.parentElement.offsetHeight;
+
+                let particles = [];
+                const colors = ['#38bdf8', '#0284c7', '#4caf50', '#ff9800', '#e91e63'];
+
+                for (let i = 0; i < 80; i++) {
+                    particles.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height - canvas.height,
+                        r: Math.random() * 4 + 4,
+                        d: colors[Math.floor(Math.random() * colors.length)],
+                        vY: Math.random() * 2.5 + 2,
+                        dx: Math.sin(Math.random() * 2)
+                    });
+                }
+
+                function animationFrameLoop() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    let activeStream = false;
+                    particles.forEach(p => {
+                        p.y += p.vY;
+                        p.x += p.dx;
+                        if (p.y <= canvas.height) activeStream = true;
+                        
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                        ctx.fillStyle = p.d;
+                        ctx.fill();
+                    });
+                    if (activeStream) requestAnimationFrame(animationFrameLoop);
+                }
+                animationFrameLoop();
+            }
+        };
+    </script>
+</body>
+</html>

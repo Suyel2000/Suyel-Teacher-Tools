@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🪞 Symmetry Quiz</title>
+    <style>
+        :root {
+            --easy: #4caf50;
+            --medium: #ff9800;
+            --hard: #e91e63;
+            --primary: #8b5cf6;
+            --stroke-color: #1e293b;
+            --symmetry-line: #ef4444;
+            --shape-fill: #c084fc;
+            --shape-match: #f472b6;
+            --text-main: #1e293b;
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --correct-bg: #d1fae5;
+            --correct-text: #065f46;
+            --wrong-bg: #fee2e2;
+            --wrong-text: #991b1b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Segoe UI', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f3e8ff 0%, #e0e7ff 50%, #f0fdf4 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .bg-decorations {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0; left: 0;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .floating-element {
+            position: absolute;
+            opacity: 0.08;
+            animation: floatAnim 8s ease-in-out infinite alternate;
+        }
+        @keyframes floatAnim {
+            0% { transform: translateY(0) rotate(0deg) scale(1); }
+            100% { transform: translateY(-30px) rotate(20deg) scale(1.1); }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 760px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.06);
+            border: 4px solid #ffffff;
+            padding: 24px;
+            z-index: 10;
+            position: relative;
+        }
+
+        .title {
+            font-size: 2.4rem;
+            color: #6d28d9;
+            text-align: center;
+            margin-bottom: 4px;
+        }
+
+        .subtitle {
+            font-size: 1.05rem;
+            color: #4b5563;
+            text-align: center;
+            margin-bottom: 24px;
+            font-weight: 600;
+        }
+
+        .screen {
+            display: none;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .level-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 18px 24px;
+            margin: 14px 0;
+            border: none;
+            border-radius: 18px;
+            color: white;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .level-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+        }
+        .level-btn span { font-size: 0.9rem; font-weight: normal; display: block; margin-top: 4px; opacity: 0.9; }
+        .btn-easy { background: linear-gradient(135deg, #4caf50, #2e7d32); }
+        .btn-medium { background: linear-gradient(135deg, #ff9800, #e65100); }
+        .btn-hard { background: linear-gradient(135deg, #e91e63, #ad1457); }
+
+        .meta-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        .score-box {
+            background: #f5f3ff;
+            color: #6d28d9;
+            padding: 4px 12px;
+            border-radius: 10px;
+            border: 2px solid #ddd6fe;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background: #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #8b5cf6, #ec4899);
+            transition: width 0.2s ease;
+        }
+
+        .visual-display-host {
+            display: none;
+            width: 100%;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .visual-card {
+            background: white;
+            padding: 16px;
+            border-radius: 16px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+            border: 2px solid #e5e7eb;
+            display: inline-block;
+        }
+
+        .question-box {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--text-main);
+            margin-bottom: 20px;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 520px) {
+            .options-grid { grid-template-columns: 1fr; }
+            .title { font-size: 2rem; }
+        }
+
+        .option-btn {
+            background: #ffffff;
+            border: 2px solid #cbd5e1;
+            border-radius: 14px;
+            padding: 14px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            border-color: var(--primary);
+            background: #faf5ff;
+        }
+
+        .option-btn.correct {
+            background-color: var(--correct-bg) !important;
+            border-color: #10b981 !important;
+            color: var(--correct-text) !important;
+        }
+
+        .option-btn.wrong {
+            background-color: var(--wrong-bg) !important;
+            border-color: #ef4444 !important;
+            color: var(--wrong-text) !important;
+        }
+
+        .explanation-panel {
+            display: none;
+            padding: 14px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 1rem;
+            line-height: 1.4;
+        }
+        .explanation-panel.correct { display: block; background: var(--correct-bg); color: var(--correct-text); border-left: 6px solid #10b981; }
+        .explanation-panel.wrong { display: block; background: var(--wrong-bg); color: var(--wrong-text); border-left: 6px solid #ef4444; }
+
+        .nav-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .action-btn {
+            background: #4b5563;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .action-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+        .btn-prime { background: var(--primary); }
+
+        .badge-box {
+            background: #faf5ff;
+            border: 3px dashed #8b5cf6;
+            padding: 16px;
+            border-radius: 16px;
+            margin: 16px 0;
+            text-align: center;
+        }
+        .badge-art { font-size: 3.5rem; margin-bottom: 4px; }
+        .badge-lbl { font-size: 1.4rem; font-weight: bold; color: #6d28d9; }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 16px 0;
+        }
+        .result-card {
+            background: white;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            text-align: center;
+        }
+        .res-val { font-size: 1.3rem; font-weight: bold; color: #111827; }
+        .res-lbl { font-size: 0.85rem; color: #6b7280; }
+
+        #canvas-confetti {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 99; border-radius: 24px;
+        }
+
+        #printable-certificate {
+            display: none;
+            background: #ffffff;
+            color: #000000;
+            padding: 30px;
+            border: 10px double var(--primary);
+            text-align: center;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            #printable-certificate, #printable-certificate * { visibility: visible; }
+            #printable-certificate { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-decorations">
+        <svg class="floating-element" style="top:5%; left:6%; width:40px; height:40px;" viewBox="0 0 24 24" fill="currentColor" color="#4caf50"><path d="M17,8C8,10 5.9,16.17 3.82,21.34C5.71,20.57 9.58,19.24 13,17C18.14,13.63 21.78,5.1 22,3C21,3 15.54,4.28 11,7C8,8.82 5.71,11.8 4.65,14.35C7.2,11.7 11.3,9.5 17,8Z"/></svg>
+        <svg class="floating-element" style="bottom:10%; left:8%; width:44px; height:44px; animation-delay: 1.5s;" viewBox="0 0 24 24" fill="currentColor" color="#ec4899"><path d="M12,4C11.5,2.5 10,2 9,2C7,2 6,3.5 6,5C6,7 8,9 12,11C8,13 6,15 6,17C6,18.5 7,20 9,20C10,20 11.5,19.5 12,18C12.5,19.5 14,20 15,20C17,20 18,18.5 18,17C18,15 16,13 12,11C16,9 18,7 18,5C18,3.5 17,2 15,2C14,2 12.5,2.5 12,4Z"/></svg>
+        <svg class="floating-element" style="top:18%; right:7%; width:38px; height:38px; animation-delay: 0.6s;" viewBox="0 0 24 24" fill="currentColor" color="#eab308"><path d="M12,17.27L18.18,21L16.54,13.97L22,9.24L14.81,8.62L12,2L9.19,8.62L2,9.24L7.45,13.97L5.82,21L12,17.27Z"/></svg>
+    </div>
+
+    <div class="container">
+        <canvas id="canvas-confetti"></canvas>
+        <h1 class="title">🪞 Symmetry Quiz</h1>
+        <p class="subtitle">Fold • Match • Explore • Master Symmetry</p>
+
+        <div id="screen-start" class="screen active">
+            <button class="level-btn btn-easy" onclick="QuizEngine.start('easy')">
+                <div>
+                    <div>🟢 Easy Level</div>
+                    <span>Classes 2–3 • Same on Both Sides, Lines of Symmetry & Basics</span>
+                </div>
+                <div>➔</div>
+            </button>
+            <button class="level-btn btn-medium" onclick="QuizEngine.start('medium')">
+                <div>
+                    <div>🟡 Medium Level</div>
+                    <span>Classes 3–4 • Counting Lines, Alphabets, Mirror Images & Folds</span>
+                </div>
+                <div>➔</div>
+            </button>
+            <button class="level-btn btn-hard" onclick="QuizEngine.start('hard')">
+                <div>
+                    <div>🔴 Hard Level</div>
+                    <span>Classes 4–5 • Advanced Mirroring, Rotational Basics & Regular Shapes</span>
+                </div>
+                <div>➔</div>
+            </button>
+        </div>
+
+        <div id="screen-quiz" class="screen">
+            <div class="meta-bar">
+                <div>Level: <span id="lbl-tier" style="text-transform: capitalize; color:var(--primary);">-</span></div>
+                <div class="score-box">Score: <span id="lbl-score">0</span></div>
+                <div>Q: <span id="lbl-counter">1/50</span></div>
+            </div>
+
+            <div class="progress-container">
+                <div id="progress-fill" class="progress-fill"></div>
+            </div>
+
+            <div class="visual-display-host" id="graphic-area">
+                <div class="visual-card" id="graphic-render-node"></div>
+            </div>
+
+            <div class="question-box" id="question-text"></div>
+            <div class="options-grid" id="options-box"></div>
+            <div id="explanation-box" class="explanation-panel"></div>
+
+            <div class="nav-row">
+                <button class="action-btn" onclick="QuizEngine.backToMenu()">Menu</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="action-btn" id="btn-back" onclick="QuizEngine.stepQuestion(-1)">Back</button>
+                    <button class="action-btn btn-prime" id="btn-forward" onclick="QuizEngine.stepQuestion(1)">Next ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-summary" class="screen">
+            <div class="badge-box">
+                <div id="dash-badge-art" class="badge-art">🏆</div>
+                <div id="dash-badge-lbl" class="badge-lbl">-</div>
+            </div>
+
+            <div class="results-grid">
+                <div class="result-card"><div id="dash-tier" class="res-val" style="text-transform: capitalize;">-</div><div class="res-lbl">Quiz Tier</div></div>
+                <div class="result-card"><div id="dash-score" class="res-val">-</div><div class="res-lbl">Score Summary</div></div>
+                <div class="result-card"><div id="dash-pct" class="res-val">-</div><div class="res-lbl">Accuracy Grade</div></div>
+                <div class="result-card"><div id="dash-time" class="res-val">-</div><div class="res-lbl">Duration</div></div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+                <button class="level-btn btn-medium" style="margin:0; justify-content:center; font-size:1.1rem; padding:10px;" onclick="window.print()">🖨️ Print Symmetry Certificate</button>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button class="action-btn" style="padding:10px;" onclick="QuizEngine.restartLevel()">Play Again</button>
+                    <button class="action-btn btn-prime" style="padding:10px;" onclick="QuizEngine.backToMenu()">Main Menu</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="printable-certificate">
+            <h1 style="font-size: 2.2rem; color: #6d28d9;">CERTIFICATE OF SYMMETRY MASTERY</h1>
+            <p style="font-size: 1.1rem; margin: 12px 0; font-style: italic;">Awarded for excellence in identifying mirror halves, folds, and spatial alignment balance.</p>
+            <h2 style="font-size: 1.6rem; margin-bottom: 8px; color: #8b5cf6;">Geometry Balance Expert</h2>
+            <p style="font-size: 1rem;">Tested Level: <strong id="cert-tier" style="text-transform: capitalize;"></strong></p>
+            <p style="font-size: 1.3rem; color: #6d28d9; font-weight: bold; margin: 16px 0;">Performance Matrix: <span id="cert-score"></span> Correct Answers (<span id="cert-pct"></span> Accuracy Score)</p>
+            <div style="margin-top: 50px; display: flex; justify-content: space-around; font-size: 0.9rem;">
+                <div style="border-top: 2px dashed #6b7280; width: 180px; padding-top: 4px;">Date Evaluated</div>
+                <div style="border-top: 2px dashed #6b7280; width: 180px; padding-top: 4px;">Instructor Signature</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /*********************************************************
+         * WEB AUDIO FX ENGINE
+         *********************************************************/
+        const SoundFX = {
+            ctx: null,
+            init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+            beep(f, type, len, vol) {
+                try {
+                    this.init();
+                    let osc = this.ctx.createOscillator();
+                    let gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(f, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + len);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + len);
+                } catch(err){}
+            },
+            click() { this.beep(550, 'sine', 0.04, 0.03); },
+            correct() {
+                this.beep(523.25, 'sine', 0.08, 0.04);
+                setTimeout(() => this.beep(659.25, 'sine', 0.08, 0.04), 50);
+                setTimeout(() => this.beep(783.99, 'sine', 0.16, 0.04), 100);
+            },
+            wrong() {
+                this.beep(160, 'sawtooth', 0.12, 0.05);
+                setTimeout(() => this.beep(120, 'sawtooth', 0.22, 0.05), 80);
+            },
+            victory() {
+                let scale = [293.7, 349.2, 440.0, 587.3, 698.5, 880.0];
+                scale.forEach((f, idx) => setTimeout(() => this.beep(f, 'sine', 0.2, 0.03), idx * 60));
+            }
+        };
+
+        /*********************************************************
+         * VECTOR DRAWING ENGINE FOR GEOMETRIC SYMMETRY
+         *********************************************************/
+        const SVGSymmetryDrawer = {
+            draw(type, p = {}) {
+                let s = `<svg width="200" height="150" viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:0 auto;">`;
+                const shapeFill = "var(--shape-fill)";
+                const stroke = "var(--stroke-color)";
+                const symLine = "var(--symmetry-line)";
+
+                if (type === 'butterfly') {
+                    s += `
+                        <path d="M 100 75 C 60 20, 20 40, 40 75 C 20 110, 60 130, 100 75 Z" fill="${p.leftColor || shapeFill}" stroke="${stroke}" stroke-width="2"/>
+                        <path d="M 100 75 C 140 20, 180 40, 160 75 C 180 110, 140 130, 100 75 Z" fill="${p.rightColor || shapeFill}" stroke="${stroke}" stroke-width="2"/>
+                        <rect x="97" y="35" width="6" height="80" rx="3" fill="#1e293b"/>
+                    `;
+                }
+                else if (type === 'heart') {
+                    s += `<path d="M 100 50 C 100 20, 40 20, 40 65 C 40 100, 100 130, 100 135 C 100 130, 160 100, 160 65 C 160 20, 100 20, 100 50 Z" fill="${shapeFill}" stroke="${stroke}" stroke-width="2"/>`;
+                }
+                else if (type === 'leaf') {
+                    s += `<path d="M 100 25 C 40 65, 60 115, 100 135 C 140 115, 160 65, 100 25 Z" fill="#4caf50" stroke="${stroke}" stroke-width="2"/>`;
+                    s += `<line x1="100" y1="25" x2="100" y2="135" stroke="#2e7d32" stroke-width="2"/>`;
+                }
+                else if (type === 'triangle') {
+                    // Equilateral or Scalene based on params
+                    let x3 = p.scalene ? 160 : 150;
+                    s += `<polygon points="100,30 50,120 ${x3},120" fill="${shapeFill}" stroke="${stroke}" stroke-width="2"/>`;
+                }
+                else if (type === 'letter') {
+                    s += `<text x="100" y="95" font-family="'Segoe UI',Arial" font-size="75" font-weight="900" text-anchor="middle" fill="#1e293b">${p.char || 'A'}</text>`;
+                }
+                else if (type === 'mirror_quest') {
+                    // An object block on the left and its mirror contender configuration
+                    s += `
+                        <path d="M 40 50 L 80 50 L 60 90 Z" fill="${shapeFill}" stroke="${stroke}" stroke-width="2"/>
+                        <line x1="100" y1="20" x2="100" y2="130" stroke="#64748b" stroke-width="2" stroke-dasharray="4"/>
+                        <path d="${p.flipped ? 'M 160 50 L 120 50 L 140 90 Z' : 'M 120 50 L 160 50 L 140 90 Z'}" fill="var(--shape-match)" stroke="${stroke}" stroke-width="2"/>
+                    `;
+                }
+                else if (type === 'half_shape') {
+                    s += `
+                        <path d="M 100 30 L 50 50 L 60 95 L 100 115" fill="none" stroke="${stroke}" stroke-width="3"/>
+                        <text x="55" y="140" font-size="11" fill="#64748b">Complete the half</text>
+                    `;
+                }
+
+                // Append requested dashed symmetry line visualization indicator overlays
+                if (p.hasLine) {
+                    if (p.lineDir === 'vertical') {
+                        s += `<line x1="100" y1="10" x2="100" y2="140" stroke="${symLine}" stroke-width="2.5" stroke-dasharray="6 4" />`;
+                    } else if (p.lineDir === 'horizontal') {
+                        s += `<line x1="20" y1="75" x2="180" y2="75" stroke="${symLine}" stroke-width="2.5" stroke-dasharray="6 4" />`;
+                    } else if (p.lineDir === 'wrong_diagonal') {
+                        s += `<line x1="30" y1="30" x2="150" y2="130" stroke="${symLine}" stroke-width="2.5" stroke-dasharray="6 4" />`;
+                    }
+                }
+
+                s += `</svg>`;
+                return s;
+            }
+        };
+
+        /*********************************************************
+         * EXHAUSTIVE SYSTEM DATASET MATRIX: 150 ALIGNED PROBLEMS
+         *********************************************************/
+        const SymmetryQuestionMatrix = {
+            easy: [
+                { q: "What does it mean if an object or picture is 'symmetrical'?", o: ["Both sides look matching and identical when split", "One side is much larger than the other side", "The object is colored bright blue", "The object has no straight edges"], a: "Both sides look matching and identical when split", e: "Symmetry means that a shape is perfectly balanced and look matching on both halves." },
+                { q: "What is the folding line that cuts a balanced shape into two equal matching parts called?", o: ["Line of symmetry", "Perimeter borderline", "Corner vertex line", "Radius marker link"], a: "Line of symmetry", e: "The folding guide separating a shape into perfect matching twins is the Line of Symmetry." },
+                { type: 'butterfly', q: "Look closely at this natural butterfly model. Is its design pattern symmetrical?", o: ["Yes, it matches perfectly on both sides", "No, it is entirely uneven"], a: "Yes, it matches perfectly on both sides", e: "A normal butterfly has mirroring left and right wing profiles." },
+                { type: 'heart', hasLine: true, lineDir: 'vertical', q: "Does this dashed line split the heart shape into two identical matching halves?", o: ["Yes, it is a valid line of symmetry", "No, the sides do not match"], a: "Yes, it is a valid line of symmetry", e: "A vertical line down the direct middle splits a heart into mirroring halves." },
+                { type: 'heart', hasLine: true, lineDir: 'horizontal', q: "Does this horizontal line cut the heart into a true line of symmetry?", o: ["No, the top half is different from the bottom half", "Yes, they match perfectly"], a: "No, the top half is different from the bottom half", e: "The top arches of a heart are shaped differently from the pointy bottom tip, so a horizontal line does not work." },
+                { type: 'leaf', q: "Look at this leaf. If you fold it vertically along its central stem, will both sides match?", o: ["Yes, it is symmetrical", "No, it is non-symmetrical"], a: "Yes, it is symmetrical", e: "Folding a typical leaf along its center stem yields two matching halves." },
+                { q: "Which of these objects found in nature is famous for having natural matching symmetry?", o: ["A starfish", "A crooked tree branch", "A jagged field rock", "A cloud in the sky"], a: "A starfish", e: "A starfish has beautiful balanced arm structures that radiating outwards equally." },
+                { q: "If you place a flat cutout shape on a table and cannot fold it anywhere to make matching halves, the shape is:", o: ["Non-symmetrical", "Symmetrical", "Perfect", "A square"], a: "Non-symmetrical", e: "Shapes that cannot be split into matching duplicate parts are non-symmetrical." },
+                { q: "How many lines of symmetry does a regular human face generally have?", o: ["1 vertical line", "2 lines", "4 lines", "No lines at all"], a: "1 vertical line", e: "A straight line down from the center of the forehead to the chin separates matching eyes, ears, and nostrils." },
+                { q: "Which of these basic items is NOT symmetrical?", o: ["A hand tool like an unaligned key", "An unused round dinner plate", "A clean square sticky note", "A straight plastic ruler"], a: "A hand tool like an unaligned key", e: "Most keys have irregular cut notches on one edge, making them asymmetrical." },
+                { type: 'triangle', scalene: false, hasLine: true, lineDir: 'vertical', q: "Look at this triangle. Does this vertical line down the apex form a line of symmetry?", o: ["Yes", "No"], a: "Yes", e: "An isosceles or equilateral triangle split straight down the middle yields matching mirror reflections." },
+                { type: 'triangle', scalene: true, hasLine: true, lineDir: 'vertical', q: "Look at this scalene triangle with all unequal side lengths. Is it symmetrical?", o: ["No, none of the sides align properly", "Yes"], a: "No, none of the sides align properly", e: "A scalene triangle has entirely different side dimensions, giving it zero lines of symmetry." },
+                { q: "A pair of reading glasses has how many lines of symmetry?", o: ["1 vertical line across the nose bridge", "5 lines", "0 lines", "3 lines"], a: "1 vertical line across the nose bridge", e: "Splitting the glasses right through the center nose bridge matches the left lens setup perfectly to the right lens setup." },
+                { q: "If you fold a piece of paper in half, cut out a design, and open it back up, the finished cutout shape will always be:", o: ["Symmetrical", "Asymmetrical", "A triangle", "A straight line"], a: "Symmetrical", e: "The crease line acts as a natural central mirror, producing an identical matching image on both sides." },
+                { type: 'letter', char: 'A', q: "Does the capital letter 'A' have symmetry?", o: ["Yes, 1 vertical line down the middle", "Yes, 1 horizontal line", "No, it has none", "Yes, 4 lines"], a: "Yes, 1 vertical line down the middle", e: "A line splitting the point of the 'A' straight down creates identical left and right sides." },
+                { type: 'letter', char: 'M', q: "Does the uppercase letter 'M' possess symmetry?", o: ["Yes, 1 vertical line splitting the middle dip", "No, it is totally unbalanced", "Yes, a horizontal line across its center", "Yes, 3 lines"], a: "Yes, 1 vertical line splitting the middle dip", e: "Letter 'M' has matching left and right halves when split vertically down the middle." },
+                { q: "Which shape can be folded across a line to perfectly match its opposite side?", o: ["A balanced heart shape", "A totally random paint splatter", "A jagged lightning bolt", "A flight of stairs step profile"], a: "A balanced heart shape", e: "A balanced heart has matching left and right halves." },
+                { q: "True or False: A simple circle has only 1 line of symmetry.", o: ["False, it can be folded in infinitely many ways", "True, just 1 straight fold line works"], a: "False, it can be folded in infinitely many ways", e: "Any straight line passing directly through the absolute center point of a perfect circle divides it into matching halves." },
+                { q: "Which everyday outdoor item is generally symmetrical?", o: ["A simple street stop sign", "A twisted tree branch", "A natural garden stone", "A winding river bank"], a: "A simple street stop sign", e: "An octagon stop sign is standard and highly symmetrical across multiple fold angles." },
+                { q: "A butterfly has matching wing colors and shapes on both sides. This makes the butterfly an example of:", o: ["Symmetry in nature", "A straight rectangle", "Rotational asymmetry", "An uneven figure"], a: "Symmetry in nature", e: "Butterflies are classic textbook examples of symmetry existing naturally in biology." },
+                { q: "How many halves do you get when you cut a shape through its line of symmetry?", o: ["2 identical halves", "4 unequal segments", "3 parts", "No pieces"], a: "2 identical halves", e: "The line of symmetry divides a figure into exactly two matching halves." },
+                { type: 'letter', char: 'T', q: "Does the letter 'T' have a vertical or horizontal line of symmetry?", o: ["A vertical line down the middle stem", "A horizontal line along the top bar", "It has no symmetry lines", "It has two lines"], a: "A vertical line down the middle stem", e: "A vertical line down the center of the 'T' splits it into two mirroring sides." },
+                { q: "If we draw half a symmetrical flower and place a mirror on the line of symmetry, what will we see?", o: ["The whole complete flower", "Nothing at all", "A completely different shape", "Only the same half"], a: "The whole complete flower", e: "The mirror reflects the existing half to create the missing side, making the flower look whole." },
+                { q: "Which fruit cut straight down the center cross-section shows a beautiful symmetrical star pattern?", o: ["An apple", "A banana", "A whole pear", "A pineapple exterior"], a: "An apple", e: "Cutting an apple horizontally reveals a star seed pattern with five symmetrical points." },
+                { q: "Which clothing item is designed symmetrically so it can fit your body standardly?", o: ["A pair of jeans", "A single left shoe", "An asymmetrical shoulder dress", "A watch band buckle"], a: "A pair of jeans", e: "Jeans are designed with two matching pant leg paths to comfortably mirror your left and right legs." },
+                { type: 'letter', char: 'V', q: "Does the letter 'V' have a line of symmetry?", o: ["Yes, 1 vertical line", "Yes, 1 horizontal line", "No", "Yes, 3 lines"], a: "Yes, 1 vertical line", e: "Splitting 'V' right down the middle point yields mirroring left and right arms." },
+                { q: "If a shape is not symmetrical, it is called ________.", o: ["Asymmetrical", "Symmetrical", "A polygon", "Balanced"], a: "Asymmetrical", e: "The prefix 'a-' means without, so asymmetrical means without symmetry." },
+                { q: "Which of these classroom objects is generally symmetrical?", o: ["A clean chalkboard eraser", "A crumpled piece of scrap paper", "A half-chewed pencil stub", "A backpack with side pockets on only one side"], a: "A clean chalkboard eraser", e: "A standard rectangle block eraser matches perfectly when sliced down the middle." },
+                { type: 'letter', char: 'Y', q: "Does the capital letter 'Y' have symmetry?", o: ["Yes, a vertical line right down the stem", "No", "Yes, a horizontal line", "Yes, two diagonal lines"], a: "Yes, a vertical line right down the stem", e: "The left and right sides of 'Y' branch off equally from the vertical stem." },
+                { q: "What tool can help you see the hidden matching side of a half-drawn symmetrical shape?", o: ["A mirror", "A long ruler", "A thermometer", "A clock"], a: "A mirror", e: "A mirror reflects a half-image to complete the symmetrical shape." },
+                { q: "Which shape has a vertical line of symmetry: an arrow pointing up or a flag waving right?", o: ["An arrow pointing up", "The flag waving right", "Both of them", "Neither of them"], a: "An arrow pointing up", e: "An upward-pointing arrow can be split vertically right through its center shaft." },
+                { q: "True or False: A simple ice cream cone with a single round scoop on top is usually symmetrical.", o: ["True", "False"], a: "True", e: "The round scoop and the triangular cone match left-to-right when split vertically." },
+                { type: 'letter', char: 'W', q: "Identify the symmetry line configuration for the capital letter 'W'.", o: ["1 vertical line down the absolute center", "1 horizontal line", "0 lines", "4 lines"], a: "1 vertical line down the absolute center", e: "A vertical split down the middle peak of 'W' creates two identical matching sides." },
+                { q: "Which of these geometric shapes has at least one line of symmetry?", o: ["An equilateral triangle", "A completely skewed polygon", "A jagged rock contour", "A wavy line doodle"], a: "An equilateral triangle", e: "An equilateral triangle has three separate lines of symmetry." },
+                { q: "If you look into a mirror, your reflection is an example of:", o: ["Symmetry", "A completely different person", "An unaligned shadow", "A rotating circle"], a: "Symmetry", e: "Your reflection mirrors your features, creating a symmetrical view across the surface of the glass." },
+                { q: "Which item is built symmetrically so it can fly smoothly through the air?", o: ["A toy kite", "A jagged throwing stone", "A bent stick", "A crumpled piece of paper"], a: "A toy kite", e: "Kites require balanced, symmetrical wings on both sides of their frame to catch the wind evenly." },
+                { q: "If you fold a symmetrical picture along its line of symmetry, what happens to the two halves?", o: ["They overlap perfectly with no edges sticking out", "They do not line up at all", "One half completely disappears", "They turn into a circle"], a: "They overlap perfectly with no edges sticking out", e: "Because they are identical twins in space, the two halves cover each other perfectly when folded." },
+                { type: 'letter', char: 'U', q: "Does the capital letter 'U' have a line of symmetry?", o: ["Yes, 1 vertical line", "Yes, 1 horizontal line", "No", "Yes, 2 lines"], a: "Yes, 1 vertical line", e: "A vertical fold through the center curve of 'U' lines up its two vertical walls." },
+                { q: "Which of these kitchen items is typically built symmetrically?", o: ["A round soup bowl", "An ornate single-handle tea cup", "A frying pan with its long handle on one side", "A randomly broken ceramic plate"], a: "A round soup bowl", e: "A round soup bowl is circular and uniform, giving it multiple lines of symmetry." },
+                { q: "How many lines of symmetry does a plain, unpatterned winter mitten have?", o: ["0 lines, because the thumb sticks out on one side", "1 vertical line", "2 lines", "4 lines"], a: "0 lines, because the thumb sticks out on one side", e: "Because the thumb is on only one side, a mitten cannot be folded to match perfectly." },
+                { type: 'butterfly', leftColor: '#ff0000', rightColor: '#0000ff', q: "If a butterfly has a bright red wing on the left and a bright blue wing on the right, is its color pattern symmetrical?", o: ["No, the colors must match on both sides to be fully symmetrical", "Yes, because the shapes are the same"], a: "No, the colors must match on both sides to be fully symmetrical", e: "Symmetry requires both the shape AND the pattern/color details to match exactly on both sides." },
+                { q: "Which regular structure is built symmetrically to stay strong and balanced?", o: ["A classic house with a centered door and roof apex", "A leaning pile of rocks", "A twisted tree root", "An asymmetrical shoe box lid"], a: "A classic house with a centered door and roof apex", e: "Symmetrical buildings distribute weight evenly, making them stable and strong." },
+                { q: "What shape is created if you draw a half-circle on a fold line, cut it out, and open it?", o: ["A full circle", "A square", "A triangle", "A crescent moon"], a: "A full circle", e: "Reflecting a half-circle across its straight diameter fold forms a complete circle." },
+                { q: "Does a standard desktop computer monitor display screen usually have symmetry?", o: ["Yes, both vertical and horizontal symmetry lines", "No, it is totally skewed", "Only 1 diagonal line", "It has zero lines"], a: "Yes, both vertical and horizontal symmetry lines", e: "A flat rectangular screen can be split right down the center or across the middle horizontally." },
+                { type: 'letter', char: 'O', q: "How many lines of symmetry does the perfectly round letter 'O' have?", o: ["Many lines through the center", "Only 1 line", "Only 2 lines", "Zero lines"], a: "Many lines through the center", e: "A perfectly round letter 'O' acts like a circle, allowing lines of symmetry at any angle through its center." },
+                { q: "Which musical instrument is built symmetrically?", o: ["An acoustic guitar body", "A grand piano shape", "A single-handed saxophone tube", "A modern French horn assembly"], a: "An acoustic guitar body", e: "The body of a standard acoustic guitar curves outward equally on the left and right sides." },
+                { q: "If you draw a line down a picture of a tree trunk and find that one side has branches while the other side has none, the tree picture is:", o: ["Asymmetrical", "Symmetrical", "A perfect square", "A reflection"], a: "Asymmetrical", e: "Since the branches do not match across the line, it lacks symmetry." },
+                { type: 'letter', char: 'H', q: "Does the capital letter 'H' have a horizontal line of symmetry?", o: ["Yes, cutting through the middle crossbar", "No, only a vertical line works"], a: "Yes, cutting through the middle crossbar", e: "An 'H' can be folded down the middle crossbar, matching the top half to the bottom half." },
+                { q: "Which shape has no lines of symmetry whatsoever?", o: ["A completely random scribble shape", "A perfect square block", "A clean equilateral triangle", "An oval egg profile"], a: "A completely random scribble shape", e: "Scribbles lack any geometric pattern, meaning they have no lines of symmetry." },
+                { q: "Why do emergency ambulances paint the word 'AMBULANCE' backward on the front of their trucks?", o: ["So drivers ahead see it correctly in their flat rearview mirrors", "By accident", "To make it look like a puzzle", "Because letters have no symmetry"], a: "So drivers ahead see it correctly in their flat rearview mirrors", e: "Mirrors reflect images horizontally. Painting the letters backward allows them to appear normal in a mirror reflection." }
+            ],
+            medium: [
+                { q: "How many lines of symmetry does a perfect square shape have?", o: ["4 lines", "2 lines", "3 lines", "8 lines"], a: "4 lines", e: "A square has 4 lines of symmetry: 1 vertical, 1 horizontal, and 2 corner-to-corner diagonal lines." },
+                { q: "How many lines of symmetry does a standard non-square rectangle have?", o: ["2 lines", "4 lines", "1 line", "0 lines"], a: "2 lines", e: "A rectangle can only be folded in half vertically or horizontally. Its diagonals do not line up its corners perfectly." },
+                { type: 'letter', char: 'X', q: "How many lines of symmetry does a symmetrical capital letter 'X' have?", o: ["2 lines", "1 line", "4 lines", "0 lines"], a: "2 lines", e: "The letter 'X' can be divided equally with a vertical line down the center and a horizontal line across the middle." },
+                { type: 'mirror_quest', flipped: true, q: "Look at the diagram. Does the shape on the right show a correct mirror reflection across the center line?", o: ["Yes, it is a correct mirror image", "No, it is facing the wrong way"], a: "Yes, it is a correct mirror image", e: "A proper mirror reflection flips the orientation of the shape horizontally across the axis line." },
+                { type: 'mirror_quest', flipped: false, q: "Look at this test diagram. The right side is a direct slide copy instead of a flipped reflection. Is this a correct mirror image?", o: ["No, it must be flipped around to mirror the left side", "Yes, it looks correct"], a: "No, it must be flipped around to mirror the left side", e: "A mirror image must reflect and face the opposite direction, not just slide over as an exact copy." },
+                { type: 'half_shape', q: "If you mirror this half-drawn shape across the vertical line, what full shape will you create?", o: ["A symmetric home or arrow shape", "A perfect circle", "A long rectangle", "A straight line"], a: "A symmetric home or arrow shape", e: "Reflecting this profile outward across the center axis creates a five-sided pentagon house or arrow." },
+                { q: "How many lines of symmetry does an isosceles triangle have (a triangle with 2 equal sides)?", o: ["1 line", "3 lines", "2 lines", "0 lines"], a: "1 line", e: "An isosceles triangle has exactly 1 line of symmetry cutting down from its top corner straight through the center base." },
+                { q: "Which uppercase letter has a horizontal line of symmetry but NO vertical line of symmetry?", o: ["The letter 'B'", "The letter 'A'", "The letter 'M'", "The letter 'X'"], a: "The letter 'B'", e: "Letter 'B' can be cut across the middle horizontally, but its left flat spine does not match its right rounded loops." },
+                { q: "How many lines of symmetry does a regular pentagon (a 5-sided shape with all equal sides) have?", o: ["5 lines", "1 line", "10 lines", "3 lines"], a: "5 lines", e: "Every regular polygon has a number of lines of symmetry equal to its total number of sides and corners. A regular pentagon has 5." },
+                { type: 'letter', char: 'I', q: "How many lines of symmetry does a standard block capital letter 'I' have?", o: ["2 lines", "1 line", "4 lines", "0 lines"], a: "2 lines", e: "A block letter 'I' can be cut evenly down the middle vertically, or across the middle spine horizontally." },
+                { q: "If you fold a clean sheet of rectangular paper diagonally corner-to-corner, do the edges match perfectly?", o: ["No, the corners stick out, so diagonals are not symmetry lines for rectangles", "Yes, they match perfectly"], a: "No, the corners stick out, so diagonals are not symmetry lines for rectangles", e: "A rectangle folded diagonally does not align its edges perfectly, meaning its diagonals are not lines of symmetry." },
+                { q: "Which letter looks exactly the same when held up in front of a flat mirror?", o: ["The letter 'H'", "The letter 'F'", "The letter 'E'", "The letter 'G'"], a: "The letter 'H'", e: "Because 'H' is vertically symmetrical, its left-to-right mirror flip looks exactly the same as the original letter." },
+                { q: "How many lines of symmetry does a kite shape typically have?", o: ["1 line running vertically down the long spine", "2 lines", "4 lines", "0 lines"], a: "1 line running vertically down the long spine", e: "A kite has 1 line of symmetry that runs vertically down its center, matching its left and right wings." },
+                { q: "Which of these capital letters has zero lines of symmetry?", o: ["The letter 'Z'", "The letter 'O'", "The letter 'E'", "The letter 'Y'"], a: "The letter 'Z'", e: "Although 'Z' looks balanced, you cannot fold it along any straight line to make its edges match up perfectly." },
+                { q: "A regular shape has 6 sides that are all the same length. How many lines of symmetry does it have?", o: ["6 lines", "3 lines", "12 lines", "1 line"], a: "6 lines", e: "A regular hexagon has exactly 6 lines of symmetry (3 passing through opposite corners and 3 through opposite flat edges)." },
+                { q: "If a geometric design has 3 matching arms arranged around a central point, what kind of symmetry is it showing?", o: ["Rotational symmetry", "Vertical fold line symmetry", "Horizontal reflection symmetry", "No symmetry"], a: "Rotational symmetry", e: "Rotational symmetry occurs when a shape can be spun around its center point to match its original position before making a full turn." },
+                { q: "Which letter can be cut into matching top and bottom halves with a single horizontal line?", o: ["The letter 'C'", "The letter 'M'", "The letter 'A'", "The letter 'V'"], a: "The letter 'C'", e: "A horizontal slice through the center of the letter 'C' splits its upper loop away from its lower loop evenly." },
+                { q: "How many lines of symmetry can you find in a scalene triangle?", o: ["0 lines", "1 line", "3 lines", "2 lines"], a: "0 lines", e: "Because all three sides have entirely different lengths, a scalene triangle cannot be folded to match anywhere." },
+                { q: "If you take a square paper and fold it in half horizontally, then fold it in half vertically, what shapes do you get?", o: ["Smaller squares or rectangles with intersecting fold creases", "Circles", "Triangles", "Ovals"], a: "Smaller squares or rectangles with intersecting fold creases", e: "Folding a square twice along its lines of symmetry creates four smaller quadrants." },
+                { q: "Which of these words reads exactly the same when viewed in a mirror reflection?", o: ["WOW", "CAT", "BOOK", "HOME"], a: "WOW", e: "Each letter in 'WOW' has its own vertical line of symmetry, so flipping the word horizontally keeps it looking exactly the same." },
+                { q: "How many lines of symmetry does a regular octagon (an 8-sided stop sign shape) have?", o: ["8 lines", "4 lines", "16 lines", "2 lines"], a: "8 lines", e: "A regular 8-sided polygon features exactly 8 lines of symmetry." },
+                { q: "Which capital letter has BOTH a vertical line and a horizontal line of symmetry?", o: ["The letter 'H'", "The letter 'A'", "The letter 'B'", "The letter 'M'"], a: "The letter 'H'", e: "An 'H' can be split symmetrically down the center or across its middle crossbar." },
+                { q: "If you fold a shape along its single line of symmetry, you create two shapes that are ________ to each other.", o: ["Congruent (identical in size and shape)", "Completely different sizes", "Unrelated", "Opposite weights"], a: "Congruent (identical in size and shape)", e: "The two halves are congruent, meaning they have the exact same measurements and dimensions." },
+                { q: "How many lines of symmetry does an equilateral triangle have?", o: ["3 lines", "1 line", "2 lines", "0 lines"], a: "3 lines", e: "An equilateral triangle has 3 matching sides, allowing a line of symmetry through each of its 3 corners." },
+                { q: "Which of these letters has exactly 1 vertical line of symmetry?", o: ["The letter 'M'", "The letter 'E'", "The letter 'H'", "The letter 'N'"], a: "The letter 'M'", e: "Letter 'M' can be split evenly with a vertical line down the center, while 'E' has a horizontal line and 'H' has two lines." },
+                { q: "A parallelogram is a tilted four-sided shape with opposite parallel sides. How many lines of symmetry does a standard tilted parallelogram have?", o: ["0 lines", "2 lines", "4 lines", "1 line"], a: "0 lines", e: "A tilted parallelogram cannot be folded anywhere to make its corners match up perfectly, giving it zero lines of symmetry." },
+                { q: "Which geometry option describes a line of symmetry?", o: ["A mirror line that acts as a balanced divider crease", "The outer perimeter outline length", "The center corner edge point", "The total surface space measured inside"], a: "A mirror line that acts as a balanced divider crease", e: "A line of symmetry functions as a balance line dividing a shape into two mirroring halves." },
+                { q: "How many lines of symmetry does a common isosceles trapezoid have (a four-sided shape with two matching slanted sides)?", o: ["1 vertical line through the center", "2 lines", "4 lines", "0 lines"], a: "1 vertical line through the center", e: "An isosceles trapezoid can be folded in half vertically down the center to match its slanted outer legs." },
+                { q: "Which capital letter exhibits symmetry when cut horizontally across the center?", o: ["The letter 'E'", "The letter 'A'", "The letter 'W'", "The letter 'T'"], a: "The letter 'E'", e: "A horizontal fold through the center bar of 'E' matches its top half to its bottom half." },
+                { q: "If you draw a shape and its mirror image across an axis, the distance from any point on the original shape to the mirror line is:", o: ["The exact same distance as the reflection point to the mirror line", "Twice as far away", "Completely random", "Closer by half"], a: "The exact same distance as the reflection point to the mirror line", e: "A mirror reflection preserves distances, meaning both halves sit at the same distance from the mirror line." },
+                { q: "How many lines of symmetry does a standard oval egg shape have?", o: ["2 lines", "1 line", "4 lines", "Infinitely many"], a: "2 lines", e: "An oval has 2 lines of symmetry: 1 vertical line down the center and 1 horizontal line across the wide middle." },
+                { q: "Which of these single letters has exactly one horizontal line of symmetry?", o: ["The letter 'K'", "The letter 'V'", "The letter 'A'", "The letter 'Y'"], a: "The letter 'K'", e: "The letter 'K' can be split horizontally across its middle vertex, while 'V', 'A', and 'Y' have vertical lines of symmetry." },
+                { q: "If a geometric tile pattern matches its original shape 4 times when spun in a full circle, it has rotational symmetry of order:", o: ["4", "1", "2", "8"], a: "4", e: "The number of times a shape matches itself during a full 360-degree rotation determines its order of rotational symmetry." },
+                { q: "How many lines of symmetry does an open, unzipped jacket have?", o: ["0 lines, because the zipper slider sits on only one side", "1 vertical line", "2 lines", "1 horizontal line"], a: "0 lines, because the zipper slider sits on only one side", e: "The zipper pull tab sits on one side of the jacket, making the two halves asymmetrical." },
+                { q: "Which quadrilateral has the highest number of lines of symmetry?", o: ["A square (4 lines)", "A rectangle (2 lines)", "A rhombus (2 lines)", "A parallelogram (0 lines)"], a: "A square (4 lines)", e: "A square has 4 lines of symmetry, which is more than any other four-sided shape." },
+                { q: "What is the order of rotational symmetry for a standard 3-blade ceiling fan?", o: ["Order 3", "Order 1", "Order 6", "Order 2"], a: "Order 3", e: "A 3-blade fan looks exactly the same 3 times during one full spin turn." },
+                { q: "Which of these capital letters contains zero lines of fold symmetry but CAN be rotated to look the same?", o: ["The letter 'N'", "The letter 'A'", "The letter 'E'", "The letter 'O'"], a: "The letter 'N'", e: "The letter 'N' has zero lines of symmetry, but spinning it halfway around (180 degrees) makes it look normal again." },
+                { q: "How many lines of symmetry can be drawn through a regular pentagon?", o: ["5 lines", "1 line", "4 lines", "0 lines"], a: "5 lines", e: "A regular pentagon has 5 lines of symmetry, each running from a corner straight to the middle of the opposite flat edge." },
+                { q: "Which letter looks like a different letter when flipped upside down over a horizontal line?", o: ["The letter 'M' becomes a 'W'", "The letter 'X' stays an 'X'", "The letter 'H' stays an 'H'", "The letter 'O' stays an 'O'"], a: "The letter 'M' becomes a 'W'", e: "Flipping the letter 'M' upside down over a horizontal line turns it into a 'W'." },
+                { q: "A rhombus is a diamond shape with 4 equal sides. How many lines of symmetry does a standard rhombus have?", o: ["2 lines through opposite corners", "4 lines", "1 line", "0 lines"], a: "2 lines through opposite corners", e: "A rhombus can be folded in half along its 2 corner-to-corner diagonal paths." },
+                { q: "Which punctuation mark is usually symmetrical?", o: ["A dash line minus sign (-)", "A question mark (?)", "A comma point (,)", "A semi-colon (;)" ], a: "A dash line minus sign (-)", e: "A simple flat dash line has both vertical and horizontal lines of symmetry." },
+                { q: "If you have a half-drawn drawing of a face on a grid, how do you complete it symmetrically?", o: ["Count the boxes from the center line and duplicate every point in reverse", "Draw random features on the other side", "Make the other side twice as large", "Trace the exact same side facing the same direction"], a: "Count the boxes from the center line and duplicate every point in reverse", e: "Counting grid boxes from the center line helps you draw a perfect mirror image on the other side." },
+                { q: "How many lines of symmetry does a capital letter 'U' have?", o: ["1 vertical line", "2 lines", "1 horizontal line", "0 lines"], a: "1 vertical line", e: "A vertical line down the center splits the letter 'U' into two matching halves." },
+                { q: "Which of these shapes has the least number of lines of symmetry?", o: ["A scalene triangle (0 lines)", "A rectangle (2 lines)", "A square (4 lines)", "An equilateral triangle (3 lines)"], a: "A scalene triangle (0 lines)", e: "A scalene triangle has 0 lines of symmetry, which is fewer than the others." },
+                { q: "True or False: A standard uppercase letter 'L' has a diagonal line of symmetry.", o: ["False", "True"], a: "False", e: "The letter 'L' cannot be folded anywhere to make its two arms match up perfectly." },
+                { q: "What type of symmetry is shown by a balanced set of scales holding equal weights?", o: ["Bilateral vertical symmetry", "Rotational asymmetry", "Diagonal alignment", "No symmetry lines"], a: "Bilateral vertical symmetry", e: "A balanced scale features matching left and right sides across its center vertical support column." },
+                { q: "How many lines of symmetry does a lowercase letter 'l' written as a straight line have?", o: ["2 lines", "1 line", "0 lines", "4 lines"], a: "2 lines", e: "A single straight line segment can be split down its center vertically or across its middle horizontally." },
+                { q: "If you rotate a shape by a full 360 degrees, how many times will it look like its original self?", o: ["At least 1 time", "Never", "Only if it is a square", "Always 4 times"], a: "At least 1 time", e: "Every shape matches its original position at least once at the end of a full 360-degree turn." },
+                { q: "Which of these transport symbols is universally drawn symmetrically?", o: ["A standard airplane icon", "A bicycle profile viewed from the side", "A car seen from the side", "A cargo ship side view"], a: "A standard airplane icon", e: "An airplane icon viewed from above is drawn symmetrically to show its matching left and right wings." },
+                { q: "How many lines of symmetry does a regular 7-sided heptagon have?", o: ["7 lines", "1 line", "14 lines", "0 lines"], a: "7 lines", e: "A regular polygon has a number of lines of symmetry equal to its total number of sides. A regular heptagon has 7." }
+            ],
+            hard: [
+                { q: "How many lines of symmetry does a perfect, unpatterned mathematical circle have?", o: ["An infinite number of lines", "8 lines", "360 lines", "4 lines"], a: "An infinite number of lines", e: "Any straight line passing through the absolute center point of a perfect circle is a line of symmetry." },
+                { q: "How many lines of symmetry does a regular hexagon have?", o: ["6 lines", "3 lines", "12 lines", "4 lines"], a: "6 lines", e: "A regular hexagon has 6 lines of symmetry: 3 connecting opposite corners and 3 connecting opposite flat sides." },
+                { q: "Which of these shapes has the most lines of symmetry?", o: ["A circle", "A regular octagon", "A square", "An equilateral triangle"], a: "A circle", e: "A circle has an infinite number of lines of symmetry, which is more than any polygon." },
+                { type: 'letter', char: 'S', q: "Does the capital letter 'S' have any lines of fold symmetry?", o: ["No lines of fold symmetry, but it has rotational symmetry", "Yes, 1 horizontal line", "Yes, 1 vertical line", "Yes, 2 lines"], a: "No lines of fold symmetry, but it has rotational symmetry", e: "The letter 'S' cannot be folded to match its edges, but spinning it halfway around (180 degrees) makes it look identical." },
+                { q: "What is the order of rotational symmetry for a regular pentagon?", o: ["Order 5", "Order 1", "Order 10", "Order 2.5"], a: "Order 5", e: "A regular pentagon can be rotated 5 times within a full turn to match its original position." },
+                { q: "If a shape looks identical 2 times during a single full 360-degree spin, we say it has:", o: ["Rotational symmetry of order 2", "Line symmetry of order 2", "No symmetry features", "Infinite rotational alignment"], a: "Rotational symmetry of order 2", e: "The order of rotational symmetry matches the number of times a shape aligns with itself during a full spin." },
+                { type: 'letter', char: 'Z', q: "What type of symmetry does the uppercase letter 'Z' have?", o: ["Rotational symmetry only", "Fold line symmetry only", "Both fold line and rotational symmetry", "No symmetry at all"], a: "Rotational symmetry only", e: "Letter 'Z' has zero fold lines, but spinning it 180 degrees brings it back into perfect alignment." },
+                { q: "How many lines of symmetry does a regular 12-sided dodecagon have?", o: ["12 lines", "6 lines", "24 lines", "1 line"], a: "12 lines", e: "A regular polygon has a number of lines of symmetry equal to its total number of sides. A regular dodecagon has 12." },
+                { q: "Which triangle has rotational symmetry of order 3 around its center point?", o: ["An equilateral triangle", "An isosceles triangle", "A right-angled triangle", "A scalene triangle"], a: "An equilateral triangle", e: "An equilateral triangle can be spun 3 times within a full turn to match its original position." },
+                { q: "A standard non-square rectangle has a rotational symmetry order of:", o: ["Order 2", "Order 4", "Order 1", "Order 0"], a: "Order 2", e: "A rectangle matches its original profile twice during a full spin: once at 180 degrees and once at 360 degrees." },
+                { type: 'mirror_quest', flipped: true, p: { hasLine: true, lineDir: 'wrong_diagonal' }, q: "Look at the diagram. If you try to mirror a shape across an incorrect diagonal line, will the halves line up when folded?", o: ["No, they will stick out in different directions", "Yes, they will overlap perfectly"], a: "No, they will stick out in different directions", e: "For a line to be a true line of symmetry, folding along it must cause both halves to overlap perfectly." },
+                { q: "How many lines of symmetry does a regular 5-pointed star have?", o: ["5 lines", "1 line", "10 lines", "0 lines"], a: "5 lines", e: "A regular 5-pointed star has 5 lines of symmetry, each running from a star point down through the opposite valley corner." },
+                { q: "What is the order of rotational symmetry for a perfect circle?", o: ["Infinite order", "Order 360", "Order 1", "Order 100"], a: "Infinite order", e: "A perfect circle looks exactly the same at any angle of rotation, giving it an infinite order of rotational symmetry." },
+                { q: "Which shape has exactly 2 lines of symmetry and a rotational symmetry of order 2?", o: ["A rhombus", "A square", "An equilateral triangle", "An isosceles trapezoid"], a: "A rhombus", e: "A rhombus has 2 lines of symmetry (along its diagonals) and matches itself twice during a full rotation." },
+                { q: "If you flip a shape over a vertical mirror line, and then flip it over another vertical mirror line parallel to the first one, the shape has undergone:", o: ["A translation slide", "A single rotation turn", "An asymmetrical distortion", "No movement"], a: "A translation slide", e: "Reflecting a shape twice over parallel lines returns it to its original orientation, creating a translation slide." },
+                { q: "What is the order of rotational symmetry for a regular octagon?", o: ["Order 8", "Order 4", "Order 16", "Order 2"], a: "Order 8", e: "A regular octagon fits into its own footprint 8 times during a full 360-degree turn." },
+                { q: "Which of these words has a vertical line of symmetry when written in capital letters?", o: ["AHHA", "BOOB", "SEES", "LUCK"], a: "AHHA", e: "The word 'AHHA' can be split down the middle vertically, and the left side ('AH') will mirror the right side ('HA') perfectly." },
+                { q: "How many lines of symmetry does a regular 9-sided nonagon have?", o: ["9 lines", "3 lines", "1 line", "18 lines"], a: "9 lines", e: "A regular nonagon has exactly 9 lines of symmetry." },
+                { q: "If you spin a regular shape by 60 degrees and it looks exactly like its original position, what is the shape?", o: ["A regular hexagon", "A square", "A regular pentagon", "An equilateral triangle"], a: "A regular hexagon", e: "A regular hexagon matches its original position 6 times during a full spin (360 ÷ 60 = 6), meaning it has 6 matching sides." },
+                { q: "Which quadrilaterals have rotational symmetry of order 2 or higher around their center point?", o: ["Square, Rectangle, Rhombus, and Parallelogram", "Square and Rectangle only", "Trapezoid and Square only", "None of them"], a: "Square, Rectangle, Rhombus, and Parallelogram", e: "All four of these shapes match their original profiles at least twice during a full 360-degree spin." },
+                { q: "How many lines of symmetry does a standard shape of a wind turbine with 4 identical symmetric straight blades have?", o: ["0 lines of fold symmetry, but it has rotational symmetry", "4 lines", "8 lines", "2 lines"], a: "0 lines of fold symmetry, but it has rotational symmetry", e: "If the turbine blades are slanted to catch the wind, they cannot be folded to match up, but they will have rotational symmetry." },
+                { q: "What is the order of rotational symmetry for a standard capital letter 'H'?", o: ["Order 2", "Order 1", "Order 4", "Order 0"], a: "Order 2", e: "The letter 'H' looks normal twice during a full spin: once at 180 degrees and once at 360 degrees." },
+                { q: "If a shape has line symmetry but zero rotational symmetry higher than order 1, which shape could it be?", o: ["An isosceles triangle", "A square", "A regular hexagon", "A rectangle"], a: "An isosceles triangle", e: "An isosceles triangle has 1 line of symmetry, but it must be rotated a full 360 degrees to look like itself again." },
+                { q: "How many lines of symmetry does a pinwheel with 4 twisted curved sails have?", o: ["0 lines", "4 lines", "2 lines", "1 line"], a: "0 lines", e: "The curved twist of the sails prevents the pinwheel from having any lines of fold symmetry." },
+                { q: "A regular decagon has 10 sides. How many lines of symmetry does it have?", o: ["10 lines", "5 lines", "20 lines", "1 line"], a: "10 lines", e: "A regular decagon has exactly 10 lines of symmetry." },
+                { q: "Which letter looks exactly the same after a quarter-turn rotation (90 degrees)?", o: ["No ordinary single letter matches at 90 degrees unless it is a perfect circle or cross", "The letter 'X'", "The letter 'O'", "The letter 'I'"], a: "No ordinary single letter matches at 90 degrees unless it is a perfect circle or cross", e: "Most letters are taller than they are wide, so a 90-degree turn changes their orientation completely." },
+                { q: "How many lines of symmetry does a cross shape with 4 arms of equal length have?", o: ["4 lines", "2 lines", "8 lines", "1 line"], a: "4 lines", e: "An equilateral cross can be folded vertically, horizontally, and along both of its diagonal paths." },
+                { q: "What is the order of rotational symmetry for a regular 10-sided decagon?", o: ["Order 10", "Order 5", "Order 20", "Order 1"], a: "Order 10", e: "A regular decagon can be rotated 10 times within a full turn to match its original position." },
+                { q: "If a geometric design has 8 lines of symmetry, it must be based on which regular polygon?", o: ["A regular octagon", "A regular hexagon", "A perfect square", "A regular decagon"], a: "A regular octagon", e: "A regular octagon has exactly 8 lines of symmetry." },
+                { q: "Which of these words can be read upside down because its capital letters have rotational symmetry?", o: ["MOW", "SWIMS", "SIS", "NOON"], a: "SWIMS", e: "When rotated 180 degrees, 'SWIMS' still reads as 'SWIMS' because of the rotational symmetry of its letters." },
+                { q: "How many lines of symmetry does a regular 20-sided icosagon have?", o: ["20 lines", "10 lines", "40 lines", "1 line"], a: "20 lines", e: "A regular polygon has a number of lines of symmetry equal to its total number of sides. A regular icosagon has 20." },
+                { q: "What is the order of rotational symmetry of a standard capital letter 'X'?", o: ["Order 2", "Order 4", "Order 1", "Order 8"], a: "Order 2", e: "A standard letter 'X' matches its original position twice during a full 360-degree spin." },
+                { q: "If you reflect a point at coordinates (3, 4) across a vertical mirror line at x = 0 (the y-axis), where does it land?", o: ["(-3, 4)", "(3, -4)", "(-3, -4)", "(4, 3)"], a: "(-3, 4)", e: "Reflecting a point across the vertical y-axis reverses its horizontal position, changing the x-coordinate from 3 to -3." },
+                { q: "How many lines of symmetry does a standard recycling symbol with 3 chasing arrows have?", o: ["0 lines", "3 lines", "1 line", "6 lines"], a: "0 lines", e: "The chasing arrows spin in one direction, which prevents the symbol from having any lines of fold symmetry." },
+                { q: "What is the order of rotational symmetry for a standard recycling symbol with 3 chasing arrows?", o: ["Order 3", "Order 1", "Order 6", "Order 0"], a: "Order 3", e: "The symbol looks exactly the same 3 times during a full 360-degree spin." },
+                { q: "Which of these regular shapes has the smallest angle of rotational symmetry?", o: ["A regular octagon (45 degrees)", "A regular hexagon (60 degrees)", "A perfect square (90 degrees)", "An equilateral triangle (120 degrees)"], a: "A regular octagon (45 degrees)", e: "The more sides a regular polygon has, the less you need to rotate it before it matches its original position." },
+                { q: "How many lines of symmetry does a standard chess board grid have?", o: ["4 lines", "2 lines", "8 lines", "0 lines"], a: "4 lines", e: "An 8x8 chessboard grid forms a perfect square, giving it 4 lines of symmetry." },
+                { q: "What is the order of rotational symmetry for a standard 8x8 chessboard grid?", o: ["Order 4", "Order 2", "Order 8", "Order 1"], a: "Order 4", e: "Because a chessboard is a square, it looks exactly the same 4 times during a full 360-degree spin." },
+                { q: "If a shape has an angle of rotational symmetry equal to 90 degrees, what is its order of rotational symmetry?", o: ["Order 4", "Order 2", "Order 1", "Order 90"], a: "Order 4", e: "To find the order of rotational symmetry, divide a full turn by the angle of symmetry: 360 ÷ 90 = 4." },
+                { q: "How many lines of symmetry does a standard three-legged stool seen from directly above have?", o: ["3 lines", "1 line", "6 lines", "0 lines"], a: "3 lines", e: "A three-legged stool has 3 lines of symmetry, each running from one leg straight across to the center of the opposite gap." },
+                { q: "What is the order of rotational symmetry for a three-legged stool seen from directly above?", o: ["Order 3", "Order 1", "Order 6", "Order 2"], a: "Order 3", e: "The stool matches its original position 3 times during a full 360-degree spin." },
+                { q: "If you reflect a point at coordinates (5, 2) across a horizontal mirror line at y = 0 (the x-axis), where does it land?", o: ["(5, -2)", "(-5, 2)", "(-5, -2)", "(2, 5)"], a: "(5, -2)", e: "Reflecting a point across the horizontal x-axis reverses its vertical position, changing the y-coordinate from 2 to -2." },
+                { q: "How many lines of symmetry does a capital letter 'N' have?", o: ["0 lines", "1 line", "2 lines", "1 diagonal line"], a: "0 lines", e: "The letter 'N' cannot be folded along any line to make its edges match up perfectly." },
+                { q: "What is the order of rotational symmetry for the capital letter 'O' if it is drawn as a perfect circle?", o: ["Infinite order", "Order 2", "Order 4", "Order 1"], a: "Infinite order", e: "A perfectly circular letter 'O' looks exactly the same at any angle of rotation." },
+                { q: "Which geometric transformation flips a figure over a line to create a mirror image?", o: ["Reflection", "Rotation", "Translation", "Scaling"], a: "Reflection", e: "A reflection flips a shape over a line to create its mirror image." },
+                { q: "How many lines of symmetry does a regular 100-sided polygon have?", o: ["100 lines", "50 lines", "200 lines", "1 line"], a: "100 lines", e: "A regular polygon has a number of lines of symmetry equal to its total number of sides. A 100-sided polygon has 100." },
+                { q: "What is the order of rotational symmetry for a regular 100-sided polygon?", o: ["Order 100", "Order 50", "Order 1", "Order 360"], a: "Order 100", e: "A regular 100-sided polygon matches its original position 100 times during a full 360-degree turn." },
+                { q: "If a shape must be rotated a full 360 degrees before it matches its original position, its order of rotational symmetry is:", o: ["Order 1", "Order 0", "Order 2", "Infinite order"], a: "Order 1", e: "An order of 1 means the shape does not have any rotational symmetry, as it only matches itself once at the end of a full turn." },
+                { q: "How many lines of symmetry does a standard bricks pattern on a wall usually have?", o: ["0 lines, because the alternating joints are offset", "1 vertical line", "2 lines", "Infinitely many"], a: "0 lines, because the alternating joints are offset", e: "The offset joints in a brick wall prevent it from being folded symmetrically, making the pattern asymmetrical." },
+                { q: "What is the order of rotational symmetry for a standard 4-pointed compass star?", o: ["Order 4", "Order 2", "Order 8", "Order 1"], a: "Order 4", e: "A 4-pointed compass star looks exactly the same 4 times during a full 360-degree turn." }
+            ]
+        };
+
+        /*********************************************************
+         * CORE INTERACTIVE QUIZ APPLICATION ENGINE
+         *********************************************************/
+        let QuizEngine = {
+            activeTier: '',
+            questions: [],
+            index: 0,
+            score: 0,
+            answersLog: [],
+            startTime: null,
+
+            shuffle(arr) {
+                for (let i = arr.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [arr[i], arr[j]] = [arr[j], arr[i]];
+                }
+                return arr;
+            },
+
+            start(tierKey) {
+                this.activeTier = tierKey;
+                let rawDataset = SymmetryQuestionMatrix[tierKey] || SymmetryQuestionMatrix.easy;
+                
+                // Clone, fully shuffle question sequences and options, then slice down to exactly 50
+                this.questions = this.shuffle(JSON.parse(JSON.stringify(rawDataset))).slice(0, 50);
+                this.index = 0;
+                this.score = 0;
+                this.answersLog = new Array(50).fill(null);
+                this.startTime = new Date();
+
+                document.getElementById('lbl-tier').innerText = tierKey;
+                document.getElementById('screen-start').classList.remove('active');
+                document.getElementById('screen-quiz').classList.add('active');
+
+                SoundFX.click();
+                this.renderQuestion();
+            },
+
+            renderQuestion() {
+                if (this.index >= this.questions.length) return;
+                const item = this.questions[this.index];
+
+                // Sync UI metrics panel
+                document.getElementById('lbl-score').innerText = this.score;
+                document.getElementById('lbl-counter').innerText = `${this.index + 1} / ${this.questions.length}`;
+                document.getElementById('progress-fill').style.width = `${((this.index + 1) / this.questions.length) * 100}%`;
+
+                // Handle interactive SVGs
+                const graphicArea = document.getElementById('graphic-area');
+                const renderNode = document.getElementById('graphic-render-node');
+                renderNode.innerHTML = '';
+
+                if (item.type) {
+                    graphicArea.style.display = "block";
+                    renderNode.innerHTML = SVGSymmetryDrawer.draw(item.type, item);
+                } else {
+                    graphicArea.style.display = "none";
+                }
+
+                document.getElementById('question-text').innerText = item.q;
+
+                // Configure shuffled options array once per question
+                if (!item._shuffledOptions) {
+                    item._shuffledOptions = this.shuffle([...item.o]);
+                }
+
+                const optionsBox = document.getElementById('options-box');
+                optionsBox.innerHTML = '';
+
+                item._shuffledOptions.forEach(optStr => {
+                    const btn = document.createElement('button');
+                    btn.className = 'option-btn';
+                    btn.innerText = optStr;
+                    btn.onclick = () => this.selectOption(btn, optStr);
+
+                    // Restore past choices when navigating back and forth
+                    if (this.answersLog[this.index] !== null) {
+                        btn.disabled = true;
+                        if (optStr === item.a) btn.classList.add('correct');
+                        if (optStr === this.answersLog[this.index] && optStr !== item.a) {
+                            btn.classList.add('wrong');
+                        }
+                    }
+                    optionsBox.appendChild(btn);
+                });
+
+                // Display feedback panel after user selection
+                const expBox = document.getElementById('explanation-box');
+                if (this.answersLog[this.index] !== null) {
+                    let chosen = this.answersLog[this.index];
+                    if (chosen === item.a) {
+                        expBox.className = "explanation-panel correct";
+                        expBox.innerHTML = `<strong>✅ Correct!</strong><br>${item.e}`;
+                    } else if (chosen === "") {
+                        expBox.className = "explanation-panel wrong";
+                        expBox.innerHTML = `<strong>⚠️ Skipped!</strong> Correct Answer: <em>${item.a}</em><br>${item.e}`;
+                    } else {
+                        expBox.className = "explanation-panel wrong";
+                        expBox.innerHTML = `<strong>❌ Incorrect!</strong> Correct Answer: <em>${item.a}</em><br>${item.e}`;
+                    }
+                } else {
+                    expBox.style.display = 'none';
+                }
+
+                document.getElementById('btn-back').disabled = (this.index === 0);
+                document.getElementById('btn-forward').innerText = (this.index === this.questions.length - 1) ? "Finish 🏁" : "Next ➔";
+            },
+
+            selectOption(btn, selection) {
+                const item = this.questions[this.index];
+                this.answersLog[this.index] = selection;
+
+                const buttons = document.querySelectorAll('.options-grid .option-btn');
+                buttons.forEach(b => b.disabled = true);
+
+                const expBox = document.getElementById('explanation-box');
+
+                if (selection === item.a) {
+                    this.score++;
+                    SoundFX.correct();
+                    btn.classList.add('correct');
+                    expBox.className = "explanation-panel correct";
+                    expBox.innerHTML = `<strong>✅ Correct!</strong><br>${item.e}`;
+                } else {
+                    SoundFX.wrong();
+                    btn.classList.add('wrong');
+                    buttons.forEach(b => { if (b.innerText === item.a) b.classList.add('correct'); });
+                    expBox.className = "explanation-panel wrong";
+                    expBox.innerHTML = `<strong>❌ Incorrect!</strong> Correct Answer: <em>${item.a}</em><br>${item.e}`;
+                }
+                document.getElementById('lbl-score').innerText = this.score;
+            },
+
+            stepQuestion(dir) {
+                SoundFX.click();
+                if (dir === 1 && this.answersLog[this.index] === null) {
+                    if (!confirm("Do you want to skip this question? You can return to it later.")) return;
+                    this.answersLog[this.index] = ""; // Set clear skip tracking token anchor
+                }
+
+                this.index += dir;
+
+                if (this.index >= this.questions.length) {
+                    this.completeQuiz();
+                } else if (this.index < 0) {
+                    this.index = 0;
+                } else {
+                    this.renderQuestion();
+                }
+            },
+
+            backToMenu() {
+                SoundFX.click();
+                document.getElementById('screen-quiz').className = "screen";
+                document.getElementById('screen-summary').className = "screen";
+                document.getElementById('screen-start').className = "screen active";
+            },
+
+            restartLevel() {
+                this.start(this.activeTier);
+            },
+
+            completeQuiz() {
+                const elapsedSecTotal = Math.floor((new Date() - this.startTime) / 1000);
+                const elapsedMin = Math.floor(elapsedSecTotal / 60);
+                const elapsedSec = elapsedSecTotal % 60;
+                const percentage = Math.round((this.score / this.questions.length) * 100);
+
+                let badgeArt = "📚", badgeText = "Keep Practising";
+                if (percentage >= 90) { badgeArt = "🏆"; badgeText = "Symmetry Master"; }
+                else if (percentage >= 70) { badgeArt = "🌟"; badgeText = "Shape Explorer"; }
+                else if (percentage >= 50) { badgeArt = "👍"; badgeText = "Good Learner"; }
+
+                document.getElementById('dash-tier').innerText = this.activeTier;
+                document.getElementById('dash-score').innerText = `${this.score} / ${this.questions.length}`;
+                document.getElementById('dash-pct').innerText = `${percentage}%`;
+                document.getElementById('dash-time').innerText = `${elapsedMin}m ${elapsedSec}s`;
+
+                document.getElementById('dash-badge-art').innerText = badgeArt;
+                document.getElementById('dash-badge-lbl').innerText = badgeText;
+
+                // Sync printable certificate elements
+                document.getElementById('cert-tier').innerText = this.activeTier;
+                document.getElementById('cert-score').innerText = `${this.score} / ${this.questions.length}`;
+                document.getElementById('cert-pct').innerText = `${percentage}%`;
+
+                document.getElementById('screen-quiz').classList.remove('active');
+                document.getElementById('screen-summary').classList.add('active');
+
+                SoundFX.victory();
+                if (percentage >= 50) { this.runConfetti(); }
+            },
+
+            runConfetti() {
+                const canvas = document.getElementById('canvas-confetti');
+                const ctx = canvas.getContext('2d');
+                canvas.width = canvas.parentElement.offsetWidth;
+                canvas.height = canvas.parentElement.offsetHeight;
+
+                let items = [];
+                const colorPalette = ['#a78bfa', '#ec4899', '#f43f5e', '#3b82f6', '#10b981', '#eab308'];
+
+                for (let i = 0; i < 100; i++) {
+                    items.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height - canvas.height,
+                        r: Math.random() * 4 + 4,
+                        color: colorPalette[Math.floor(Math.random() * colorPalette.length)],
+                        vY: Math.random() * 2 + 2,
+                        dx: Math.sin(Math.random() * 2)
+                    });
+                }
+
+                function frames() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    let alive = false;
+                    items.forEach(p => {
+                        p.y += p.vY;
+                        p.x += p.dx;
+                        if (p.y <= canvas.height) alive = true;
+                        
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                        ctx.fillStyle = p.color;
+                        ctx.fill();
+                    });
+                    if (alive) requestAnimationFrame(frames);
+                }
+                frames();
+            }
+        };
+    </script>
+</body>
+</html>

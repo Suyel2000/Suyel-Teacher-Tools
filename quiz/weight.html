@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚖️ Weight Quiz — Measure, Compare & Master</title>
+    <style>
+        :root {
+            --primary-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --easy-color: #2ec4b6;
+            --medium-color: #ff9f1c;
+            --hard-color: #e71d36;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --text-dark: #2b2d42;
+            --text-light: #f8f9fa;
+            --correct-bg: #d4edda;
+            --correct-border: #c3e6cb;
+            --correct-text: #155724;
+            --wrong-bg: #f8d7da;
+            --wrong-border: #f5c6cb;
+            --wrong-text: #721c24;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--primary-bg);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated Background Ornaments */
+        .bg-ornament {
+            position: absolute;
+            opacity: 0.08;
+            pointer-events: none;
+            animation: float 8s ease-in-out infinite;
+            z-index: 0;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(15deg); }
+        }
+
+        /* Container & Glass Cards */
+        .quiz-container {
+            width: 100%;
+            max-width: 750px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+            padding: 25px;
+            z-index: 10;
+            transition: all 0.4s ease;
+            position: relative;
+        }
+
+        /* Headers & Branding */
+        .header-title {
+            text-align: center;
+            font-size: 2.4rem;
+            color: #4a148c;
+            font-weight: 800;
+            margin-bottom: 5px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .header-subtitle {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #6a1b9a;
+            margin-bottom: 25px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        /* Level Selection Screen */
+        .screen-layout {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .screen-layout.active {
+            display: block;
+        }
+
+        .level-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 20px 25px;
+            margin: 15px 0;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            color: white;
+            font-size: 1.3rem;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+
+        .level-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+        }
+
+        .level-btn span { font-size: 0.9rem; font-weight: normal; opacity: 0.9; display: block; margin-top: 3px;}
+        .level-btn .btn-left { text-align: left; }
+
+        .btn-easy { background: linear-gradient(135deg, #2ec4b6, #0cb0a1); }
+        .btn-medium { background: linear-gradient(135deg, #ff9f1c, #f18701); }
+        .btn-hard { background: linear-gradient(135deg, #e71d36, #c30018); }
+
+        /* Top Panel - Progress Bars & Counters */
+        .top-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-weight: 700;
+            color: var(--text-dark);
+            font-size: 0.95rem;
+        }
+
+        .badge-pill {
+            background: #e0aa3e;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 12px;
+            background: rgba(0,0,0,0.1);
+            border-radius: 6px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            transition: width 0.3s ease;
+        }
+
+        /* SVG Dynamic Graphic Box (Conditional) */
+        .graphics-box {
+            display: none; /* Hidden by default */
+            width: 100%;
+            height: 180px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 16px;
+            margin-bottom: 20px;
+            justify-content: center;
+            align-items: center;
+            border: 1px dashed rgba(0,0,0,0.15);
+        }
+        
+        .graphics-box.active {
+            display: flex; /* Shown only when needed */
+        }
+
+        /* Question Styles */
+        .question-text {
+            font-size: 1.35rem;
+            color: var(--text-dark);
+            font-weight: 700;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        /* Choice Buttons */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 550px) {
+            .options-grid { grid-template-columns: 1fr; }
+            .header-title { font-size: 1.9rem; }
+        }
+
+        .option-btn {
+            background: white;
+            border: 2px solid rgba(0,0,0,0.08);
+            border-radius: 14px;
+            padding: 16px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background: #f1f5f9;
+            border-color: #3b82f6;
+            transform: scale(1.01);
+        }
+
+        .option-btn:disabled { cursor: not-allowed; }
+
+        .option-btn.correct {
+            background-color: var(--correct-bg) !important;
+            border-color: var(--correct-border) !important;
+            color: var(--correct-text) !important;
+        }
+
+        .option-btn.wrong {
+            background-color: var(--wrong-bg) !important;
+            border-color: var(--wrong-border) !important;
+            color: var(--wrong-text) !important;
+        }
+
+        /* Feedback Panel */
+        .feedback-box {
+            display: none;
+            padding: 15px 20px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            animation: slideDown 0.3s ease;
+            line-height: 1.5;
+            font-weight: 500;
+        }
+
+        .feedback-box.correct {
+            display: block;
+            background-color: var(--correct-bg);
+            border-left: 5px solid var(--correct-text);
+            color: var(--correct-text);
+        }
+
+        .feedback-box.wrong {
+            display: block;
+            background-color: var(--wrong-bg);
+            border-left: 5px solid var(--hard-color);
+            color: var(--wrong-text);
+        }
+
+        /* Navigation controls */
+        .nav-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .action-btn {
+            background: #4a148c;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s, opacity 0.2s;
+        }
+
+        .action-btn:hover:not(:disabled) { background: #6a1b9a; }
+        .action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-restart { background: #6c757d; }
+        .btn-restart:hover { background: #5a6268; }
+
+        /* End Screen Summary */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .summary-card {
+            background: rgba(255,255,255,0.5);
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .summary-card div:first-child {
+            font-size: 0.85rem;
+            color: #555;
+            margin-bottom: 4px;
+        }
+        .summary-card div:last-child {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .badge-showcase {
+            text-align: center;
+            margin: 25px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            border-radius: 166px;
+            border: 2px dashed #ffb74d;
+        }
+
+        .badge-icon {
+            font-size: 4.5rem;
+            margin-bottom: 10px;
+            animation: bounce 2s infinite alternate;
+        }
+
+        @keyframes bounce {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-10px); }
+        }
+
+        /* Canvas Confetti Overlays */
+        #confetti-canvas {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 99;
+            border-radius: 24px;
+        }
+
+        /* Certificate Printing Wrapper */
+        @media print {
+            body * { visibility: hidden; }
+            #certificate-print-area, #certificate-print-area * { visibility: visible; }
+            #certificate-print-area { position: absolute; left: 0; top: 0; width: 100%; }
+        }
+
+        #certificate-print-area {
+            display: none;
+            background: white;
+            color: black;
+            padding: 40px;
+            border: 10px double #4a148c;
+            text-align: center;
+            font-family: serif;
+            margin-top: 20px;
+            border-radius: 12px;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <svg class="bg-ornament" style="top:10%; left:10%; width:80px; height:80px;" viewBox="0 0 64 64"><path fill="#FFF" d="M32 4L12 24h12v28h16V24h12z"/></svg>
+    <svg class="bg-ornament" style="bottom:15%; right:8%; width:100px; height:100px; animation-delay: 2s;" viewBox="0 0 64 64"><circle cx="32" cy="32" r="24" fill="none" stroke="#FFF" stroke-width="4"/></svg>
+    <svg class="bg-ornament" style="top:40%; right:12%; width:70px; height:70px; animation-delay: 4s;" viewBox="0 0 64 64"><path fill="#FFF" d="M10 50h44v6H10zM32 8l18 24H14z"/></svg>
+
+    <div class="quiz-container">
+        <canvas id="confetti-canvas"></canvas>
+
+        <h1 class="header-title">⚖️ Weight Quiz</h1>
+        <p class="header-subtitle">Measure • Compare • Estimate • Master Weight</p>
+
+        <div id="screen-start" class="screen-layout active">
+            <div style="text-align: center; margin-bottom: 25px; color: var(--text-dark); font-weight: 500;">
+                <p>Welcome, young Mathematician! Select your grade class level to start exactly 50 randomized tracking questions.</p>
+            </div>
+            <button class="level-btn btn-easy" onclick="startQuiz('easy')">
+                <div class="btn-left">
+                    <div>🟢 Easy Level</div>
+                    <span>Suitable for Classes 2–3</span>
+                </div>
+                <div>➡️</div>
+            </button>
+            <button class="level-btn btn-medium" onclick="startQuiz('medium')">
+                <div class="btn-left">
+                    <div>🟡 Medium Level</div>
+                    <span>Suitable for Classes 3–4</span>
+                </div>
+                <div>➡️</div>
+            </button>
+            <button class="level-btn btn-hard" onclick="startQuiz('hard')">
+                <div class="btn-left">
+                    <div>🔴 Hard Level</div>
+                    <span>Suitable for Classes 4–5</span>
+                </div>
+                <div>➡️</div>
+            </button>
+        </div>
+
+        <div id="screen-quiz" class="screen-layout">
+            <div class="top-meta">
+                <div>Level: <span id="lbl-level" style="text-transform: capitalize;">-</span></div>
+                <div class="badge-pill">Score: <span id="lbl-score">0</span></div>
+                <div>Q: <span id="lbl-counter">1/50</span></div>
+            </div>
+
+            <div class="progress-bar-container">
+                <div id="progress-fill" class="progress-bar-fill"></div>
+            </div>
+
+            <div class="graphics-box" id="graphics-container"></div>
+
+            <div class="question-text" id="question-render-box"></div>
+
+            <div class="options-grid" id="options-render-box"></div>
+
+            <div id="feedback-panel" class="feedback-box"></div>
+
+            <div class="nav-controls">
+                <button class="action-btn btn-restart" onclick="quitToMenu()">Menu</button>
+                <div style="display:flex; gap: 10px;">
+                    <button class="action-btn" id="btn-prev" onclick="handlePrev()" disabled>Back</button>
+                    <button class="action-btn" id="btn-next" onclick="handleNext()">Next ➡️</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-summary" class="screen-layout">
+            <h2 style="text-align: center; color: #4a148c; margin-bottom: 15px;">🎉 Level Completed!</h2>
+            
+            <div class="badge-showcase">
+                <div class="badge-icon" id="summary-badge-icon">🏆</div>
+                <h3 id="summary-badge-title" style="font-size: 1.6rem; color:#e65100;">Weight Master</h3>
+                <p id="summary-badge-desc" style="color: #5d4037; font-weight: 500; margin-top: 5px;"></p>
+            </div>
+
+            <div class="summary-grid">
+                <div class="summary-card"><div>Selected Tier</div><div id="sum-tier" style="text-transform: capitalize;">-</div></div>
+                <div class="summary-card"><div>Final Score</div><div id="sum-score">-</div></div>
+                <div class="summary-card"><div>Accuracy</div><div id="sum-pct">-</div></div>
+                <div class="summary-card"><div>Correct Answers</div><div id="sum-correct" style="color:var(--correct-text);">-</div></div>
+                <div class="summary-card"><div>Wrong Answers</div><div id="sum-wrong" style="color:var(--hard-color);">-</div></div>
+                <div class="summary-card"><div>Time Spent</div><div id="sum-time">-</div></div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+                <button class="level-btn btn-easy" style="margin:0; justify-content:center; font-size:1.1rem; padding:14px;" onclick="window.print()">🖨️ Print Achievement Certificate</button>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <button class="action-btn btn-restart" style="padding:14px;" onclick="restartCurrentLevel()">Retry Level</button>
+                    <button class="action-btn" style="padding:14px;" onclick="quitToMenu()">Change Level</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="certificate-print-area">
+            <h1>CERTIFICATE OF ACHIEVEMENT</h1>
+            <p style="font-size: 1.4rem; margin: 20px 0;">This award certifies that the candidate has successfully completed</p>
+            <h2>THE WEIGHT & MASS MATHEMATICS QUIZ</h2>
+            <p style="font-size: 1.3rem; margin: 15px 0;">Difficulty Tier Level: <strong id="cert-level" style="text-transform: capitalize;"></strong></p>
+            <p style="font-size: 1.5rem; color: #4a148c; font-weight: bold; margin: 25px 0;">Final Score Performance: <span id="cert-score"></span> (<span id="cert-pct"></span> Accuracy)</p>
+            <p style="font-size: 1.2rem; margin-top: 40px; border-top: 2px dashed #999; display:inline-block; padding-top:10px; width:250px;">Quiz Master Authority</p>
+        </div>
+    </div>
+
+    <script>
+        /*********************************************************
+         * 1. AUDIO SYNTHESIZER MODULE (Web Audio API - Fully Offline)
+         *********************************************************/
+        const AudioEngine = {
+            ctx: null,
+            init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+            playTone(freq, type, duration, vol) {
+                try {
+                    this.init();
+                    let osc = this.ctx.createOscillator();
+                    let gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.00001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e) { console.log("Audio not supported yet context blocked"); }
+            },
+            click() { this.playTone(600, 'sine', 0.08, 0.2); },
+            correct() {
+                this.playTone(523.25, 'triangle', 0.12, 0.25); // C5
+                setTimeout(() => this.playTone(659.25, 'triangle', 0.25, 0.25), 100); // E5
+            },
+            wrong() {
+                this.playTone(220, 'sawtooth', 0.15, 0.2); // A3
+                setTimeout(() => this.playTone(165, 'sawtooth', 0.3, 0.2), 120); // E3
+            },
+            badge() {
+                let now = 0;
+                [440, 554, 659, 880].forEach((f, i) => {
+                    setTimeout(() => this.playTone(f, 'sine', 0.3, 0.3), now);
+                    now += 120;
+                });
+            }
+        };
+
+        /*********************************************************
+         * 2. QUESTIONS DATA STRUCT (50 Easy, 50 Med, 50 Hard)
+         *********************************************************/
+        const QuestionBank = {
+            easy: [
+                { q: "Which object is lighter than the others?", o: ["Feather", "Apple", "School Bag", "Brick"], a: "Feather", e: "A feather is extremely light and floats in the air easily!" },
+                { q: "Which object is the heaviest?", o: ["Elephant", "Cat", "Bicycle", "Watermelon"], a: "Elephant", e: "An elephant is a huge animal weighing thousands of kilograms!" },
+                { q: "What metric unit should you use to measure an apple?", o: ["Grams (g)", "Kilograms (kg)", "Meters (m)", "Liters (L)"], a: "Grams (g)", e: "Small or single items like an apple are light and measured in grams (g)." },
+                { q: "Which item should be measured in Kilograms (kg)?", o: ["A sack of rice", "A plastic eraser", "A postage stamp", "A single grape"], a: "A sack of rice", e: "Large items packed in bulk are heavy, so we use kilograms (kg)." },
+                { q: "Which instrument is used to check the weight of vegetables?", o: ["Weighing Scale", "Thermometer", "Ruler", "Clock"], a: "Weighing Scale", e: "A weighing balance scale calculates mass or weight.", g: "digital", w: "2.5 kg" },
+                { q: "If a watermelon is heavier than a lemon, which side of a balance scale drops down lower?", o: ["The side with the watermelon", "The side with the lemon", "Both stay perfectly even", "The scale tips upside down"], a: "The side with the watermelon", e: "The heavier object pushes its side of the scale downwards due to gravity.", g: "balance", wl: 20, wr: 4 },
+                { q: "Which object is generally lighter than a school textbook?", o: ["A pencil", "A heavy wooden desk", "A microwave oven", "An iron safe"], a: "A pencil", e: "A single thin pencil is light and easy to pick up." },
+                { q: "Complete the statement: A concrete block is ________ than a feather pillow.", o: ["Heavier", "Lighter", "The exact same weight", "More soft"], a: "Heavier", e: "Concrete is a dense composite material, making blocks very heavy." },
+                { q: "Choose the most accurate estimate for a puppy's weight.", o: ["4 kg", "400 kg", "1 g", "10 g"], a: "4 kg", e: "A small household puppy safely weighs around 4 kilograms." },
+                { q: "Which is lighter: 10 grams of fluff or 10 kilograms of stones?", o: ["10 grams of fluff", "10 kilograms of stones", "They weigh exactly the same", "Stones are lighter"], a: "10 grams of fluff", e: "10 grams is a tiny weight compared to 10 kilograms (10,000 grams)!" },
+                { q: "A chocolate bar's weight is typically printed using which unit?", o: ["g", "kg", "km", "mL"], a: "g", e: "Snacks and chocolate bars are small items, measured in grams (g)." },
+                { q: "What instrument does a doctor use to check how heavy you are?", o: ["Human weighing scale", "Measuring tape", "Barometer", "Microscope"], a: "Human weighing scale", e: "A body weight platform scale tracks physical human mass.", g: "digital", w: "35.0 kg" },
+                { q: "Which object has the closest mass to 1 gram?", o: ["A small plastic paperclip", "A laptop computer", "A mountain bike", "A bucket of water"], a: "A small plastic paperclip", e: "A standard metal or plastic paperclip weighs approximately 1 gram." },
+                { q: "If you add 3 apples to an empty balance pan and 1 apple to the other side, which pan rises UP?", o: ["The pan with 1 apple", "The pan with 3 apples", "Neither pan moves", "Both pans drop down"], a: "The pan with 1 apple", e: "The lighter side with only 1 apple rises up higher.", g: "balance", wl: 3, wr: 1 },
+                { q: "Which item is the lightest among these groceries?", o: ["A single potato crisp", "A pumpkin", "A bottle of milk", "A whole pineapple"], a: "A single potato crisp", e: "A single piece of dry potato chip weighs less than a single gram!" },
+                { q: "Which of the following describes 'Mass' accurately for children?", o: ["How heavy an object is", "How tall an object stands", "The color of an item", "How fast something runs"], a: "How heavy an object is", e: "Mass or weight tells us how heavy an object feels when lifted." },
+                { q: "Would you measure a heavy family car in grams or kilograms?", o: ["Kilograms (kg)", "Grams (g)", "Centimeters (cm)", "Milligrams (mg)"], a: "Kilograms (kg)", e: "Cars are massive and are measured in large units like kilograms or tonnes." },
+                { q: "Which is heavier: A full box of crayons or one single crayon?", o: ["A full box of crayons", "One single crayon", "They are identical in mass", "Neither has any weight"], a: "A full box of crayons", e: "A bundle or group containing multiple crayons weighs more than one isolated crayon." },
+                { q: "What does an empty lunchbox become when you fill it completely with food?", o: ["Heavier", "Lighter", "Stays the same weight", "Emptier"], a: "Heavier", e: "Adding items adds up their individual masses, making the total heavier." },
+                { q: "Identify the object that weighs roughly 1 kilogram.", o: ["A standard pack of flour", "A commercial airplane", "A grain of beach sand", "An adult elephant"], a: "A standard pack of flour", e: "Baking flour is usually sold in standard 1 kg bags or packs." },
+                // Expanding to satisfy comprehensive 50 items
+                { q: "Which unit matches the weight of a bicycle?", o: ["Kilograms (kg)", "Grams (g)", "Meters (m)", "Milliliters (mL)"], a: "Kilograms (kg)", e: "A bicycle contains heavy structural metal frames." },
+                { q: "A feather is placed on the left side of a balance, and a brick on the right. What happens?", o: ["The right side sinks down", "The left side sinks down", "They balance perfectly", "The balance shatters"], a: "The right side sinks down", e: "The heavy brick pushes down the right pan instantly.", g: "balance", wl: 1, wr: 30 },
+                { q: "Which is the lightest item?", o: ["A postage stamp", "A coin", "A smartphone", "A textbook"], a: "A postage stamp", e: "Stamps are made of tiny bits of paper, making them featherlight." },
+                { q: "Estimate the weight of a standard classroom wooden chair.", o: ["3 kg", "300 kg", "3 g", "30 g"], a: "3 kg", e: "A standard student desk chair is around 3 kg, light enough to be carried by an adult." },
+                { q: "What unit is best to measure a single strawberry?", o: ["Grams (g)", "Kilograms (kg)", "Kilometers (km)", "Liters (L)"], a: "Grams (g)", e: "Berries are small and light, tracking perfectly in grams." },
+                { q: "Which object is heavier than an empty school bag?", o: ["A school bag packed with 10 heavy books", "A single sheet of drawing paper", "A short wooden ruler", "A plastic pen"], a: "A school bag packed with 10 heavy books", e: "The books add substantial internal weight to the base bag." },
+                { q: "If we remove weights from a scale, the remaining object reads...", o: ["Lighter", "Heavier", "Double the score", "Unchanged"], a: "Lighter", e: "Subtracting physical mass decreases the net force on the scale." },
+                { q: "What do we use to gauge mass instantly at a supermarket check-out counter?", o: ["Digital checkout scale", "Measuring ruler", "Measuring tape", "Clock timer"], a: "Digital checkout scale", e: "Supermarkets use digital scanners embedded with precise weight plates.", g: "digital", w: "1.2 kg" },
+                { q: "Which is heavier: A basketball or a table tennis ball?", o: ["A basketball", "A table tennis ball", "They are equal", "Ping pong ball is heavier"], a: "A basketball", e: "A basketball is larger and contains thick heavy composite leather rubber." },
+                { q: "Estimate the weight of an adult cat.", o: ["4 kg", "400 kg", "4 g", "40 g"], a: "4 kg", e: "Domestic cats generally range between 3 kg and 6 kg." },
+                { q: "Which item is lighter than a smartphone?", o: ["A single dry autumn leaf", "A metal hammer", "An iron frying pan", "A car wheel tire"], a: "A single dry autumn leaf", e: "A dry leaf contains almost zero moisture, making it weightless to our touch." },
+                { q: "What unit would you use to measure the mass of a massive blue whale?", o: ["Kilograms (kg)", "Grams (g)", "Milligrams (mg)", "Centimeters (cm)"], a: "Kilograms (kg)", e: "Whales are the heaviest creatures on Earth, requiring large scales in kilograms or tons." },
+                { q: "If two objects balance perfectly level on a scale, what does it mean?", o: ["They have the exact same weight", "One is much heavier", "One is much lighter", "The scale is broken"], a: "They have the exact same weight", e: "Equal weight applies identical gravitational pull to both pans.", g: "balance", wl: 10, wr: 10 },
+                { q: "Which item is the heaviest?", o: ["A metal anvil", "A woolen sweater", "A pair of socks", "A tennis ball"], a: "A metal anvil", e: "Anvils are forged out of solid thick iron blocs." },
+                { q: "Pick the item measured in grams.", o: ["A golden wedding ring", "A heavy concrete pillar", "A horse", "A dynamic cruise ship"], a: "A golden wedding ring", e: "Jewelry consists of fine precious metals measured in precise small grams." },
+                { q: "A balance scale has a toy car on the left and a heavy stone on the right. The left side is tilted high up in the air. Which is lighter?", o: ["The toy car", "The heavy stone", "They are equal", "The scale frame"], a: "The toy car", e: "The lighter side always moves upwards.", g: "balance", wl: 3, wr: 12 },
+                { q: "Which is lighter than a loaf of bread?", o: ["A single slice of bread", "A truck of bread", "Three loaves of bread", "The bakery oven"], a: "A single slice of bread", e: "A fraction or small component part weighs less than the complete whole." },
+                { q: "Estimate the weight of a standard banana.", o: ["120 g", "120 kg", "1 g", "5 kg"], a: "120 g", e: "A common fresh banana is less than a quarter of a kilogram, roughly 120 grams." },
+                { q: "Which is heavier: A pillow stuffed with down feathers or a solid brick of the same size?", o: ["The solid brick", "The feather pillow", "They weigh the same", "Feathers are heavier"], a: "The solid brick", e: "Clay brick material is extremely dense compared to airy down feathers." },
+                { q: "What are the standard units of weight taught in primary school?", o: ["Grams and Kilograms", "Meters and Kilometers", "Liters and Milliliters", "Hours and Minutes"], a: "Grams and Kilograms", e: "Grams (g) and Kilograms (kg) are standard metric mass units." },
+                { q: "Which object is the heaviest?", o: ["A school bus", "A skateboard", "A motorcycle", "A family sedan car"], a: "A school bus", e: "A commercial school bus carries dozens of passengers and has massive metal reinforcement panels." },
+                { q: "Which object is measured in grams?", o: ["An eraser", "A refrigerator", "An automated washing machine", "A solid oak dining table"], a: "An eraser", e: "Erasers fit easily inside your pocket and have small mass." },
+                { q: "If you have 1 kg of sugar and 1 kg of salt, which is heavier?", o: ["They are both equal in weight", "The sugar is heavier", "The salt is heavier", "Sugar is lighter"], a: "They are both equal in weight", e: "1 kg equals 1 kg regardless of the items being weighed." },
+                { q: "Which item is lighter than a bottle of water?", o: ["A plastic bottle cap", "A full metal bucket", "An outdoor swimming pool", "The water cooler machine"], a: "A plastic bottle cap", e: "A tiny hollow plastic cap weighs next to nothing." },
+                { q: "Choose the item that weighs roughly 500 grams.", o: ["A standard pack of butter or margarine", "A large elephant calf", "A drop of morning rain", "A school playground swing"], a: "A standard pack of butter or margarine", e: "Butter blocks frequently retail in half-kilogram (500g) wrappers." },
+                { q: "A balance has an orange on the left and a grape on the right. What will happen?", o: ["The left pan sinks down", "The right pan sinks down", "They remain equal", "The scale turns around"], a: "The left pan sinks down", e: "An orange is significantly heavier than a small grape.", g: "balance", wl: 8, wr: 1 },
+                { q: "Which item requires an industrial platform crane to lift due to its weight?", o: ["A shipping steel container", "A pair of leather boots", "A box of matches", "A computer keyboard"], a: "A shipping steel container", e: "Cargo containers hold tons of freight material." },
+                { q: "If we combine two 1-kilogram bags of flour into one bowl, what is the weight?", o: ["2 kg", "1 kg", "10 kg", "0.5 kg"], a: "2 kg", e: "1 kg + 1 kg equals 2 kg of total weight." },
+                { q: "Which is lighter?", o: ["A single dry toothpick", "A wooden baseball bat", "A large tree log", "A heavy wooden door"], a: "A single dry toothpick", e: "Toothpicks are extremely thin splinters of wood." },
+                { q: "What letter symbol represents the unit 'Gram'?", o: ["g", "kg", "gr", "gm"], a: "g", e: "The official metric system symbol for gram is simply 'g'." }
+            ],
+            medium: [
+                { q: "How many grams are there in 1 Kilogram?", o: ["1000 g", "100 g", "10 g", "10000 g"], a: "1000 g", e: "The prefix 'Kilo' stands for one thousand. So, 1 kg = 1000 g." },
+                { q: "Convert 3 Kilograms into grams.", o: ["3000 g", "300 g", "30 g", "30000 g"], a: "3000 g", e: "Multiply the kilograms by 1000. $3 \times 1000 = 3000\text{ g}$." },
+                { q: "Which weight value is the heaviest?", o: ["1 kg", "800 g", "500 g", "950 g"], a: "1 kg", e: "1 kg is equal to 1000 g, which is larger than 950 g, 800 g, or 500 g." },
+                { q: "A fresh watermelon weighs 5 kg and a pumpkin weighs 3 kg. What is their combined total weight?", o: ["8 kg", "2 kg", "15 kg", "8000 kg"], a: "8 kg", e: "Add the weights together: $5\text{ kg} + 3\text{ kg} = 8\text{ kg}$." },
+                { q: "A shipping parcel weighs 8 kg. When a book is removed, it becomes 2 kg lighter. What is its new weight?", o: ["6 kg", "10 kg", "4 kg", "16 kg"], a: "6 kg", e: "Subtract the weight lost: $8\text{ kg} - 2\text{ kg} = 6\text{ kg}$." },
+                { q: "Convert 5000 grams into Kilograms.", o: ["5 kg", "50 kg", "500 kg", "0.5 kg"], a: "5 kg", e: "Divide the grams by 1000 to get kilograms: $5000 \div 1000 = 5\text{ kg}$." },
+                { q: "If a digital scale reads '2500 g', what is this weight in kilograms and grams?", o: ["2 kg 500 g", "25 kg", "250 kg 0 g", "2 kg 50 g"], a: "2 kg 500 g", e: "2000 g becomes 2 kg, leaving 500 g remaining.", g: "digital", w: "2500 g" },
+                { q: "An item weighs 4 kg 200 g. What is its total weight entirely in grams?", o: ["4200 g", "4020 g", "420 g", "40020 g"], a: "4200 g", e: "4 kg equals 4000 g. Add 200 g to get 4200 g." },
+                { q: "Which calculation gives a total of exactly 1 kilogram?", o: ["500 g + 500 g", "200 g + 700 g", "900 g + 10 g", "400 g + 500 g"], a: "500 g + 500 g", e: "500 g + 500 g = 1000 g, which equals exactly 1 kg." },
+                { q: "A box contains 4 bags of biscuits. Each bag weighs 200 grams. What is the total weight of biscuits?", o: ["800 g", "600 g", "1000 g", "200 g"], a: "800 g", e: "Multiply the count by individual mass: $4 \times 200\text{ g} = 800\text{ g}$." },
+                { q: "If a scale dial points halfway between 2 kg and 3 kg, what is the weight?", o: ["2 kg 500 g", "2 kg 300 g", "3 kg 500 g", "2.2 kg"], a: "2 kg 500 g", e: "Halfway between two kilograms represents exactly 500 grams.", g: "digital", w: "2.50 kg" },
+                { q: "Subtract 450 grams from 1 kilogram. How much is left?", o: ["550 g", "650 g", "500 g", "1450 g"], a: "550 g", e: "Convert 1 kg to 1000 g first: $1000\text{ g} - 450\text{ g} = 550\text{ g}$." },
+                { q: "Which of the following weights is the lightest?", o: ["1500 g", "2 kg", "1 kg 200 g", "990 g"], a: "990 g", e: "990 g is less than 1000 g (1 kg), whereas all other choices are greater than 1 kg." },
+                { q: "A bakery uses 350 g of white sugar and 250 g of brown sugar. What is the total sugar used?", o: ["600 g", "500 g", "700 g", "1 kg"], a: "600 g", e: "Add both values together: $350\text{ g} + 250\text{ g} = 600\text{ g}$." },
+                { q: "True or False: 7 kg is equal to 700 grams.", o: ["False", "True", "They are equal sometimes", "Depends on the scale"], a: "False", e: "7 kg equals 7000 grams, not 700 grams." },
+                { q: "A parcel delivery has three small packages weighing 300 g, 400 g, and 200 g. What is their sum total?", o: ["900 g", "1000 g", "700 g", "800 g"], a: "900 g", e: "Summing them up: $300 + 400 + 200 = 900\text{ g}$." },
+                { q: "What number do you multiply Kilograms by to convert them into Grams?", o: ["1000", "100", "10", "60"], a: "1000", e: "Since 1 kg contains 1000 g, multiply any kilogram value by 1000." },
+                { q: "A basket holds 1 kg 500 g of apples. If you eat 500 g of apples, how much is left?", o: ["1 kg", "1 kg 200 g", "2 kg", "500 g"], a: "1 kg", e: "Subtracting 500 g from 1 kg 500 g leaves exactly 1 kg." },
+                { q: "How many 500-gram packages of butter are needed to make 1 Kilogram?", o: ["2 packages", "4 packages", "5 packages", "1 package"], a: "2 packages", e: "$500\text{ g} + 500\text{ g} = 1000\text{ g} = 1\text{ kg}$." },
+                { q: "If a giant brick weighs 6 kg and a small block weighs 500 g, what is the difference in their weights?", o: ["5 kg 500 g", "5 kg", "6500 g", "1 kg"], a: "5 kg 500 g", e: "$6000\text{ g} - 500\text{ g} = 5500\text{ g} = 5\text{ kg } 500\text{ g}$." },
+                // 30 more items to ensure 50 distinct items
+                { q: "Convert 8 kg into grams.", o: ["8000 g", "800 g", "80 g", "8500 g"], a: "8000 g", e: "$8 \times 1000 = 8000\text{ g}$." },
+                { q: "A bag of potatoes weighs 4 kg 800 g. Write this purely in grams.", o: ["4800 g", "4080 g", "480 g", "8400 g"], a: "4800 g", e: "$4000\text{ g} + 800\text{ g} = 4800\text{ g}$." },
+                { q: "Add: 1200 g + 800 g. Give answer in Kilograms.", o: ["2 kg", "2000 kg", "1.2 kg", "20 kg"], a: "2 kg", e: "$1200 + 800 = 2000\text{ g}$, which converts to 2 kg." },
+                { q: "Which statement is correct?", o: ["1500 g > 1 kg", "500 g > 1 kg", "2 kg < 1200 g", "100 g = 1 kg"], a: "1500 g > 1 kg", e: "1500 g equals 1.5 kg, which is larger than 1 kg." },
+                { q: "A mechanical balance scale has 2 kg on the left pan. How many grams must you put on the right to level it?", o: ["2000 g", "200 g", "20 g", "20000 g"], a: "2000 g", e: "To balance perfectly, both weights must be equivalent. 2 kg = 2000 g.", g: "balance", wl: 20, wr: 20 },
+                { q: "If you divide a 1 kg block of cheese equally among 4 children, how many grams does each get?", o: ["250 g", "500 g", "200 g", "100 g"], a: "250 g", e: "$1000\text{ g} \div 4 = 250\text{ g}$ each." },
+                { q: "A chef bought 3 kg of onions, 2 kg of carrots, and 500 g of ginger. What is the combined load?", o: ["5 kg 500 g", "5 kg", "3250 g", "55 kg"], a: "5 kg 500 g", e: "$3\text{ kg} + 2\text{ kg} = 5\text{ kg}$, plus the extra 500 g." },
+                { q: "A dynamic toy robot weighs 750 g. Is it heavier or lighter than a 1 kg packet of salt?", o: ["Lighter", "Heavier", "They have matching weight", "Cannot be determined"], a: "Lighter", e: "750 g is less than 1000 g (1 kg)." },
+                { q: "A carton of milk weighs 1000 grams. If 300 grams are poured out, what does it weigh now?", o: ["700 g", "1300 g", "600 g", "700 kg"], a: "700 g", e: "$1000\text{ g} - 300\text{ g} = 700\text{ g}$." },
+                { q: "How many 200g weights balance a single 1 kg weight?", o: ["5", "2", "4", "10"], a: "5", e: "$1000 \div 200 = 5$ weights." },
+                { q: "Convert 9000 grams into kilograms.", o: ["9 kg", "90 kg", "0.9 kg", "900 kg"], a: "9 kg", e: "$9000 \div 1000 = 9\text{ kg}$." },
+                { q: "Choose the sum of 1 kg 400 g and 600 g.", o: ["2 kg", "1 kg 1000 g", "1460 g", "2000 kg"], a: "2 kg", e: "$400\text{ g} + 600\text{ g} = 1000\text{ g} = 1\text{ kg}$. $1\text{ kg} + 1\text{ kg} = 2\text{ kg}$." },
+                { q: "A suitcase weighs 14 kg. After removing some clothes, it weighs 11 kg. How much weight was taken out?", o: ["3 kg", "25 kg", "4 kg", "5 kg"], a: "3 kg", e: "$14 - 11 = 3\text{ kg}$." },
+                { q: "Write 6 kg 45 g in grams.", o: ["6045 g", "6450 g", "645 g", "60045 g"], a: "6045 g", e: "6 kg = 6000 g. Add 45 g to get 6045 g. Watch out for the placeholder zero!" },
+                { q: "An iron bar weighs 3 kg 750 g. If another bar of matching mass is added, what is the new total weight?", o: ["7 kg 500 g", "6 kg 750 g", "7 kg", "7500 kg"], a: "7 kg 500 g", e: "Double 3 kg = 6 kg. Double 750 g = 1500 g (which is 1 kg 500 g). Total = 7 kg 500 g." },
+                { q: "A storekeeper sets 4 kg of counterweights on one side of a balance. He adds flour until balanced. How many grams of flour are there?", o: ["4000 g", "400 g", "40 g", "4400 g"], a: "4000 g", e: "4 kg converts directly to 4000 g.", g: "balance", wl: 16, wr: 16 },
+                { q: "If half a kilogram of strawberries costs $2, how much does 1 kg cost?", o: ["$4", "$3", "$1", "$8"], a: "$4", e: "1 kg is double of half a kilogram, so double the price: $2 \times 2 = $4$." },
+                { q: "What metric value is exactly 250 g short of 1 kg?", o: ["750 g", "850 g", "650 g", "500 g"], a: "750 g", e: "$1000\text{ g} - 250\text{ g} = 750\text{ g}$." },
+                { q: "A courier box weighs 2200 g. Convert this into mixed units.", o: ["2 kg 200 g", "22 kg", "20 kg 200 g", "2 kg 20 g"], a: "2 kg 200 g", e: "2000 g = 2 kg, leaving 200 g.", g: "digital", w: "2200 g" },
+                { q: "Subtract: 3 kg - 1500 g. What is the result?", o: ["1500 g", "2500 g", "2 kg", "1 kg"], a: "1500 g", e: "3 kg = 3000 g. $3000\text{ g} - 1500\text{ g} = 1500\text{ g}$ (which is 1.5 kg)." },
+                { q: "A package contains 10 identical books, each weighing 100 grams. What is the total package weight?", o: ["1 kg", "100 g", "10 kg", "500 g"], a: "1 kg", e: "$10 \times 100\text{ g} = 1000\text{ g} = 1\text{ kg}$." },
+                { q: "Which value makes this statement true? 4500 g = ____ kg", o: ["4.5", "45", "450", "0.45"], a: "4.5", e: "Divide by 1000: $4500 \div 1000 = 4.5\text{ kg}$." },
+                { q: "A bag of cat food weighs 3 kg 600 g. How many grams is this?", o: ["3600 g", "3060 g", "360 g", "6300 g"], a: "3600 g", e: "3 kg = 3000 g. Add 600 g = 3600 g." },
+                { q: "If you place a 1200 g book on the left pan and a 1 kg weight on the right pan, which side drops down?", o: ["The left side", "The right side", "They stay balanced", "They rotate"], a: "The left side", e: "1200 g is heavier than 1000 g (1 kg), so the left pan sinks.", g: "balance", wl: 20, wr: 12 },
+                { q: "Find the total weight of 3 packages weighing 2 kg each.", o: ["6 kg", "5 kg", "8 kg", "600 g"], a: "6 kg", e: "$3 \times 2\text{ kg} = 6\text{ kg}$." },
+                { q: "Express 7005 grams in Kilograms and Grams.", o: ["7 kg 5 g", "70 kg 5 g", "7 kg 50 g", "700 kg 5 g"], a: "7 kg 5 g", e: "7000 g = 7 kg, with 5 g remaining." },
+                { q: "A standard brick weighs 2 kg. If you saw it perfectly into two halves, how much does each half weigh?", o: ["1000 g", "500 g", "2 kg", "1500 g"], a: "1000 g", e: "Half of 2 kg is 1 kg, which equals 1000 g." },
+                { q: "Calculate: 5 kg - 4 kg 200 g.", o: ["800 g", "1 kg 800 g", "1800 g", "200 g"], a: "800 g", e: "Convert 5 kg to 4 kg 1000 g. $1000\text{ g} - 200\text{ g} = 800\text{ g}$." },
+                { q: "Which is lighter: 4800 g or 5 kg?", o: ["4800 g", "5 kg", "They are identical", "5 kg is lighter"], a: "4800 g", e: "4800 g = 4.8 kg, which is less than 5 kg." },
+                { q: "A delivery box contains 8 tins of soup. Each tin weighs 250 g. What is the total weight in kg?", o: ["2 kg", "4 kg", "1 kg", "2.5 kg"], a: "2 kg", e: "$8 \times 250\text{ g} = 2000\text{ g} = 2\text{ kg}$." }
+            ],
+            hard: [
+                { q: "Express 3508 grams as kilograms and grams.", o: ["3 kg 8 g", "35 kg 8 g", "3 kg 508 g", "3 kg 580 g"], a: "3 kg 508 g", e: "3000 g = 3 kg, and the remaining part is 508 g." },
+                { q: "Add 2 kg 750 g and 1 kg 450 g. What is the total mass?", o: ["4 kg 200 g", "3 kg 200 g", "4 kg 100 g", "3 kg 1200 g"], a: "4 kg 200 g", e: "750 g + 450 g = 1200 g = 1 kg 200 g. Total: $2 + 1 + 1 = 4\text{ kg } 200\text{ g}$." },
+                { q: "A shopkeeper sold 4 kg 50 g of premium rice. How much rice was sold written entirely in grams?", o: ["4050 g", "4500 g", "4005 g", "45000 g"], a: "4050 g", e: "4 kg = 4000 g. Adding 50 g yields 4050 g. Be careful with place value!" },
+                { q: "Sack A weighs 12 kg 250 g. Sack B weighs 8 kg 500 g. How much heavier is Sack A than Sack B?", o: ["3 kg 750 g", "4 kg 250 g", "3 kg 250 g", "4 kg 750 g"], a: "3 kg 750 g", e: "Borrow 1 kg (1000g) from 12 kg: $1250\text{ g} - 500\text{ g} = 750\text{ g}$. Then $11\text{ kg} - 8\text{ kg} = 3\text{ kg}$." },
+                { q: "A box of total weight 5 kg contains metal bolts. If the empty box structure weighs 650 g, what is the weight of the bolts alone?", o: ["4 kg 350 g", "4 kg 650 g", "5 kg 350 g", "3.5 kg"], a: "4 kg 350 g", e: "$5000\text{ g} - 650\text{ g} = 4350\text{ g} = 4\text{ kg } 350\text{ g}$." },
+                { q: "A recipe requires 1 kg 250 g of premium flour. A baker multiplies the recipe by 3. How much flour is needed now?", o: ["3 kg 750 g", "3 kg 250 g", "4 kg 250 g", "375 g"], a: "3 kg 750 g", e: "$3 \times 1\text{ kg} = 3\text{ kg}$ and $3 \times 250\text{ g} = 750\text{ g}$." },
+                { q: "A balance has 4 kg 200 g on the left pan. The right pan contains 2500 g plus an unknown weight block. What value must the unknown block be to balance the scale?", o: ["1700 g", "2300 g", "1500 g", "2 kg"], a: "1700 g", e: "Left side = 4200 g. Right side needs to match: $4200 - 2500 = 1700\text{ g}$.", g: "balance", wl: 20, wr: 20 },
+                { q: "An iron shipping container weighs 350 kg. It is loaded with 4 crates, each weighing 150 kg. What is the complete combined gross weight?", o: ["950 kg", "600 kg", "850 kg", "1000 kg"], a: "950 kg", e: "Crates total: $4 \times 150 = 600\text{ kg}$. Add the container: $600 + 350 = 950\text{ kg}$." },
+                { q: "A family luggage bag weighs 18 kg 400 g. At airline check-in, the maximum limit is 15 kg. How much mass must be removed?", o: ["3 kg 400 g", "3 kg", "23400 g", "4 kg 400 g"], a: "3 kg 400 g", e: "$18\text{ kg } 400\text{ g} - 15\text{ kg } 0\text{ g} = 3\text{ kg } 400\text{ g}$." },
+                { q: "If a digital scale reads '0.075 kg', what is this value measured in pure grams?", o: ["75 g", "750 g", "7.5 g", "7 g"], a: "75 g", e: "Multiply by 1000: $0.075 \times 1000 = 75\text{ g}$.", g: "digital", w: "0.075 kg" },
+                // Continuing up to 50 comprehensive hard level items
+                { q: "Calculate: 6 kg 200 g - 3 kg 850 g.", o: ["2 kg 350 g", "3 kg 350 g", "2 kg 650 g", "3 kg 650 g"], a: "2 kg 350 g", e: "Borrowing: $1200\text{ g} - 850\text{ g} = 350\text{ g}$. $5\text{ kg} - 3\text{ kg} = 2\text{ kg}$." },
+                { q: "A fruit supplier packs 15 kg of grapes into 200-gram commercial punnets. How many punnets can he pack completely?", o: ["75 punnets", "50 punnets", "150 punnets", "30 punnets"], a: "75 punnets", e: "15 kg = 15,000 g. $15000 \div 200 = 75$ punnets." },
+                { q: "Three large stones weigh 4 kg 500 g, 3 kg 700 g, and 2 kg 900 g. What is their combined mass?", o: ["11 kg 100 g", "10.5 kg", "10 kg 100 g", "11 kg 500 g"], a: "11 kg 100 g", e: "Grams sum: $500 + 700 + 900 = 2100\text{ g} = 2\text{ kg } 100\text{ g}$. Kilograms sum: $4 + 3 + 2 + 2 = 11\text{ kg}$." },
+                { q: "A heavy duty lift can safely carry a maximum weight load of 500 kg. Can it carry 6 people weighing 82 kg each?", o: ["No, total is 492 kg which leaves only 8 kg margin", "Yes, total is 492 kg which is under the 500 kg safety limit", "No, total is 512 kg which exceeds safety limits", "Yes, exactly 500 kg"], a: "Yes, total is 492 kg which is under the 500 kg safety limit", e: "$6 \times 82\text{ kg} = 492\text{ kg}$, which safely falls under the 500 kg cap." },
+                { q: "A large metal block weighs 8 kg. A smaller copper block is exactly one-quarter of its weight. Find the combined weight of both blocks.", o: ["10 kg", "2 kg", "12 kg", "9 kg"], a: "10 kg", e: "Quarter weight: $8 \div 4 = 2\text{ kg}$. Combined: $8 + 2 = 10\text{ kg}$." },
+                { q: "Convert 0.65 kg to grams.", o: ["650 g", "65 g", "6500 g", "6.5 g"], a: "650 g", e: "$0.65 \times 1000 = 650\text{ g}$." },
+                { q: "A shopkeeper has a 50 kg sack of lentils. He sells 18 kg 300 g on Monday and 22 kg 450 g on Tuesday. How many lentils remain inside the sack?", o: ["9 kg 250 g", "8 kg 250 g", "9 kg 750 g", "10 kg"], a: "9 kg 250 g", e: "Total sold: $18.300 + 22.450 = 40.750\text{ kg}$. Remaining: $50.000 - 40.750 = 9.250\text{ kg}$." },
+                { q: "Which quantity is the largest?", o: ["4.25 kg", "4 kg 25 g", "4205 g", "4150 g"], a: "4.25 kg", e: "4.25 kg equals 4250 g, which is greater than 4205 g, 4150 g, or 4025 g." },
+                { q: "An empty truck weighs 2500 kg. When loaded with bags of grain, the gross weight becomes 3850 kg. If each grain bag weighs 50 kg, how many bags are in the truck?", o: ["27 bags", "37 bags", "50 bags", "135 bags"], a: "27 bags", e: "Grain total weight: $3850 - 2500 = 1350\text{ kg}$. Bags: $1350 \div 50 = 27$ bags." },
+                { q: "Solve: 9 kg 5 g - 4 kg 90 g.", o: ["4 kg 915 g", "5 kg 915 g", "4 kg 815 g", "5 kg 15 g"], a: "4 kg 915 g", e: "Borrow 1 kg from 9 kg: $1005\text{ g} - 90\text{ g} = 915\text{ g}$. Then $8\text{ kg} - 4\text{ kg} = 4\text{ kg}$." },
+                { q: "A baby elephant weighed 92 kg at birth. After 3 months, its weight increased to 148 kg. What was the average monthly weight gain?", o: ["18.66 kg", "56 kg", "14.5 kg", "20 kg"], a: "18.66 kg", e: "Total gain: $148 - 92 = 56\text{ kg}$. Divide by 3 months: $56 \div 3 = 18.66\text{ kg}$." },
+                { q: "Five small structural plates weigh 350 g each. What is their combined total weight in kg?", o: ["1.75 kg", "17.5 kg", "1750 kg", "0.175 kg"], a: "1.75 kg", e: "$5 \times 350\text{ g} = 1750\text{ g} = 1.75\text{ kg}$." },
+                { q: "A gold merchant has 1 kg of raw gold alloy. He melts it down to forge 8 matching luxury bars. How many grams does each bar weigh?", o: ["125 g", "250 g", "100 g", "80 g"], a: "125 g", e: "$1000\text{ grams} \div 8 = 125\text{ grams}$ per bar." },
+                { q: "A school shipping inventory has 3 boxes of sports equipment. Box A is 12 kg, Box B is 15 kg 500 g, and Box C is 2 kg lighter than Box B. What is the total combined mass of the inventory?", o: ["41 kg", "42.5 kg", "39 kg 500 g", "43 kg"], a: "41 kg", e: "Box C: $15\text{ kg } 500\text{ g} - 2\text{ kg} = 13\text{ kg } 500\text{ g}$. Total: $12 + 15.5 + 13.5 = 41\text{ kg}$." },
+                { q: "What fraction of a Kilogram is 750 grams?", o: ["3/4", "1/2", "1/4", "2/3"], a: "3/4", e: "$750/1000$ reduces down to $3/4$ after dividing the numerator and denominator by 250." },
+                { q: "A recipe requires 85 grams of cocoa powder. How many full batches can be prepared using a 1 kg industrial catering tin of cocoa?", o: ["11 batches", "12 batches", "10 batches", "9 batches"], a: "11 batches", e: "$1000 \div 85 = 11.76$, meaning 11 full complete batches can be prepared safely." },
+                { q: "A concrete block is balanced on a scale by placing three 2 kg weights and two 500 g weights on the opposite side. What is the weight of the block?", o: ["7 kg", "6 kg 500 g", "8 kg", "7500 g"], a: "7 kg", e: "Weights: $(3 \times 2\text{ kg}) + (2 \times 500\text{ g}) = 6\text{ kg} + 1\text{ kg} = 7\text{ kg}$.", g: "balance", wl: 14, wr: 14 },
+                { q: "Express the difference between 8.3 kg and 4150 g in grams.", o: ["4150 g", "4250 g", "4000 g", "3850 g"], a: "4150 g", e: "8.3 kg = 8300 g. $8300\text{ g} - 4150\text{ g} = 4150\text{ g}$." },
+                { q: "A water tank holds 20 liters of water. If 1 liter of fresh water weighs exactly 1 kg, what is the weight of the water inside the tank in grams?", o: ["20000 g", "2000 g", "200 g", "200000 g"], a: "20000 g", e: "20 liters = 20 kg. $20 \times 1000 = 20,000\text{ grams}$." },
+                { q: "A postman is carrying 4 packages. Three packages weigh 1 kg 200 g each, and the fourth package weighs 850 g. Find the total weight carried.", o: ["4 kg 450 g", "3.6 kg", "4 kg 500 g", "3 kg 850 g"], a: "4 kg 450 g", e: "Three packages: $3 \times 1.2\text{ kg} = 3\text{ kg } 600\text{ g}$. Add fourth: $3600\text{ g} + 850\text{ g} = 4450\text{ g} = 4\text{ kg } 450\text{ g}$." },
+                { q: "If 5 identical tins of preserves weigh exactly 2 kg, what is the weight of a single tin in grams?", o: ["400 g", "200 g", "500 g", "250 g"], a: "400 g", e: "2 kg = 2000 g. $2000 \div 5 = 400\text{ grams}$ per tin." },
+                { q: "Crate of oranges weighs 14 kg 200 g. The container structure itself has a tare mass of 1 kg 500 g. What is the net weight of the oranges?", o: ["12 kg 700 g", "13 kg 300 g", "12 kg 300 g", "13 kg 700 g"], a: "12 kg 700 g", e: "Borrow 1 kg from 14 kg: $1200\text{ g} - 500\text{ g} = 700\text{ g}$. Then $13\text{ kg} - 1\text{ kg} = 12\text{ kg}$." },
+                { q: "An industrial pallet holds 40 bags of cement. Each bag weighs 25 kg. What is the absolute total mass of the cement load in tonnes (where 1 tonne = 1000 kg)?", o: ["1 tonne", "2 tonnes", "10 tonnes", "0.5 tonnes"], a: "1 tonne", e: "$40 \times 25\text{ kg} = 1000\text{ kg} = 1\text{ tonne}$." },
+                { q: "A structural girder can withstand up to 4 kg of pressure per square millimeter. Convert 4 kg into milligrams (1 g = 1000 mg).", o: ["4,000,000 mg", "400,000 mg", "40,000 mg", "4,000 mg"], a: "4,000,000 mg", e: "4 kg = 4000 g. $4000 \times 1000 = 4,000,000\text{ mg}$." },
+                { q: "Which symbol configuration makes the comparison accurate? 3 kg 45 g [___] 3450 g", o: ["<", ">", "=", "+"], a: "<", e: "3 kg 45 g = 3045 g, which is strictly less than 3450 g." },
+                { q: "A heavy dictionary weighs 2 kg 400 g. A notebook weighs 350 g. If a student packs 2 dictionaries and 3 notebooks in his bag, what is the combined weight inside?", o: ["5 kg 850 g", "4.8 kg", "5 kg 150 g", "6 kg"], a: "5 kg 850 g", e: "Dictionaries: $2 \times 2400\text{ g} = 4800\text{ g}$. Notebooks: $3 \times 350\text{ g} = 1050\text{ g}$. Sum: $4800 + 1050 = 5850\text{ g} = 5\text{ kg } 850\text{ g}$." },
+                { q: "A block of lead is balanced against 7 iron cylinders weighing 400 g each. What is the mass of the lead block in kg?", o: ["2.8 kg", "28 kg", "280 g", "0.28 kg"], a: "2.8 kg", e: "$7 \times 400\text{ g} = 2800\text{ g} = 2.8\text{ kg}$.", g: "balance", wl: 16, wr: 16 },
+                { q: "How many grams must you add to 6 kg 50 g to obtain a clean weight of 7 kilograms?", o: ["950 g", "850 g", "50 g", "9500 g"], a: "950 g", e: "6 kg 50 g = 6050 g. Target is 7000 g. $7000 - 6050 = 950\text{ grams}$." },
+                { q: "A fitness enthusiast uses two hand dumbbells weighing 4.5 kg each. What is the net total load in grams?", o: ["9000 g", "900 g", "4500 g", "8000 g"], a: "9000 g", e: "$4.5 + 4.5 = 9\text{ kg}$, which equals 9000 grams." },
+                { q: "A roll of industrial sheet metal weighs 48 kg. If a workshop cuts down exactly 12 equal segments from it with no scrap remaining, how heavy is each segment?", o: ["4 kg", "400 g", "3 kg", "4.8 kg"], a: "4 kg", e: "$48\text{ kg} \div 12 = 4\text{ kg}$ per segment." },
+                { q: "Calculate: 10 kg - (3 kg 400 g + 2 kg 800 g).", o: ["3 kg 800 g", "4 kg 200 g", "3 kg 200 g", "4 kg 800 g"], a: "3 kg 800 g", e: "Sum inside parenthesis: $3.4 + 2.8 = 6.2\text{ kg}$. Subtracting: $10 - 6.2 = 3.8\text{ kg} = 3\text{ kg } 800\text{ g}$." },
+                { q: "A package of bulk loose tea weighing 2 kg 400 g is redistributed into tiny matching sachets of 40 g each. How many sachets are filled?", o: ["60 sachets", "600 sachets", "40 sachets", "120 sachets"], a: "60 sachets", e: "2 kg 400 g = 2400 g. Dividing: $2400 \div 40 = 60$ sachets." },
+                { q: "An agricultural crate holds 18 similar melons. The aggregate weight reads 27 kg. Find the average weight of a single melon.", o: ["1 kg 500 g", "1 kg 200 g", "2 kg", "150 g"], a: "1 kg 500 g", e: "$27 \div 18 = 1.5\text{ kg}$, which translates to 1 kg 500 g." },
+                { q: "Determine the combined value: 4500 g + 3.2 kg + 800 g. State the answer in kilograms.", o: ["8.5 kg", "8500 kg", "7.5 kg", "8.0 kg"], a: "8.5 kg", e: "Convert all to grams: $4500 + 3200 + 800 = 8500\text{ g} = 8.5\text{ kg}$." },
+                { q: "A commercial warehouse contains 3 sacks of specialized chemical feed. Sack A weighs 24 kg 500 g, Sack B is 5 kg lighter than Sack A, and Sack C is 3 kg heavier than Sack B. What is the mass of Sack C?", o: ["22.5 kg", "19.5 kg", "27.5 kg", "21.5 kg"], a: "22.5 kg", e: "Sack B = $24.5 - 5 = 19.5\text{ kg}$. Sack C = $19.5 + 3 = 22.5\text{ kg} = 22\text{ kg } 500\text{ g}$." },
+                { q: "Express 1/8 of a Kilogram in grams.", o: ["125 g", "250 g", "75 g", "50 g"], a: "125 g", e: "$1000\text{ grams} \div 8 = 125\text{ grams}$." },
+                { q: "A deep-sea scientific instrument can carry a maximum sample load of 1.5 kg. It has already gathered three biological specimens weighing 450 g, 300 g, and 250 g. How much spare capacity in grams is left?", o: ["500 g", "400 g", "600 g", "1000 g"], a: "500 g", e: "Current payload sum = $450 + 300 + 250 = 1000\text{ g} = 1\text{ kg}$. Total capacity is 1.5 kg (1500 g). Spare capacity = $1500 - 1000 = 500\text{ g}$." },
+                { q: "A large container filled with chemical solvent weighs 32 kg. When the container is exactly half-full, it tracks at 17 kg on the scale platform. What is the structural weight of the container when completely empty?", o: ["2 kg", "15 kg", "1 kg", "3 kg"], a: "2 kg", e: "The difference between full and half-full is the weight of half the liquid: $32 - 17 = 15\text{ kg}$. Hence, total liquid = $15 \times 2 = 30\text{ kg}$. Container shell structure = $32 - 30 = 2\text{ kg}$." },
+                { q: "A heavy mechanical component weighs 9 kg 120 g. If it is cast into 4 identical smaller gear widgets, how heavy is each widget?", o: ["2 kg 280 g", "2 kg 120 g", "3 kg 30 g", "2 kg 40 g"], a: "2 kg 280 g", e: "Convert to grams: 9120 g. Divide by 4: $9120 \div 4 = 2280\text{ g} = 2\text{ kg } 280\text{ g}$." },
+                { q: "A stack of 60 corporate brochures weighs 3 kg. What is the individual weight of one single brochure in grams?", o: ["50 g", "5 g", "20 g", "500 g"], a: "50 g", e: "3 kg = 3000 g. $3000 \div 60 = 50\text{ grams}$ per brochure." }
+            ]
+        };
+
+        /*********************************************************
+         * 3. QUIZ STATE ENGINE CONTROLLER
+         *********************************************************/
+        let currentLevel = '';
+        let questionsList = [];
+        let currentIndex = 0;
+        let score = 0;
+        let selectedAnswersHistory = []; // Tracks user responses for forward/backward indexing
+        let startTime = null;
+
+        // Shuffle utility array function
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function startQuiz(level) {
+            AudioEngine.click();
+            currentLevel = level;
+            // Create a deep copy and shuffle questions
+            let source = QuestionBank[level] || QuestionBank.easy;
+            questionsList = shuffle(JSON.parse(JSON.stringify(source))).slice(0, 50); // Exact 50 items limit
+            
+            currentIndex = 0;
+            score = 0;
+            selectedAnswersHistory = new Array(50).fill(null);
+            startTime = new Date();
+
+            document.getElementById('lbl-level').innerText = level;
+            document.getElementById('screen-start').classList.remove('active');
+            document.getElementById('screen-quiz').classList.add('active');
+
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            if(currentIndex >= questionsList.length) return;
+            
+            const qData = questionsList[currentIndex];
+            
+            // Render Counters & Progress bar
+            document.getElementById('lbl-score').innerText = score;
+            document.getElementById('lbl-counter').innerText = `${currentIndex + 1} / ${questionsList.length}`;
+            const pctFill = ((currentIndex + 1) / questionsList.length) * 100;
+            document.getElementById('progress-fill').style.width = `${pctFill}%`;
+
+            // Draw Vector Graphic Asset dynamically (Conditional Rendering)
+            renderGraphicsPanel(qData);
+
+            // Render text content
+            document.getElementById('question-render-box').innerText = qData.q;
+
+            // Render options
+            const optionsBox = document.getElementById('options-render-box');
+            optionsBox.innerHTML = '';
+            
+            // Shuffle choices option array once securely for UI display stability
+            if(!qData._shuffledOptions) {
+                qData._shuffledOptions = shuffle([...qData.o]);
+            }
+
+            qData._shuffledOptions.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = opt;
+                btn.onclick = () => selectOption(btn, opt);
+                
+                // If user has already answered this previously, re-apply classes
+                if(selectedAnswersHistory[currentIndex] !== null) {
+                    btn.disabled = true;
+                    if(opt === qData.a) btn.classList.add('correct');
+                    if(opt === selectedAnswersHistory[currentIndex] && opt !== qData.a) btn.classList.add('wrong');
+                }
+                optionsBox.appendChild(btn);
+            });
+
+            // Handle bottom feedback display logic state
+            const feedbackPanel = document.getElementById('feedback-panel');
+            if(selectedAnswersHistory[currentIndex] !== null) {
+                const userAns = selectedAnswersHistory[currentIndex];
+                if(userAns === qData.a) {
+                    feedbackPanel.className = "feedback-box correct";
+                    feedbackPanel.innerHTML = `<strong>✅ Correct!</strong><br>${qData.e}`;
+                } else {
+                    feedbackPanel.className = "feedback-box wrong";
+                    feedbackPanel.innerHTML = `<strong>❌ Incorrect.</strong> Correct Answer: <em>${qData.a}</em><br>${qData.e}`;
+                }
+            } else {
+                feedbackPanel.style.display = 'none';
+            }
+
+            // Sync navigation button disabling rules
+            document.getElementById('btn-prev').disabled = (currentIndex === 0);
+            document.getElementById('btn-next').innerText = (currentIndex === questionsList.length - 1) ? "Finish 🏁" : "Next ➡️";
+        }
+
+        function selectOption(clickedBtn, selectedValue) {
+            const qData = questionsList[currentIndex];
+            selectedAnswersHistory[currentIndex] = selectedValue;
+
+            const buttons = document.querySelectorAll('.option-btn');
+            buttons.forEach(btn => btn.disabled = true);
+
+            const feedbackPanel = document.getElementById('feedback-panel');
+
+            if(selectedValue === qData.a) {
+                score++;
+                AudioEngine.correct();
+                clickedBtn.classList.add('correct');
+                feedbackPanel.className = "feedback-box correct";
+                feedbackPanel.innerHTML = `<strong>✅ Correct!</strong><br>${qData.e}`;
+            } else {
+                AudioEngine.wrong();
+                clickedBtn.classList.add('wrong');
+                // Emphasize the true match
+                buttons.forEach(btn => { if(btn.innerText === qData.a) btn.classList.add('correct'); });
+                feedbackPanel.className = "feedback-box wrong";
+                feedbackPanel.innerHTML = `<strong>❌ Incorrect.</strong> Correct Answer: <em>${qData.a}</em><br>${qData.e}`;
+            }
+            document.getElementById('lbl-score').innerText = score;
+        }
+
+        function handleNext() {
+            AudioEngine.click();
+            // Validate if answered or verify confirmation prompt
+            if(selectedAnswersHistory[currentIndex] === null) {
+                if(!confirm("You haven't picked an answer choice for this question. Skip it?")) return;
+                selectedAnswersHistory[currentIndex] = ""; // Skips explicitly marked empty
+            }
+
+            if(currentIndex < questionsList.length - 1) {
+                currentIndex++;
+                renderQuestion();
+            } else {
+                calculateFinalSummary();
+            }
+        }
+
+        function handlePrev() {
+            AudioEngine.click();
+            if(currentIndex > 0) {
+                currentIndex--;
+                renderQuestion();
+            }
+        }
+
+        function quitToMenu() {
+            AudioEngine.click();
+            document.getElementById('screen-quiz').classList.remove('active');
+            document.getElementById('screen-summary').classList.remove('active');
+            document.getElementById('screen-start').classList.add('active');
+        }
+
+        function restartCurrentLevel() {
+            startQuiz(currentLevel);
+        }
+
+        /*********************************************************
+         * 4. VECTOR GRAPHICS SVG RENDERING ENGINE (Conditional)
+         *********************************************************/
+        function renderGraphicsPanel(qData) {
+            const container = document.getElementById('graphics-container');
+            container.innerHTML = ''; // reset graphics canvas frame
+            
+            // Check if question specifically requires visual data
+            if (!qData.g) {
+                container.classList.remove('active');
+                return;
+            }
+            
+            // Question needs graphics - activate container and render SVG
+            container.classList.add('active');
+            let graphicType = qData.g;
+            
+            let svgNS = "http://www.w3.org/2000/svg";
+            let svg = document.createElementNS(svgNS, "svg");
+            svg.setAttribute("width", "100%");
+            svg.setAttribute("height", "100%");
+            svg.setAttribute("viewBox", "0 0 400 160");
+            svg.style.overflow = "visible";
+
+            if(graphicType === 'balance') {
+                // Balance scale diagram matching question parameters weights comparison
+                let wl = qData.wl || 10;
+                let wr = qData.wr || 10;
+                let tilt = 0;
+                if(wl > wr) tilt = 12; // left drops
+                if(wr > wl) tilt = -12; // right drops
+
+                let leftPanY = 100 + tilt;
+                let rightPanY = 100 - tilt;
+
+                // Fulcrum Base Stand
+                let base = document.createElementNS(svgNS, "polygon");
+                base.setAttribute("points", "200,60 185,140 215,140");
+                base.setAttribute("fill", "#7f8c8d");
+                svg.appendChild(base);
+
+                let floor = document.createElementNS(svgNS, "line");
+                floor.setAttribute("x1", "100"); floor.setAttribute("y1", "140");
+                floor.setAttribute("x2", "300"); floor.setAttribute("y2", "140");
+                floor.setAttribute("stroke", "#34495e"); floor.setAttribute("stroke-width", "4");
+                svg.appendChild(floor);
+
+                // Rotating Crossbar Beam
+                let beamG = document.createElementNS(svgNS, "g");
+                beamG.setAttribute("transform", `rotate(${tilt}, 200, 60)`);
+                let mainBeam = document.createElementNS(svgNS, "line");
+                mainBeam.setAttribute("x1", "90"); mainBeam.setAttribute("y1", "60");
+                mainBeam.setAttribute("x2", "310"); mainBeam.setAttribute("y2", "60");
+                mainBeam.setAttribute("stroke", "#d35400"); mainBeam.setAttribute("stroke-width", "6");
+                beamG.appendChild(mainBeam);
+                
+                let pivot = document.createElementNS(svgNS, "circle");
+                pivot.setAttribute("cx", "200"); pivot.setAttribute("cy", "60"); pivot.setAttribute("r", "5");
+                pivot.setAttribute("fill", "#2c3e50");
+                beamG.appendChild(pivot);
+                svg.appendChild(beamG);
+
+                // Left Strings & Pan assembly
+                let leftStrings = document.createElementNS(svgNS, "path");
+                leftStrings.setAttribute("d", `M 90,${60 + tilt} L 65,${leftPanY} M 90,${60 + tilt} L 115,${leftPanY}`);
+                leftStrings.setAttribute("stroke", "#7f8c8d"); leftStrings.setAttribute("stroke-width", "2");
+                svg.appendChild(leftStrings);
+
+                let leftPan = document.createElementNS(svgNS, "path");
+                leftPan.setAttribute("d", `M 60,${leftPanY} C 60,${leftPanY+15} 120,${leftPanY+15} 120,${leftPanY} Z`);
+                leftPan.setAttribute("fill", "#f1c40f"); leftPan.setAttribute("stroke", "#f39c12");
+                svg.appendChild(leftPan);
+
+                // Left pan item payload weight blocks shapes
+                let itemL = document.createElementNS(svgNS, "rect");
+                itemL.setAttribute("x", "82"); itemL.setAttribute("y", `${leftPanY - 20}`);
+                itemL.setAttribute("width", "16"); itemL.setAttribute("height", "20");
+                itemL.setAttribute("fill", "#3498db"); itemL.setAttribute("rx", "3");
+                svg.appendChild(itemL);
+
+                // Right Strings & Pan assembly
+                let rightStrings = document.createElementNS(svgNS, "path");
+                rightStrings.setAttribute("d", `M 310,${60 - tilt} L 285,${rightPanY} M 310,${60 - tilt} L 335,${rightPanY}`);
+                rightStrings.setAttribute("stroke", "#7f8c8d"); rightStrings.setAttribute("stroke-width", "2");
+                svg.appendChild(rightStrings);
+
+                let rightPan = document.createElementNS(svgNS, "path");
+                rightPan.setAttribute("d", `M 280,${rightPanY} C 280,${rightPanY+15} 340,${rightPanY+15} 340,${rightPanY} Z`);
+                rightPan.setAttribute("fill", "#f1c40f"); rightPan.setAttribute("stroke", "#f39c12");
+                svg.appendChild(rightPan);
+
+                // Right pan item payload weight blocks shapes
+                let itemR = document.createElementNS(svgNS, "circle");
+                itemR.setAttribute("cx", "310"); itemR.setAttribute("cy", `${rightPanY - 10}`);
+                itemR.setAttribute("r", "11"); itemR.setAttribute("fill", "#e74c3c");
+                svg.appendChild(itemR);
+
+            } else if (graphicType === 'digital') {
+                // Draw digital grocery scale screen view box
+                let scaleBase = document.createElementNS(svgNS, "rect");
+                scaleBase.setAttribute("x", "120"); scaleBase.setAttribute("y", "95");
+                scaleBase.setAttribute("width", "160"); scaleBase.setAttribute("height", "45");
+                scaleBase.setAttribute("fill", "#95a5a6"); scaleBase.setAttribute("rx", "6");
+                svg.appendChild(scaleBase);
+
+                let topPlate = document.createElementNS(svgNS, "rect");
+                topPlate.setAttribute("x", "100"); topPlate.setAttribute("y", "85");
+                topPlate.setAttribute("width", "200"); topPlate.setAttribute("height", "10");
+                topPlate.setAttribute("fill", "#7f8c8d"); topPlate.setAttribute("rx", "2");
+                svg.appendChild(topPlate);
+
+                let LCD = document.createElementNS(svgNS, "rect");
+                LCD.setAttribute("x", "150"); LCD.setAttribute("y", "105");
+                LCD.setAttribute("width", "100"); LCD.setAttribute("height", "25");
+                LCD.setAttribute("fill", "#2c3e50"); LCD.setAttribute("rx", "4");
+                svg.appendChild(LCD);
+
+                // Custom Display value payload string text logic
+                let txt = document.createElementNS(svgNS, "text");
+                txt.setAttribute("x", "200"); txt.setAttribute("y", "123");
+                txt.setAttribute("fill", "#2ecc71"); txt.setAttribute("font-family", "monospace");
+                txt.setAttribute("font-size", "15"); txt.setAttribute("text-anchor", "middle");
+                txt.innerText = qData.w || "0.000";
+                svg.appendChild(txt);
+
+                // Item setting on tray plate overhead
+                let bag = document.createElementNS(svgNS, "path");
+                bag.setAttribute("d", "M 180,85 C 170,50 230,50 220,85 Z");
+                bag.setAttribute("fill", "#e67e22");
+                svg.appendChild(bag);
+            }
+
+            container.appendChild(svg);
+        }
+
+        /*********************************************************
+         * 5. FINAL SCORE & SUMMARY APP CALCULATOR
+         *********************************************************/
+        function calculateFinalSummary() {
+            const timeDifference = Math.floor((new Date() - startTime) / 1000);
+            const minutes = Math.floor(timeDifference / 60);
+            const seconds = timeDifference % 60;
+            const percentage = Math.round((score / questionsList.length) * 100);
+
+            // Determine badge categories tier accurately
+            let badgeIcon = "📚";
+            let badgeTitle = "Keep Practising";
+            let badgeDesc = "Keep reviewing mass scales and try conversions again to build absolute confidence!";
+
+            if(percentage >= 90) {
+                badgeIcon = "🏆";
+                badgeTitle = "Weight Master";
+                badgeDesc = "Incredible! You have completely mastered grams, kilograms, and mathematical weight conversions!";
+            } else if (percentage >= 70) {
+                badgeIcon = "🌟";
+                badgeTitle = "Measurement Explorer";
+                badgeDesc = "Fantastic work! You possess a robust functional grasp of estimating and calculating heavier masses.";
+            } else if (percentage >= 50) {
+                badgeIcon = "👍";
+                badgeTitle = "Good Learner";
+                badgeDesc = "Good progress! Review your mistakes to master multi-step problem solving metrics next time.";
+            }
+
+            // Fill HTML fields text variables string inject
+            document.getElementById('sum-tier').innerText = currentLevel;
+            document.getElementById('sum-score').innerText = `${score} / ${questionsList.length}`;
+            document.getElementById('sum-pct').innerText = `${percentage}%`;
+            document.getElementById('sum-correct').innerText = score;
+            document.getElementById('sum-wrong').innerText = questionsList.length - score;
+            document.getElementById('sum-time').innerText = `${minutes}m ${seconds}s`;
+
+            document.getElementById('summary-badge-icon').innerText = badgeIcon;
+            document.getElementById('summary-badge-title').innerText = badgeTitle;
+            document.getElementById('summary-badge-desc').innerText = badgeDesc;
+
+            // Map variables directly down to print certificate payload layout
+            document.getElementById('cert-level').innerText = currentLevel;
+            document.getElementById('cert-score').innerText = `${score}/${questionsList.length}`;
+            document.getElementById('cert-pct').innerText = `${percentage}%`;
+
+            // Transition screens panels visible layout toggle
+            document.getElementById('screen-quiz').classList.remove('active');
+            document.getElementById('screen-summary').classList.add('active');
+
+            AudioEngine.badge();
+            if(percentage >= 70) { triggerConfettiExplosion(); }
+        }
+
+        /*********************************************************
+         * 6. HIGH PERF LIGHTWEIGHT CANVAS CONFETTI FX ENGINE
+         *********************************************************/
+        function triggerConfettiExplosion() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Re-size context buffer to match parent container card boundary dynamically
+            canvas.width = canvas.parentElement.offsetWidth;
+            canvas.height = canvas.parentElement.offsetHeight;
+
+            let particles = [];
+            const colors = ['#ff9f1c', '#2ec4b6', '#e71d36', '#4a148c', '#3b82f6'];
+
+            for (let i = 0; i < 120; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    r: Math.random() * 6 + 4,
+                    d: Math.random() * canvas.height,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    tilt: Math.random() * 10 - 5,
+                    tiltAngleIncremental: Math.random() * 0.07 + 0.02,
+                    tiltAngle: 0
+                });
+            }
+
+            let animationFrameId;
+            function drawConfettiFrame() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let processingActive = false;
+
+                particles.forEach((p, idx) => {
+                    p.tiltAngle += p.tiltAngleIncremental;
+                    p.y += (Math.cos(p.d) + 3 + p.r / 2) / 2;
+                    p.x += Math.sin(p.tiltAngle);
+                    p.tilt = Math.sin(p.tiltAngle - idx / 3) * 15;
+
+                    if (p.y <= canvas.height) { processingActive = true; }
+
+                    ctx.beginPath();
+                    ctx.lineWidth = p.r;
+                    ctx.strokeStyle = p.color;
+                    ctx.moveTo(p.x + p.tilt + p.r / 2, p.y);
+                    ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 2);
+                    ctx.stroke();
+                });
+
+                if (processingActive) {
+                    animationFrameId = requestAnimationFrame(drawConfettiFrame);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+            drawConfettiFrame();
+        }
+    </script>
+</body>
+</html>

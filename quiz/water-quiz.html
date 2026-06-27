@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💧 Water Quiz</title>
+    <style>
+        /* CSS RESET & THEME VARIABLES */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --primary-gradient: linear-gradient(135deg, #74ebd5 0%, #9face6 100%);
+            --card-bg: rgba(255, 255, 255, 0.55);
+            --card-border: rgba(255, 255, 255, 0.4);
+            --text-main: #1a2a3a;
+            --text-muted: #4a5568;
+            --easy-btn: #2ecc71;
+            --medium-btn: #f1c40f;
+            --hard-btn: #e74c3c;
+            --correct-ui: #27ae60;
+            --wrong-ui: #c0392b;
+            --accent-blue: #2980b9;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        }
+
+        body {
+            min-height: 100vh;
+            background: var(--primary-gradient);
+            background-size: 400% 400%;
+            animation: rippleBg 20s ease infinite;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-main);
+            padding: 15px;
+            overflow-x: hidden;
+        }
+
+        @keyframes rippleBg {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* CARD ARCHITECTURE */
+        .quiz-card {
+            width: 100%;
+            max-width: 820px;
+            background: var(--card-bg);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            padding: 30px;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 2.6rem;
+            text-align: center;
+            margin-bottom: 6px;
+            color: #0f2c59;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.04);
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 1.15rem;
+            color: #34495e;
+            margin-bottom: 35px;
+            font-weight: 600;
+            letter-spacing: 1.2px;
+        }
+
+        /* VIEW DISPLAY CONTROLS */
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* SELECTION MENU CONFIGURATION */
+        .menu-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 25px;
+        }
+
+        .btn-level {
+            padding: 22px;
+            font-size: 1.35rem;
+            font-weight: bold;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .btn-level:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.14);
+        }
+
+        .btn-level:active { transform: translateY(-1px); }
+        .btn-easy { background-color: var(--easy-btn); }
+        .btn-medium { background-color: var(--medium-btn); color: #2c3e50; }
+        .btn-hard { background-color: var(--hard-btn); }
+
+        /* HEADER & UTILITY NAVIGATION */
+        .quiz-top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 22px;
+            gap: 12px;
+        }
+
+        .level-tag {
+            padding: 8px 18px;
+            border-radius: 25px;
+            font-weight: 800;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .btn-home-nav {
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(0,0,0,0.12);
+            padding: 9px 18px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            color: var(--text-main);
+        }
+
+        .btn-home-nav:hover {
+            background: #ffffff;
+            transform: scale(1.03);
+        }
+
+        /* PROGRESS MONITORING SYSTEM */
+        .track-wrapper {
+            width: 100%;
+            height: 14px;
+            background: rgba(0, 0, 0, 0.08);
+            border-radius: 7px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .track-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #3498db, #00ced1);
+            border-radius: 7px;
+            transition: width 0.4s ease-out;
+        }
+
+        .data-counters {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 22px;
+        }
+
+        .question-holder {
+            font-size: 1.45rem;
+            font-weight: 700;
+            color: #0f2c59;
+            margin-bottom: 25px;
+            line-height: 1.45;
+        }
+
+        /* DYNAMIC SVG CANVAS PACKETS */
+        .graphic-display {
+            width: 100%;
+            max-width: 260px;
+            height: 230px;
+            margin: 0 auto 25px auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.75);
+            border-radius: var(--radius-md);
+            padding: 15px;
+            box-shadow: inset 0 4px 12px rgba(0,0,0,0.04), 0 4px 10px rgba(0,0,0,0.02);
+        }
+
+        .graphic-display svg {
+            width: 100%;
+            height: 100%;
+            max-height: 200px;
+        }
+
+        /* MULTIPLE CHOICE GRID CONFIGURATION */
+        .options-pane {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 14px;
+            margin-bottom: 25px;
+        }
+
+        @media (min-width: 620px) {
+            .options-pane { grid-template-columns: 1fr 1fr; }
+        }
+
+        .btn-choice {
+            background: rgba(255, 255, 255, 0.85);
+            border: 2px solid transparent;
+            border-radius: var(--radius-md);
+            padding: 20px;
+            font-size: 1.15rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+            color: var(--text-main);
+        }
+
+        .btn-choice:hover:not([disabled]) {
+            background: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+            border-color: var(--accent-blue);
+        }
+
+        .btn-choice:disabled { cursor: not-allowed; }
+
+        .btn-choice.correct {
+            background-color: #d4edda !important;
+            border-color: var(--correct-ui) !important;
+            color: #155724 !important;
+            font-weight: 700;
+        }
+
+        .btn-choice.wrong {
+            background-color: #f8d7da !important;
+            border-color: var(--wrong-ui) !important;
+            color: #721c24 !important;
+        }
+
+        /* EXPLANATORY COMPONENT FEEDBACK */
+        .explanation-space {
+            background: rgba(255, 255, 255, 0.92);
+            border-left: 6px solid var(--accent-blue);
+            border-radius: 8px;
+            padding: 18px 22px;
+            margin-bottom: 25px;
+            display: none;
+        }
+
+        .explanation-space.active {
+            display: block;
+            animation: revealDown 0.35s ease;
+        }
+
+        @keyframes revealDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .explanation-title {
+            font-weight: 800;
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+
+        .explanation-title.ui-correct { color: var(--correct-ui); }
+        .explanation-title.ui-wrong { color: var(--wrong-ui); }
+        .explanation-content { font-size: 1.05rem; color: #2d3748; line-height: 1.5; }
+
+        /* CONTROL NAVIGATION BLOCK */
+        .nav-block {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .btn-step {
+            padding: 15px 32px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-step:active { transform: scale(0.97); }
+        .btn-backwards { background: #e2e8f0; color: #4a5568; }
+        .btn-backwards:hover:not([disabled]) { background: #cbd5e1; }
+        .btn-backwards:disabled { opacity: 0.45; cursor: not-allowed; }
+        .btn-forwards { background: var(--accent-blue); color: white; margin-left: auto; }
+        .btn-forwards:hover { background: #1f6696; }
+
+        /* PERFORMANCE ASSESSMENT VIEWS */
+        .results-summary-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 25px 0;
+        }
+
+        @media(max-width: 540px) {
+            .results-summary-layout { grid-template-columns: 1fr; }
+        }
+
+        .metric-tile {
+            background: rgba(255,255,255,0.7);
+            padding: 16px;
+            border-radius: var(--radius-md);
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.4);
+        }
+
+        .metric-data {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: #0f2c59;
+            margin-top: 4px;
+        }
+
+        .showcase-badge-box {
+            text-align: center;
+            margin: 25px 0;
+            padding: 24px;
+            background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+            border-radius: var(--radius-md);
+            border: 3px dashed #00acc1;
+        }
+
+        .badge-avatar {
+            font-size: 3.8rem;
+            margin-bottom: 8px;
+            animation: bobbing 2.5s ease-in-out infinite;
+        }
+
+        @keyframes bobbing {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .badge-title-txt {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #006064;
+        }
+
+        .summary-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        .btn-action-core {
+            padding: 16px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .btn-action-replay { background: #2ecc71; color: white; }
+        .btn-action-replay:hover { background: #27ae60; }
+        .btn-action-switch { background: #3498db; color: white; }
+        .btn-action-switch:hover { background: #2980b9; }
+        .btn-action-print { background: transparent; border: 2px solid #5a6a85; color: #2c3e50; }
+        .btn-action-print:hover { background: rgba(0,0,0,0.06); }
+
+        /* PARTICLES / CELEBRATION OVERLAYS */
+        #celebration-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 100;
+            display: none;
+        }
+
+        /* PRINT EXCLUSIVE TEMPLATES */
+        #printable-certificate-container { display: none; }
+
+        @media print {
+            body * { visibility: hidden; }
+            #printable-certificate-container, #printable-certificate-container * { visibility: visible; }
+            #printable-certificate-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                display: block !important;
+                padding: 50px;
+                border: 12px double #1f6696;
+                background: #ffffff;
+                text-align: center;
+                font-family: 'Georgia', serif;
+                color: #222;
+            }
+            .cert-header-main { font-size: 3.2rem; color: #1f6696; margin-bottom: 25px; font-weight: bold; }
+            .cert-sub-main { font-size: 1.5rem; font-style: italic; margin-bottom: 45px; color: #444; }
+            .cert-name-line { font-size: 2.2rem; font-weight: bold; text-decoration: underline; margin-bottom: 25px; color: #111; }
+            .cert-body-narrative { font-size: 1.3rem; line-height: 1.7; margin-bottom: 45px; max-width: 650px; margin-left: auto; margin-right: auto; }
+            .cert-base-signatures { display: flex; justify-content: space-around; margin-top: 70px; font-weight: bold; font-size: 1.1rem; }
+            .cert-watermark-icon { font-size: 5rem; position: absolute; right: 60px; bottom: 60px; opacity: 0.15; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="celebration-canvas"></canvas>
+
+    <div class="quiz-card">
+        <div id="view-landing" class="screen active">
+            <h1>💧 Water Quiz</h1>
+            <div class="subtitle">Observe • Explore • Save • Learn</div>
+            <div style="text-align:center; font-size: 1.2rem; font-weight: 700; color: #0f2c59; margin-bottom: 18px;">
+                Select a level to begin your science journey!
+            </div>
+            <div class="menu-grid">
+                <button class="btn-level btn-easy" onclick="initiateQuizSession('easy')">🟢 Easy Level (Classes 1–2)</button>
+                <button class="btn-level btn-medium" onclick="initiateQuizSession('medium')">🟡 Medium Level (Classes 3–4)</button>
+                <button class="btn-level btn-hard" onclick="initiateQuizSession('hard')">🔴 Hard Level (Classes 4–5)</button>
+            </div>
+        </div>
+
+        <div id="view-player" class="screen">
+            <div class="quiz-top-bar">
+                <span id="label-level-tier" class="level-tag">Tier</span>
+                <button class="btn-home-nav" onclick="requestHomeAbort()">🏠 Home</button>
+            </div>
+
+            <div class="track-wrapper">
+                <div id="quiz-fluid-bar" class="track-bar"></div>
+            </div>
+
+            <div class="data-counters">
+                <span id="txt-question-count">Question: 1/30</span>
+                <span id="txt-score-count">Score: 0</span>
+            </div>
+
+            <div id="graphics-box-wrapper" class="graphic-display" style="display: none;">
+                </div>
+
+            <div id="txt-question-string" class="question-holder">Loading...</div>
+
+            <div id="box-options-pane" class="options-pane">
+                </div>
+
+            <div id="box-explanation" class="explanation-space">
+                <div id="txt-explanation-title" class="explanation-title">Correct!</div>
+                <div id="txt-explanation-body" class="explanation-content">Contextual educational proofing notes.</div>
+            </div>
+
+            <div class="nav-block">
+                <button id="btn-step-prev" class="btn-step btn-backwards" onclick="navigateBackwards()" disabled>⬅️ Previous</button>
+                <button id="btn-step-next" class="btn-step btn-forwards" onclick="navigateForwards()">Next ➡️</button>
+            </div>
+        </div>
+
+        <div id="view-wrapup" class="screen">
+            <h1>🎉 Quiz Completed!</h1>
+            <div class="subtitle">Excellent work inspecting the wonders of water!</div>
+
+            <div class="showcase-badge-box">
+                <div id="txt-badge-avatar" class="badge-avatar">🏆</div>
+                <div id="txt-badge-heading" class="badge-title-txt">Water Expert</div>
+            </div>
+
+            <div class="results-summary-layout">
+                <div class="metric-tile"><div>Selected Level</div><div id="lbl-summary-level" class="metric-data">-</div></div>
+                <div class="metric-tile"><div>Final Score</div><div id="lbl-summary-score" class="metric-data">0/30</div></div>
+                <div class="metric-tile"><div>Accuracy Percentage</div><div id="lbl-summary-percent" class="metric-data">0%</div></div>
+                <div class="metric-tile"><div>Time Expended</div><div id="lbl-summary-duration" class="metric-data">0s</div></div>
+                <div class="metric-tile"><div>Correct Answers</div><div id="lbl-summary-correct" class="metric-data" style="color:var(--correct-ui)">0</div></div>
+                <div class="metric-tile"><div>Wrong Answers</div><div id="lbl-summary-wrong" class="metric-data" style="color:var(--wrong-ui)">0</div></div>
+            </div>
+
+            <div class="summary-actions">
+                <button class="btn-action-core btn-action-replay" onclick="relaunchCurrentTier()">🔄 Play This Level Again</button>
+                <button class="btn-action-core btn-action-switch" onclick="returnToMainLanding()">🌈 Choose Another Level</button>
+                <button class="btn-action-core btn-action-print" onclick="window.print()">🖨️ Print My Certificate</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="printable-certificate-container">
+        <div class="cert-header-main">Certificate of Achievement</div>
+        <div class="cert-sub-main">Junior Water Science & Conservation Award</div>
+        <p class="cert-body-narrative">This is to officially certify that a dedicated eco-learner has successfully completed the interactive, rigorous environmental studies challenge on</p>
+        <div class="cert-name-line">The Science & Value of Water</div>
+        <p class="cert-body-narrative">
+            Assessed Difficulty Tier: <span id="out-cert-level" style="font-weight: bold; text-transform: uppercase;">-</span><br>
+            Final Evaluation Score: <span id="out-cert-score" style="font-weight: bold;">0/30</span> (<span id="out-cert-pct">0%</span> Verification Grade)<br>
+            Earned Distinction Badge: <span id="out-cert-badge" style="font-weight: bold;">-</span>
+        </p>
+        <p class="cert-body-narrative" style="font-size:1.1rem; margin-top:15px; font-style: italic;">"Water is life. By exploring its cycle and preserving its purity, you help protect planet Earth!"</p>
+        <div class="cert-base-signatures">
+            <div>📅 Evaluation Date: <span id="out-cert-date">2026</span></div>
+            <div>✍️ Authorized Issuer: EVS Quiz Inspector</div>
+        </div>
+        <div class="cert-watermark-icon">💧☁️☀️</div>
+    </div>
+
+    <script>
+        /* CORE AUDIO ARCHITECTURE (WEB AUDIO API MATHEMATICAL GENERATOR) */
+        let browserAudioContext = null;
+
+        function soundInitializer() {
+            if (!browserAudioContext) {
+                browserAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function triggerSynthesizedAudio(soundEffectType) {
+            soundInitializer();
+            if (!browserAudioContext) return;
+
+            const systemTimePoint = browserAudioContext.currentTime;
+
+            switch(soundEffectType) {
+                case 'click':
+                    let clickOscillator = browserAudioContext.createOscillator();
+                    let clickGainControl = browserAudioContext.createGain();
+                    clickOscillator.connect(clickGainControl);
+                    clickGainControl.connect(browserAudioContext.destination);
+                    clickOscillator.frequency.setValueAtTime(580, systemTimePoint);
+                    clickGainControl.gain.setValueAtTime(0.06, systemTimePoint);
+                    clickGainControl.gain.exponentialRampToValueAtTime(0.001, systemTimePoint + 0.04);
+                    clickOscillator.start(systemTimePoint);
+                    clickOscillator.stop(systemTimePoint + 0.04);
+                    break;
+
+                case 'drop':
+                    // Generates an authentic liquid bubble/plop sound
+                    let waterOsc = browserAudioContext.createOscillator();
+                    let waterGain = browserAudioContext.createGain();
+                    waterOsc.connect(waterGain);
+                    waterGain.connect(browserAudioContext.destination);
+                    waterOsc.type = 'sine';
+                    waterOsc.frequency.setValueAtTime(400, systemTimePoint);
+                    waterOsc.frequency.exponentialRampToValueAtTime(1300, systemTimePoint + 0.15);
+                    waterGain.gain.setValueAtTime(0.15, systemTimePoint);
+                    waterGain.gain.exponentialRampToValueAtTime(0.001, systemTimePoint + 0.15);
+                    waterOsc.start(systemTimePoint);
+                    waterOsc.stop(systemTimePoint + 0.15);
+                    break;
+
+                case 'correct':
+                    // Harmonious dual note resolution chord
+                    [440, 554.37, 659.25].forEach((frequencyValue, sequenceOffset) => {
+                        let chordOsc = browserAudioContext.createOscillator();
+                        let chordGain = browserAudioContext.createGain();
+                        chordOsc.type = 'sine';
+                        chordOsc.connect(chordGain);
+                        chordGain.connect(browserAudioContext.destination);
+                        chordOsc.frequency.setValueAtTime(frequencyValue, systemTimePoint + (sequenceOffset * 0.05));
+                        chordGain.gain.setValueAtTime(0.08, systemTimePoint + (sequenceOffset * 0.05));
+                        chordGain.gain.exponentialRampToValueAtTime(0.001, systemTimePoint + (sequenceOffset * 0.05) + 0.25);
+                        chordOsc.start(systemTimePoint + (sequenceOffset * 0.05));
+                        chordOsc.stop(systemTimePoint + (sequenceOffset * 0.05) + 0.25);
+                    });
+                    break;
+
+                case 'wrong':
+                    // Harsh abrasive flat industrial frequency dump
+                    let failOsc = browserAudioContext.createOscillator();
+                    let failGain = browserAudioContext.createGain();
+                    failOsc.type = 'sawtooth';
+                    failOsc.connect(failGain);
+                    failGain.connect(browserAudioContext.destination);
+                    failOsc.frequency.setValueAtTime(140, systemTimePoint);
+                    failOsc.frequency.linearRampToValueAtTime(75, systemTimePoint + 0.28);
+                    failGain.gain.setValueAtTime(0.15, systemTimePoint);
+                    failGain.gain.linearRampToValueAtTime(0.001, systemTimePoint + 0.28);
+                    failOsc.start(systemTimePoint);
+                    failOsc.stop(systemTimePoint + 0.28);
+                    break;
+
+                case 'completion':
+                    // Grand upbeat major-scale melody runtime cascade
+                    const musicalNotes = [523.25, 587.33, 659.25, 698.46, 783.99, 880.00, 987.77, 1046.50];
+                    musicalNotes.forEach((freq, stepIndex) => {
+                        let stepOsc = browserAudioContext.createOscillator();
+                        let stepGain = browserAudioContext.createGain();
+                        stepOsc.type = 'sine';
+                        stepOsc.connect(stepGain);
+                        stepGain.connect(browserAudioContext.destination);
+                        stepOsc.frequency.setValueAtTime(freq, systemTimePoint + (stepIndex * 0.08));
+                        stepGain.gain.setValueAtTime(0.07, systemTimePoint + (stepIndex * 0.08));
+                        stepGain.gain.exponentialRampToValueAtTime(0.001, systemTimePoint + (stepIndex * 0.08) + 0.3);
+                        stepOsc.start(systemTimePoint + (stepIndex * 0.08));
+                        stepOsc.stop(systemTimePoint + (stepIndex * 0.08) + 0.3);
+                    });
+                    break;
+            }
+        }
+
+        /* INLINE SCALABLE SVG VECTOR GRAPHICS DATABASE */
+        const InlineVectors = {
+            water_drop: `<svg viewBox="0 0 100 100"><path d="M50 15 C50 15 20 55 20 70 A 30 30 0 0 0 80 70 C80 55 50 15 50 15 Z" fill="#3498db"/><circle cx="42" cy="62" r="6" fill="#fff" opacity="0.3"/></svg>`,
+            tap: `<svg viewBox="0 0 100 100"><rect x="15" y="35" width="45" height="15" rx="4" fill="#bdc3c7"/><rect x="45" y="20" width="15" height="30" rx="3" fill="#95a5a6"/><path d="M45 45 L45 65 H35 V70 H55 V65 H50 L50 45 Z" fill="#7f8c8d"/><path d="M40 75 Q42 85 40 95" stroke="#3498db" stroke-width="4" fill="none" stroke-linecap="round"/></svg>`,
+            glass_of_water: `<svg viewBox="0 0 100 100"><path d="M25 20 L32 85 A 6 6 0 0 0 38 90 H62 A 6 6 0 0 0 68 85 L75 20 Z" fill="none" stroke="#bdc3c7" stroke-width="4"/><path d="M30 45 L34 85 C34 87 36 88 38 88 H62 C64 88 66 87 66 85 L70 45 Z" fill="#6baed6"/></svg>`,
+            river: `<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#7ed321"/><path d="M0 20 Q25 45 50 20 T100 20 L100 70 Q75 95 50 70 T0 70 Z" fill="#4a90e2"/></svg>`,
+            pond: `<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#8bc34a"/><ellipse cx="50" cy="55" rx="42" ry="28" fill="#29b6f6" stroke="#0288d1" stroke-width="3"/><path d="M25 45 Q22 30 28 35 M75 60 Q80 45 72 50" stroke="#4caf50" stroke-width="4" fill="none"/></svg>`,
+            lake: `<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#a1887f"/><ellipse cx="50" cy="50" rx="45" ry="35" fill="#0288d1"/><path d="M20 30 C30 25 40 35 50 30 C60 25 70 35 80 30" stroke="#fff" stroke-width="2" fill="none" opacity="0.4"/></svg>`,
+            sea: `<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#1565c0"/><path d="M0 30 Q25 15 50 30 T100 30 L100 100 H0 Z" fill="#0d47a1"/><circle cx="80" cy="25" r="8" fill="#fffde7"/></svg>`,
+            ocean: `<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#0d47a1"/><path d="M0 40 Q12 30 25 40 T50 40 T75 40 T100 40 L100 100 H0 Z" fill="#0a3680"/><path d="M70 70 Q75 65 80 70" stroke="#fff" stroke-width="2" fill="none"/></svg>`,
+            rain: `<svg viewBox="0 0 100 100"><path d="M25 50 A 12 12 0 0 1 32 28 A 16 16 0 0 1 65 25 A 12 12 0 0 1 78 50 Z" fill="#cfd8dc"/><g stroke="#29b6f6" stroke-width="3" stroke-linecap="round"><line x1="35" y1="62" x2="30" y2="78" /><line x1="52" y1="65" x2="47" y2="81" /><line x1="68" y1="62" x2="63" y2="78" /></g></svg>`,
+            clouds: `<svg viewBox="0 0 100 100"><path d="M20 60 A 10 10 0 0 1 26 40 A 15 15 0 0 1 58 35 A 12 12 0 0 1 75 60 Z" fill="#e0f7fa"/><path d="M40 70 A 12 12 0 0 1 48 48 A 18 18 0 0 1 80 42 A 14 14 0 0 1 95 70 Z" fill="#b2ebf2" opacity="0.8"/></svg>`,
+            well: `<svg viewBox="0 0 100 100"><rect x="30" y="55" width="40" height="35" rx="2" fill="#b0bec5" stroke="#37474f" stroke-width="2"/><line x1="35" y1="55" x2="35" y2="25" stroke="#78909c" stroke-width="3"/><line x1="65" y1="55" x2="65" y2="25" stroke="#78909c" stroke-width="3"/><path d="M30 28 L50 12 L70 28 Z" fill="#d32f2f"/><circle cx="50" cy="35" r="6" fill="none" stroke="#37474f" stroke-width="2"/></svg>`,
+            hand_pump: `<svg viewBox="0 0 100 100"><rect x="45" y="40" width="10" height="50" fill="#37474f"/><path d="M45 45 H25 V52 H45 Z" fill="#263238"/><path d="M55 48 L80 75" stroke="#263238" stroke-width="4" stroke-linecap="round"/><rect x="35" y="85" width="30" height="7" fill="#78909c"/></svg>`,
+            dam: `<svg viewBox="0 0 100 100"><path d="M10 90 L30 25 H70 L90 90 Z" fill="#78909c"/><path d="M0 65 H36 V90 H0 Z" fill="#0288d1"/><path d="M64 65 H100 V90 H100 Z" fill="#0288d1"/><path d="M36 72 Q50 95 64 72" fill="none" stroke="#fff" stroke-width="4"/></svg>`,
+            water_cycle: `<svg viewBox="0 0 100 100"><circle cx="15" cy="15" r="10" fill="#ffb300"/><path d="M65 25 A 8 8 0 0 1 80 25 A 10 10 0 0 1 95 35 Z" fill="#b0bec5"/><path d="M10 85 H90 V95 H10 Z" fill="#0288d1"/><g stroke="#ff5722" stroke-width="2" fill="none"><path d="M25 75 L25 50 M25 50 L20 55 M25 50 L30 55"/></g><g stroke="#00bcd4" stroke-width="2" fill="none"><path d="M75 35 L75 65 M75 65 L70 60 M75 65 L80 60"/></g></svg>`
+        };
+
+        /* FULL COMPREHENSIVE 90 SCENARIO QUESTION ENCYCLOPEDIA */
+        const CompleteQuestionMatrix = {
+            easy: [
+                { q: "Why do we drink water?", options: ["To stay alive and healthy", "To become invisible", "To turn into a fish", "To fly like a bird"], correct: 0, exp: "All living things need clean water to support life functions and survive!" },
+                { q: "Which of these is a natural source of water falling from the sky?", options: ["A water hose", "Rain", "A water bottle", "An orange juice carton"], correct: 1, exp: "Rain is water that falls naturally down from clouds onto the land.", visual: "rain" },
+                { q: "Can human beings or household pets live completely without water?", options: ["Yes, forever", "No, water is needed by all living things", "Only on Sundays", "Only in winter"], correct: 1, exp: "No creature can survive without water; it is essential for everything alive." },
+                { q: "Which type of water is considered safe for drinking?", options: ["Dirty mud puddle water", "Clean and filtered water", "River water with trash", "Soapy bucket water"], correct: 1, exp: "We must drink clean, filtered, or boiled water to keep from getting sick." },
+                { q: "What should we always do immediately after using a water tap?", options: ["Leave it running full speed", "Break the handle", "Close the tap tightly", "Paint it yellow"], correct: 2, exp: "Closing the tap tightly stops drops from leaking and saves valuable water.", visual: "tap" },
+                { q: "What do small plants and huge trees need to grow green and tall?", options: ["Water and sunlight", "Chocolate milk", "Paper envelopes", "Plastic toys"], correct: 0, exp: "Plants consume water through their roots to make food and grow healthy." },
+                { q: "Which of these water bodies is typically much larger?", options: ["A small garden puddle", "A long flowing river", "A kitchen sink", "A plastic cup"], correct: 1, exp: "Rivers are massive streams of flowing fresh water that cross land.", visual: "river" },
+                { q: "What simple container can we place in the yard to collect rainwater?", options: ["A paper box", "A clean plastic bucket", "A wicker basket", "A cloth bag"], correct: 1, exp: "Buckets or barrels catch rainwater cleanly so we can water plants later." },
+                { q: "Is dirty water from a factory safe to drink?", options: ["Yes, it tastes good", "No, it contains germs and dirt that make us sick", "It turns us into superheroes", "Only if it looks blue"], correct: 1, exp: "Dirty water contains dangerous microbes and particles that harm our bodies." },
+                { q: "What does water turn into when we put it inside a cold freezer?", options: ["Hot steam", "Cold, hard ice cubes", "Liquid orange juice", "Dry yellow sand"], correct: 1, exp: "Freezing liquid water lowers its temperature until it changes into hard ice cubes." },
+                { q: "Which animal has gills and can only live inside water?", options: ["A garden cat", "A wild forest monkey", "A swimming fish", "A flying parrot"], correct: 2, exp: "Fish require water to breathe through gills and will perish on dry land." },
+                { q: "Why must we wash our hands using clean water and soap?", options: ["To make our hands wet", "To clear away invisible dirt and germs", "To change our skin color", "To play a game"], correct: 1, exp: "Clean flowing water washes dangerous germs away to protect our health.", visual: "glass_of_water" },
+                { q: "Identify this deep structure dug into earth to reach water.", options: ["A sandbox", "A water well", "A mountain tunnel", "A brick chimney"], correct: 1, exp: "A well is a deep vertical shaft made to haul up clean ground water.", visual: "well" },
+                { q: "Where does tap water inside our homes come from?", options: ["The grocery store shelves", "Natural sources like rivers, lakes, or tanks", "The kitchen ceiling", "From dry rocks"], correct: 1, exp: "Municipal pipes carry fresh water directly from lakes, rivers, or giant tanks." },
+                { q: "What color is pure, clean drinking water in a clear glass?", options: ["Bright pink", "Dark green", "It has no color at all", "Milky white"], correct: 2, exp: "Clean, pure water is a clear liquid with absolutely no color or tint.", visual: "glass_of_water" },
+                { q: "Identify this object that controls water flow in our sinks.", options: ["A light bulb", "A water tap", "A wooden chair", "A school book"], correct: 1, exp: "A tap or faucet lets us start, adjust, or stop water flow easily.", visual: "tap" },
+                { q: "What happens to a potted flower if we give it no water for weeks?", options: ["It grows gold coins", "It dries up and dies", "It turns into a tree", "It speaks out loud"], correct: 1, exp: "Without regular moisture, plants dry up completely, wilt, and perish." },
+                { q: "Where do wild jungle animals drink water when they are thirsty?", options: ["From glass bottles", "From forest ponds and rivers", "From kitchen sinks", "From water balloons"], correct: 1, exp: "Nature provides ponds, lakes, and rivers as watering spots for wildlife.", visual: "pond" },
+                { q: "Should we leave the tap running while brushing our teeth?", options: ["Yes, let it run", "No, turn it off until it is time to rinse", "Only if we brush fast", "Turn it on harder"], correct: 1, exp: "Turning off the faucet while brushing keeps gallons of clean water from wasting." },
+                { q: "When heavy rain finishes, small shallow pools left on the ground are...", options: ["Deep oceans", "Puddles", "Dry sand dunes", "High mountains"], correct: 1, exp: "Puddles are small collections of rainwater gathered in shallow spots." },
+                { q: "Identify this single element of rain.", options: ["A water drop", "An ice crystal", "A green leaf", "A sand grain"], correct: 0, exp: "Liquid water gathers into teardrop shapes called water drops when falling.", visual: "water_drop" },
+                { q: "Which activity does NOT need water at all?", options: ["Mopping the kitchen floor", "Reading a storybook quietly", "Washing a dirty car", "Boiling fresh rice"], correct: 1, exp: "Reading requires eyes and books, using zero physical water!" },
+                { q: "Why do we boil well water if we don't have a modern filter?", options: ["To turn it into juice", "To destroy any hidden harmful germs", "To freeze it faster", "To change its weight"], correct: 1, exp: "Boiling subjects water to high heat, which neutralizes harmful bacteria." },
+                { q: "Where do frogs and ducks love to swim together?", options: ["Inside a dry closet", "In a small quiet pond", "On top of a high mountain", "In the sand desert"], correct: 1, exp: "Ponds are calm, small water bodies perfect for frogs and waterfowl.", visual: "pond" },
+                { q: "How does natural rainfall help our surrounding environment?", options: ["It makes the dirt disappear", "It replenishes water for plants and animals", "It stops the wind blowing", "It causes winter instantly"], correct: 1, exp: "Rain provides the vital fresh water that outdoor nature needs to survive.", visual: "rain" },
+                { q: "What happens if you spill a glass of water on a paper drawing?", options: ["The paper turns into stone", "The paper gets wet and fragile", "The paper changes to wood", "Nothing at all"], correct: 1, exp: "Paper absorbs water rapidly, causing its fibers to expand, soften, and tear." },
+                { q: "Which is a clean and responsible way to drink water?", options: ["Scooping from a muddy hole", "Pouring filtered water into a clean glass", "Licking wet rocks", "Drinking pool water"], correct: 1, exp: "Using a clean glass filled with filtered water ensures no germs enter our bodies.", visual: "glass_of_water" },
+                { q: "Can we find hidden water inside fruits like watermelons?", options: ["No, fruits are dry", "Yes, they contain lots of healthy juice water", "Only if we inject it", "Fruits are made of ice"], correct: 1, exp: "Many fresh fruits are packed with naturally filtered water and vitamins." },
+                { q: "What shape do individual raindrops display as they fall from skies?", options: ["Perfect square box shape", "Teardrop shape", "Flat triangle shape", "Star pattern shape"], correct: 1, exp: "Gravity and air resistance mold falling water droplets into smooth teardrops.", visual: "water_drop" },
+                { q: "Who among these absolutely requires water to stay alive?", options: ["Only human beings", "Only field plants", "Only jungle animals", "All humans, plants, and animals together"], correct: 3, exp: "Every single biological organism on Earth relies on water to live." }
+            ],
+            medium: [
+                { q: "Which of the following is the absolute largest water body on Earth?", options: ["A local swimming pool", "A wide mountain river", "A massive saltwater ocean", "A deep forest lake"], correct: 2, exp: "Oceans are massive basins of salt water that cover most of Earth.", visual: "ocean" },
+                { q: "Water changes from liquid into invisible water vapour because of...", options: ["The blowing of cold wind", "Intense heat from the Sun", "The songs of birds", "The moonlight at night"], correct: 1, exp: "Solar heat warms up water molecules, causing them to turn into gas gas vapor." },
+                { q: "Why is open sea water not used by humans for drinking or cooking?", options: ["It is too cold to use", "It contains far too much salt", "It has a bright pink color", "It has no weight"], correct: 1, exp: "Sea water is highly saline; drinking it can make humans very dehydrated.", visual: "sea" },
+                { q: "Boiling water for over 10 minutes is an effective method to make it...", options: ["Turn into milk", "Safer to drink by killing micro-germs", "Completely salty", "Turn into blue ice"], correct: 1, exp: "High temperatures break down biological germs, sanitizing the fluid." },
+                { q: "What do we call water that sits trapped inside deep rock spaces under the soil?", options: ["Ocean water", "Underground water", "Rain clouds", "Surface ripples"], correct: 1, exp: "Water that filters through soil and collects underground is groundwater." },
+                { q: "When clouds release rain, which spaces get refilled?", options: ["High sandy deserts", "Rivers, lakes, and open reservoirs", "Volcano craters", "Indoor water pipes"], correct: 1, exp: "Rainwater collects directly into rivers, streams, and freshwater lakes.", visual: "river" },
+                { q: "Why must communities work together to save and conserve water?", options: ["Because fresh clean water is limited on Earth", "To make the oceans dry", "To prevent rain from falling", "Because water is very heavy"], correct: 0, exp: "While Earth has plenty of water, very little of it is fresh and clean enough to drink." },
+                { q: "Identify this mechanical tool used to draw up underground water manually.", options: ["An electrical fan", "A manual hand pump", "A construction crane", "A garden rake"], correct: 1, exp: "Hand pumps leverage leverage force to bring ground water up through a pipe.", visual: "hand_pump" },
+                { q: "What do large white or grey clouds turn into when they get heavy and cold?", options: ["Falling green leaves", "Liquid rain showers", "Bright sunbeams", "Blowing dust storms"], correct: 1, exp: "Cooling clouds condense until water drops become too heavy and fall as rain.", visual: "rain" },
+                { q: "Which water body is a wide basin completely surrounded by land on all sides?", options: ["An open sea", "A freshwater lake", "A flowing river stream", "The main ocean"], correct: 1, exp: "Lakes are inland bodies of water surrounded entirely by land.", visual: "lake" },
+                { q: "What serves as the primary natural source of all fresh water on our planet?", options: ["The ocean wave system", "Rainfall", "Swimming pools", "Underground oil wells"], correct: 1, exp: "Rain and snow provide almost all the renewed fresh surface water on Earth." },
+                { q: "What is the specific name for water when it transitions into an invisible gas?", options: ["Hard ice blocks", "Water vapour", "Dewdrops", "Salty foam"], correct: 1, exp: "Water vapour is the gaseous phase of water floating invisibly in air." },
+                { q: "Where do international cargo ships sail to cross continents?", options: ["Across small village ponds", "Across deep open oceans", "Down narrow water slides", "Across shallow creeks"], correct: 1, exp: "Oceans form the global continuous saltwater pathways used by giant ships.", visual: "ocean" },
+                { q: "Identify this ancient stone-lined structure built to access ground water.", options: ["A standard brick well", "A modern river dam", "A simple garden tap", "A mountain bridge"], correct: 0, exp: "Wells are deep shafts dug down to tap into natural underground aquifers.", visual: "well" },
+                { q: "What human action makes river systems dirty and highly unsafe?", options: ["Allowing fish to swim in them", "Dumping industrial garbage and plastics into them", "Letting rainwater join them", "Rowing wooden boats carefully"], correct: 1, exp: "Human trash, chemicals, and sewage pollute water, making it toxic." },
+                { q: "Can human beings drink directly from ocean shores to stay healthy?", options: ["Yes, it is clean", "No, the high salt content is dangerous to our organs", "Only during summertime", "Only if filtered through paper"], correct: 1, exp: "Ocean water contains excessive salts that human kidneys cannot process safely.", visual: "ocean" },
+                { q: "What is a great way for children to conserve water at school?", options: ["Leaving school taps running open", "Turning the tap off securely right after drinking", "Spilling water on classroom floors", "Throwing full bottles away"], correct: 1, exp: "Securing faucets stops treated municipal water from wasting down the drain.", visual: "tap" },
+                { q: "What happens to frozen solid ice cubes when left out on a warm table?", options: ["They disappear instantly into fire", "They melt back into liquid water", "They grow into bigger ice blocks", "They turn into green crystals"], correct: 1, exp: "Warm room air supplies thermal energy, melting solid ice back to liquid." },
+                { q: "Which water body is smaller than a lake and stays quiet with no active current?", options: ["A wild ocean", "A quiet pond", "A roaring river", "A sea wave"], correct: 1, exp: "Ponds are tiny, peaceful, shallow pools of localized standing water.", visual: "pond" },
+                { q: "Where do long, winding river systems finally end their continuous journeys?", options: ["On top of mountains", "By emptying into seas or oceans", "Inside underground pipelines", "They disappear into space"], correct: 1, exp: "Rivers flow downwards due to gravity, eventually discharging into saline seas.", visual: "river" },
+                { q: "What utility network safely transports treated clean water into our household sinks?", options: ["A system of pipes and taps", "Open muddy ditches", "Electrical wire cables", "Wooden storage crates"], correct: 0, exp: "Infrastructural pipes deliver pressurized clean water directly to faucets.", visual: "tap" },
+                { q: "What happens to water inside wet clothes when hung out under the hot sun?", options: ["It turns into soap powder", "It evaporates up into the atmosphere as vapor", "It freezes into hard ice layers", "It falls down like heavy stones"], correct: 1, exp: "Solar heat drives evaporation, drawing water out of fabrics into the air." },
+                { q: "How does surface rainwater manage to get deep under the solid ground?", options: ["It travels through tree trunks", "It slowly trickles down through soil and rock layers", "It stays on top forever", "Earthworms carry it in buckets"], correct: 1, exp: "Infiltration describes water sinking through porous earth to become groundwater." },
+                { q: "Why is using a continuous running garden hose to wash a bicycle bad?", options: ["It cleans the bike too fast", "It wastes an enormous volume of fresh clean water", "It makes the bike turn into wood", "It stops the sun from shining"], correct: 1, exp: "Running hoses release gallons per minute; using a bucket saves a lot of water." },
+                { q: "What do we call a fast-moving, natural path of fresh water rushing down hills?", options: ["A static pond", "A flowing river", "A deep ocean trench", "An artificial swimming pool"], correct: 1, exp: "Rivers are dynamic corridors of fresh water carving paths across terrain.", visual: "river" },
+                { q: "What distinct smell should a glass of perfectly pure, healthy water have?", options: ["A strong perfume scent", "It should have no smell at all", "A sharp sour odor", "A sweet chocolate aroma"], correct: 1, exp: "Pure, uncontaminated water is entirely odorless, tasteless, and clear.", visual: "glass_of_water" },
+                { q: "What object is created high up when water vapour cools and groups together?", options: ["A sandy beach", "A cluster of clouds", "A burning star", "A line of trees"], correct: 1, exp: "Condensation drops form visible cloud bodies high in cold air layers.", visual: "clouds" },
+                { q: "Why do groups of wild animals migrate to forest river channels in summer?", options: ["To play video games", "To hydrate their bodies and cool off safely", "To escape the green trees", "To look for clothes"], correct: 1, exp: "Rivers offer essential hydration zones required by animals during dry seasons." },
+                { q: "What factor helps maintain steady water levels in human city reservoirs?", options: ["Blowing winter dust", "Regular seasonal rainfall cycles", "Sailing massive cargo boats", "Emptying household trash"], correct: 1, exp: "Consistent precipitation cycles are necessary to restock drinking water stores." },
+                { q: "Is melting winter mountain snow a primary source for major freshwater rivers?", options: ["Yes, melting snow runs down to feed river channels", "No, snow turns into sand", "Snow water disappears into the sky instantly", "Only during night hours"], correct: 0, exp: "Spring thaws turn mountaintop snowbanks into streams that feed large rivers." }
+            ],
+            hard: [
+                { q: "What is the scientific name for liquid water converting into invisible gas vapor?", options: ["Condensation", "Evaporation", "Precipitation", "Freezing"], correct: 1, exp: "Evaporation is the phase change from liquid state to gaseous vapor state." },
+                { q: "Clouds form when airborne water vapour loses heat and changes back to liquid drops. This is...", options: ["Evaporation", "Condensation", "Collection", "Pollution"], correct: 1, exp: "Condensation is the physical process where gas cools down and reverts to liquid.", visual: "clouds" },
+                { q: "Rain, snow, sleet, and hail falling out of clouds down to earth are types of...", options: ["Precipitation", "Evaporation", "Transpiration", "Infiltration"], correct: 0, exp: "Precipitation refers to any form of water moisture dropping from atmospheric clouds.", visual: "rain" },
+                { q: "Roughly what percentage of the entire planet Earth is covered by water?", options: ["About 10%", "About 50%", "About 71%", "About 95%"], correct: 2, exp: "Water bodies, primarily massive saline oceans, envelop roughly 71% of Earth." },
+                { q: "Look at this entire system. What continuous cycle does it represent?", options: ["The Rock Lifecycle", "The Global Water Cycle", "The Plant Growth Pattern", "The Oxygen Machine"], correct: 1, exp: "The water cycle moves water continuously between earth, oceans, and skies.", visual: "water_cycle" },
+                { q: "Which classification of water do we find inside glaciers, streams, and ice caps?", options: ["Heavy Salt water", "Fresh water", "Acidic water", "Oily water"], correct: 1, exp: "Fresh water has low salt levels, unlike oceans, and is vital for drinking." },
+                { q: "What is the sustainable method of capturing and storing roof runoff water called?", options: ["Water Pollution", "Rainwater Harvesting", "Ocean Desalination", "Dam Flooding"], correct: 1, exp: "Rainwater harvesting saves clean downpours directly for domestic reuse later." },
+                { q: "Identify this concrete barrier engineered to hold back rivers and make power.", options: ["A simple bridge", "A hydroelectric dam", "A farming greenhouse", "A shallow well fence"], correct: 1, exp: "Dams retain massive river pools to regulate water flow and spin power turbines.", visual: "dam" },
+                { q: "What is the correct definition of water pollution?", options: ["Making water move very fast", "Contaminating water with toxic chemicals and garbage", "Adding clean ice cubes to a glass", "Filtering out fine sand particles"], correct: 1, exp: "Pollution introduces hazardous materials that degrade water ecosystems and safety." },
+                { q: "Why can most land plants NOT grow if irrigated with saline ocean water?", options: ["Ocean water is too blue", "High salt concentrations damage root cells and dehydrate them", "Sea water has too many fish", "Ocean water is too heavy for roots"], correct: 1, exp: "Excessive soil salinity draws moisture OUT of roots, killing regular plants." },
+                { q: "What engine drives the water cycle by evaporating surface moisture?", options: ["The rotation of the Moon", "The thermal heat energy of the Sun", "Deep underground volcanic action", "Human factory fans"], correct: 1, exp: "Solar radiation warms up lakes and oceans, kicking off evaporation cycles.", visual: "water_cycle" },
+                { q: "What occurs directly during the condensation stage of the water cycle?", options: ["Liquid water turns to gas steam", "Invisible water vapour cools into liquid clouds", "Ice cubes melt into rivers", "Rain water sinks into deep dirt"], correct: 1, exp: "Vapour reaches high cold altitudes, shedding heat energy to assemble clouds." },
+                { q: "How does a large municipal dam benefit surrounding agricultural fields?", options: ["It stops crops from getting sunlight", "It stores water for dry seasons and supplies electricity", "It turns fresh water into salt water", "It keeps wild birds away entirely"], correct: 1, exp: "Reservoirs behind dams guarantee steady irrigation supplies during dry spells.", visual: "dam" },
+                { q: "Which sector holds the absolute vast majority (over 96%) of all water on Earth?", options: ["Freshwater mountain lakes", "Saline oceans and seas", "Atmospheric cloud vapor", "Deep underground well systems"], correct: 1, exp: "The vast bulk of global water is saltwater stored across global oceans.", visual: "ocean" },
+                { q: "What are the natural underground geological layers of porous rock that hold water called?", options: ["Volcanic chambers", "Aquifers", "Mountain ridges", "Coral reefs"], correct: 1, exp: "Aquifers act as giant underground sponges holding fresh groundwater stores." },
+                { q: "What is a major dangerous health risk of drinking polluted water supplies?", options: ["Gaining super-strength", "Contracting severe waterborne diseases", "Growing gills on your neck", "Having cleaner teeth"], correct: 1, exp: "Contaminated water harbors pathogens causing cholera, dysentery, and typhoid." },
+                { q: "Why is dumping untreated chemical factory effluent into rivers a critical crime?", options: ["It cools down the river water too much", "It poisons aquatic life and spoils local drinking sources", "It makes river currents run backwards", "It changes the color of river rocks"], correct: 1, exp: "Chemical toxins destroy aquatic populations and poison downstream drinking networks." },
+                { q: "Using a bucket to wash cars instead of letting a garden hose run continuously is...", options: ["A waste of time", "An excellent act of water conservation", "A way to cause heavy rain storms", "Bad for car tires"], correct: 1, exp: "Conservation reduces unnecessary demands on limited municipal clean water." },
+                { q: "What do we call the tiny clear beads of water seen on grass tips on cold mornings?", options: ["Salty foam beads", "Dew drops", "Hail stones", "Acid rain drops"], correct: 1, exp: "Night temperature drops cause localized water vapor to condense onto cool grass." },
+                { q: "Which source of fresh water is most insulated from direct solar rays and evaporates slowest?", options: ["Shallow open puddles", "Deep underground water reservoirs", "Wide surface lakes", "Fast mountain rivers"], correct: 1, exp: "Groundwater is shielded below soil layers, keeping it safe from solar evaporation." },
+                { q: "If a residential tap drips continuously at one drop per second, what happens?", options: ["The water grows back automatically", "Large volumes of precious clean water waste over time", "The tap turns into pure silver", "Nothing happens at all"], correct: 1.5, correct: 1, exp: "Small leaks accumulate over days into hundreds of wasted gallons of clean water.", visual: "tap" },
+                { q: "Where is the largest percentage of Earth's precious fresh water physically locked up?", options: ["Inside fast-moving muddy rivers", "Frozen securely within polar glaciers and ice sheets", "Floating inside thin white clouds", "Stored inside artificial city tanks"], correct: 1, exp: "Over late estimates, nearly 69% of global fresh water sits locked as glacial ice." },
+                { q: "Why must well water be routinely tested and boiled before consumption?", options: ["To make it taste like sugar", "To ensure dangerous bacteria or runoff chemical traces are neutralized", "To turn the water into steam", "To make it look brighter"], correct: 1, exp: "Unprotected wells can accumulate biological pollutants from surface soil runoff.", visual: "well" },
+                { q: "When saline ocean water undergoes solar evaporation, does the salt move into clouds?", options: ["Yes, clouds become very salty", "No, only pure fresh water changes to vapor while salt stays behind", "Salt turns into rain drops", "Oceans lose all their salt in one day"], correct: 1, exp: "Evaporation isolates water molecules; heavy salt solutes remain behind in the sea." },
+                { q: "Which environmental action significantly aids ground water recharge?", options: ["Cutting down large forests", "Planting native trees and vegetative cover", "Paving fields with thick concrete", "Building wide sand deserts"], correct: 1, exp: "Roots and plant matter break up soil, allowing rain to sink downward rather than wash away." },
+                { q: "What can happen to local weather patterns if a massive forest is completely cut down?", options: ["Rainfall frequency can drop, causing the land to dry out", "Trees will fall into the clouds", "Water becomes sweeter", "The water cycle accelerates heavily"], correct: 0, exp: "Forests release water vapor via transpiration; clearing them cuts down cloud generation." },
+                { q: "Why are natural wetlands and marshes highly valuable for regional water health?", options: ["They speed up devastating floods", "They act as organic filters that catch sediments and scrub toxins", "They convert fresh water into salt water", "They dry out the earth completely"], correct: 1, exp: "Wetland biomes act as nature's kidney systems, filtering out toxic chemical debris." },
+                { q: "Which engineering design directly helps rehydrate depleted underground water layers?", options: ["Digging open garbage landfills", "Constructing specialized rainwater harvesting injection pits", "Building high stone brick towers", "Pumping oil into deep caves"], correct: 1, exp: "Harvesting pits intercept stormwater torrents and channel them safely into dry aquifers." },
+                { q: "Identify this vast expanse of saltwater located between global continents.", options: ["A narrow creek", "The open ocean", "A concrete pool", "A slow mud marsh"], correct: 1, exp: "Oceans are the massive planetary water elements dividing main continental land masses.", visual: "ocean" },
+                { q: "Which standard sanitary habit protects our digestive tracts from waterborne pathogens?", options: ["Washing dirty clothes in drinking glasses", "Washing hands thoroughly with soap and clean water before meals", "Licking random kitchen plates", "Storing water in open rusted tin cans"], correct: 1, exp: "Hand hygiene breaks transmission lines of fecal-oral waterborne viral particles." }
+            ]
+        };
+
+        /* STATE ENGINE CONFIGURATION RUNTIME VARIABLES */
+        let chosenDifficultyLevel = 'easy';
+        let levelQuestionBuffer = [];
+        let executionIndex = 0;
+        let cumulativeScore = 0;
+        let sessionAnswersMap = [];
+        let timerStartTimestamp = 0;
+
+        /* SHUFFLE MANAGEMENT UTILITIES (FISHER-YATES ALGORITHM) */
+        function shuffleDataset(targetArray) {
+            for (let cursor = targetArray.length - 1; cursor > 0; cursor--) {
+                const randomTargetIndex = Math.floor(Math.random() * (cursor + 1));
+                [targetArray[cursor], targetArray[randomTargetIndex]] = [targetArray[randomTargetIndex], targetArray[cursor]];
+            }
+            return targetArray;
+        }
+
+        /* ENGINE EXECUTION CONTROLLERS */
+        function initiateQuizSession(difficultyTier) {
+            triggerSynthesizedAudio('drop');
+            chosenDifficultyLevel = difficultyTier;
+
+            // Deep clone target question set and execute dynamic shuffle sequence
+            let blueprintData = CompleteQuestionMatrix[difficultyTier];
+            levelQuestionBuffer = JSON.parse(JSON.stringify(blueprintData));
+            shuffleDataset(levelQuestionBuffer);
+
+            // Trim array down to exactly 30 randomized entries
+            levelQuestionBuffer = levelQuestionBuffer.slice(0, 30);
+
+            // Scramble options within individual question blocks to guarantee variability
+            levelQuestionBuffer.forEach(questionBlock => {
+                let formattedOptionsArray = questionBlock.options.map((optionTextString, originalPosition) => {
+                    return { text: optionTextString, isCorrect: originalPosition === questionBlock.correct };
+                });
+                shuffleDataset(formattedOptionsArray);
+                questionBlock.scrambledOptions = formattedOptionsArray;
+            });
+
+            // Initialize structural loop state parameters
+            executionIndex = 0;
+            cumulativeScore = 0;
+            sessionAnswersMap = new Array(30).fill(null);
+            timerStartTimestamp = Date.now();
+
+            // Screen State Presentation Modifications
+            document.getElementById('view-landing').classList.remove('active');
+            document.getElementById('view-wrapup').classList.remove('active');
+            document.getElementById('view-player').classList.add('active');
+
+            renderCurrentDifficultyTag();
+            displayActiveQuestionBlock();
+        }
+
+        function renderCurrentDifficultyTag() {
+            const levelLabelElement = document.getElementById('label-level-tier');
+            levelLabelElement.innerText = chosenDifficultyLevel + " level";
+            if(chosenDifficultyLevel === 'easy') levelLabelElement.style.backgroundColor = 'var(--easy-btn)';
+            if(chosenDifficultyLevel === 'medium') levelLabelElement.style.backgroundColor = 'var(--medium-btn)';
+            if(chosenDifficultyLevel === 'hard') levelLabelElement.style.backgroundColor = 'var(--hard-btn)';
+        }
+
+        function displayActiveQuestionBlock() {
+            // Collapse contextual explanation interface wrapper
+            document.getElementById('box-explanation').classList.remove('active');
+
+            let activeQuestionNode = levelQuestionBuffer[executionIndex];
+
+            // Render trackers, strings, and update status UI lines
+            document.getElementById('txt-question-count').innerText = `Question: ${executionIndex + 1}/30`;
+            document.getElementById('txt-score-count').innerText = `Score: ${cumulativeScore}`;
+
+            let computationPercentage = (executionIndex / 30) * 100;
+            document.getElementById('quiz-fluid-bar').style.width = `${computationPercentage}%`;
+            document.getElementById('txt-question-string').innerText = activeQuestionNode.q;
+
+            // SVG Graphic Layer Handler Rules
+            const graphicsContainer = document.getElementById('graphics-box-wrapper');
+            if (activeQuestionNode.visual && InlineVectors[activeQuestionNode.visual]) {
+                graphicsContainer.innerHTML = InlineVectors[activeQuestionNode.visual];
+                graphicsContainer.style.display = 'flex';
+            } else {
+                graphicsContainer.innerHTML = '';
+                graphicsContainer.style.display = 'none';
+            }
+
+            // Build Options Interface Elements
+            const optionsBox = document.getElementById('box-options-pane');
+            optionsBox.innerHTML = '';
+
+            activeQuestionNode.scrambledOptions.forEach((optionMetaItem, incrementalIdx) => {
+                const choiceButton = document.createElement('button');
+                choiceButton.className = 'btn-choice';
+                choiceButton.innerText = optionMetaItem.text;
+                choiceButton.onclick = () => evaluationSelectionTrigger(incrementalIdx);
+                optionsBox.appendChild(choiceButton);
+            });
+
+            // Set Prev/Next visibility properties based on execution position indices
+            document.getElementById('btn-step-prev').disabled = executionIndex === 0;
+
+            if (sessionAnswersMap[executionIndex] !== null) {
+                restoreHistoricalAnswerState();
+            } else {
+                document.getElementById('btn-step-next').style.visibility = 'hidden';
+            }
+        }
+
+        function evaluationSelectionTrigger(chosenButtonIndex) {
+            let activeQuestionNode = levelQuestionBuffer[executionIndex];
+            sessionAnswersMap[executionIndex] = chosenButtonIndex;
+
+            let buttonDOMElementsList = document.getElementById('box-options-pane').children;
+            let structuredChoiceData = activeQuestionNode.scrambledOptions[chosenButtonIndex];
+
+            if (structuredChoiceData.isCorrect) {
+                cumulativeScore++;
+                document.getElementById('txt-score-count').innerText = `Score: ${cumulativeScore}`;
+                buttonDOMElementsList[chosenButtonIndex].classList.add('correct');
+                presentExplanatoryFeedback(true, activeQuestionNode.exp);
+                triggerSynthesizedAudio('correct');
+            } else {
+                buttonDOMElementsList[chosenButtonIndex].classList.add('wrong');
+                // Auto expose the correct option target
+                for(let optIdx = 0; optIdx < activeQuestionNode.scrambledOptions.length; optIdx++) {
+                    if(activeQuestionNode.scrambledOptions[optIdx].isCorrect) {
+                        buttonDOMElementsList[optIdx].classList.add('correct');
+                        break;
+                    }
+                }
+                presentExplanatoryFeedback(false, activeQuestionNode.exp);
+                triggerSynthesizedAudio('wrong');
+            }
+
+            // Intercept further clicks by disabling inputs
+            for (let dynamicBtn of buttonDOMElementsList) {
+                dynamicBtn.disabled = true;
+            }
+
+            document.getElementById('btn-step-next').style.visibility = 'visible';
+        }
+
+        function restoreHistoricalAnswerState() {
+            let activeQuestionNode = levelQuestionBuffer[executionIndex];
+            let historicalSavedIndex = sessionAnswersMap[executionIndex];
+            let buttonsCollection = document.getElementById('box-options-pane').children;
+
+            for(let i = 0; i < activeQuestionNode.scrambledOptions.length; i++) {
+                buttonsCollection[i].disabled = true;
+                if(activeQuestionNode.scrambledOptions[i].isCorrect) {
+                    buttonsCollection[i].classList.add('correct');
+                }
+            }
+
+            let validatedChoice = activeQuestionNode.scrambledOptions[historicalSavedIndex];
+            if (!validatedChoice.isCorrect) {
+                buttonsCollection[historicalSavedIndex].classList.add('wrong');
+                presentExplanatoryFeedback(false, activeQuestionNode.exp);
+            } else {
+                presentExplanatoryFeedback(true, activeQuestionNode.exp);
+            }
+
+            document.getElementById('btn-step-next').style.visibility = 'visible';
+        }
+
+        function presentExplanatoryFeedback(isAnswerCorrect, structuralExplanationText) {
+            const displayFieldBox = document.getElementById('box-explanation');
+            const headlineLabel = document.getElementById('txt-explanation-title');
+            const descriptiveLabel = document.getElementById('txt-explanation-body');
+
+            if (isAnswerCorrect) {
+                headlineLabel.innerText = "✅ Correct!";
+                headlineLabel.className = "explanation-title ui-correct";
+            } else {
+                headlineLabel.innerText = "❌ Incorrect";
+                headlineLabel.className = "explanation-title ui-wrong";
+            }
+
+            descriptiveLabel.innerText = structuralExplanationText;
+            displayFieldBox.classList.add('active');
+        }
+
+        function navigateForwards() {
+            triggerSynthesizedAudio('click');
+            if (executionIndex < 29) {
+                executionIndex++;
+                displayActiveQuestionBlock();
+            } else {
+                collateAndShowSummaryMetrics();
+            }
+        }
+
+        function navigateBackwards() {
+            triggerSynthesizedAudio('click');
+            if (executionIndex > 0) {
+                executionIndex--;
+                displayActiveQuestionBlock();
+            }
+        }
+
+        function requestHomeAbort() {
+            triggerSynthesizedAudio('click');
+            if(confirm("Are you sure you want to exit this level? Your ongoing progress will be cleared.")) {
+                returnToMainLanding();
+            }
+        }
+
+        function returnToMainLanding() {
+            document.getElementById('view-player').classList.remove('active');
+            document.getElementById('view-wrapup').classList.remove('active');
+            document.getElementById('view-landing').classList.add('active');
+            terminateConfettiAnimationLoops();
+        }
+
+        function relaunchCurrentTier() {
+            initiateQuizSession(chosenDifficultyLevel);
+        }
+
+        /* METRIC PACKAGING AND CERTIFICATION COMPONENT DISPATCHER */
+        function collateAndShowSummaryMetrics() {
+            document.getElementById('view-player').classList.remove('active');
+            document.getElementById('view-wrapup').classList.add('active');
+            triggerSynthesizedAudio('completion');
+
+            let aggregateDurationInSeconds = Math.floor((Date.now() - timerStartTimestamp) / 1000);
+            let scoreConversionPercentage = Math.round((cumulativeScore / 30) * 100);
+            let cumulativeFailures = 30 - cumulativeScore;
+
+            // Map Distinction Badges
+            let computedBadgeGraphic = "📚";
+            let computedBadgeTextString = "Keep Practising";
+            if (scoreConversionPercentage >= 90) { 
+                computedBadgeGraphic = "🏆"; computedBadgeTextString = "Water Expert"; kickstartConfettiEngine(); 
+            } else if (scoreConversionPercentage >= 70) { 
+                computedBadgeGraphic = "🌟"; computedBadgeTextString = "Water Explorer"; kickstartConfettiEngine(); 
+            } else if (scoreConversionPercentage >= 50) { 
+                computedBadgeGraphic = "👍"; computedBadgeTextString = "Nature Learner"; 
+            }
+
+            // Bind values to UI summary metrics blocks
+            document.getElementById('lbl-summary-level').innerText = chosenDifficultyLevel.toUpperCase();
+            document.getElementById('lbl-summary-score').innerText = `${cumulativeScore} / 30`;
+            document.getElementById('lbl-summary-percent').innerText = `${scoreConversionPercentage}%`;
+            document.getElementById('lbl-summary-duration').innerText = `${aggregateDurationInSeconds}s`;
+            document.getElementById('lbl-summary-correct').innerText = cumulativeScore;
+            document.getElementById('lbl-summary-wrong').innerText = cumulativeFailures;
+
+            document.getElementById('txt-badge-avatar').innerText = computedBadgeGraphic;
+            document.getElementById('txt-badge-heading').innerText = computedBadgeTextString;
+
+            // Format hidden certification fields ready for immediate systemic print execution
+            document.getElementById('out-cert-level').innerText = chosenDifficultyLevel;
+            document.getElementById('out-cert-score').innerText = `${cumulativeScore}/30`;
+            document.getElementById('out-cert-pct').innerText = `${scoreConversionPercentage}%`;
+            document.getElementById('out-cert-badge').innerText = `${computedBadgeGraphic} ${computedBadgeTextString}`;
+            document.getElementById('out-cert-date').innerText = new Date().toLocaleDateString();
+        }
+
+        /* LIGHTWEIGHT HIGH-PERFORMANCE CANVAS CONFETTI ENGINE */
+        const celebrationCanvasElement = document.getElementById("celebration-canvas");
+        const canvasRenderContext = celebrationCanvasElement.getContext("2d");
+        let activeConfettiPool = [];
+        let animationFrameHandleRef = null;
+
+        function kickstartConfettiEngine() {
+            celebrationCanvasElement.style.display = "block";
+            syncCanvasDimensions();
+            activeConfettiPool = [];
+            for (let particleCount = 0; particleCount < 140; particleCount++) {
+                activeConfettiPool.push({
+                    coordX: Math.random() * celebrationCanvasElement.width,
+                    coordY: Math.random() * celebrationCanvasElement.height - celebrationCanvasElement.height,
+                    radiusSize: Math.random() * 5 + 5,
+                    densityWeight: Math.random() * celebrationCanvasElement.height,
+                    hueColor: `hsl(${Math.random() * 360}, 95%, 55%)`,
+                    swayTilt: Math.random() * 10 - 5,
+                    swaySpeed: Math.random() * 0.06 + 0.02,
+                    swayAngle: 0
+                });
+            }
+            window.addEventListener('resize', syncCanvasDimensions);
+            renderConfettiTickLoop();
+        }
+
+        function syncCanvasDimensions() {
+            celebrationCanvasElement.width = window.innerWidth;
+            celebrationCanvasElement.height = window.innerHeight;
+        }
+
+        function renderConfettiTickLoop() {
+            canvasRenderContext.clearRect(0, 0, celebrationCanvasElement.width, celebrationCanvasElement.height);
+            let executionHasActiveParticles = false;
+
+            for (let elementIdx = 0; elementIdx < activeConfettiPool.length; elementIdx++) {
+                let currentConfettiPiece = activeConfettiPool[elementIdx];
+                currentConfettiPiece.swayAngle += currentConfettiPiece.swaySpeed;
+                currentConfettiPiece.coordY += (Math.cos(currentConfettiPiece.densityWeight) + 3.5 + currentConfettiPiece.radiusSize / 2) / 2;
+                currentConfettiPiece.coordX += Math.sin(currentConfettiPiece.swayAngle);
+                currentConfettiPiece.swayTilt = Math.sin(currentConfettiPiece.swayAngle - elementIdx / 3) * 14;
+
+                if (currentConfettiPiece.coordY <= celebrationCanvasElement.height) {
+                    executionHasActiveParticles = true;
+                }
+
+                canvasRenderContext.beginPath();
+                canvasRenderContext.lineWidth = currentConfettiPiece.radiusSize;
+                canvasRenderContext.strokeStyle = currentConfettiPiece.hueColor;
+                canvasRenderContext.moveTo(currentConfettiPiece.coordX + currentConfettiPiece.swayTilt + currentConfettiPiece.radiusSize / 2, currentConfettiPiece.coordY);
+                canvasRenderContext.lineTo(currentConfettiPiece.coordX + currentConfettiPiece.swayTilt, currentConfettiPiece.coordY + currentConfettiPiece.swayTilt + currentConfettiPiece.radiusSize / 2);
+                canvasRenderContext.stroke();
+            }
+
+            if (executionHasActiveParticles) {
+                animationFrameHandleRef = requestAnimationFrame(renderConfettiTickLoop);
+            } else {
+                terminateConfettiAnimationLoops();
+            }
+        }
+
+        function terminateConfettiAnimationLoops() {
+            if(animationFrameHandleRef) cancelAnimationFrame(animationFrameHandleRef);
+            celebrationCanvasElement.style.display = "none";
+            window.removeEventListener('resize', syncCanvasDimensions);
+        }
+    </script>
+</body>
+</html>

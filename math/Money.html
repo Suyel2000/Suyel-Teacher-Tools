@@ -89,7 +89,7 @@
         
         /* Sorting Baskets */
         .basket-container { display: flex; justify-content: space-around; margin-top: 30px; gap: 20px; }
-        .basket { flex: 1; background: #f7fafc; border: 3px solid #cbd5e0; border-radius: var(--radius); padding: 25px; text-align: center; min-height: 200px; transition: 0.3s; }
+        .basket { flex: 1; background: #f7fafc; border: 3px solid #cbd5e0; border-radius: var(--radius); padding: 25px; text-align: center; min-height: 200px; transition: 0.3s; cursor: pointer; }
         .basket.hovered { border-color: var(--success); background: #f0fff4; }
         .basket h4 { font-size: 1.2rem; margin-bottom: 15px; font-weight: 700; color: #4a5568; }
 
@@ -549,14 +549,14 @@
         // 2. Coins & Notes Sort Module Builder
         function buildSortingModule(container) {
             container.innerHTML = `
-                <p style="text-align: center; font-weight: bold; margin-bottom: 15px;">Drag items into their accurate structural category baskets:</p>
+                <p style="text-align: center; font-weight: bold; margin-bottom: 15px;">Drag items into baskets, or tap an asset and select its match target box below:</p>
                 <div class="currency-box" id="sorting-vault"></div>
                 <div class="basket-container">
-                    <div class="basket" id="basket-coins" ondragover="allowWorkspaceDrop(event)" ondrop="handleSortingDrop(event, 'coin')">
+                    <div class="basket" id="basket-coins" ondragover="allowWorkspaceDrop(event)" ondrop="handleSortingDrop(event, 'coin')" onclick="handleBasketClick('coin')">
                         <h4>🪙 COINS BASKET</h4>
                         <div class="currency-box" id="inner-basket-coins"></div>
                     </div>
-                    <div class="basket" id="basket-notes" ondragover="allowWorkspaceDrop(event)" ondrop="handleSortingDrop(event, 'note')">
+                    <div class="basket" id="basket-notes" ondragover="allowWorkspaceDrop(event)" ondrop="handleSortingDrop(event, 'note')" onclick="handleBasketClick('note')">
                         <h4>💵 NOTES BASKET</h4>
                         <div class="currency-box" id="inner-basket-notes"></div>
                     </div>
@@ -576,7 +576,17 @@
             e.preventDefault();
             const val = parseInt(e.dataTransfer.getData("text/plain"));
             if(!val) return;
-            
+            processSortingMove(val, type, document.querySelector(`#sorting-vault [data-value="${val}"]`));
+        }
+
+        function handleBasketClick(type) {
+            const selected = document.querySelector('#sorting-vault .selected-sort-asset');
+            if(!selected) return;
+            const val = parseInt(selected.getAttribute("data-value"));
+            processSortingMove(val, type, selected);
+        }
+
+        function processSortingMove(val, type, elementRef) {
             const isCoin = CURRENCY_ENGINE.coins[val] !== undefined;
             const targetType = isCoin ? 'coin' : 'note';
             const feedback = document.getElementById('sorting-feedback');
@@ -585,7 +595,7 @@
                 AudioLabEngine.play('correct');
                 feedback.innerHTML = `<span style="color: var(--success); font-weight: bold;">Excellent! Match verified.</span>`;
                 document.getElementById(`inner-basket-${type}s`).innerHTML += type === 'coin' ? generateCoinAssetMarkup(val, false) : generateNoteAssetMarkup(val, false);
-                document.querySelector(`#sorting-vault [data-value="${val}"]`)?.remove();
+                if(elementRef) elementRef.remove();
                 
                 AppState.score += 5; AppState.completedCount++; updateMetricsDisplay();
                 if(document.getElementById('sorting-vault').children.length === 0) {
@@ -676,7 +686,7 @@
             }
         }
 
-        // 5. Compare Money Module Builder (Updated with Next Question Functionality)
+        // 5. Compare Money Module Builder
         function buildCompareModule(container) {
             let leftVal = AppState.currentLevel === 'easy' ? Math.floor(Math.random()*20)+1 : (AppState.currentLevel === 'medium' ? Math.floor(Math.random()*150)+10 : Math.floor(Math.random()*800)+100);
             let rightVal = AppState.currentLevel === 'easy' ? Math.floor(Math.random()*20)+1 : (AppState.currentLevel === 'medium' ? Math.floor(Math.random()*150)+10 : Math.floor(Math.random()*800)+100);
@@ -742,7 +752,7 @@
             }
         }
 
-        // 7. Virtual Shop Simulator (Updated for Multi-quantity Product Selections)
+        // 7. Virtual Shop Simulator
         function buildShopModule(container) {
             AppState.activeQuestionData = { quantities: {}, targetTotal: 0 };
             InventoryDatabase.forEach(item => { AppState.activeQuestionData.quantities[item.id] = 0; });
@@ -844,7 +854,9 @@
 
         // 8. Give Change Engine Module Builder
         function buildChangeModule(container) {
-            let itemCost = Math.floor(Math.random()*120)+15; let billPaid = itemCost <= 50 ? 50 : (itemCost <= 100 ? 100 : 500);
+            let itemCost = AppState.currentLevel === 'easy' ? Math.floor(Math.random()*35)+5 : (AppState.currentLevel === 'medium' ? Math.floor(Math.random()*85)+10 : Math.floor(Math.random()*420)+50);
+            let billPaid = itemCost <= 20 ? 20 : (itemCost <= 50 ? 50 : (itemCost <= 100 ? 100 : 500));
+            if(billPaid === itemCost) billPaid += 10;
             let accurateChange = billPaid - itemCost; AppState.activeQuestionData = { changeRequired: accurateChange };
 
             container.innerHTML = `
@@ -871,6 +883,7 @@
                     <div style="display:flex; gap:10px;">
                         <button class="btn btn-t" onclick="clearActiveWorkspace('change-drop-zone')">🔏 Recall Assets</button>
                         <button class="btn btn-p" onclick="verifyRegisterChangePayout()">Authorize Drawer Closure</button>
+                        <button class="btn btn-t" onclick="loadModule('change')">🔄 Next Challenge</button>
                     </div>
                 </div>
                 <div id="change-engine-feedback" style="text-align: center; margin-top:15px; font-weight:bold; font-size:1.2rem;"></div>`;
@@ -937,6 +950,20 @@
         function handleCurrencyClick(element, structureType) {
             if(AppState.currentModule === 'explorer') return;
             AudioLabEngine.play('coin');
+            
+            if(AppState.currentModule === 'sorting') {
+                if(element.parentElement.id.startsWith('inner-basket')) return;
+                document.querySelectorAll('#sorting-vault .img-coin, #sorting-vault .img-note, #sorting-vault .svg-coin, #sorting-vault .svg-note').forEach(el => {
+                    el.classList.remove('selected-sort-asset');
+                    el.style.outline = 'none';
+                });
+                element.classList.add('selected-sort-asset');
+                element.style.outline = '4px solid var(--primary)';
+                element.style.outlineOffset = '2px';
+                element.style.borderRadius = '8px';
+                return;
+            }
+
             const activeZoneMap = { 'makeamount': 'make-amount-zone', 'shop': 'shop-pay-zone', 'change': 'change-drop-zone' };
             const activeZoneId = activeZoneMap[AppState.currentModule];
             if(activeZoneId) { addCurrencyAssetToWorkspace(parseInt(element.getAttribute('data-value')), activeZoneId); }

@@ -1,0 +1,1910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧮 Place Value Blocks Explorer</title>
+    <style>
+        :root {
+            --thousands-color: #2563eb;
+            --thousands-bg: #dbeafe;
+            --hundreds-color: #16a34a;
+            --hundreds-bg: #dcfce7;
+            --tens-color: #ca8a04;
+            --tens-bg: #fef9c3;
+            --ones-color: #ea580c;
+            --ones-bg: #ffedd5;
+            
+            --bg-gradient: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 50%, #fff7ed 100%);
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --shadow-sm: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+            --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
+            --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+            --font-size-base: 16px;
+        }
+
+        .high-contrast {
+            --thousands-color: #0000ff;
+            --thousands-bg: #ffffff;
+            --hundreds-color: #008000;
+            --hundreds-bg: #ffffff;
+            --tens-color: #b58900;
+            --tens-bg: #ffffff;
+            --ones-color: #ff4500;
+            --ones-bg: #ffffff;
+            --bg-gradient: #ffffff;
+            --glass-bg: #ffffff;
+            --glass-border: #000000;
+            --text-main: #000000;
+            --text-muted: #000000;
+            border: 2px solid #000;
+        }
+
+        .large-text {
+            --font-size-base: 20px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-size: var(--font-size-base);
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* Utility Classes / Layout */
+        .hidden { display: none !important; }
+        
+        .app-container {
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .brand h1 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            background: linear-gradient(45deg, #1d4ed8, #b45309);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .global-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        button.btn {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            color: var(--text-main);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        button.btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            background: #ffffff;
+        }
+
+        button.btn:active {
+            transform: translateY(0);
+        }
+
+        button.btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            border: none;
+        }
+        button.btn-primary:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        }
+
+        button.btn-teacher {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+            color: white;
+            border: none;
+        }
+
+        .active-mode-indicator {
+            border: 2px solid #8b5cf6 !important;
+            box-shadow: 0 0 12px rgba(139, 92, 246, 0.4) !important;
+        }
+
+        /* Screens Layout */
+        .screen {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Welcome Screen */
+        #welcome-screen {
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .welcome-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            padding: 50px 40px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            max-width: 650px;
+            width: 100%;
+        }
+
+        .welcome-logo {
+            font-size: 4rem;
+            margin-bottom: 15px;
+            display: inline-block;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(3deg); }
+        }
+
+        .welcome-card h2 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            color: #0f172a;
+        }
+
+        .welcome-card p {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .module-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 25px;
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.25s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .module-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 6px; height: 100%;
+            background: currentColor;
+        }
+
+        .module-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+            background: #ffffff;
+        }
+
+        .module-icon {
+            font-size: 2.2rem;
+            margin-bottom: 15px;
+        }
+
+        .module-card h3 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .module-card p {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        /* Interactive Workspaces Layout */
+        .workspace-layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+            flex-grow: 1;
+        }
+
+        @media (max-width: 992px) {
+            .workspace-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .control-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .main-canvas-area {
+            background: rgba(255, 255, 255, 0.5);
+            border: 2px dashed var(--glass-border);
+            border-radius: var(--radius-md);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            min-height: 500px;
+            overflow: hidden;
+        }
+
+        /* Place Value Grid Styling */
+        .pv-grid-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            flex-grow: 1;
+            height: 100%;
+        }
+
+        @media (max-width: 600px) {
+            .pv-grid-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .pv-column {
+            display: flex;
+            flex-direction: column;
+            border-radius: var(--radius-md);
+            border: 2px dashed rgba(0,0,0,0.08);
+            background: rgba(255,255,255,0.3);
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .pv-column-header {
+            text-align: center;
+            padding: 12px;
+            font-weight: 800;
+            font-size: 1.2rem;
+            border-top-left-radius: calc(var(--radius-md) - 2px);
+            border-top-right-radius: calc(var(--radius-md) - 2px);
+            color: white;
+            letter-spacing: 0.5px;
+        }
+
+        .col-thousands { --col-theme: var(--thousands-color); background-color: var(--thousands-bg); }
+        .col-hundreds { --col-theme: var(--hundreds-color); background-color: var(--hundreds-bg); }
+        .col-tens { --col-theme: var(--tens-color); background-color: var(--tens-bg); }
+        .col-ones { --col-theme: var(--ones-color); background-color: var(--ones-bg); }
+
+        .pv-column-header {
+            background-color: var(--col-theme);
+        }
+
+        .pv-dropzone {
+            flex-grow: 1;
+            padding: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            gap: 10px;
+            overflow-y: auto;
+            position: relative;
+            min-height: 200px;
+        }
+
+        .pv-column-counter {
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: 800;
+            padding: 10px;
+            background: rgba(255,255,255,0.7);
+            border-bottom-left-radius: calc(var(--radius-md) - 2px);
+            border-bottom-right-radius: calc(var(--radius-md) - 2px);
+            border-top: 1px solid rgba(0,0,0,0.05);
+            color: var(--col-theme);
+        }
+
+        /* Base Ten Block Renderers (Pure CSS / SVGs) */
+        .block-manipulative {
+            cursor: grab;
+            touch-action: none;
+            transition: transform 0.1s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .block-manipulative:active { cursor: grabbing; transform: scale(1.05); }
+
+        /* Custom Live Digital Display Dashboard */
+        .live-displays {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 15px 25px;
+            margin-top: 20px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .live-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 1.1rem;
+        }
+
+        .live-label {
+            font-weight: 700;
+            min-width: 150px;
+            color: var(--text-muted);
+        }
+
+        .live-val {
+            font-weight: 800;
+            color: var(--text-main);
+        }
+        .live-val-large {
+            font-size: 1.8rem;
+            color: #1e3a8a;
+        }
+
+        /* Place Value House View Specifics */
+        .house-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 20px;
+            flex-grow: 1;
+            padding: 40px 10px;
+        }
+
+        .house-slot {
+            width: 140px;
+            background: white;
+            border: 3px solid var(--col-theme);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-md);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .house-roof {
+            width: 0; height: 0;
+            border-left: 70px solid transparent;
+            border-right: 70px solid transparent;
+            border-bottom: 50px solid var(--col-theme);
+            margin: 0 auto -5px auto;
+        }
+
+        .house-digit-zone {
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: var(--col-theme);
+            background: #fafafa;
+        }
+
+        .house-label {
+            background: var(--col-theme);
+            color: white;
+            text-align: center;
+            padding: 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        /* Compare Numbers Panel Configuration */
+        .comparison-layout {
+            display: grid;
+            grid-template-columns: 1fr 120px 1fr;
+            gap: 20px;
+            align-items: center;
+            flex-grow: 1;
+        }
+
+        @media (max-width: 850px) {
+            .comparison-layout { grid-template-columns: 1fr; }
+            .compare-operator-box { transform: rotate(90deg); margin: 15px auto; }
+        }
+
+        .compare-side {
+            background: var(--glass-bg);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .compare-operator-box {
+            background: #ffffff;
+            border: 3px dashed #cbd5e1;
+            border-radius: 50%;
+            width: 90px;
+            height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            font-weight: 900;
+            margin: 0 auto;
+            color: #3b4252;
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Regrouping Specific Controls */
+        .regroup-actions-bar {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            padding: 15px;
+            background: var(--glass-bg);
+            border-radius: var(--radius-md);
+            margin-bottom: 15px;
+        }
+
+        /* Form Inputs & Controls */
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .input-group label {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .input-control {
+            padding: 12px 16px;
+            font-size: 1.1rem;
+            border: 2px solid #cbd5e1;
+            border-radius: var(--radius-md);
+            outline: none;
+            font-weight: 700;
+            transition: border-color 0.2s;
+        }
+
+        .input-control:focus {
+            border-color: #3b82f6;
+        }
+
+        /* Info Badge, Achievements and Popups */
+        .achievement-toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #1e1b4b 0%, #311042 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transform: translateY(150%);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 9999;
+        }
+
+        .achievement-toast.show {
+            transform: translateY(0);
+        }
+
+        .toast-icon { font-size: 2.5rem; }
+        .toast-title { font-weight: 800; font-size: 1.1rem; margin-bottom: 2px; color: #fcd34d; }
+        .toast-desc { font-size: 0.9rem; color: #e2e8f0; }
+
+        .stats-bar {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            font-weight: 700;
+            background: rgba(255,255,255,0.5);
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 0.95rem;
+        }
+
+        /* Teacher Mode Overlays */
+        .teacher-overlay-active .pv-val,
+        .teacher-overlay-active .live-val {
+            visibility: hidden !important;
+        }
+        .teacher-overlay-active .live-val-mask::after {
+            content: "❓ Hidden By Instructor";
+            visibility: visible !important;
+            font-size: 1rem;
+            color: #8b5cf6;
+            font-style: italic;
+            font-weight: 600;
+        }
+
+        /* Classroom Spotlight mode layout styling */
+        .spotlight-active {
+            background: #090d16 !important;
+            color: #f8fafc !important;
+        }
+        .spotlight-active .main-canvas-area {
+            background: #111827 !important;
+            border-color: #374151 !important;
+        }
+        .spotlight-active .pv-column {
+            background: #1f2937 !important;
+        }
+
+        /* Base-Ten Blocks Dynamic Geometric Engine Views */
+        .svg-block {
+            filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.15));
+            transition: transform 0.2s;
+        }
+        .svg-block:hover {
+            transform: scale(1.03);
+        }
+
+        .activities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .activity-btn {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: var(--radius-md);
+            padding: 15px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .activity-btn:hover {
+            border-color: #3b82f6;
+            background: #f8fafc;
+            transform: translateY(-2px);
+        }
+        .activity-btn h4 { font-weight: 700; margin-bottom: 4px; color: #1e293b;}
+        .activity-btn p { font-size: 0.85rem; color: #64748b; }
+
+        /* Virtual blocks stack configuration layout inside grid */
+        .block-stack-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            padding: 10px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid #e2e8f0;
+        }
+
+        .block-label-btn {
+            margin-top: 8px;
+            width: 100%;
+            font-size: 0.85rem;
+            padding: 6px;
+        }
+
+        /* Utility classes for teacher highlights */
+        .highlight-border-th { border: 3px solid var(--thousands-color) !important; box-shadow: 0 0 15px var(--thousands-color) !important; }
+        .highlight-border-h { border: 3px solid var(--hundreds-color) !important; box-shadow: 0 0 15px var(--hundreds-color) !important; }
+        .highlight-border-t { border: 3px solid var(--tens-color) !important; box-shadow: 0 0 15px var(--tens-color) !important; }
+        .highlight-border-o { border: 3px solid var(--ones-color) !important; box-shadow: 0 0 15px var(--ones-color) !important; }
+
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header>
+            <div class="brand">
+                <h1 onclick="App.showScreen('dashboard')" style="cursor:pointer;">🧮 Place Value Blocks Explorer</h1>
+            </div>
+            
+            <div class="global-controls">
+                <div class="stats-bar">
+                    <span>⭐ Stars: <span id="star-counter">0</span></span>
+                    <span>🏅 <span id="rank-badge">Beginner Builder</span></span>
+                </div>
+                <button class="btn" id="btn-teacher-mode" onclick="App.toggleTeacherMode()">👨‍🏫 Teacher Mode</button>
+                <button class="btn" onclick="App.toggleHighContrast()" title="Toggle High Contrast">👁️</button>
+                <button class="btn" onclick="App.toggleLargeText()" title="Toggle Text Size">A+</button>
+            </div>
+        </header>
+
+        <main id="welcome-screen" class="screen">
+            <div class="welcome-card">
+                <div class="welcome-logo">🧮</div>
+                <h2>Place Value Blocks Explorer</h2>
+                <p>Build • Break • Explore • Understand Numbers</p>
+                <button class="btn btn-primary" style="font-size: 1.3rem; padding: 15px 40px;" onclick="App.showScreen('dashboard')">▶ Start Learning</button>
+            </div>
+        </main>
+
+        <main id="dashboard-screen" class="screen hidden">
+            <h2 style="margin-bottom: 20px; font-weight: 800;">📚 Select a Learning Lab</h2>
+            <div class="dashboard-grid">
+                <div class="module-card" style="color: var(--thousands-color)" onclick="App.showScreen('blocks-lab')">
+                    <div class="module-icon">🧱</div>
+                    <h3>Base-Ten Blocks Lab</h3>
+                    <p>Free exploration with digital manipulatives from Thousands to Ones.</p>
+                </div>
+                <div class="module-card" style="color: var(--hundreds-color)" onclick="App.showScreen('build-number')">
+                    <div class="module-icon">🔢</div>
+                    <h3>Build a Number</h3>
+                    <p>Enter any mathematical target value and learn to construct its layout.</p>
+                </div>
+                <div class="module-card" style="color: var(--tens-color)" onclick="App.showScreen('pv-house')">
+                    <div class="module-icon">📍</div>
+                    <h3>Place Value House</h3>
+                    <p>Drop multi-digit integers directly into rooms to discover positional worth.</p>
+                </div>
+                <div class="module-card" style="color: var(--ones-color)" onclick="App.showScreen('compare-lab')">
+                    <div class="module-icon">⚖️</div>
+                    <h3>Compare Numbers Lab</h3>
+                    <p>Place two sets of values face to face to visually weigh greater or lesser states.</p>
+                </div>
+                <div class="module-card" style="color: #8b5cf6" onclick="App.showScreen('regroup-lab')">
+                    <div class="module-icon">🔄</div>
+                    <h3>Regrouping Laboratory</h3>
+                    <p>Trade 10 items to move up or break down values to explore carrying and borrowing.</p>
+                </div>
+                <div class="module-card" style="color: #06b6d4" onclick="App.showScreen('activities-dashboard')">
+                    <div class="module-icon">🎯</div>
+                    <h3>Interactive Challenges</h3>
+                    <p>Play games to check knowledge, discover missing digits, and unlock achievements.</p>
+                </div>
+            </div>
+
+            <div class="live-displays" style="margin-top: auto;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-weight:700; color:var(--text-muted);">💾 Progress and Profiles Saved Locally</span>
+                    <button class="btn" style="font-size:0.8rem; padding:5px 12px;" onclick="App.resetProgress()">Reset Application Progress</button>
+                </div>
+            </div>
+        </main>
+
+        <main id="blocks-lab-screen" class="screen hidden">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <button class="btn" onclick="App.showScreen('dashboard')">⬅ Back to Dashboard</button>
+                <h2 id="lab-title-context">🧱 Base-Ten Blocks Exploration</h2>
+                <button class="btn btn-primary" onclick="BlocksLab.clearWorkspace()">Reset Canvas</button>
+            </div>
+
+            <div class="workspace-layout">
+                <div class="control-panel">
+                    <h3>Block Generator</h3>
+                    <p style="font-size:0.85rem; color:var(--text-muted);">Click objects below to instantly render them on the active workspace:</p>
+                    
+                    <div class="block-stack-wrap" style="border-top: 4px solid var(--thousands-color);">
+                        <div id="svg-th-preview"></div>
+                        <button class="btn block-label-btn" onclick="BlocksLab.addBlock(1000)">+1 Thousand</button>
+                    </div>
+
+                    <div class="block-stack-wrap" style="border-top: 4px solid var(--hundreds-color);">
+                        <div id="svg-h-preview"></div>
+                        <button class="btn block-label-btn" onclick="BlocksLab.addBlock(100)">+1 Hundred</button>
+                    </div>
+
+                    <div class="block-stack-wrap" style="border-top: 4px solid var(--tens-color);">
+                        <div id="svg-t-preview"></div>
+                        <button class="btn block-label-btn" onclick="BlocksLab.addBlock(10)">+1 Ten</button>
+                    </div>
+
+                    <div class="block-stack-wrap" style="border-top: 4px solid var(--ones-color);">
+                        <div id="svg-o-preview"></div>
+                        <button class="btn block-label-btn" onclick="BlocksLab.addBlock(1)">+1 One</button>
+                    </div>
+                </div>
+
+                <div class="main-canvas-area">
+                    <div class="pv-grid-container" id="sandbox-grid-container">
+                        <div class="pv-column col-thousands" id="col-th-target">
+                            <div class="pv-column-header">Thousands</div>
+                            <div class="pv-dropzone" id="dz-1000"></div>
+                            <div class="pv-column-counter live-val-mask"><span class="pv-val" id="cnt-1000">0</span></div>
+                        </div>
+                        <div class="pv-column col-hundreds" id="col-h-target">
+                            <div class="pv-column-header">Hundreds</div>
+                            <div class="pv-dropzone" id="dz-100"></div>
+                            <div class="pv-column-counter live-val-mask"><span class="pv-val" id="cnt-100">0</span></div>
+                        </div>
+                        <div class="pv-column col-tens" id="col-t-target">
+                            <div class="pv-column-header">Tens</div>
+                            <div class="pv-dropzone" id="dz-10"></div>
+                            <div class="pv-column-counter live-val-mask"><span class="pv-val" id="cnt-10">0</span></div>
+                        </div>
+                        <div class="pv-column col-ones" id="col-o-target">
+                            <div class="pv-column-header">Ones</div>
+                            <div class="pv-dropzone" id="dz-1"></div>
+                            <div class="pv-column-counter live-val-mask"><span class="pv-val" id="cnt-1">0</span></div>
+                        </div>
+                    </div>
+
+                    <div class="live-displays">
+                        <div class="live-row">
+                            <span class="live-label">Standard Form:</span>
+                            <span class="live-val live-val-large live-val-mask" id="display-standard">0</span>
+                        </div>
+                        <div class="live-row">
+                            <span class="live-label">Expanded Form:</span>
+                            <span class="live-val live-val-mask" id="display-expanded">0 + 0 + 0 + 0</span>
+                        </div>
+                        <div class="live-row">
+                            <span class="live-label">Number Name:</span>
+                            <span class="live-val live-val-mask" id="display-word">Zero</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="teacher-tools-strip" class="hidden" style="margin-top:15px; padding:15px; background:#f5f3ff; border:2px solid #c084fc; border-radius:var(--radius-md);">
+                <div style="font-weight:800; color:#6b21a8; margin-bottom:8px; display:flex; align-items:center; gap:8px;">👨‍🏫 Teacher Demonstration Dashboard Active</div>
+                <div style="display:flex; flex-wrap:wrap; gap:10px;">
+                    <button class="btn" onclick="TeacherConsole.toggleVisibilityMask()">Show / Hide Text Values</button>
+                    <button class="btn" onclick="TeacherConsole.triggerHighlight('th')">Highlight Thousands Column</button>
+                    <button class="btn" onclick="TeacherConsole.triggerHighlight('h')">Highlight Hundreds Column</button>
+                    <button class="btn" onclick="TeacherConsole.triggerHighlight('t')">Highlight Tens Column</button>
+                    <button class="btn" onclick="TeacherConsole.triggerHighlight('o')">Highlight Ones Column</button>
+                    <button class="btn" onclick="TeacherConsole.clearHighlights()">Clear Screen Markings</button>
+                    <button class="btn" onclick="TeacherConsole.toggleSpotlightMode()">Spotlight / Smartboard Mode</button>
+                </div>
+            </div>
+        </main>
+
+        <main id="build-number-screen" class="screen hidden">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <button class="btn" onclick="App.showScreen('dashboard')">⬅ Back to Dashboard</button>
+                <h2>🔢 Target Build Workspace</h2>
+                <div></div>
+            </div>
+            <div class="workspace-layout">
+                <div class="control-panel">
+                    <div class="input-group">
+                        <label for="target-num-input">Enter Target Number (0 - 9999):</label>
+                        <input type="number" id="target-num-input" class="input-control" min="0" max="9999" value="342">
+                    </div>
+                    <button class="btn btn-primary" onclick="BuildEngine.setTargetFromInput()">Set Active Target</button>
+                    <button class="btn" onclick="BuildEngine.generateRandomTarget()">🎲 Random Number</button>
+                    <hr style="border:none; border-top:1px solid #e2e8f0;">
+                    <div style="padding:10px; background:#f0fdf4; border-radius:8px; border:1px solid #bbf7d0;">
+                        <span style="font-weight:700; color:#166534;">Target:</span>
+                        <div style="font-size:2rem; font-weight:900; color:#14532d;" id="target-display-val">342</div>
+                    </div>
+                    <button class="btn btn-primary" style="background:#16a34a;" onclick="BuildEngine.checkUserSolution()">Verify My Layout</button>
+                </div>
+                <div class="main-canvas-area" id="build-workspace-canvas-root">
+                    </div>
+            </div>
+        </main>
+
+        <main id="pv-house-screen" class="screen hidden">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <button class="btn" onclick="App.showScreen('dashboard')">⬅ Back to Dashboard</button>
+                <h2>📍 Interactive Place Value House</h2>
+                <button class="btn" onclick="PVHouse.randomize()">Random Number</button>
+            </div>
+            <div class="control-panel" style="margin-bottom:20px; flex-direction:row; justify-content:center; align-items:center; gap:20px; flex-wrap:wrap;">
+                <div class="input-group">
+                    <label>Change Global House Number:</label>
+                    <input type="number" id="pv-house-raw-input" class="input-control" style="width:160px;" min="0" max="9999" value="1234">
+                </div>
+                <button class="btn btn-primary" onclick="PVHouse.buildFromInput()">Update House</button>
+            </div>
+            <div class="main-canvas-area" style="justify-content:center; align-items:center;">
+                <div class="house-container">
+                    <div class="house-column-wrap">
+                        <div class="house-roof" style="--col-theme: var(--thousands-color)"></div>
+                        <div class="house-slot" style="--col-theme: var(--thousands-color)">
+                            <div class="house-digit-zone" id="house-digit-th">0</div>
+                            <div class="house-label">Thousands</div>
+                        </div>
+                    </div>
+                    <div class="house-column-wrap">
+                        <div class="house-roof" style="--col-theme: var(--hundreds-color)"></div>
+                        <div class="house-slot" style="--col-theme: var(--hundreds-color)">
+                            <div class="house-digit-zone" id="house-digit-h">0</div>
+                            <div class="house-label">Hundreds</div>
+                        </div>
+                    </div>
+                    <div class="house-column-wrap">
+                        <div class="house-roof" style="--col-theme: var(--tens-color)"></div>
+                        <div class="house-slot" style="--col-theme: var(--tens-color)">
+                            <div class="house-digit-zone" id="house-digit-t">0</div>
+                            <div class="house-label">Tens</div>
+                        </div>
+                    </div>
+                    <div class="house-column-wrap">
+                        <div class="house-roof" style="--col-theme: var(--ones-color)"></div>
+                        <div class="house-slot" style="--col-theme: var(--ones-color)">
+                            <div class="house-digit-zone" id="house-digit-o">0</div>
+                            <div class="house-label">Ones</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="live-displays" style="width:100%;">
+                    <div class="live-row"><span class="live-label">Breakdown Structure:</span><span class="live-val" id="house-breakdown-text">...</span></div>
+                </div>
+            </div>
+        </main>
+
+        <main id="compare-lab-screen" class="screen hidden">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <button class="btn" onclick="App.showScreen('dashboard')">⬅ Back to Dashboard</button>
+                <h2>⚖️ Number Comparison Laboratory</h2>
+                <button class="btn btn-primary" onclick="CompareLab.executeEvaluation()">Compare Spaces</button>
+            </div>
+            <div class="comparison-layout">
+                <div class="compare-side">
+                    <h3 style="color:var(--thousands-color)">Left Workspace</h3>
+                    <input type="number" id="compare-left-input" class="input-control" value="25" min="0" max="9999">
+                    <div id="compare-left-blocks-area" style="min-height:220px; background:rgba(255,255,255,0.4); border-radius:12px; padding:10px; display:flex; flex-wrap:wrap; gap:5px;"></div>
+                </div>
+                <div>
+                    <div class="compare-operator-box" id="comparison-result-sign">?</div>
+                </div>
+                <div class="compare-side">
+                    <h3 style="color:var(--ones-color)">Right Workspace</h3>
+                    <input type="number" id="compare-right-input" class="input-control" value="42" min="0" max="9999">
+                    <div id="compare-right-blocks-area" style="min-height:220px; background:rgba(255,255,255,0.4); border-radius:12px; padding:10px; display:flex; flex-wrap:wrap; gap:5px;"></div>
+                </div>
+            </div>
+        </main>
+
+        <main id="regroup-lab-screen" class="screen hidden">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <button class="btn" onclick="App.showScreen('dashboard')">⬅ Back to Dashboard</button>
+                <h2>🔄 Regrouping Lab (Carrying & Borrowing)</h2>
+                <button class="btn" onclick="RegroupLab.reset()">Reset Lab Space</button>
+            </div>
+            <div class="regroup-actions-bar">
+                <button class="btn" style="border-color:var(--ones-color);" onclick="RegroupLab.combineOnesToTens()">Combine 10 Ones ➡️ 1 Ten</button>
+                <button class="btn" style="border-color:var(--tens-color);" onclick="RegroupLab.breakTenToOnes()">Break 1 Ten ➡️ 10 Ones</button>
+                <button class="btn" style="border-color:var(--hundreds-color);" onclick="RegroupLab.combineTensToHundreds()">Combine 10 Tens ➡️ 1 Hundred</button>
+                <button class="btn" style="border-color:var(--thousands-color);" onclick="RegroupLab.breakHundredToTens()">Break 1 Hundred ➡️ 10 Tens</button>
+            </div>
+            <div id="regroup-workspace-canvas-root" style="flex-grow:1; display:flex; flex-direction:column;">
+                 </div>
+        </main>
+
+        <main id="activities-dashboard-screen" class="screen hidden">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <button class="btn" onclick="App.showScreen('dashboard')">⬅ Back to Dashboard</button>
+                <h2>🎯 Place Value Interactive Challenges</h2>
+                <div></div>
+            </div>
+            <div class="activities-grid">
+                <div class="activity-btn" onclick="ChallengeEngine.startChallenge('build-target')">
+                    <h4>🏗️ Build Target Challenge</h4>
+                    <p>Construct specific values on demand to unlock gold badges.</p>
+                </div>
+                <div class="activity-btn" onclick="ChallengeEngine.startChallenge('missing-digit')">
+                    <h4>⭐ Find the Missing Digit</h4>
+                    <p>Analyze blocks array models and supply missing place digits.</p>
+                </div>
+                <div class="activity-btn" onclick="ChallengeEngine.startChallenge('pattern-train')">
+                    <h4>🚂 Place Value Patterns Train</h4>
+                    <p>Track intervals adding +10, +100, or +1000 dynamically.</p>
+                </div>
+            </div>
+            <div id="active-challenge-sandbox-zone" class="main-canvas-area hidden" style="margin-top:20px; min-height:300px; transition: all 0.3s ease;">
+                 <div id="game-prompt-strip" style="font-size:1.3rem; font-weight:800; margin-bottom:15px; padding:12px; background:white; border-radius:8px; border-left: 5px solid #06b6d4; box-shadow: var(--shadow-sm);"></div>
+                 <div id="game-interactive-content-node" style="animation: fadeIn 0.3s ease-out;"></div>
+            </div>
+        </main>
+
+    </div>
+
+    <div class="achievement-toast" id="global-achievement-toast">
+        <div class="toast-icon" id="toast-medal">🌟</div>
+        <div>
+            <div class="toast-title" id="toast-title-text">Achievement Unlocked!</div>
+            <div class="toast-desc" id="toast-desc-text">You have earned a place value badge!</div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * Pure Web Audio Sound Generation Subsystem Architecture Engine
+         */
+        const SoundEngine = {
+            ctx: null,
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
+            playClick() {
+                this.init(); if(!this.ctx) return;
+                let osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+                osc.type = 'sine'; osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(); osc.stop(this.ctx.currentTime + 0.1);
+            },
+            playSnap() {
+                this.init(); if(!this.ctx) return;
+                let osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(320, this.ctx.currentTime);
+                gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(); osc.stop(this.ctx.currentTime + 0.08);
+            },
+            playCorrect() {
+                this.init(); if(!this.ctx) return;
+                let now = this.ctx.currentTime;
+                this.playTone(523.25, now, 0.1); // C5
+                this.playTone(659.25, now + 0.1, 0.1); // E5
+                this.playTone(783.99, now + 0.2, 0.2); // G5
+            },
+            playWrong() {
+                this.init(); if(!this.ctx) return;
+                let osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(140, this.ctx.currentTime);
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(); osc.stop(this.ctx.currentTime + 0.3);
+            },
+            playCelebration() {
+                this.init(); if(!this.ctx) return;
+                let now = this.ctx.currentTime;
+                let scale = [523.25, 587.33, 659.25, 698.46, 783.99, 880.00, 987.77, 1046.50];
+                scale.forEach((freq, idx) => {
+                    this.playTone(freq, now + (idx * 0.08), 0.08);
+                });
+            },
+            playTone(freq, start, duration) {
+                let osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+                osc.type = 'sine'; osc.frequency.setValueAtTime(freq, start);
+                gain.gain.setValueAtTime(0.1, start);
+                gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(start); osc.stop(start + duration);
+            }
+        };
+
+        /**
+         * Inline SVG Vector Math Graphics Asset Factory Generator
+         */
+        const BlockGraphics = {
+            createOnesSVG(size = 35) {
+                return `<svg class="svg-block" width="${size}" height="${size}" viewBox="0 0 40 40">
+                    <rect x="5" y="10" width="25" height="25" fill="#ea580c" stroke="#c2410c" stroke-width="2" rx="3"/>
+                    <polygon points="5,10 12,3 37,3 30,10" fill="#f97316" stroke="#c2410c" stroke-width="2"/>
+                    <polygon points="30,10 37,3 37,28 30,35" fill="#9a3412" stroke="#c2410c" stroke-width="2"/>
+                </svg>`;
+            },
+            createTensSVG(width = 35, height = 110) {
+                let segments = '';
+                for(let i=0; i<10; i++) {
+                    segments += `<rect x="5" y="${5 + i*10}" width="20" height="10" fill="#eab308" stroke="#a16207" stroke-width="1"/>`;
+                }
+                return `<svg class="svg-block" width="${width}" height="${height}" viewBox="0 0 32 115">
+                    <g>${segments}</g>
+                    <polygon points="5,5 10,0 30,0 25,5" fill="#fde047" stroke="#a16207" stroke-width="1"/>
+                    <polygon points="25,5 30,0 30,105 25,110" fill="#854d0e" stroke="#a16207" stroke-width="1"/>
+                </svg>`;
+            },
+            createHundredsSVG(size = 120) {
+                let grid = '';
+                for(let r=0; r<10; r++) {
+                    for(let c=0; c<10; c++) {
+                        grid += `<rect x="${5 + c*10}" y="${5 + r*10}" width="10" height="10" fill="#16a34a" stroke="#15803d" stroke-width="1"/>`;
+                    }
+                }
+                return `<svg class="svg-block" width="${size}" height="${size}" viewBox="0 0 115 115">
+                    <g>${grid}</g>
+                    <polygon points="5,5 12,0 112,0 105,5" fill="#4ade80" stroke="#15803d" stroke-width="1"/>
+                    <polygon points="105,5 112,0 112,100 105,105" fill="#166534" stroke="#15803d" stroke-width="1"/>
+                </svg>`;
+            },
+            createThousandsSVG(size = 140) {
+                return `<svg class="svg-block" width="${size}" height="${size}" viewBox="0 0 140 140">
+                    <rect x="10" y="45" width="85" height="85" fill="#2563eb" stroke="#1d4ed8" stroke-width="2" rx="4"/>
+                    <polygon points="10,45 45,10 130,10 95,45" fill="#60a5fa" stroke="#1d4ed8" stroke-width="2"/>
+                    <polygon points="95,45 130,10 130,95 95,130" fill="#1e40af" stroke="#1d4ed8" stroke-width="2"/>
+                    <line x1="95" y1="45" x2="95" y2="130" stroke="#1d4ed8" stroke-width="1.5"/>
+                    <line x1="10" y1="45" x2="95" y2="45" stroke="#1d4ed8" stroke-width="1.5"/>
+                    <text x="32" y="95" fill="white" font-weight="900" font-size="16">1,000</text>
+                </svg>`;
+            }
+        };
+
+        /**
+         * Global Numerical Translation Utility Engine (Standard Int ➡️ Text Word Forms)
+         */
+        const NumberTranslator = {
+            ones: ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'],
+            tens: ['', 'Ten', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'],
+            teens: ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'],
+            
+            translate(num) {
+                if (num === 0) return 'Zero';
+                let words = '';
+                
+                let thousands = Math.floor(num / 1000);
+                if (thousands > 0) {
+                    words += this.ones[thousands] + ' Thousand ';
+                    num %= 1000;
+                }
+                
+                let hundreds = Math.floor(num / 100);
+                if (hundreds > 0) {
+                    words += this.ones[hundreds] + ' Hundred ';
+                    num %= 100;
+                }
+                
+                if (num > 0) {
+                    if (words !== '') words += 'and ';
+                    if (num < 10) {
+                        words += this.ones[num];
+                    } else if (num >= 10 && num < 20) {
+                        words += this.teens[num - 10];
+                    } else {
+                        let t = Math.floor(num / 10);
+                        let o = num % 10;
+                        words += this.tens[t] + (o > 0 ? '-' + this.ones[o] : '');
+                    }
+                }
+                return words.trim();
+            }
+        };
+
+        /**
+         * Core Application Lifecycle State System Manager
+         */
+        const App = {
+            state: {
+                stars: 0,
+                achievements: [],
+                teacherMode: false,
+                highContrast: false,
+                largeText: false,
+                currentView: 'welcome'
+            },
+
+            init() {
+                this.loadUserData();
+                this.renderPreviews();
+                // Set default initial viewport screen state setup
+                this.showScreen('welcome');
+            },
+
+            loadUserData() {
+                let saved = localStorage.getItem('pv_explorer_user_progress_2026');
+                if (saved) {
+                    try {
+                        this.state = Object.assign(this.state, JSON.parse(saved));
+                        document.getElementById('star-counter').innerText = this.state.stars;
+                        this.updateRankBadge();
+                    } catch(e) { console.error("Error unpacking state profiles", e); }
+                }
+            },
+
+            saveUserData() {
+                localStorage.setItem('pv_explorer_user_progress_2026', JSON.stringify(this.state));
+            },
+
+            addStars(count) {
+                this.state.stars += count;
+                document.getElementById('star-counter').innerText = this.state.stars;
+                SoundEngine.playCorrect();
+                this.updateRankBadge();
+                this.saveUserData();
+            },
+
+            updateRankBadge() {
+                let r = "Beginner Builder";
+                if(this.state.stars >= 15) r = "🌟 Place Value Explorer";
+                if(this.state.stars >= 40) r = "🏅 Block Master";
+                if(this.state.stars >= 80) r = "👑 Number Champion";
+                if(this.state.stars >= 150) r = "💎 Maths Genius";
+                document.getElementById('rank-badge').innerText = r;
+            },
+
+            unlockAchievement(id, title, desc) {
+                if (this.state.achievements.includes(id)) return;
+                this.state.achievements.push(id);
+                SoundEngine.playCelebration();
+                let toast = document.getElementById('global-achievement-toast');
+                document.getElementById('toast-title-text').innerText = `🏆 ${title}`;
+                document.getElementById('toast-desc-text').innerText = desc;
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 5000);
+                this.saveUserData();
+            },
+
+            resetProgress() {
+                if(confirm("Are you sure you want to clear all earned stars and achievements?")) {
+                    localStorage.removeItem('pv_explorer_user_progress_2026');
+                    location.reload();
+                }
+            },
+
+            renderPreviews() {
+                document.getElementById('svg-th-preview').innerHTML = BlockGraphics.createThousandsSVG(70);
+                document.getElementById('svg-h-preview').innerHTML = BlockGraphics.createHundredsSVG(60);
+                document.getElementById('svg-t-preview').innerHTML = BlockGraphics.createTensSVG(20, 60);
+                document.getElementById('svg-o-preview').innerHTML = BlockGraphics.createOnesSVG(30);
+            },
+
+            showScreen(screenId) {
+                SoundEngine.playClick();
+                // Deactivate all targets uniformly
+                document.querySelectorAll('main.screen').forEach(s => s.classList.add('hidden'));
+                
+                let target = document.getElementById(`${screenId}-screen`);
+                if (target) {
+                    target.classList.remove('hidden');
+                    this.state.currentView = screenId;
+                }
+                
+                // Route init triggers based on custom selected view state
+                if(screenId === 'blocks-lab') BlocksLab.initWorkspace();
+                if(screenId === 'build-number') BuildEngine.init();
+                if(screenId === 'pv-house') PVHouse.init();
+                if(screenId === 'compare-lab') CompareLab.init();
+                if(screenId === 'regroup-lab') RegroupLab.init();
+            },
+
+            toggleTeacherMode() {
+                this.state.teacherMode = !this.state.teacherMode;
+                let btn = document.getElementById('btn-teacher-mode');
+                let strip = document.getElementById('teacher-tools-strip');
+                
+                if(this.state.teacherMode) {
+                    btn.classList.add('active-mode-indicator');
+                    if(strip) strip.classList.remove('hidden');
+                    this.unlockAchievement('teacher_harness', 'Instructor Assistant', 'Enabled professional smartboard controls! 👨‍🏫');
+                } else {
+                    btn.classList.remove('active-mode-indicator');
+                    if(strip) strip.classList.add('hidden');
+                    document.body.classList.remove('teacher-overlay-active');
+                }
+                SoundEngine.playSnap();
+            },
+
+            toggleHighContrast() {
+                this.state.highContrast = !this.state.highContrast;
+                document.body.classList.toggle('high-contrast', this.state.highContrast);
+                SoundEngine.playSnap();
+            },
+
+            toggleLargeText() {
+                this.state.largeText = !this.state.largeText;
+                document.body.classList.toggle('large-text', this.state.largeText);
+                SoundEngine.playSnap();
+            }
+        };
+
+        /**
+         * Core Interactive Base-Ten Blocks Sandbox Execution Space
+         */
+        const BlocksLab = {
+            counts: { 1000: 0, 100: 0, 10: 0, 1: 0 },
+            activeCanvasRootId: 'sandbox-grid-container',
+
+            initWorkspace() {
+                this.counts = { 1000: 0, 100: 0, 10: 0, 1: 0 };
+                this.clearWorkspaceDOM();
+                this.recalculateValues();
+            },
+
+            clearWorkspace() {
+                SoundEngine.playSnap();
+                this.initWorkspace();
+            },
+
+            clearWorkspaceDOM() {
+                const suffixes = ['1000', '100', '10', '1'];
+                suffixes.forEach(s => {
+                    let container = document.querySelector(`#${this.activeCanvasRootId} #dz-${s}`);
+                    if(container) container.innerHTML = '';
+                });
+            },
+
+            addBlock(value) {
+                if(this.counts[value] >= 99) {
+                    alert("Maximum element structural block visualization capacity reached for this column space!");
+                    return;
+                }
+                SoundEngine.playSnap();
+                this.counts[value]++;
+                this.renderBlockToColumn(value);
+                this.recalculateValues();
+            },
+
+            renderBlockToColumn(value) {
+                let zone = document.querySelector(`#${this.activeCanvasRootId} #dz-${value}`);
+                if(!zone) return;
+
+                let wrapper = document.createElement('div');
+                wrapper.className = 'block-manipulative';
+                wrapper.setAttribute('data-val', value);
+                
+                // Pick corresponding vector structural mapping
+                if(value === 1000) wrapper.innerHTML = BlockGraphics.createThousandsSVG(75);
+                if(value === 100)  wrapper.innerHTML = BlockGraphics.createHundredsSVG(65);
+                if(value === 10)   wrapper.innerHTML = BlockGraphics.createTensSVG(22, 70);
+                if(value === 1)    wrapper.innerHTML = BlockGraphics.createOnesSVG(28);
+
+                // Quick operational click deletion layout functionality for primary students
+                wrapper.addEventListener('dblclick', () => {
+                    SoundEngine.playSnap();
+                    wrapper.remove();
+                    this.counts[value]--;
+                    this.recalculateValues();
+                });
+
+                zone.appendChild(wrapper);
+            },
+
+            recalculateValues() {
+                // Read exact runtime calculations status from the localized state configurations
+                let total = (this.counts[1000] * 1000) + (this.counts[100] * 100) + (this.counts[10] * 10) + (this.counts[1] * 1);
+                
+                // Write counts to indicators
+                const values = [1000, 100, 10, 1];
+                values.forEach(v => {
+                    let counterNode = document.querySelector(`#${this.activeCanvasRootId} #cnt-${v}`);
+                    if(counterNode) counterNode.innerText = this.counts[v];
+                });
+
+                // Update text summary labels across elements updates spaces
+                let stdNode = document.getElementById('display-standard');
+                let expNode = document.getElementById('display-expanded');
+                let wrdNode = document.getElementById('display-word');
+
+                if(stdNode) stdNode.innerText = total.toLocaleString();
+                if(expNode) {
+                    expNode.innerText = `${this.counts[1000]*1000} + ${this.counts[100]*100} + ${this.counts[10]*10} + ${this.counts[1]}`;
+                }
+                if(wrdNode) wrdNode.innerText = NumberTranslator.translate(total);
+            }
+        };
+
+        /**
+         * Teacher Presentation Instrumentation Logic Sub-controller
+         */
+        const TeacherConsole = {
+            toggleVisibilityMask() {
+                SoundEngine.playSnap();
+                document.body.classList.toggle('teacher-overlay-active');
+                
+                // Wrap content to allow hidden parameters masking
+                let targets = ['display-standard', 'display-expanded', 'display-word'];
+                targets.forEach(t => {
+                    let el = document.getElementById(t);
+                    if(el) el.parentElement.classList.toggle('live-val-mask');
+                });
+            },
+
+            triggerHighlight(columnKey) {
+                SoundEngine.playClick();
+                this.clearHighlights();
+                let targetId = '';
+                if(columnKey === 'th') targetId = 'col-th-target';
+                if(columnKey === 'h') targetId = 'col-h-target';
+                if(columnKey === 't') targetId = 'col-t-target';
+                if(columnKey === 'o') targetId = 'col-o-target';
+
+                let target = document.getElementById(targetId);
+                if(target) target.classList.add(`highlight-border-${columnKey}`);
+            },
+
+            clearHighlights() {
+                let cols = ['col-th-target', 'col-h-target', 'col-t-target', 'col-o-target'];
+                cols.forEach(c => {
+                    let el = document.getElementById(c);
+                    if(el) {
+                        el.className = el.className.replace(/highlight-border-\w+/g, '');
+                    }
+                });
+            },
+
+            toggleSpotlightMode() {
+                SoundEngine.playSnap();
+                document.body.classList.toggle('spotlight-active');
+            }
+        };
+
+        /**
+         * System Challenge Mode Game Engine Module Core Code Setup
+         */
+        const BuildEngine = {
+            currentTarget: 0,
+
+            init() {
+                // Clone dynamic sandbox UI elements context layout setup into game arena node
+                let root = document.getElementById('build-workspace-canvas-root');
+                root.innerHTML = '';
+                
+                // Create unique instance execution workspace
+                let sandboxTemplate = document.getElementById('sandbox-grid-container').cloneNode(true);
+                sandboxTemplate.id = "game-build-grid-container";
+                root.appendChild(sandboxTemplate);
+                
+                // Bind local elements controls over the active nodes
+                this.generateRandomTarget();
+            },
+
+            generateRandomTarget() {
+                this.currentTarget = Math.floor(Math.random() * 899) + 11; // 11 to 910
+                document.getElementById('target-display-val').innerText = this.currentTarget;
+                // Clear out sandbox status configuration parameters arrays data arrays
+                this.resetGameWorkspace();
+            },
+
+            setTargetFromInput() {
+                let val = parseInt(document.getElementById('target-num-input').value) || 0;
+                if(val < 0 || val > 9999) { alert("Please provide coordinates spanning values within constraints between 0 and 9,999"); return; }
+                this.currentTarget = val;
+                document.getElementById('target-display-val').innerText = val;
+                this.resetGameWorkspace();
+            },
+
+            resetGameWorkspace() {
+                const suffixes = ['1000', '100', '10', '1'];
+                suffixes.forEach(s => {
+                    let zone = document.querySelector(`#game-build-grid-container #dz-${s}`);
+                    if(zone) zone.innerHTML = '';
+                    let cnt = document.querySelector(`#game-build-grid-container #cnt-${s}`);
+                    if(cnt) cnt.innerText = '0';
+                });
+                
+                // Setup standalone manual buttons into columns for ease of input execution
+                this.injectActionButtonsToGameGrid();
+            },
+
+            injectActionButtonsToGameGrid() {
+                const mapping = [
+                    { k: '1000', v: 1000 }, { k: '100', v: 100 }, { k: '10', v: 10 }, { k: '1', v: 1 }
+                ];
+                mapping.forEach(m => {
+                    let header = document.querySelector(`#game-build-grid-container .col-${m.k === '1000' ? 'thousands' : m.k === '100' ? 'hundreds' : m.k === '10' ? 'tens' : 'ones'} .pv-column-header`);
+                    if(header && !header.querySelector('.add-game-btn')) {
+                        let btn = document.createElement('button');
+                        btn.className = 'add-game-btn';
+                        btn.innerText = " ➕ ";
+                        btn.style.cssText = "float:right; cursor:pointer; background:white; border:none; border-radius:4px; font-size:0.75rem; padding:2px 5px;";
+                        btn.onclick = (e) => {
+                            e.stopPropagation();
+                            this.addGameBlock(m.v);
+                        };
+                        header.appendChild(btn);
+                    }
+                });
+            },
+
+            addGameBlock(value) {
+                SoundEngine.playSnap();
+                let zone = document.querySelector(`#game-build-grid-container #dz-${value}`);
+                let cntEl = document.querySelector(`#game-build-grid-container #cnt-${value}`);
+                let currentCount = parseInt(cntEl.innerText) || 0;
+                
+                if(currentCount >= 50) return;
+                currentCount++;
+                cntEl.innerText = currentCount;
+
+                let wrapper = document.createElement('div');
+                wrapper.className = 'block-manipulative';
+                if(value === 1000) wrapper.innerHTML = BlockGraphics.createThousandsSVG(45);
+                if(value === 100)  wrapper.innerHTML = BlockGraphics.createHundredsSVG(40);
+                if(value === 10)   wrapper.innerHTML = BlockGraphics.createTensSVG(12, 45);
+                if(value === 1)    wrapper.innerHTML = BlockGraphics.createOnesSVG(18);
+                
+                wrapper.onclick = () => {
+                    SoundEngine.playSnap();
+                    wrapper.remove();
+                    let updated = parseInt(cntEl.innerText) - 1;
+                    cntEl.innerText = updated;
+                };
+
+                zone.appendChild(wrapper);
+            },
+
+            checkUserSolution() {
+                let thCount = parseInt(document.querySelector(`#game-build-grid-container #cnt-1000`).innerText) || 0;
+                let hCount = parseInt(document.querySelector(`#game-build-grid-container #cnt-100`).innerText) || 0;
+                let tCount = parseInt(document.querySelector(`#game-build-grid-container #cnt-10`).innerText) || 0;
+                let oCount = parseInt(document.querySelector(`#game-build-grid-container #cnt-1`).innerText) || 0;
+
+                let calculatedSum = (thCount * 1000) + (hCount * 100) + (tCount * 10) + oCount;
+
+                if(calculatedSum === this.currentTarget) {
+                    SoundEngine.playCorrect();
+                    App.addStars(5);
+                    alert("🎉 Outstanding! Your base-ten layout perfectly maps out the target structure value! +5 Stars Added.");
+                    this.generateRandomTarget();
+                } else {
+                    SoundEngine.playWrong();
+                    alert(`❌ Not quite matches target. Your space counts evaluate out to: ${calculatedSum}. Please reconstruct or trade values carefully.`);
+                }
+            }
+        };
+
+        /**
+         * Place Value House Positional Logic Sandbox View System
+         */
+        const PVHouse = {
+            init() {
+                this.buildFromInput();
+            },
+            randomize() {
+                let rand = Math.floor(Math.random() * 9999);
+                document.getElementById('pv-house-raw-input').value = rand;
+                this.buildFromInput();
+            },
+            buildFromInput() {
+                SoundEngine.playClick();
+                let rawInput = document.getElementById('pv-house-raw-input').value;
+                let value = Math.max(0, Math.min(9999, parseInt(rawInput) || 0));
+                
+                // String padding generation routines strategy array loops
+                let str = value.toString().padStart(4, '0');
+                
+                let thDigit = str[0];
+                let hDigit = str[1];
+                let tDigit = str[2];
+                let oDigit = str[3];
+
+                document.getElementById('house-digit-th').innerText = thDigit;
+                document.getElementById('house-digit-h').innerText = hDigit;
+                document.getElementById('house-digit-t').innerText = tDigit;
+                document.getElementById('house-digit-o').innerText = oDigit;
+
+                // Build descriptive texts parameters equations
+                let breakdownStr = `(${thDigit} × 1000) + (${hDigit} × 100) + (${tDigit} × 10) + (${oDigit} × 1) = ${value}`;
+                document.getElementById('house-breakdown-text').innerText = breakdownStr;
+            }
+        };
+
+        /**
+         * Dual Laboratory Area Comparison Module Subsystem Logic Core Controller
+         */
+        const CompareLab = {
+            init() {
+                this.renderCompareWorkspaceGraphics();
+            },
+            renderCompareWorkspaceGraphics() {
+                let leftVal = parseInt(document.getElementById('compare-left-input').value) || 0;
+                let rightVal = parseInt(document.getElementById('compare-right-input').value) || 0;
+
+                this.drawMicroBlocksToContainer('compare-left-blocks-area', leftVal);
+                this.drawMicroBlocksToContainer('compare-right-blocks-area', rightVal);
+            },
+            drawMicroBlocksToContainer(targetId, totalVal) {
+                let el = document.getElementById(targetId);
+                if(!el) return;
+                el.innerHTML = '';
+
+                let remainder = totalVal;
+                let th = Math.floor(remainder / 1000); remainder %= 1000;
+                let h = Math.floor(remainder / 100); remainder %= 100;
+                let t = Math.floor(remainder / 10); remainder %= 10;
+                let o = remainder;
+
+                // Append proportional graphical elements representations efficiently
+                for(let i=0; i<Math.min(th, 6); i++) el.innerHTML += BlockGraphics.createThousandsSVG(35);
+                for(let i=0; i<Math.min(h, 12); i++) el.innerHTML += BlockGraphics.createHundredsSVG(30);
+                for(let i=0; i<Math.min(t, 20); i++) el.innerHTML += BlockGraphics.createTensSVG(10, 35);
+                for(let i=0; i<Math.min(o, 30); i++) el.innerHTML += BlockGraphics.createOnesSVG(14);
+            },
+            executeEvaluation() {
+                let leftVal = parseInt(document.getElementById('compare-left-input').value) || 0;
+                let rightVal = parseInt(document.getElementById('compare-right-input').value) || 0;
+
+                this.renderCompareWorkspaceGraphics();
+
+                let signBox = document.getElementById('comparison-result-sign');
+                if(leftVal > rightVal) { signBox.innerText = '>'; SoundEngine.playCorrect(); App.addStars(2); }
+                else if(leftVal < rightVal) { signBox.innerText = '<'; SoundEngine.playCorrect(); App.addStars(2); }
+                else { signBox.innerText = '='; SoundEngine.playCorrect(); App.addStars(1); }
+            }
+        };
+
+        /**
+         * Regrouping Lab Module Trade Mechanics Framework
+         */
+        const RegroupLab = {
+            counts: { 1000: 0, 100: 0, 10: 15, 1: 12 }, // Load dynamic mismatched numbers initially to provoke trading workflows
+
+            init() {
+                let root = document.getElementById('regroup-workspace-canvas-root');
+                root.innerHTML = '';
+                
+                let layoutGrid = document.getElementById('sandbox-grid-container').cloneNode(true);
+                layoutGrid.id = "regroup-canvas-grid-system";
+                root.appendChild(layoutGrid);
+
+                this.syncWorkspaceDOM();
+            },
+
+            reset() {
+                this.counts = { 1000: 0, 100: 1, 10: 12, 1: 14 };
+                this.syncWorkspaceDOM();
+                SoundEngine.playSnap();
+            },
+
+            syncWorkspaceDOM() {
+                // Wipe clean targets arrays layers structures
+                const keys = [1000, 100, 10, 1];
+                keys.forEach(k => {
+                    let zone = document.querySelector(`#regroup-canvas-grid-system #dz-${k}`);
+                    if(zone) zone.innerHTML = '';
+                    
+                    // Render current stack indicators count array listings
+                    for(let i=0; i<this.counts[k]; i++) {
+                        let wrapper = document.createElement('div');
+                        wrapper.className = 'block-manipulative';
+                        if(k === 1000) wrapper.innerHTML = BlockGraphics.createThousandsSVG(40);
+                        if(k === 100)  wrapper.innerHTML = BlockGraphics.createHundredsSVG(35);
+                        if(k === 10)   wrapper.innerHTML = BlockGraphics.createTensSVG(10, 40);
+                        if(k === 1)    wrapper.innerHTML = BlockGraphics.createOnesSVG(15);
+                        zone.appendChild(wrapper);
+                    }
+
+                    let cnt = document.querySelector(`#regroup-canvas-grid-system #cnt-${k}`);
+                    if(cnt) cnt.innerText = this.counts[k];
+                });
+            },
+
+            combineOnesToTens() {
+                if(this.counts[1] >= 10) {
+                    this.counts[1] -= 10;
+                    this.counts[10] += 1;
+                    SoundEngine.playCorrect();
+                    this.syncWorkspaceDOM();
+                    App.addStars(3);
+                } else {
+                    SoundEngine.playWrong();
+                    alert("Inadequate blocks inventory. You require at least 10 Ones to bundle into 1 Ten!");
+                }
+            },
+
+            breakTenToOnes() {
+                if(this.counts[10] >= 1) {
+                    this.counts[10] -= 1;
+                    this.counts[1] += 10;
+                    SoundEngine.playCorrect();
+                    this.syncWorkspaceDOM();
+                    App.addStars(2);
+                } else {
+                    SoundEngine.playWrong();
+                    alert("No available Ten rods inside column to break apart!");
+                }
+            },
+
+            combineTensToHundreds() {
+                if(this.counts[10] >= 10) {
+                    this.counts[10] -= 10;
+                    this.counts[100] += 1;
+                    SoundEngine.playCorrect();
+                    this.syncWorkspaceDOM();
+                    App.addStars(4);
+                } else {
+                    SoundEngine.playWrong();
+                    alert("You require 10 Ten rods to trade for a Hundred Flat flat space block!");
+                }
+            },
+
+            breakHundredToTens() {
+                if(this.counts[100] >= 1) {
+                    this.counts[100] -= 1;
+                    this.counts[10] += 10;
+                    SoundEngine.playCorrect();
+                    this.syncWorkspaceDOM();
+                } else {
+                    SoundEngine.playWrong();
+                    alert("No selectable items inside Target Column structure space arrays!");
+                }
+            }
+        };
+
+        /**
+         * Mini Active Interactive Educational Games Router Context Module Subcontroller
+         */
+        const ChallengeEngine = {
+            activeGameType: '',
+            currentCorrectAnswer: null,
+
+            startChallenge(type) {
+                SoundEngine.playClick();
+                this.activeGameType = type;
+                let container = document.getElementById('active-challenge-sandbox-zone');
+                container.classList.remove('hidden');
+                container.scrollIntoView({ behavior: 'smooth' });
+                this.generateQuestion();
+            },
+
+            generateQuestion() {
+                let prompt = document.getElementById('game-prompt-strip');
+                let bodyNode = document.getElementById('game-interactive-content-node');
+                bodyNode.innerHTML = '';
+                bodyNode.style.opacity = 0;
+                
+                // Trigger smooth fade-in layout transition animation
+                setTimeout(() => {
+                    bodyNode.style.transition = "opacity 0.3s ease";
+                    bodyNode.style.opacity = 1;
+                }, 50);
+
+                if(this.activeGameType === 'build-target') {
+                    let target = Math.floor(Math.random() * 899) + 11; // Generate random number between 11-910
+                    this.currentCorrectAnswer = target;
+                    prompt.innerText = `🏗️ Target Challenge: Use the action buttons to stack blocks and build exactly: ${target}`;
+
+                    let htmlGrid = `
+                    <div class="pv-grid-container" style="margin-bottom: 15px;">
+                        <div class="pv-column col-thousands">
+                            <div class="pv-column-header">Thousands</div>
+                            <div class="pv-dropzone" id="ch-dz-1000"></div>
+                            <div class="pv-column-counter"><span class="pv-val" id="ch-cnt-1000">0</span></div>
+                        </div>
+                        <div class="pv-column col-hundreds">
+                            <div class="pv-column-header">Hundreds</div>
+                            <div class="pv-dropzone" id="ch-dz-100"></div>
+                            <div class="pv-column-counter"><span class="pv-val" id="ch-cnt-100">0</span></div>
+                        </div>
+                        <div class="pv-column col-tens">
+                            <div class="pv-column-header">Tens</div>
+                            <div class="pv-dropzone" id="ch-dz-10"></div>
+                            <div class="pv-column-counter"><span class="pv-val" id="ch-cnt-10">0</span></div>
+                        </div>
+                        <div class="pv-column col-ones">
+                            <div class="pv-column-header">Ones</div>
+                            <div class="pv-dropzone" id="ch-dz-1"></div>
+                            <div class="pv-column-counter"><span class="pv-val" id="ch-cnt-1">0</span></div>
+                        </div>
+                    </div>`;
+
+                    let interactionArea = document.createElement('div');
+                    interactionArea.innerHTML = htmlGrid;
+
+                    let btnRow = document.createElement('div');
+                    btnRow.style.cssText = "display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:15px;";
+                    
+                    let counts = { 1000: 0, 100: 0, 10: 0, 1: 0 };
+                    const values = [1000, 100, 10, 1];
+
+                    values.forEach(v => {
+                        let btn = document.createElement('button');
+                        btn.className = "btn";
+                        btn.style.borderTop = `4px solid var(--${v===1000?'thousands':v===100?'hundreds':v===10?'tens':'ones'}-color)`;
+                        btn.innerText = `+1 (${v})`;
+                        btn.onclick = () => {
+                            SoundEngine.playSnap();
+                            counts[v]++;
+                            interactionArea.querySelector(`#ch-cnt-${v}`).innerText = counts[v];
+                            let dz = interactionArea.querySelector(`#ch-dz-${v}`);
+                            let item = document.createElement('div');
+                            item.className = 'block-manipulative';
+                            if(v === 1000) item.innerHTML = BlockGraphics.createThousandsSVG(35);
+                            if(v === 100)  item.innerHTML = BlockGraphics.createHundredsSVG(30);
+                            if(v === 10)   item.innerHTML = BlockGraphics.createTensSVG(10, 35);
+                            if(v === 1)    item.innerHTML = BlockGraphics.createOnesSVG(15);
+                            dz.appendChild(item);
+                        };
+                        btnRow.appendChild(btn);
+                    });
+
+                    let submitBtn = document.createElement('button');
+                    submitBtn.className = "btn btn-primary";
+                    submitBtn.innerText = "Submit Answer";
+                    submitBtn.onclick = () => {
+                        let totalResult = (counts[1000]*1000) + (counts[100]*100) + (counts[10]*10) + counts[1];
+                        if(totalResult === this.currentCorrectAnswer) {
+                            SoundEngine.playCorrect();
+                            App.addStars(10);
+                            App.unlockAchievement('challenge_master', 'Challenge Champ', 'Completed a dynamic interactive training task! 🎯');
+                            alert("🎉 Brilliant! Your block configuration matches the target number exactly! +10 Stars!");
+                            this.generateQuestion();
+                        } else {
+                            SoundEngine.playWrong();
+                            alert(`❌ Not quite! You constructed ${totalResult}. We need ${this.currentCorrectAnswer}. Keep counting and try again!`);
+                        }
+                    };
+
+                    btnRow.appendChild(submitBtn);
+                    interactionArea.appendChild(btnRow);
+                    bodyNode.appendChild(interactionArea);
+
+                } else if(this.activeGameType === 'missing-digit') {
+                    let th = Math.floor(Math.random() * 4);
+                    let h = Math.floor(Math.random() * 6);
+                    let t = Math.floor(Math.random() * 8) + 1;
+                    let o = Math.floor(Math.random() * 9);
+
+                    let segments = ['Ones', 'Tens', 'Hundreds', 'Thousands'];
+                    let selectedIdx = Math.floor(Math.random() * 4);
+                    if (selectedIdx === 3 && th === 0) selectedIdx = 1; // avoid 0 thousands choice
+                    
+                    let targetLabel = segments[selectedIdx];
+                    if(targetLabel === 'Ones') this.currentCorrectAnswer = o;
+                    if(targetLabel === 'Tens') this.currentCorrectAnswer = t;
+                    if(targetLabel === 'Hundreds') this.currentCorrectAnswer = h;
+                    if(targetLabel === 'Thousands') this.currentCorrectAnswer = th;
+
+                    prompt.innerText = `⭐ Question: Look at the blocks model below. What is the correct single digit for the [ ${targetLabel} ] position?`;
+
+                    let arrayPanel = document.createElement('div');
+                    arrayPanel.style.cssText = "display:flex; flex-wrap:wrap; gap:12px; background:rgba(255,255,255,0.6); padding:20px; border-radius:12px; margin:15px 0; min-height:120px; align-items:center; justify-content:center;";
+                    
+                    for(let i=0; i<th; i++) arrayPanel.innerHTML += BlockGraphics.createThousandsSVG(40);
+                    for(let i=0; i<h; i++) arrayPanel.innerHTML += BlockGraphics.createHundredsSVG(35);
+                    for(let i=0; i<t; i++) arrayPanel.innerHTML += BlockGraphics.createTensSVG(12, 45);
+                    for(let i=0; i<o; i++) arrayPanel.innerHTML += BlockGraphics.createOnesSVG(18);
+
+                    let entryContainer = document.createElement('div');
+                    entryContainer.style.cssText = "display:flex; gap:10px; justify-content:center; align-items:center; margin-top:15px;";
+
+                    let numInput = document.createElement('input');
+                    numInput.type = "number";
+                    numInput.className = "input-control";
+                    numInput.placeholder = "0-9";
+                    numInput.style.width = "100px";
+
+                    let checkBtn = document.createElement('button');
+                    checkBtn.className = "btn btn-primary";
+                    checkBtn.innerText = "Check Answer";
+                    checkBtn.onclick = () => {
+                        if(parseInt(numInput.value) === this.currentCorrectAnswer) {
+                            SoundEngine.playCorrect();
+                            App.addStars(10);
+                            alert("🎉 Excellent observation! That is exactly correct! +10 Stars.");
+                            this.generateQuestion();
+                        } else {
+                            SoundEngine.playWrong();
+                            alert("❌ That digit doesn't match the block count in that place position. Count carefully and try again!");
+                        }
+                    };
+
+                    entryContainer.appendChild(numInput);
+                    entryContainer.appendChild(checkBtn);
+                    bodyNode.appendChild(arrayPanel);
+                    bodyNode.appendChild(entryContainer);
+
+                } else if(this.activeGameType === 'pattern-train') {
+                    let startNum = Math.floor(Math.random() * 500) + 20;
+                    let rules = [10, 100, 1000];
+                    let chosenRule = rules[Math.floor(Math.random() * rules.length)];
+
+                    let sequence = [startNum, startNum + chosenRule, startNum + (chosenRule * 2), startNum + (chosenRule * 3)];
+                    let blankIdx = Math.floor(Math.random() * 4);
+                    this.currentCorrectAnswer = sequence[blankIdx];
+
+                    let layoutString = sequence.map((v, idx) => idx === blankIdx ? "🚂 [ ❓ ]" : `🚂 ${v}`).join(" ➡️ ");
+                    prompt.innerText = "🚂 Place Value Train: Identify the missing number that correctly completes the counting pattern sequence!";
+
+                    let trainTrack = document.createElement('div');
+                    trainTrack.style.cssText = "font-size:1.6rem; font-weight:800; color:#1e3a8a; text-align:center; padding:25px; background:#eff6ff; border-radius:12px; border:2px dashed #bfdbfe; margin:20px 0;";
+                    trainTrack.innerText = layoutString;
+
+                    let formBox = document.createElement('div');
+                    formBox.style.cssText = "display:flex; gap:10px; justify-content:center; align-items:center;";
+
+                    let trainInput = document.createElement('input');
+                    trainInput.type = "number";
+                    trainInput.className = "input-control";
+                    trainInput.placeholder = "Number";
+                    trainInput.style.width = "150px";
+
+                    let goBtn = document.createElement('button');
+                    goBtn.className = "btn btn-primary";
+                    goBtn.innerText = "Verify Train Value";
+                    goBtn.onclick = () => {
+                        if(parseInt(trainInput.value) === this.currentCorrectAnswer) {
+                            SoundEngine.playCorrect();
+                            App.addStars(10);
+                            alert("🎉 Perfect! The pattern is unbroken, and the train is ready to leave the station! +10 Stars.");
+                            this.generateQuestion();
+                        } else {
+                            SoundEngine.playWrong();
+                            alert(`❌ That number doesn't fit the sequence. Look closely at how the place positions change (+${chosenRule})!`);
+                        }
+                    };
+
+                    formBox.appendChild(trainInput);
+                    formBox.appendChild(goBtn);
+                    bodyNode.appendChild(trainTrack);
+                    bodyNode.appendChild(formBox);
+                }
+            }
+        };
+
+        // Window elements initial execution invocation hook loops configurations
+        window.addEventListener('DOMContentLoaded', () => {
+            App.init();
+        });
+    </script>
+</body>
+</html>

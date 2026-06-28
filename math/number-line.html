@@ -1,0 +1,1687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>📏 Number Line Explorer</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+            --blue: #3a86ff;
+            --green: #38b000;
+            --yellow: #ffb703;
+            --orange: #fb5607;
+            --purple: #8338ec;
+            --pink: #ff006e;
+            --glass-bg: rgba(255, 255, 255, 0.45);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --text-color: #2b2d42;
+            --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            --font-family: 'Comic Sans MS', 'Chalkboard SE', 'Open Sans', sans-serif;
+            --font-scale: 1;
+        }
+
+        .high-contrast {
+            --bg-gradient: linear-gradient(135deg, #000000 0%, #111111 100%);
+            --glass-bg: rgba(20, 20, 20, 0.95);
+            --glass-border: #ffffff;
+            --text-color: #ffffff;
+            --blue: #00b4d8;
+            --green: #00f5d4;
+            --yellow: #ffee32;
+            --orange: #ff9f1c;
+            --purple: #9b5de5;
+            --pink: #f15bb5;
+            --card-shadow: 0 0 15px rgba(255,255,255,0.2);
+        }
+
+        .large-text {
+            --font-scale: 1.25;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-color);
+            min-height: 100vh;
+            overflow-x: hidden;
+            font-size: calc(16px * var(--font-scale));
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* Ambient Animations */
+        .ambient-bg {
+            position: fixed;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            overflow: hidden;
+            top: 0;
+            left: 0;
+        }
+        .cloud {
+            position: absolute;
+            background: rgba(255,255,255,0.8);
+            border-radius: 100px;
+            animation: floatCloud 25s linear infinite;
+            opacity: 0.7;
+        }
+        .cloud::before, .cloud::after {
+            content: '';
+            position: absolute;
+            background: rgba(255,255,255,0.8);
+            border-radius: 50%;
+        }
+        .cloud::before { width: 50px; height: 50px; top: -20px; left: 15px; }
+        .cloud::after { width: 70px; height: 70px; top: -35px; right: 15px; }
+
+        @keyframes floatCloud {
+            0% { transform: translateX(-150px) translateY(10vh); }
+            100% { transform: translateX(calc(100vw + 150px)) translateY(15vh); }
+        }
+
+        /* App Layout Containers */
+        .screen {
+            display: none;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        .screen.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Glassmorphism Cards */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 2px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 25px;
+        }
+
+        /* Universal App Bar */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px;
+            background: rgba(255,255,255,0.3);
+            backdrop-filter: blur(8px);
+            border-bottom: 2px solid var(--glass-border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .app-title {
+            font-size: 1.6rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+        .header-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        /* Chunky/Touch Buttons */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 16px;
+            font-family: var(--font-family);
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .btn:active { transform: scale(0.95); }
+        .btn-blue { background: var(--blue); color: white; }
+        .btn-green { background: var(--green); color: white; }
+        .btn-orange { background: var(--orange); color: white; }
+        .btn-purple { background: var(--purple); color: white; }
+        .btn-pink { background: var(--pink); color: white; }
+        .btn-icon { pading: 12px; border-radius: 50%; width: 48px; height: 48px; }
+
+        /* Welcome Screen Layout */
+        #welcome-screen {
+            text-align: center;
+            padding-top: 10vh;
+        }
+        .hero-title {
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        .hero-subtitle {
+            font-size: 1.6rem;
+            color: #4a4e69;
+            margin-bottom: 40px;
+            font-style: italic;
+        }
+        .welcome-animation {
+            height: 120px;
+            position: relative;
+            margin-bottom: 50px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            border: 1px dashed rgba(255,255,255,0.5);
+        }
+
+        /* Dashboard Grid Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 20px;
+            margin-top: 25px;
+        }
+        .module-card {
+            cursor: pointer;
+            text-align: center;
+            transition: transform 0.25s, box-shadow 0.25s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 25px;
+        }
+        .module-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+        }
+        .module-icon {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+        }
+        .module-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+
+        /* Core Number Line Component System */
+        .number-line-container {
+            position: relative;
+            width: 100%;
+            padding: 60px 0;
+            margin: 20px 0;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scrollbar-width: smooth;
+        }
+        .number-line-track {
+            position: relative;
+            height: 12px;
+            background: var(--text-color);
+            border-radius: 6px;
+            min-width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .tick-mark {
+            position: relative;
+            width: 4px;
+            height: 30px;
+            background: var(--text-color);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .tick-mark.major {
+            height: 45px;
+            width: 6px;
+        }
+        .tick-label {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .tick-mark:hover .tick-label {
+            color: var(--pink);
+            transform: translateX(-50%) scale(1.2);
+        }
+
+        /* Live Jump Tracking & Overlay Canvas */
+        .interactive-overlay-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+        .teacher-canvas-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 20;
+            pointer-events: none;
+        }
+        .teacher-canvas-layer.active {
+            pointer-events: auto;
+            cursor: crosshair;
+        }
+
+        /* Generic Manipulative Markers */
+        .manipulative-pointer {
+            position: absolute;
+            top: -25px;
+            width: 40px;
+            height: 40px;
+            cursor: grab;
+            z-index: 10;
+            font-size: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: translateX(-50%);
+            transition: left 0.1s linear;
+        }
+        .manipulative-pointer:active { cursor: grabbing; }
+
+        /* Module Toolbar Control Interfaces */
+        .control-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: center;
+            background: rgba(255,255,255,0.25);
+            padding: 15px;
+            border-radius: 16px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        label { font-weight: bold; font-size: 0.95rem; }
+        select, input {
+            padding: 10px 15px;
+            border-radius: 10px;
+            border: 2px solid var(--glass-border);
+            font-family: var(--font-family);
+            font-size: 1rem;
+            background: white;
+        }
+
+        /* Inspection Information Cards */
+        .inspector-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .stat-box {
+            background: rgba(255,255,255,0.6);
+            padding: 15px;
+            border-radius: 14px;
+            text-align: center;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .stat-box .val { font-size: 1.8rem; font-weight: bold; color: var(--purple); margin-top: 5px;}
+
+        /* Teacher Utilities floating dashboard */
+        .teacher-floating-bar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.9);
+            border: 3px solid var(--blue);
+            padding: 10px 20px;
+            border-radius: 50px;
+            display: flex;
+            gap: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 1000;
+            align-items: center;
+        }
+
+        /* Gamified Activity Targets Layout */
+        .game-status-board {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            background: rgba(255,255,255,0.5);
+            padding: 12px 25px;
+            border-radius: 14px;
+        }
+        .game-prompt {
+            font-size: 1.8rem;
+            text-align: center;
+            margin: 20px 0;
+            font-weight: bold;
+            color: var(--pink);
+        }
+
+        /* Achievements Display Layout & Modal Popups */
+        .achievement-popup {
+            position: fixed;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #ffe259 0%, #ffa751 100%);
+            border: 4px solid white;
+            padding: 20px 40px;
+            border-radius: 30px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: top 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .achievement-popup.active { top: 30px; }
+        .achievement-badge { font-size: 3rem; }
+
+        /* Drag-and-drop bucket matching systems */
+        .matching-layout {
+            display: flex;
+            justify-content: space-around;
+            gap: 20px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        .drop-bucket {
+            width: 220px;
+            min-height: 140px;
+            background: rgba(255,255,255,0.5);
+            border: 3px dashed var(--blue);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            gap: 10px;
+        }
+        .drag-item-pool {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+        .draggable-chip {
+            padding: 12px 24px;
+            background: var(--orange);
+            color: white;
+            font-weight: bold;
+            border-radius: 14px;
+            cursor: grab;
+            font-size: 1.3rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+        }
+
+        /* Spotlight/Curtain Overlay Effect for Smartboards */
+        #spotlight-mask {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.85);
+            pointer-events: none;
+            z-index: 999;
+            display: none;
+        }
+
+        /* Responsive Breakpoint Adaptability */
+        @media (max-width: 768px) {
+            .hero-title { font-size: 2.2rem; }
+            .hero-subtitle { font-size: 1.2rem; }
+            .app-header { flex-direction: column; gap: 10px; }
+            .teacher-floating-bar { width: 90%; border-radius: 20px; flex-wrap: wrap; justify-content: center; }
+            .btn { padding: 10px 16px; font-size: 0.95rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-bg" id="ambient-layer"></div>
+
+    <div class="achievement-popup" id="achievement-toast">
+        <div class="achievement-badge" id="toast-icon">⭐</div>
+        <div>
+            <h3 style="color:#fff; font-size:1.4rem;">Achievement Unlocked!</h3>
+            <p id="toast-title" style="color:#fff; font-weight:bold;"></p>
+        </div>
+    </div>
+
+    <div id="spotlight-mask"></div>
+
+    <header class="app-header">
+        <div class="app-title" onclick="router.go('welcome')">📏 Number Line Explorer</div>
+        <div class="header-controls">
+            <button class="btn btn-purple" onclick="ui.toggleHighContrast()" title="Accessibility High Contrast">🌓 Contrast</button>
+            <button class="btn btn-orange" onclick="ui.toggleLargeText()" title="Accessibility Text Scale">🔍 Text</button>
+            <button class="btn btn-blue" onclick="router.go('dashboard')" id="nav-dash-btn" style="display:none;">📂 Modules</button>
+            <button class="btn btn-pink" onclick="ui.viewProgress()">🏆 Stats</button>
+        </div>
+    </header>
+
+    <main id="welcome-screen" class="screen active">
+        <h1 class="hero-title">📏 Number Line Explorer</h1>
+        <p class="hero-subtitle">Jump • Count • Compare • Discover</p>
+        
+        <div class="welcome-animation" id="welcome-anim-box">
+            </div>
+
+        <button class="btn btn-green" style="font-size: 1.8rem; padding: 20px 45px; border-radius: 24px;" onclick="router.go('dashboard')">
+            ▶ Start Learning
+        </button>
+    </main>
+
+    <main id="dashboard-screen" class="screen">
+        <div class="glass-card">
+            <h2>Select a Learning Adventure</h2>
+            <div class="dashboard-grid">
+                <div class="glass-card module-card" onclick="router.go('explore')">
+                    <div class="module-icon">📏</div>
+                    <div class="module-title">Explore Number Lines</div>
+                </div>
+                <div class="glass-card module-card" onclick="router.go('find')">
+                    <div class="module-icon">👆</div>
+                    <div class="module-title">Find a Number</div>
+                </div>
+                <div class="glass-card module-card" onclick="router.go('jump')">
+                    <div class="module-icon">🐸</div>
+                    <div class="module-title">Jump Along</div>
+                </div>
+                <div class="glass-card module-card" onclick="router.go('add')">
+                    <div class="module-icon">➕</div>
+                    <div class="module-title">Addition Jumps</div>
+                </div>
+                <div class="glass-card module-card" onclick="router.go('sub')">
+                    <div class="module-icon">➖</div>
+                    <div class="module-title">Subtraction Jumps</div>
+                </div>
+                <div class="glass-card module-card" onclick="router.go('compare')">
+                    <div class="module-icon">🔢</div>
+                    <div class="module-title">Compare Numbers</div>
+                </div>
+                <div class="glass-card module-card" onclick="router.go('sequence')">
+                    <div class="module-icon">🔄</div>
+                    <div class="module-title">Before, After, Between</div>
+                </div>
+                <div class="glass-card module-card" onclick="router.go('skip')">
+                    <div class="module-icon">🚀</div>
+                    <div class="module-title">Skip Counting</div>
+                </div>
+                <div class="glass-card module-card" onclick="router.go('build')">
+                    <div class="module-icon">🎨</div>
+                    <div class="module-title">Build Your Own</div>
+                </div>
+                <div class="glass-card module-card" onclick="router.go('games')">
+                    <div class="module-icon">🎲</div>
+                    <div class="module-title">Interactive Games</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <main id="explore-screen" class="screen">
+        <div class="glass-card">
+            <h2>📏 Explore Number Lines</h2>
+            <div class="control-panel">
+                <div class="form-group">
+                    <label>Select Range Preset:</label>
+                    <select id="explore-range-select" onchange="modules.explore.updateRange()">
+                        <option value="0-10">0 – 10 (Primary Basic)</option>
+                        <option value="0-20">0 – 20 (Early Addition)</option>
+                        <option value="0-50">0 – 50 (Intermediate)</option>
+                        <option value="0-100">0 – 100 (Centurion Grid)</option>
+                        <option value="100-1000">100 – 1000 (Advanced Scales)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="number-line-container" id="explore-line-outer">
+                </div>
+
+            <div class="inspector-panel" id="explore-inspector">
+                <div class="stat-box"><div>Inspected Value</div><div class="val" id="ins-val">-</div></div>
+                <div class="stat-box"><div>Number Name</div><div class="val" id="ins-name" style="font-size:1.1rem;">-</div></div>
+                <div class="stat-box"><div>Classification</div><div class="val" id="ins-type">-</div></div>
+                <div class="stat-box"><div>Place Value Structure</div><div class="val" id="ins-pv" style="font-size:1.1rem;">-</div></div>
+                <div class="stat-box"><div>Neighbors</div><div class="val" id="ins-neighbors" style="font-size:1.1rem;">-</div></div>
+            </div>
+        </div>
+    </main>
+
+    <main id="find-screen" class="screen">
+        <div class="glass-card">
+            <h2>👆 Find a Number Challenge</h2>
+            <div class="control-panel">
+                <button class="btn btn-blue" onclick="modules.find.start('easy')">Easy (0-10)</button>
+                <button class="btn btn-orange" onclick="modules.find.start('medium')">Medium (0-50)</button>
+                <button class="btn btn-pink" onclick="modules.find.start('hard')">Hard (0-100)</button>
+            </div>
+            <div class="game-status-board">
+                <div id="find-score">Score: 0</div>
+                <div id="find-streak">🔥 Streak: 0</div>
+            </div>
+            <div class="game-prompt" id="find-prompt">Select a tier level to launch game!</div>
+            <div class="number-line-container" id="find-line-outer"></div>
+        </div>
+    </main>
+
+    <main id="jump-screen" class="screen">
+        <div class="glass-card">
+            <h2>🐸 Jump Along the Number Line</h2>
+            <div class="control-panel">
+                <div class="form-group"><label>Interval Jump Vector</label>
+                    <select id="jump-step-size"><option value="1">Jumps of 1</option><option value="2">Jumps of 2</option><option value="5">Jumps of 5</option><option value="10">Jumps of 10</option></select>
+                </div>
+                <button class="btn btn-green" onclick="modules.jump.exec(1)">Forward Jump ➔</button>
+                <button class="btn btn-orange" onclick="modules.jump.exec(-1)">⬅ Backward Jump</button>
+                <button class="btn btn-purple" onclick="modules.jump.reset()">Reset</button>
+            </div>
+            <div class="number-line-container" id="jump-line-outer"></div>
+            <div class="stat-box" style="max-width:300px; margin: 0 auto;"><div style="font-weight:bold;">Current Avatar Position</div><div class="val" id="jump-pos-val">0</div></div>
+        </div>
+    </main>
+
+    <main id="add-screen" class="screen">
+        <div class="glass-card">
+            <h2>➕ Addition Jumps Visualizer</h2>
+            <div class="control-panel">
+                <div class="form-group"><label>Starting Number (Augend)</label><input type="number" id="add-start-val" value="4" min="0" max="20"></div>
+                <div class="form-group"><label>Value to Add (Addend)</label><input type="number" id="add-jump-val" value="5" min="1" max="20"></div>
+                <button class="btn btn-green" onclick="modules.arithmetic.runAdd()">Animate Math Operation</button>
+            </div>
+            <div class="game-prompt" id="add-equation-display" style="font-family:monospace; font-size:2.5rem;">? + ? = ?</div>
+            <div class="number-line-container" id="add-line-outer"></div>
+        </div>
+    </main>
+
+    <main id="sub-screen" class="screen">
+        <div class="glass-card">
+            <h2>➖ Subtraction Jumps Visualizer</h2>
+            <div class="control-panel">
+                <div class="form-group"><label>Starting Number (Minuend)</label><input type="number" id="sub-start-val" value="15" min="1" max="30"></div>
+                <div class="form-group"><label>Value to Subtract (Subtrahend)</label><input type="number" id="sub-jump-val" value="6" min="1" max="20"></div>
+                <button class="btn btn-orange" onclick="modules.arithmetic.runSub()">Animate Math Subtraction</button>
+            </div>
+            <div class="game-prompt" id="sub-equation-display" style="font-family:monospace; font-size:2.5rem;">? - ? = ?</div>
+            <div class="number-line-container" id="sub-line-outer"></div>
+        </div>
+    </main>
+
+    <main id="compare-screen" class="screen">
+        <div class="glass-card">
+            <h2>🔢 Number Comparison Laboratory</h2>
+            <p style="margin-bottom: 15px; font-weight: bold;">Drag Pointer Marker A (🔵) and Marker B (🟢) to inspect absolute inequality relationship dimensions:</p>
+            <div class="number-line-container" id="compare-line-outer" style="padding: 80px 0;"></div>
+            <div class="inspector-panel" style="margin-top:40px;">
+                <div class="stat-box" style="border-left: 6px solid var(--blue);"><div>Marker A</div><div class="val" id="comp-val-a">10</div></div>
+                <div class="stat-box" style="background: rgba(255,255,255,0.85);"><div style="font-weight:bold;">Comparison Result</div><div class="val" id="comp-sign" style="font-size:3rem; color:var(--pink);">==</div></div>
+                <div class="stat-box" style="border-left: 6px solid var(--green);"><div>Marker B</div><div class="val" id="comp-val-b">25</div></div>
+            </div>
+            <div class="stat-box" style="margin-top:20px; font-size:1.4rem;"><span style="font-weight:bold;">Calculated Linear Separation Distance:</span> <span id="comp-distance" style="font-weight:bold; color:var(--purple);">0</span> units</div>
+        </div>
+    </main>
+
+    <main id="sequence-screen" class="screen">
+        <div class="glass-card">
+            <h2>🔄 Sequence Ordering: Before, After & Between</h2>
+            <div class="control-panel">
+                <button class="btn btn-blue" onclick="modules.sequence.generate('before')">Practice 'Before'</button>
+                <button class="btn btn-green" onclick="modules.sequence.generate('after')">Practice 'After'</button>
+                <button class="btn btn-purple" onclick="modules.sequence.generate('between')">Practice 'Between'</button>
+            </div>
+            
+            <div class="matching-layout" id="sequence-interactive-zone">
+                </div>
+
+            <div class="drag-item-pool" id="sequence-source-chips">
+                </div>
+        </div>
+    </main>
+
+    <main id="skip-screen" class="screen">
+        <div class="glass-card">
+            <h2>🚀 Skip Counting Vector Sequence Visualizer</h2>
+            <div class="control-panel">
+                <button class="btn btn-blue" onclick="modules.skip.run(2)">Skip by 2s</button>
+                <button class="btn btn-green" onclick="modules.skip.run(3)">Skip by 3s</button>
+                <button class="btn btn-yellow" style="color:#000;" onclick="modules.skip.run(4)">Skip by 4s</button>
+                <button class="btn btn-orange" onclick="modules.skip.run(5)">Skip by 5s</button>
+                <button class="btn btn-purple" onclick="modules.skip.run(10)">Skip by 10s</button>
+            </div>
+            <div class="number-line-container" id="skip-line-outer"></div>
+            <div class="glass-card" style="margin-top: 20px; font-size: 1.3rem; letter-spacing: 2px; text-align: center;">
+                <strong>Generated Sequence Pattern Matrix:</strong>
+                <div id="skip-matrix-display" style="margin-top: 10px; color: var(--purple); font-weight: bold;">-</div>
+            </div>
+        </div>
+    </main>
+
+    <main id="build-screen" class="screen">
+        <div class="glass-card">
+            <h2>🎨 Build Your Own Custom Number Line</h2>
+            <div class="control-panel">
+                <div class="form-group"><label>Scale Minimum</label><input type="number" id="build-min" value="0"></div>
+                <div class="form-group"><label>Scale Maximum</label><input type="number" id="build-max" value="30"></div>
+                <button class="btn btn-blue" onclick="modules.build.rebuild()">Generate Base Line</button>
+                <button class="btn btn-green" onclick="modules.build.highlight('even')">Highlight Evens</button>
+                <button class="btn btn-orange" onclick="modules.build.highlight('odd')">Highlight Odds</button>
+                <div class="form-group">
+                    <input type="number" id="build-mult-val" placeholder="Multiples of..." style="width:140px;">
+                </div>
+                <button class="btn btn-purple" onclick="modules.build.highlight('multiples')">Filter Multiples</button>
+                <button class="btn btn-pink" onclick="modules.build.save()">💾 Save Blueprint</button>
+            </div>
+            <div class="number-line-container" id="build-line-outer"></div>
+            
+            <div class="glass-card" style="margin-top: 20px;">
+                <h3>Saved Blueprints Storage Repository</h3>
+                <div id="build-saved-list" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;"></div>
+            </div>
+        </div>
+    </main>
+
+    <main id="games-screen" class="screen">
+        <div class="glass-card">
+            <h2>🎲 Interactive Arcade Games Center</h2>
+            <div class="control-panel">
+                <button class="btn btn-pink" onclick="modules.games.start('pop')">🎈 Pop Correct Number</button>
+                <button class="btn btn-orange" onclick="modules.games.start('target')">🎯 Number Target Mission</button>
+                <button class="btn btn-purple" onclick="modules.games.start('hidden')">⭐ Find the Hidden Number</button>
+            </div>
+            <div class="game-status-board" id="game-arcade-stats" style="display:none;">
+                <div id="arcade-score">Points: 0</div>
+                <div id="arcade-task-prompt" style="color:var(--pink); font-size:1.4rem;">Select game to play</div>
+            </div>
+            <div class="number-line-container" id="arcade-line-outer"></div>
+            <div id="arcade-game-interaction-box" style="margin-top:20px; display:flex; justify-content:center; gap:15px; flex-wrap:wrap;"></div>
+        </div>
+    </main>
+
+    <nav class="teacher-floating-bar" id="teacher-dashboard">
+        <strong style="color:var(--blue); font-size:0.9rem; text-transform:uppercase;">👨‍🏫 Smartboard Toolbar</strong>
+        <button class="btn btn-blue" style="padding:6px 12px; font-size:0.85rem;" onclick="teacherToolbox.togglePointerMode()" id="t-ptr-btn">📍 Pointer Mode</button>
+        <button class="btn btn-purple" style="padding:6px 12px; font-size:0.85rem;" onclick="teacherToolbox.toggleDrawMode()" id="t-draw-btn">✏️ Annotation Pen</button>
+        <button class="btn btn-orange" style="padding:6px 12px; font-size:0.85rem;" onclick="teacherToolbox.toggleSpotlight()">🔦 Spotlight Curtain</button>
+        <button class="btn btn-green" style="padding:6px 12px; font-size:0.85rem;" onclick="teacherToolbox.generateRandomNumber()">🎲 Random Int</button>
+        <button class="btn btn-pink" style="padding:6px 12px; font-size:0.85rem;" onclick="teacherToolbox.toggleFullscreen()">🖥️ Fullscreen</button>
+        <button class="btn btn-orange" style="padding:6px 12px; font-size:0.85rem; background:#6c757d;" onclick="teacherToolbox.clearCanvas()">🧼 Clear Marks</button>
+    </nav>
+
+    <script>
+        /**
+         * Pure Web Audio API Sound FX Architecture Model Synthesis
+         */
+        const audioEngine = {
+            ctx: null,
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
+            play(type) {
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                switch(type) {
+                    case 'click':
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(400, now);
+                        gain.gain.setValueAtTime(0.1, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                        osc.start(now);
+                        osc.stop(now + 0.05);
+                        break;
+                    case 'jump':
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(250, now);
+                        osc.frequency.exponentialRampToValueAtTime(600, now + 0.15);
+                        gain.gain.setValueAtTime(0.15, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                        osc.start(now);
+                        osc.stop(now + 0.15);
+                        break;
+                    case 'correct':
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(523.25, now); // C5
+                        osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+                        osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+                        gain.gain.setValueAtTime(0.15, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                        osc.start(now);
+                        osc.stop(now + 0.35);
+                        break;
+                    case 'wrong':
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(180, now);
+                        osc.frequency.linearRampToValueAtTime(110, now + 0.25);
+                        gain.gain.setValueAtTime(0.2, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                        osc.start(now);
+                        osc.stop(now + 0.25);
+                        break;
+                    case 'celebrate':
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(880, now);
+                        gain.gain.setValueAtTime(0.1, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                        osc.start(now);
+                        osc.stop(now + 0.5);
+                        break;
+                }
+            }
+        };
+
+        /**
+         * Client State Storage Layer Tracker
+         */
+        const stateEngine = {
+            data: {
+                completedActivities: 0,
+                score: 0,
+                streak: 0,
+                savedLines: [],
+                unlockedAchievements: []
+            },
+            load() {
+                const local = localStorage.getItem('__num_line_explorer_state_2026');
+                if (local) {
+                    try { this.data = JSON.parse(local); } catch(e) { console.error(e); }
+                }
+            },
+            save() {
+                localStorage.setItem('__num_line_explorer_state_2026', JSON.stringify(this.data));
+            },
+            addScore(pts) {
+                this.data.score += pts;
+                this.save();
+                this.checkAchievements();
+            },
+            unlockAchievement(id, title, icon) {
+                if (!this.data.unlockedAchievements.includes(id)) {
+                    this.data.unlockedAchievements.push(id);
+                    this.save();
+                    // Render Toast Achievement Card Setup
+                    audioEngine.play('celebrate');
+                    const toast = document.getElementById('achievement-toast');
+                    document.getElementById('toast-icon').innerText = icon;
+                    document.getElementById('toast-title').innerText = title;
+                    toast.classList.add('active');
+                    setTimeout(() => { toast.classList.remove('active'); }, 4000);
+                    ui.createConfetti();
+                }
+            },
+            checkAchievements() {
+                if (this.data.score >= 10) this.unlockAchievement('explorer', 'Number Explorer 🌟', '⭐');
+                if (this.data.score >= 30) this.unlockAchievement('detective', 'Number Detective 🏅', '🏅');
+                if (this.data.score >= 70) this.unlockAchievement('champion', 'Maths Champion 👑', '👑');
+            }
+        };
+
+        /**
+         * Reusable Dynamic Scale Axis Generator Object Model Component
+         */
+        class NumberLine {
+            constructor(containerId, options = {}) {
+                this.container = document.getElementById(containerId);
+                this.min = options.min !== undefined ? options.min : 0;
+                this.max = options.max !== undefined ? options.max : 10;
+                this.step = options.step || 1;
+                this.onTickClick = options.onTickClick || null;
+                this.showLabels = options.showLabels !== false;
+                this.id = containerId + '_line';
+                this.render();
+            }
+
+            render() {
+                this.container.innerHTML = '';
+                
+                // Canvas Path Drawing Layer
+                const canvas = document.createElement('canvas');
+                canvas.className = 'interactive-overlay-canvas';
+                canvas.id = this.id + '_canvas';
+                this.container.appendChild(canvas);
+
+                // Teacher Marking layer integration
+                const teacherCanvas = document.createElement('canvas');
+                teacherCanvas.className = 'teacher-canvas-layer';
+                teacherCanvas.id = this.id + '_teacher_canvas';
+                this.container.appendChild(teacherCanvas);
+
+                const track = document.createElement('div');
+                track.className = 'number-line-track';
+                
+                const totalTicks = Math.floor((this.max - this.min) / this.step);
+                
+                // Adaptive Ticking layout for ultra density support up to 1000
+                let labelInterval = 1;
+                if (this.max - this.min > 20) labelInterval = 5;
+                if (this.max - this.min > 100) labelInterval = 50;
+                if (this.max - this.min > 500) labelInterval = 100;
+
+                for (let i = 0; i <= totalTicks; i++) {
+                    const currentVal = this.min + (i * this.step);
+                    const tick = document.createElement('div');
+                    
+                    const isMajor = currentVal % labelInterval === 0;
+                    tick.className = `tick-mark ${isMajor ? 'major' : ''}`;
+                    tick.dataset.value = currentVal;
+
+                    if (this.showLabels && isMajor) {
+                        const label = document.createElement('div');
+                        label.className = 'tick-label';
+                        label.innerText = currentVal;
+                        tick.appendChild(label);
+                    }
+
+                    tick.addEventListener('click', (e) => {
+                        audioEngine.play('click');
+                        if (this.onTickClick) this.onTickClick(currentVal, tick);
+                    });
+
+                    track.appendChild(tick);
+                }
+
+                this.container.appendChild(track);
+                this.resizeCanvas();
+                window.addEventListener('resize', () => this.resizeCanvas());
+            }
+
+            resizeCanvas() {
+                const canvas = document.getElementById(this.id + '_canvas');
+                const tCanvas = document.getElementById(this.id + '_teacher_canvas');
+                if(canvas && tCanvas) {
+                    canvas.width = this.container.scrollWidth;
+                    canvas.height = this.container.clientHeight;
+                    tCanvas.width = this.container.scrollWidth;
+                    tCanvas.height = this.container.clientHeight;
+                    teacherToolbox.initEvents(tCanvas);
+                }
+            }
+
+            getTickCoordinates(value) {
+                const ticks = this.container.querySelectorAll('.tick-mark');
+                for (let tick of ticks) {
+                    if (parseInt(tick.dataset.value) === value) {
+                        return {
+                            x: tick.offsetLeft + (tick.offsetWidth / 2),
+                            y: tick.offsetTop
+                        };
+                    }
+                }
+                return null;
+            }
+
+            animateJump(fromVal, toVal, color = 'var(--pink)', duration = 600) {
+                const canvas = document.getElementById(this.id + '_canvas');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                
+                const startCoord = this.getTickCoordinates(fromVal);
+                const endCoord = this.getTickCoordinates(toVal);
+                if (!startCoord || !endCoord) return;
+
+                audioEngine.play('jump');
+
+                const startTime = performance.now();
+                const renderLoop = (now) => {
+                    const elapsed = now - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    
+                    // Clear matching quadrant frame cleanly
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    
+                    ctx.beginPath();
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 4;
+                    ctx.setLineDash([6, 4]);
+
+                    // Quadratic Bezier Arc Engine plotting
+                    const currentX = startCoord.x + (endCoord.x - startCoord.x) * progress;
+                    const controlX = startCoord.x + (endCoord.x - startCoord.x) / 2;
+                    const maxArcHeight = Math.min(100, Math.abs(endCoord.x - startCoord.x) * 0.4);
+                    const controlY = startCoord.y - maxArcHeight;
+
+                    ctx.moveTo(startCoord.x, startCoord.y);
+                    
+                    if (progress < 1) {
+                        // Approximate path drawing for frame interpolation
+                        for (let t = 0; t <= progress; t += 0.02) {
+                            const tx = (1 - t) * (1 - t) * startCoord.x + 2 * (1 - t) * t * controlX + t * t * endCoord.x;
+                            const ty = (1 - t) * (1 - t) * startCoord.y + 2 * (1 - t) * t * controlY + t * t * endCoord.y;
+                            ctx.lineTo(tx, ty);
+                        }
+                    } else {
+                        ctx.quadraticCurveTo(controlX, controlY, endCoord.x, endCoord.y);
+                    }
+                    ctx.stroke();
+
+                    if (progress < 1) {
+                        requestAnimationFrame(renderLoop);
+                    } else {
+                        // Draw clean destination vector arrow head indicator
+                        ctx.setLineDash([]);
+                        ctx.beginPath();
+                        ctx.fillStyle = color;
+                        ctx.arc(endCoord.x, endCoord.y, 6, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                };
+                requestAnimationFrame(renderLoop);
+            }
+        }
+
+        /**
+         * Global App Navigation & Routing Engine Controller Matrix
+         */
+        const router = {
+            currentScreen: 'welcome',
+            go(screenId) {
+                audioEngine.play('click');
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                
+                const target = document.getElementById(`${screenId}-screen`);
+                if (target) {
+                    target.classList.add('active');
+                    this.currentScreen = screenId;
+                    
+                    // Show or Hide Dashboard button based on view location status
+                    document.getElementById('nav-dash-btn').style.display = screenId === 'welcome' ? 'none' : 'block';
+                    
+                    // Lazy-init matching active functional component context routine
+                    if (modules[screenId] && modules[screenId].init) {
+                        modules[screenId].init();
+                    }
+                }
+                window.scrollTo(0,0);
+            }
+        };
+
+        /**
+         * Modules Controller Registry Systems Implementation
+         */
+        const modules = {
+            explore: {
+                instance: null,
+                init() {
+                    this.updateRange();
+                },
+                updateRange() {
+                    const range = document.getElementById('explore-range-select').value;
+                    const [min, max] = range.split('-').map(Number);
+                    
+                    this.instance = new NumberLine('explore-line-outer', {
+                        min: min,
+                        max: max,
+                        step: 1,
+                        onTickClick: (val) => this.inspect(val)
+                    });
+                    this.inspect(min);
+                },
+                inspect(val) {
+                    document.getElementById('ins-val').innerText = val;
+                    document.getElementById('ins-name').innerText = ui.numberToWords(val);
+                    document.getElementById('ins-type').innerText = (val % 2 === 0) ? '🟢 Even Number' : '🔵 Odd Number';
+                    
+                    // Compute basic Place Value details mapping breakdown
+                    if(val >= 100) {
+                        const h = Math.floor(val/100);
+                        const t = Math.floor((val%100)/10);
+                        const o = val%10;
+                        document.getElementById('ins-pv').innerText = `${h} Hundreds, ${t} Tens, ${o} Ones`;
+                    } else {
+                        const t = Math.floor(val/10);
+                        const o = val%10;
+                        document.getElementById('ins-pv').innerText = `${t} Tens, ${o} Ones`;
+                    }
+                    document.getElementById('ins-neighbors').innerText = `Before: ${val - 1} | After: ${val + 1}`;
+                }
+            },
+
+            find: {
+                instance: null,
+                targetNum: 0,
+                currentLevel: 'easy',
+                init() {
+                    if(!this.instance) this.start('easy');
+                },
+                start(tier) {
+                    this.currentLevel = tier;
+                    let max = 10;
+                    if (tier === 'medium') max = 50;
+                    if (tier === 'hard') max = 100;
+
+                    this.targetNum = Math.floor(Math.random() * (max + 1));
+                    document.getElementById('find-prompt').innerText = `Can you find and tap the number ${this.targetNum}? 🎯`;
+
+                    this.instance = new NumberLine('find-line-outer', {
+                        min: 0,
+                        max: max,
+                        step: 1,
+                        onTickClick: (val) => this.verify(val)
+                    });
+                },
+                verify(val) {
+                    if (val === this.targetNum) {
+                        audioEngine.play('correct');
+                        stateEngine.addScore(5);
+                        stateEngine.data.streak++;
+                        document.getElementById('find-score').innerText = `Score: ${stateEngine.data.score}`;
+                        document.getElementById('find-streak').innerText = `🔥 Streak: ${stateEngine.data.streak}`;
+                        ui.createConfetti();
+                        this.start(this.currentLevel);
+                    } else {
+                        audioEngine.play('wrong');
+                        stateEngine.data.streak = 0;
+                        document.getElementById('find-streak').innerText = `🔥 Streak: 0`;
+                        document.getElementById('find-prompt').innerText = `Not quite! That's ${val}. Try again to locate ${this.targetNum}!`;
+                    }
+                }
+            },
+
+            jump: {
+                instance: null,
+                currentPos: 0,
+                maxRange: 20,
+                init() {
+                    this.currentPos = 0;
+                    document.getElementById('jump-pos-val').innerText = this.currentPos;
+                    this.instance = new NumberLine('jump-line-outer', {
+                        min: 0,
+                        max: this.maxRange,
+                        step: 1
+                    });
+                    this.renderAvatar();
+                },
+                renderAvatar() {
+                    let ptr = document.getElementById('jump-frog-ptr');
+                    if (!ptr) {
+                        ptr = document.createElement('div');
+                        ptr.id = 'jump-frog-ptr';
+                        ptr.className = 'manipulative-pointer';
+                        ptr.innerText = '🐸';
+                        document.getElementById('jump-line-outer').appendChild(ptr);
+                    }
+                    const coords = this.instance.getTickCoordinates(this.currentPos);
+                    if (coords) {
+                        ptr.style.left = `${coords.x}px`;
+                    }
+                },
+                exec(direction) {
+                    const step = parseInt(document.getElementById('jump-step-size').value);
+                    const nextPos = this.currentPos + (step * direction);
+                    
+                    if (nextPos >= 0 && nextPos <= this.maxRange) {
+                        this.instance.animateJump(this.currentPos, nextPos, 'var(--green)');
+                        this.currentPos = nextPos;
+                        document.getElementById('jump-pos-val').innerText = this.currentPos;
+                        setTimeout(() => this.renderAvatar(), 500);
+                    } else {
+                        audioEngine.play('wrong');
+                    }
+                },
+                reset() {
+                    this.currentPos = 0;
+                    document.getElementById('jump-pos-val').innerText = this.currentPos;
+                    this.renderAvatar();
+                }
+            },
+
+            arithmetic: {
+                instance: null,
+                init() {
+                    this.instance = new NumberLine('add-line-outer', { min: 0, max: 30, step: 1 });
+                    new NumberLine('sub-line-outer', { min: 0, max: 30, step: 1 });
+                },
+                runAdd() {
+                    const start = parseInt(document.getElementById('add-start-val').value) || 0;
+                    const jump = parseInt(document.getElementById('add-jump-val').value) || 0;
+                    const outLine = new NumberLine('add-line-outer', { min: 0, max: 30, step: 1 });
+                    
+                    let end = start + jump;
+                    if (end > 30) end = 30;
+
+                    document.getElementById('add-equation-display').innerText = `${start} + ${jump} = ${end}`;
+                    outLine.animateJump(start, end, 'var(--blue)', 800);
+                    stateEngine.addScore(2);
+                },
+                runSub() {
+                    const start = parseInt(document.getElementById('sub-start-val').value) || 0;
+                    const jump = parseInt(document.getElementById('sub-jump-val').value) || 0;
+                    const outLine = new NumberLine('sub-line-outer', { min: 0, max: 30, step: 1 });
+                    
+                    let end = start - jump;
+                    if (end < 0) end = 0;
+
+                    document.getElementById('sub-equation-display').innerText = `${start} - ${jump} = ${end}`;
+                    outLine.animateJump(start, end, 'var(--orange)', 800);
+                    stateEngine.addScore(2);
+                }
+            },
+
+            compare: {
+                instance: null,
+                valA: 5,
+                valB: 15,
+                init() {
+                    this.instance = new NumberLine('compare-line-outer', { min: 0, max: 30, step: 1 });
+                    this.renderMarkers();
+                },
+                renderMarkers() {
+                    let ptrA = document.getElementById('comp-ptr-a');
+                    let ptrB = document.getElementById('comp-ptr-b');
+                    
+                    if(!ptrA) {
+                        ptrA = document.createElement('div'); ptrA.id = 'comp-ptr-a';
+                        ptrA.className = 'manipulative-pointer'; ptrA.innerText = '🔵';
+                        ptrA.setAttribute('draggable', true);
+                        document.getElementById('compare-line-outer').appendChild(ptrA);
+                        this.setupDrag(ptrA, 'A');
+                    }
+                    if(!ptrB) {
+                        ptrB = document.createElement('div'); ptrB.id = 'comp-ptr-b';
+                        ptrB.className = 'manipulative-pointer'; ptrB.innerText = '🟢';
+                        ptrB.setAttribute('draggable', true);
+                        document.getElementById('compare-line-outer').appendChild(ptrB);
+                        this.setupDrag(ptrB, 'B');
+                    }
+
+                    const cA = this.instance.getTickCoordinates(this.valA);
+                    if(cA) ptrA.style.left = `${cA.x}px`;
+                    
+                    const cB = this.instance.getTickCoordinates(this.valB);
+                    if(cB) ptrB.style.left = `${cB.x}px`;
+
+                    // Live update analysis metrics labels
+                    document.getElementById('comp-val-a').innerText = this.valA;
+                    document.getElementById('comp-val-b').innerText = this.valB;
+                    
+                    let icon = '=';
+                    if (this.valA > this.valB) icon = '>';
+                    if (this.valA < this.valB) icon = '<';
+                    
+                    document.getElementById('comp-sign').innerText = icon;
+                    document.getElementById('comp-distance').innerText = Math.abs(this.valA - this.valB);
+                },
+                setupDrag(el, type) {
+                    // Simple click fallback for accessibility touch targets on smartboards
+                    el.addEventListener('click', () => {
+                        let res = prompt(`Enter position value for Marker ${type} (0-30):`, type === 'A' ? this.valA : this.valB);
+                        let parsed = parseInt(res);
+                        if(!isNaN(parsed) && parsed >= 0 && parsed <= 30) {
+                            if(type === 'A') this.valA = parsed; else this.valB = parsed;
+                            this.renderMarkers();
+                        }
+                    });
+                }
+            },
+
+            sequence: {
+                currentMode: 'before',
+                targetVal: 0,
+                init() {
+                    if(!this.targetVal) this.generate('before');
+                },
+                generate(mode) {
+                    this.currentMode = mode;
+                    this.targetVal = Math.floor(Math.random() * 18) + 2; // Range bounds 2 to 20
+                    
+                    const zone = document.getElementById('sequence-interactive-zone');
+                    const chips = document.getElementById('sequence-source-chips');
+                    zone.innerHTML = '';
+                    chips.innerHTML = '';
+
+                    let correctAns = 0;
+                    let displayLayoutHtml = '';
+
+                    if (mode === 'before') {
+                        correctAns = this.targetVal - 1;
+                        displayLayoutHtml = `
+                            <div class="drop-bucket" id="seq-drop-target" data-ans="${correctAns}">❓<br><small>Drop Before</small></div>
+                            <div class="glass-card" style="font-size:3rem; padding:20px 40px;">${this.targetVal}</div>
+                        `;
+                    } else if (mode === 'after') {
+                        correctAns = this.targetVal + 1;
+                        displayLayoutHtml = `
+                            <div class="glass-card" style="font-size:3rem; padding:20px 40px;">${this.targetVal}</div>
+                            <div class="drop-bucket" id="seq-drop-target" data-ans="${correctAns}">❓<br><small>Drop After</small></div>
+                        `;
+                    } else { // Between Matrix tracking
+                        correctAns = this.targetVal + 1;
+                        displayLayoutHtml = `
+                            <div class="glass-card" style="font-size:3rem; padding:20px 40px;">${this.targetVal}</div>
+                            <div class="drop-bucket" id="seq-drop-target" data-ans="${correctAns}">❓<br><small>Drop Between</small></div>
+                            <div class="glass-card" style="font-size:3rem; padding:20px 40px;">${this.targetVal + 2}</div>
+                        `;
+                    }
+
+                    zone.innerHTML = displayLayoutHtml;
+
+                    // Generate choices chips array matrix pool list
+                    let options = [correctAns, correctAns + 2, correctAns - 1, correctAns + 5].filter(v => v >= 0);
+                    options = [...new Set(options)].sort(() => Math.random() - 0.5);
+
+                    options.forEach(opt => {
+                        const chip = document.createElement('div');
+                        chip.className = 'draggable-chip';
+                        chip.innerText = opt;
+                        chip.addEventListener('click', () => this.verifySelection(opt));
+                        chips.appendChild(chip);
+                    });
+
+                    // Fast initialization of dynamic dropzone targets listeners interfaces
+                    const targetBucket = document.getElementById('seq-drop-target');
+                    targetBucket.addEventListener('dragover', (e) => e.preventDefault());
+                    targetBucket.addEventListener('drop', (e) => {
+                        // Drag support fallback link trace
+                        this.verifySelection(correctAns); 
+                    });
+                },
+                verifySelection(chosen) {
+                    const target = parseInt(document.getElementById('seq-drop-target').dataset.ans);
+                    if (chosen === target) {
+                        audioEngine.play('correct');
+                        stateEngine.addScore(5);
+                        ui.createConfetti();
+                        this.generate(this.currentMode);
+                    } else {
+                        audioEngine.play('wrong');
+                    }
+                }
+            },
+
+            skip: {
+                instance: null,
+                init() {
+                    this.instance = new NumberLine('skip-line-outer', { min: 0, max: 50, step: 1 });
+                },
+                run(factor) {
+                    this.instance = new NumberLine('skip-line-outer', { min: 0, max: 50, step: 1 });
+                    let arr = [];
+                    for (let i = 0; i <= 50; i += factor) {
+                        arr.push(i);
+                    }
+                    
+                    document.getElementById('skip-matrix-display').innerText = arr.join(' → ');
+                    
+                    // Cascade animate sequenced structural vector jumps array
+                    let chainIdx = 0;
+                    const triggerNextJump = () => {
+                        if (chainIdx < arr.length - 1) {
+                            this.instance.animateJump(arr[chainIdx], arr[chainIdx+1], 'var(--purple)', 400);
+                            
+                            // Highlight native element tick targets
+                            const ticks = document.querySelectorAll('#skip-line-outer .tick-mark');
+                            ticks.forEach(t => {
+                                if (parseInt(t.dataset.value) === arr[chainIdx+1]) {
+                                    t.style.background = 'var(--pink)';
+                                }
+                            });
+
+                            chainIdx++;
+                            setTimeout(triggerNextJump, 450);
+                        }
+                    };
+                    triggerNextJump();
+                    stateEngine.addScore(5);
+                }
+            },
+
+            build: {
+                instance: null,
+                init() {
+                    this.rebuild();
+                },
+                rebuild() {
+                    const min = parseInt(document.getElementById('build-min').value) || 0;
+                    const max = parseInt(document.getElementById('build-max').value) || 20;
+                    this.instance = new NumberLine('build-line-outer', { min: min, max: max, step: 1 });
+                    this.renderSavedList();
+                },
+                highlight(type) {
+                    const ticks = document.querySelectorAll('#build-line-outer .tick-mark');
+                    const multVal = parseInt(document.getElementById('build-mult-val').value) || 1;
+                    
+                    ticks.forEach(t => {
+                        const v = parseInt(t.dataset.value);
+                        t.style.background = ''; // reset default fallback layout
+                        
+                        if (type === 'even' && v % 2 === 0) t.style.background = 'var(--blue)';
+                        if (type === 'odd' && v % 2 !== 0) t.style.background = 'var(--orange)';
+                        if (type === 'multiples' && v % multVal === 0 && v !== 0) t.style.background = 'var(--purple)';
+                    });
+                },
+                save() {
+                    const min = parseInt(document.getElementById('build-min').value) || 0;
+                    const max = parseInt(document.getElementById('build-max').value) || 20;
+                    const label = `${min}-${max}`;
+                    if(!stateEngine.data.savedLines.includes(label)){
+                        stateEngine.data.savedLines.push(label);
+                        stateEngine.save();
+                        this.renderSavedList();
+                    }
+                },
+                renderSavedList() {
+                    const box = document.getElementById('build-saved-list');
+                    box.innerHTML = '';
+                    stateEngine.data.savedLines.forEach(str => {
+                        const btn = document.createElement('button');
+                        btn.className = 'btn btn-purple';
+                        btn.style.fontSize = '0.85rem';
+                        btn.innerText = `Blueprint [${str}]`;
+                        btn.onclick = () => {
+                            const [min, max] = str.split('-').map(Number);
+                            document.getElementById('build-min').value = min;
+                            document.getElementById('build-max').value = max;
+                            this.rebuild();
+                        };
+                        box.appendChild(btn);
+                    });
+                }
+            },
+
+            games: {
+                instance: null,
+                gameMode: 'pop',
+                targetVal: 0,
+                score: 0,
+                init() {
+                    this.instance = new NumberLine('arcade-line-outer', { min: 0, max: 20, step: 1 });
+                },
+                start(mode) {
+                    this.gameMode = mode;
+                    document.getElementById('game-arcade-stats').style.display = 'flex';
+                    const interactionBox = document.getElementById('arcade-game-interaction-box');
+                    interactionBox.innerHTML = '';
+
+                    this.targetVal = Math.floor(Math.random() * 16) + 2; // Target 2-18 range bounds
+                    this.instance = new NumberLine('arcade-line-outer', { 
+                        min: 0, max: 20, step: 1, 
+                        onTickClick: (val) => {
+                            if(this.gameMode === 'hidden') this.verify(val);
+                        }
+                    });
+
+                    if (mode === 'pop') {
+                        document.getElementById('arcade-task-prompt').innerText = `Pop the balloon that holds matching value: ${this.targetVal}!`;
+                        
+                        let choices = [this.targetVal, this.targetVal - 1, this.targetVal + 2].sort(() => Math.random() - 0.5);
+                        choices.forEach(val => {
+                            const b = document.createElement('button');
+                            b.className = 'btn btn-pink';
+                            b.style.padding = '25px';
+                            b.style.borderRadius = '50%';
+                            b.innerText = `🎈 ${val}`;
+                            b.onclick = () => this.verify(val);
+                            interactionBox.appendChild(b);
+                        });
+                    } else if (mode === 'target') {
+                        document.getElementById('arcade-task-prompt').innerText = `Launch vector arc directly targeting value: ${this.targetVal}!`;
+                        const fireBtn = document.createElement('button');
+                        fireBtn.className = 'btn btn-orange';
+                        fireBtn.innerText = '🚀 Fire Calculation Jump!';
+                        fireBtn.onclick = () => {
+                            this.instance.animateJump(0, this.targetVal, 'var(--orange)', 700);
+                            setTimeout(() => this.verify(this.targetVal), 750);
+                        };
+                        interactionBox.appendChild(fireBtn);
+                    } else if (mode === 'hidden') {
+                        document.getElementById('arcade-task-prompt').innerText = `A secret star emoji is hidden somewhere on line! Tap ticks to reveal.`;
+                        // Hide ticks markers label data references
+                        document.querySelectorAll('#arcade-line-outer .tick-label').forEach(el => el.style.visibility = 'hidden');
+                    }
+                },
+                verify(val) {
+                    if (val === this.targetVal) {
+                        audioEngine.play('correct');
+                        this.score += 10;
+                        document.getElementById('arcade-score').innerText = `Points: ${this.score}`;
+                        ui.createConfetti();
+                        this.start(this.gameMode);
+                    } else {
+                        audioEngine.play('wrong');
+                    }
+                }
+            }
+        };
+
+        /**
+         * Live Classroom Board Presentation Tools System Manager Interface
+         */
+        const teacherToolbox = {
+            drawMode: false,
+            pointerMode: false,
+            isDrawing: false,
+            ctx: null,
+            lastX: 0, lastY: 0,
+            togglePointerMode() {
+                this.pointerMode = !this.pointerMode;
+                document.getElementById('t-ptr-btn').style.background = this.pointerMode ? 'var(--pink)' : '';
+                
+                // Overlay absolute giant custom indicator pointer element targets on system views
+                const container = document.querySelector('.screen.active .number-line-container');
+                if(!container) return;
+
+                let ptr = container.querySelector('.teacher-live-pointer');
+                if(this.pointerMode) {
+                    if(!ptr) {
+                        ptr = document.createElement('div');
+                        ptr.className = 'manipulative-pointer teacher-live-pointer';
+                        ptr.innerText = '👇';
+                        ptr.style.top = '-40px';
+                        container.appendChild(ptr);
+                    }
+                    container.style.cursor = 'help';
+                    // Tracking listener mapping
+                    container.onclick = (e) => {
+                        const rect = container.getBoundingClientRect();
+                        const relX = e.clientX - rect.left + container.scrollLeft;
+                        ptr.style.left = `${relX}px`;
+                        audioEngine.play('click');
+                    };
+                } else {
+                    if(ptr) ptr.remove();
+                    container.style.cursor = '';
+                    container.onclick = null;
+                }
+            },
+            toggleDrawMode() {
+                this.drawMode = !this.drawMode;
+                document.getElementById('t-draw-btn').style.background = this.drawMode ? 'var(--pink)' : '';
+                
+                const layers = document.querySelectorAll('.teacher-canvas-layer');
+                layers.forEach(l => {
+                    if(this.drawMode) l.classList.add('active'); else l.classList.remove('active');
+                });
+            },
+            initEvents(canvas) {
+                this.ctx = canvas.getContext('2d');
+                
+                const getPos = (e) => {
+                    const rect = canvas.getBoundingClientRect();
+                    return {
+                        x: (e.clientX || e.touches[0].clientX) - rect.left,
+                        y: (e.clientY || e.touches[0].clientY) - rect.top
+                    };
+                };
+
+                const start = (e) => {
+                    if(!this.drawMode) return;
+                    this.isDrawing = true;
+                    const pos = getPos(e);
+                    this.lastX = pos.x; this.lastY = pos.y;
+                };
+
+                const move = (e) => {
+                    if(!this.isDrawing || !this.drawMode) return;
+                    const pos = getPos(e);
+                    this.ctx.beginPath();
+                    this.ctx.strokeStyle = 'var(--pink)';
+                    this.ctx.lineWidth = 5;
+                    this.ctx.lineCap = 'round';
+                    this.ctx.moveTo(this.lastX, this.lastY);
+                    this.ctx.lineTo(pos.x, pos.y);
+                    this.ctx.stroke();
+                    this.lastX = pos.x; this.lastY = pos.y;
+                };
+
+                const stop = () => { this.isDrawing = false; };
+
+                canvas.onmousedown = start; canvas.onmousemove = move; window.onmouseup = stop;
+                canvas.ontouchstart = start; canvas.ontouchmove = move; window.ontouchend = stop;
+            },
+            clearCanvas() {
+                const layers = document.querySelectorAll('.teacher-canvas-layer');
+                layers.forEach(l => {
+                    const ctx = l.getContext('2d');
+                    ctx.clearRect(0, 0, l.width, l.height);
+                });
+            },
+            toggleSpotlight() {
+                const mask = document.getElementById('spotlight-mask');
+                if(mask.style.display === 'block') {
+                    mask.style.display = 'none';
+                    document.removeEventListener('mousemove', this.updateSpotlight);
+                } else {
+                    mask.style.display = 'block';
+                    document.addEventListener('mousemove', this.updateSpotlight);
+                }
+            },
+            updateSpotlight(e) {
+                const mask = document.getElementById('spotlight-mask');
+                mask.style.background = `radial-gradient(circle 180px at ${e.clientX}px ${e.clientY}px, transparent 100%, rgba(0,0,0,0.85) 100%)`;
+            },
+            generateRandomNumber() {
+                alert(`🎯 Smartboard Generated Random Classroom Value: ${Math.floor(Math.random() * 100)}`);
+            },
+            toggleFullscreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => console.error(err));
+                } else {
+                    document.exitFullscreen();
+                }
+            }
+        };
+
+        /**
+         * Global Unified User Interface Utility Helpers Engine Layouts Mapping
+         */
+        const ui = {
+            initAmbientBackground() {
+                const layer = document.getElementById('ambient-layer');
+                for (let i = 0; i < 6; i++) {
+                    const cloud = document.createElement('div');
+                    cloud.className = 'cloud';
+                    cloud.style.width = `${Math.random() * 80 + 80}px`;
+                    cloud.style.height = `${Math.random() * 30 + 30}px`;
+                    cloud.style.top = `${Math.random() * 70}vh`;
+                    cloud.style.animationDelay = `${Math.random() * 15}s`;
+                    layer.appendChild(cloud);
+                }
+            },
+            toggleHighContrast() {
+                document.body.classList.toggle('high-contrast');
+                audioEngine.play('click');
+            },
+            toggleLargeText() {
+                document.body.classList.toggle('large-text');
+                audioEngine.play('click');
+            },
+            viewProgress() {
+                alert(`🏆 Number Line Explorer Progress Report\n--------------------------------------\nTotal Practice Points Accumulated: ${stateEngine.data.score}\nUnlocked Badges Matrix Count: ${stateEngine.data.unlockedAchievements.length} Level achievements`);
+            },
+            numberToWords(num) {
+                const ones = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+                const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+                
+                if (num < 20) return ones[num];
+                if (num < 100) return tens[Math.floor(num / 10)] + (num % 10 !== 0 ? ' ' + ones[num % 10] : '');
+                
+                if (num >= 100 && num <= 1000) {
+                    let h = Math.floor(num / 100);
+                    let rem = num % 100;
+                    let hStr = ones[h] + ' Hundred';
+                    if (rem === 0) return hStr;
+                    return hStr + ' and ' + this.numberToWords(rem);
+                }
+                return num;
+            },
+            createConfetti() {
+                for (let i = 0; i < 35; i++) {
+                    const p = document.createElement('div');
+                    p.innerText = ['⭐','🎈','✨','🌈','🎉'][Math.floor(Math.random()*5)];
+                    p.style.position = 'fixed';
+                    p.style.left = `${Math.random() * 100}vw`;
+                    p.style.top = `-20px`;
+                    p.style.fontSize = `${Math.random() * 1.5 + 1}rem`;
+                    p.style.zIndex = '9999';
+                    p.style.pointerEvents = 'none';
+                    p.style.transition = 'transform 2s linear, opacity 2s';
+                    document.body.appendChild(p);
+
+                    setTimeout(() => {
+                        p.style.transform = `translateY(105vh) translateX(${Math.random() * 100 - 50}px) rotate(${Math.random() * 360}deg)`;
+                        p.style.opacity = '0';
+                    }, 50);
+
+                    setTimeout(() => p.remove(), 2100);
+                }
+            },
+            initWelcomeScreenAnimation() {
+                const box = document.getElementById('welcome-anim-box');
+                const line = new NumberLine('welcome-anim-box', { min: 0, max: 10, step: 1 });
+                
+                // Infinite cute automated frog bounce automation routine loop sequence
+                let current = 0;
+                setInterval(() => {
+                    if(router.currentScreen === 'welcome') {
+                        let next = (current + 2) % 11;
+                        line.animateJump(current, next, 'var(--purple)', 500);
+                        current = next;
+                    }
+                }, 1800);
+            }
+        };
+
+        // Master Application Lifecycle Ignition Bootloader entrypoint initialization
+        window.addEventListener('DOMContentLoaded', () => {
+            stateEngine.load();
+            ui.initAmbientBackground();
+            ui.initWelcomeScreenAnimation();
+        });
+    </script>
+</body>
+</html>

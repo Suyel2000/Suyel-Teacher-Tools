@@ -1,0 +1,1625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🏅 Ordinal Numbers Explorer</title>
+    <style>
+        :root {
+            --blue: #2563eb;
+            --green: #16a34a;
+            --yellow: #ca8a04;
+            --orange: #ea580c;
+            --purple: #9333ea;
+            --pink: #db2777;
+            --bg-gradient: linear-gradient(135deg, #e0f2fe 0%, #f3e8ff 100%);
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --radius-lg: 20px;
+            --radius-md: 12px;
+            --shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
+            --font-main: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            --zoom-level: 1;
+        }
+
+        .high-contrast {
+            --bg-gradient: linear-gradient(135deg, #000000 0%, #111827 100%);
+            --glass-bg: rgba(20, 20, 20, 0.95);
+            --glass-border: #ffffff;
+            --text-main: #ffffff;
+            --text-muted: #e2e8f0;
+            --blue: #3b82f6;
+            --green: #22c55e;
+            --yellow: #eab308;
+            --orange: #f97316;
+            --purple: #a855f7;
+        }
+
+        .large-text {
+            font-size: 1.25 times !important;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* App Container and Scaling Adjustments */
+        #app-container {
+            transform: scale(var(--zoom-level));
+            transform-origin: top center;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 1600px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        /* Glassmorphic Utilities */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 2px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            padding: 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Typography */
+        h1, h2, h3, h4 {
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 0.5rem;
+        }
+
+        .btn {
+            background: var(--blue);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: scale(1.04);
+            filter: brightness(1.1);
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        /* Screens Management */
+        .screen {
+            display: none;
+            padding: 20px;
+            animation: fadeIn 0.4s ease forwards;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* Header Navigation Styles */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            margin: 10px 20px;
+        }
+
+        .branding {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.4rem;
+            font-weight: 800;
+        }
+
+        .sys-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Welcome Screen Design */
+        #welcome-screen {
+            text-align: center;
+            justify-content: center;
+            align-items: center;
+            min-height: 80vh;
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            background: linear-gradient(45deg, var(--blue), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .hero-track {
+            width: 100%;
+            max-width: 800px;
+            height: 120px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 60px;
+            position: relative;
+            margin: 40px 0;
+            overflow: hidden;
+            border: 4px dashed rgba(0,0,0,0.1);
+        }
+
+        .hero-runner {
+            position: absolute;
+            bottom: 15px;
+            width: 70px;
+            height: 70px;
+            animation: raceRun 8s infinite linear;
+        }
+
+        /* Dashboard Grid layouts */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .level-card, .module-card {
+            cursor: pointer;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .level-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left:0; width: 100%; height: 8px;
+            background: var(--card-color, var(--blue));
+        }
+
+        .badge {
+            background: var(--card-color, var(--blue));
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        /* Core Application Split view workspace */
+        .workspace {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        @media (max-width: 900px) {
+            .workspace { grid-template-columns: 1fr; }
+            header { flex-direction: column; gap: 15px; text-align: center; }
+        }
+
+        .sidebar-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .menu-item {
+            padding: 14px 18px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+            background: rgba(255,255,255,0.4);
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .menu-item.active, .menu-item:hover {
+            background: white;
+            border-color: var(--blue);
+            box-shadow: var(--shadow);
+            transform: translateX(4px);
+        }
+
+        /* Main Sandbox Interactive Enclosures */
+        .sandbox {
+            min-height: 500px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .display-panel {
+            width: 100%;
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            border-top: 2px dashed var(--glass-border);
+            min-height: 80px;
+        }
+
+        /* Object Track Elements */
+        .object-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            width: 100%;
+        }
+
+        .interactive-obj {
+            width: 75px;
+            height: 75px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            background: white;
+            border-radius: var(--radius-md);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            border: 3px solid transparent;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+
+        .interactive-obj.selected {
+            border-color: var(--blue);
+            transform: scale(1.15) rotate(3deg);
+        }
+
+        .obj-label {
+            position: absolute;
+            bottom: -22px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            opacity: 1;
+            transition: opacity 0.2s;
+        }
+
+        .hide-labels .obj-label { opacity: 0; }
+
+        /* Draggable Modules (Train / Queue / Shelves) */
+        .dropzone-container {
+            display: flex;
+            gap: 15px;
+            padding: 30px 10px;
+            overflow-x: auto;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .draggable-item {
+            cursor: grab;
+            padding: 15px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            min-width: 80px;
+        }
+
+        .draggable-item:active { cursor: grabbing; }
+
+        /* Staircase Specific Graphic Engine */
+        .staircase-container {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 4px;
+            height: 350px;
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .stair-step {
+            flex: 1;
+            background: linear-gradient(to top, var(--purple), #b45309);
+            border: 2px solid white;
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 10px;
+            color: white;
+            font-weight: bold;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .stair-step:hover { filter: brightness(1.2); }
+
+        .stair-avatar {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            bottom: 0;
+            left: 50%;
+            transform: translate(-50%, -100%);
+            transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            z-index: 10;
+        }
+
+        /* Matrix Grid System */
+        .grid-container {
+            display: grid;
+            gap: 10px;
+            background: rgba(0,0,0,0.05);
+            padding: 15px;
+            border-radius: var(--radius-lg);
+        }
+
+        .grid-cell {
+            background: white;
+            border: 2px solid #cbd5e1;
+            border-radius: var(--radius-md);
+            width: 65px;
+            height: 65px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .grid-cell:hover { background: #f0fdf4; border-color: var(--green); }
+
+        /* Split Matching View */
+        .matching-board {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .match-column {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .match-card {
+            background: white;
+            padding: 16px;
+            border-radius: var(--radius-md);
+            border: 2px solid #e2e8f0;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 700;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        .match-card.selected {
+            border-color: var(--blue);
+            background: #eff6ff;
+        }
+
+        .match-card.resolved {
+            background: #bbf7d0;
+            border-color: var(--green);
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        /* Classroom Real World Scenario Scape */
+        .scenery-viewport {
+            width: 100%;
+            max-width: 800px;
+            height: 400px;
+            background: #fff;
+            border-radius: var(--radius-lg);
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            border: 4px solid var(--glass-border);
+        }
+
+        .hotspot {
+            position: absolute;
+            cursor: pointer;
+            transform: translate(-50%, -50%);
+            transition: transform 0.2s;
+        }
+
+        .hotspot:hover { transform: translate(-50%, -50%) scale(1.15); }
+
+        /* Floating Teacher Toolbars & Canvas Board Elements */
+        #teacher-toolbar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 10px 24px;
+            border-radius: 40px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            z-index: 2000;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .t-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.2s;
+        }
+
+        .t-btn:hover, .t-btn.active {
+            color: white;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .t-divider {
+            width: 1px;
+            height: 24px;
+            background: rgba(255,255,255,0.2);
+        }
+
+        #annotation-layer {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 1500;
+        }
+
+        #annotation-layer.active { pointer-events: all; cursor: crosshair; }
+
+        .spotlight-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.75);
+            pointer-events: none;
+            z-index: 1400;
+            display: none;
+            clip-path: circle(120px at 50% 50%);
+        }
+
+        /* Modal Overlay structures */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease;
+        }
+
+        /* Animations Framework */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes raceRun {
+            0% { left: -80px; transform: scaleX(1); }
+            48% { left: 105%; transform: scaleX(1); }
+            50% { left: 105%; transform: scaleX(-1); }
+            98% { left: -80px; transform: scaleX(-1); }
+            100% { left: -80px; transform: scaleX(1); }
+        }
+        @keyframes celebrationConfetti {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        .confetti-piece {
+            position: fixed;
+            top: -10px;
+            width: 10px;
+            height: 10px;
+            z-index: 9999;
+            pointer-events: none;
+            animation: celebrationConfetti 3s linear forwards;
+        }
+
+        /* Mini Notification System */
+        #notification-center {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 4000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast {
+            background: white;
+            border-left: 6px solid var(--green);
+            padding: 16px 22px;
+            border-radius: var(--radius-md);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: fadeIn 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        <canvas id="annotation-layer"></canvas>
+        <div class="spotlight-overlay" id="spotlight"></div>
+
+        <header class="glass-card">
+            <div class="branding" onclick="Navigation.home()">
+                <span>🏅</span> Ordinal Numbers Explorer
+            </div>
+            <div class="sys-controls">
+                <button class="btn" style="padding:8px 14px; background:#64748b;" onclick="Accessibility.toggleContrast()" title="Accessibility Mode">🌓</button>
+                <button class="btn" style="padding:8px 14px; background:#64748b;" onclick="Accessibility.toggleTextSize()" title="Enlarge Text">Aa</button>
+                <button class="btn" style="padding:8px 14px; background:#7c3aed;" onclick="ProgressTracker.showAchievementsModal()">🏆 Stats</button>
+                <button id="back-btn" class="btn" style="padding:8px 14px; display:none; background:#ea580c;" onclick="Navigation.back()">↩ Dashboard</button>
+            </div>
+        </header>
+
+        <div id="notification-center"></div>
+
+        <div id="welcome-screen" class="screen active">
+            <h1 class="hero-title">🏅 Ordinal Numbers Explorer</h1>
+            <p style="font-size: 1.3rem; color: var(--text-muted);">Observe • Arrange • Identify • Learn</p>
+            
+            <div class="hero-track">
+                <div class="hero-runner" id="welcome-runner-svg"></div>
+            </div>
+
+            <button class="btn" style="font-size: 1.5rem; padding: 18px 40px; background: var(--green);" onclick="Navigation.go('dashboard')">
+                ▶ Start Learning Lab
+            </button>
+        </div>
+
+        <div id="dashboard-screen" class="screen">
+            <div>
+                <h2>🎚 Choose Your Learning Level</h2>
+                <p style="color: var(--text-muted)">Progress step-by-step from foundational positions to complex grid setups.</p>
+            </div>
+            <div class="dashboard-grid" id="levels-grid"></div>
+
+            <div style="margin-top: 20px;">
+                <h2>📚 Primary Learning Sandboxes & Labs</h2>
+                <p style="color: var(--text-muted)">Interactive workspaces containing fully configurable manipulative engines.</p>
+            </div>
+            <div class="dashboard-grid" id="modules-grid"></div>
+        </div>
+
+        <div id="workspace-screen" class="screen">
+            <div class="workspace">
+                <div class="glass-card sidebar-menu">
+                    <h3 style="font-size:1.1rem; padding-bottom:8px; border-bottom:1px solid #e2e8f0;">Switch Sandbox</h3>
+                    <div class="menu-item" onclick="AppEngine.switchModule('explorer')">🏁 Position Explorer</div>
+                    <div class="menu-item" onclick="AppEngine.switchModule('train')">🚂 Train Lab</div>
+                    <div class="menu-item" onclick="AppEngine.switchModule('queue')">👧 Queue Master</div>
+                    <div class="menu-item" onclick="AppEngine.switchModule('staircase')">🪜 Staircase Explorer</div>
+                    <div class="menu-item" onclick="AppEngine.switchModule('shelf')">📚 Shelf Explorer</div>
+                    <div class="menu-item" onclick="AppEngine.switchModule('grid')">🗺 Grid Position</div>
+                    <div class="menu-item" onclick="AppEngine.switchModule('realworld')">🌍 Real-Life Worlds</div>
+                    <div class="menu-item" onclick="AppEngine.switchModule('matching')">🔄 Match Explorer</div>
+                    <div class="menu-item" onclick="AppEngine.switchModule('custom')">🎨 Build Activity</div>
+                    <div class="menu-item" style="color: var(--purple)" onclick="AppEngine.switchModule('games')">🎲 Game Arcade</div>
+                </div>
+
+                <div class="glass-card sandbox" id="sandbox-viewport">
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="teacher-toolbar">
+        <span style="color: white; font-size: 0.8rem; font-weight: 800; padding-right: 6px;">MFA BOARD TOOLS</span>
+        <button class="t-btn" onclick="TeacherTools.toggleLabels()" title="Show/Hide Output Position Labels">🏷</button>
+        <button class="t-btn" onclick="TeacherTools.triggerRandomization()" title="Scramble Container Layout Objects">🎲</button>
+        <div class="t-divider"></div>
+        <button class="t-btn" id="t-pointer" onclick="TeacherTools.setTool('pointer')" title="Interactive Control Mode">👆</button>
+        <button class="t-btn" id="t-draw" onclick="TeacherTools.setTool('draw')" title="Board Pen Overlay Annotation">✏</button>
+        <button class="t-btn" onclick="TeacherTools.clearDrawing()" title="Wipe Drawing Overlay Layer">🗑</button>
+        <div class="t-divider"></div>
+        <button class="t-btn" id="t-spot" onclick="TeacherTools.toggleSpotlight()" title="Spotlight Focus Zone">🔦</button>
+        <button class="t-btn" onclick="TeacherTools.adjustZoom(0.1)" title="Scale Interface Larger">➕</button>
+        <button class="t-btn" onclick="TeacherTools.adjustZoom(-0.1)" title="Scale Interface Smaller">➖</button>
+        <button class="t-btn" onclick="TeacherTools.toggleFullscreen()" title="Fullscreen Display Mode">📺</button>
+    </div>
+
+    <div class="modal-overlay" id="stats-modal" onclick="if(event.target===this)this.style.display='none'">
+        <div class="glass-card" style="max-width: 500px; width:90%; background:white; position:relative;">
+            <span style="position:absolute; right:20px; top:20px; cursor:pointer; font-size:1.5rem;" onclick="document.getElementById('stats-modal').style.display='none'">❌</span>
+            <h2>🏆 Achievement Tracker & Stats</h2>
+            <p style="color:var(--text-muted); margin-bottom:16px;">Saved locally on your presentation or personal device.</p>
+            <div id="achievements-list" style="display:flex; flex-direction:column; gap:10px;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Data Constant Configurations Framework
+        const CONFIG = {
+            ordinals: [
+                { num: "1st", word: "First" }, { num: "2nd", word: "Second" }, { num: "3rd", word: "Third" },
+                { num: "4th", word: "Fourth" }, { num: "5th", word: "Fifth" }, { num: "6th", word: "Sixth" },
+                { num: "7th", word: "Seventh" }, { num: "8th", word: "Eighth" }, { num: "9th", word: "Ninth" },
+                { num: "10th", word: "Tenth" }, { num: "11th", word: "Eleventh" }, { num: "12th", word: "Twelfth" },
+                { num: "13th", word: "Thirteenth" }, { num: "14th", word: "Fourteenth" }, { num: "15th", word: "Fifteenth" },
+                { num: "16th", word: "Sixteenth" }, { num: "17th", word: "Seventeenth" }, { num: "18th", word: "Eighteenth" },
+                { num: "19th", word: "Nineteenth" }, { num: "20th", word: "Twentieth" }
+            ],
+            levels: [
+                { id: 1, name: "Level 1 – First to Fifth", desc: "1st–5th positions. Ideal for Primary Class 1.", limit: 5, color: "var(--green)" },
+                { id: 2, name: "Level 2 – First to Tenth", desc: "1st–10th positions. Ideal for Class 1–2.", limit: 10, color: "var(--blue)" },
+                { id: 3, name: "Level 3 – First to Twentieth", desc: "1st–20th positions. Ideal for Class 2–3.", limit: 20, color: "var(--yellow)" },
+                { id: 4, name: "Level 4 – Real-Life Contexts", desc: "Queues, Trains, Stairs, Shelves scenarios. Class 3-4.", limit: 10, color: "var(--orange)" },
+                { id: 5, name: "Level 5 – Complex Grid Spaces", desc: "Multiple rows, grid lines, matrices. Class 4-5.", limit: 16, color: "var(--pink)" },
+                { id: 6, name: "Level 6 – Master Challenge Mode", desc: "Randomized custom exploration for advanced solvers.", limit: 20, color: "var(--purple)" }
+            ],
+            modules: [
+                { id: "explorer", title: "🏁 Position Explorer", desc: "Click and explore sequence strings seamlessly." },
+                { id: "train", title: "🚂 Train Position Lab", desc: "Drag, match and complete locomotive order paths." },
+                { id: "queue", title: "👧 Queue Explorer", desc: "Manipulate relative line queues effortlessly." },
+                { id: "staircase", title: "🪜 Staircase Explorer", desc: "Animate token lines climbing structures." },
+                { id: "shelf", title: "📚 Shelf Explorer", desc: "Organize libraries and track individual indexes." },
+                { id: "grid", title: "🗺 Grid Position Explorer", desc: "Advanced cross-axis coordinate systems." },
+                { id: "realworld", title: "🌍 Real-Life Explorer", desc: "Interact with maps, tracks and real-world sets." },
+                { id: "matching", title: "🔄 Match Explorer", desc: "Match abbreviations to proper spelling formats." },
+                { id: "custom", title: "🎨 Custom Activity Sandbox", desc: "Design master templates for class demos." },
+                { id: "games", title: "🎲 Core Games Arcade", desc: "Play standard challenge systems instantly." }
+            ],
+            games: [
+                { id: "race", name: "🏁 Race Position Challenge" },
+                { id: "sort", name: "🚂 Train Coach Sort" },
+                { id: "pop", name: "🎈 Pop the Correct Position" },
+                { id: "rainbow", name: "🌈 Rainbow Queue Game" },
+                { id: "treasure", name: "⭐ Hidden Treasure Hunt" },
+                { id: "climb", name: "🪜 Climb the Right Step" },
+                { id: "library", name: "📚 Library Shelf Sorting" },
+                { id: "spin", name: "🎡 Spin and Locate" },
+                { id: "puzzle", name: "🧩 Mixed Position Puzzle" },
+                { id: "space", name: "🚀 Space Line-Up Combat" },
+                { id: "pattern", name: "📈 Pattern Position Explorer" }
+            ],
+            svgTemplates: {
+                car: `<svg viewBox="0 0 100 100" width="100%" height="100%"><rect x="15" y="40" width="70" height="25" rx="8" fill="var(--blue)"/><path d="M25 40 L35 20 L65 20 L75 40 Z" fill="var(--blue)" fill-opacity="0.8"/><circle cx="30" cy="65" r="12" fill="#334155"/><circle cx="30" cy="65" r="5" fill="#fff"/><circle cx="70" cy="65" r="12" fill="#334155"/><circle cx="70" cy="65" r="5" fill="#fff"/></svg>`,
+                child: `<svg viewBox="0 0 100 100" width="100%" height="100%"><circle cx="50" cy="30" r="18" fill="#fbcfe8" stroke="var(--pink)" stroke-width="3"/><circle cx="44" cy="26" r="2.5" fill="#1e293b"/><circle cx="56" cy="26" r="2.5" fill="#1e293b"/><path d="M42 38 Q50 44 58 38" fill="none" stroke="#e11d48" stroke-width="2.5"/><path d="M25 85 Q50 50 75 85 Z" fill="var(--purple)"/><circle cx="50" cy="12" r="6" fill="#f472b6"/></svg>`,
+                ball: `<svg viewBox="0 0 100 100" width="100%" height="100%"><circle cx="50" cy="50" r="40" fill="var(--orange)"/><path d="M15 50 Q50 15 85 50" fill="none" stroke="#fff" stroke-width="4"/><path d="M15 50 Q50 85 85 50" fill="none" stroke="#fff" stroke-width="4"/></svg>`,
+                fruit: `<svg viewBox="0 0 100 100" width="100%" height="100%"><circle cx="50" cy="55" r="35" fill="#ef4444"/><path d="M50 20 Q55 10 65 15" fill="none" stroke="#16a34a" stroke-width="4"/><path d="M50 20 C45 30 55 30 50 35" fill="none" stroke="#78350f" stroke-width="3"/></svg>`,
+                toy: `<svg viewBox="0 0 100 100" width="100%" height="100%"><polygon points="50,10 90,85 10,85" fill="var(--yellow)" stroke="#b45309" stroke-width="3"/><circle cx="50" cy="55" r="12" fill="var(--pink)"/></svg>`
+            }
+        };
+
+        // State Machine Core
+        let AppState = {
+            currentLevel: CONFIG.levels[0],
+            currentModule: "explorer",
+            activeLabelVisibility: true,
+            customObjectCount: 6,
+            customObjectType: 'car',
+            labelsHiddenGlobal: false,
+            annotationToolActive: false
+        };
+
+        // Procedural Audio Engine Synthesizer Base (Web Audio API only)
+        const SoundEngine = {
+            ctx: null,
+            init() { 
+                if(!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); 
+            },
+            play(type) {
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                const now = this.ctx.currentTime;
+                if(type === 'click') {
+                    osc.frequency.setValueAtTime(400, now);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                    osc.start(now); osc.stop(now + 0.08);
+                } else if(type === 'correct') {
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now); osc.stop(now + 0.3);
+                } else if(type === 'wrong') {
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.linearRampToValueAtTime(110, now + 0.2);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now); osc.stop(now + 0.25);
+                } else if(type === 'unlock') {
+                    osc.frequency.setValueAtTime(587.33, now);
+                    osc.frequency.setValueAtTime(880, now + 0.12);
+                    osc.frequency.setValueAtTime(1174.66, now + 0.24);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                    osc.start(now); osc.stop(now + 0.5);
+                }
+            }
+        };
+
+        // App Navigation Controller System
+        const Navigation = {
+            screenStack: ['welcome'],
+            go(screenId) {
+                SoundEngine.play('click');
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                const target = document.getElementById(`${screenId}-screen`);
+                if(target) target.classList.add('active');
+                
+                if(screenId !== 'welcome') {
+                    document.getElementById('back-btn').style.display = 'inline-flex';
+                } else {
+                    document.getElementById('back-btn').style.display = 'none';
+                }
+                if(screenId === 'workspace') {
+                    AppEngine.initCurrentModule();
+                }
+            },
+            back() {
+                SoundEngine.play('click');
+                this.go('dashboard');
+            },
+            home() {
+                SoundEngine.play('click');
+                this.go('welcome');
+            }
+        };
+
+        // UI Builder & Render Grid System
+        const UIBuilder = {
+            init() {
+                // Populate Static Background Visuals For Welcome Screen
+                document.getElementById('welcome-runner-svg').innerHTML = CONFIG.svgTemplates.car;
+
+                // Render Dashboard Level Matrix Selector Components
+                const lvlGrid = document.getElementById('levels-grid');
+                lvlGrid.innerHTML = '';
+                CONFIG.levels.forEach(lvl => {
+                    const card = document.createElement('div');
+                    card.className = 'glass-card level-card';
+                    card.style.setProperty('--card-color', lvl.color);
+                    card.innerHTML = `<h3>${lvl.name}</h3><p style="font-size:0.9rem; color:var(--text-muted); margin:8px 0;">${lvl.desc}</p><span class="badge">Class Target Baseline</span>`;
+                    card.onclick = () => {
+                        AppState.currentLevel = lvl;
+                        UIBuilder.updateActiveLevelHighlights();
+                        NotificationCenter.trigger(`Level Locked: ${lvl.name}`, 'info');
+                        Navigation.go('workspace');
+                    };
+                    lvlGrid.appendChild(card);
+                });
+
+                // Render Core Interactive Application Workspace Cards
+                const modGrid = document.getElementById('modules-grid');
+                modGrid.innerHTML = '';
+                CONFIG.modules.forEach(mod => {
+                    const card = document.createElement('div');
+                    card.className = 'glass-card module-card';
+                    card.innerHTML = `<h3>${mod.title}</h3><p style="font-size:0.9rem; color:var(--text-muted);">${mod.desc}</p>`;
+                    card.onclick = () => {
+                        AppState.currentModule = mod.id;
+                        Navigation.go('workspace');
+                    };
+                    modGrid.appendChild(card);
+                });
+
+                this.updateActiveLevelHighlights();
+            },
+            updateActiveLevelHighlights() {
+                document.querySelectorAll('.sidebar-menu .menu-item').forEach(el => {
+                    const match = el.getAttribute('onclick').includes(`'${AppState.currentModule}'`);
+                    if(match) el.classList.add('active'); else el.classList.remove('active');
+                });
+            }
+        };
+
+        // Universal Modular Application Engine Controller
+        const AppEngine = {
+            switchModule(modId) {
+                SoundEngine.play('click');
+                AppState.currentModule = modId;
+                UIBuilder.updateActiveLevelHighlights();
+                this.initCurrentModule();
+            },
+            initCurrentModule() {
+                const view = document.getElementById('sandbox-viewport');
+                view.className = `glass-card sandbox ${AppState.labelsHiddenGlobal ? 'hide-labels' : ''}`;
+                view.innerHTML = ''; // Fresh clean render viewport environment
+
+                switch(AppState.currentModule) {
+                    case 'explorer': this.renderExplorer(view); break;
+                    case 'train': this.renderTrainLab(view); break;
+                    case 'queue': this.renderQueueLab(view); break;
+                    case 'staircase': this.renderStaircaseLab(view); break;
+                    case 'shelf': this.renderShelfLab(view); break;
+                    case 'grid': this.renderGridLab(view); break;
+                    case 'realworld': this.renderRealWorld(view); break;
+                    case 'matching': this.renderMatchingMatrix(view); break;
+                    case 'custom': this.renderCustomBuilder(view); break;
+                    case 'games': this.renderGamesArcade(view); break;
+                }
+            },
+
+            // 1. Position Explorer Construction Module
+            renderExplorer(container) {
+                container.innerHTML = `<h2>🏁 Position Explorer</h2><p style="color:var(--text-muted); margin-bottom:20px;">Click objects to reveal ordinal position strings.</p>`;
+                const row = document.createElement('div');
+                row.className = 'object-row';
+                
+                const count = AppState.currentLevel.limit;
+                const types = Object.keys(CONFIG.svgTemplates);
+                const chosenType = types[Math.floor(Math.random() * types.length)];
+
+                for(let i = 0; i < count; i++) {
+                    const item = document.createElement('div');
+                    item.className = 'interactive-obj';
+                    item.innerHTML = CONFIG.svgTemplates[chosenType] + `<div class="obj-label">${CONFIG.ordinals[i].num}</div>`;
+                    item.onclick = () => {
+                        SoundEngine.play('click');
+                        document.querySelectorAll('.interactive-obj').forEach(o=>o.classList.remove('selected'));
+                        item.classList.add('selected');
+                        document.getElementById('explorer-output').innerHTML = `
+                            <div style="font-size:1.8rem; font-weight:800; color:var(--blue);">${CONFIG.ordinals[i].num} Position</div>
+                            <div style="font-size:1.3rem; font-weight:600;">Word Form: ${CONFIG.ordinals[i].word}</div>
+                        `;
+                    };
+                    row.appendChild(item);
+                }
+                container.appendChild(row);
+
+                const out = document.createElement('div');
+                out.className = 'display-panel';
+                out.id = 'explorer-output';
+                out.innerHTML = `<span style="color:var(--text-muted)">Select any vector entity above to break down sequence structure</span>`;
+                container.appendChild(out);
+            },
+
+            // 2. Locomotive Train Sorting Manipulative Engine
+            renderTrainLab(container) {
+                container.innerHTML = `<h2>🚂 Train Position Lab</h2><p style="color:var(--text-muted)">Arrange sequence order via manual dragging elements.</p>`;
+                const track = document.createElement('div');
+                track.className = 'dropzone-container';
+                track.id = 'train-track-drop';
+
+                // Setup default sequence order
+                let itemsData = [];
+                for(let i=0; i<Math.min(AppState.currentLevel.limit, 8); i++) {
+                    itemsData.push({ id: i, data: CONFIG.ordinals[i] });
+                }
+                // Mix array sequence up initially
+                itemsData.sort(() => Math.random() - 0.5);
+
+                itemsData.forEach((item, index) => {
+                    const block = document.createElement('div');
+                    block.className = 'draggable-item';
+                    block.draggable = true;
+                    block.dataset.index = item.id;
+                    block.innerHTML = `
+                        <div style="width:50px; height:40px; background:var(--orange); border-radius:4px; position:relative;">
+                           <div style="position:absolute; bottom:-5px; left:5px; width:12px; height:12px; background:#334155; border-radius:50%;"></div>
+                           <div style="position:absolute; bottom:-5px; right:5px; width:12px; height:12px; background:#334155; border-radius:50%;"></div>
+                        </div>
+                        <div class="obj-label" style="position:relative; bottom:0; margin-top:5px;">${item.data.num}</div>
+                    `;
+                    
+                    // Native HTML5 Drag and Drop Handlers Unified Setup
+                    block.addEventListener('dragstart', (e) => {
+                        e.dataTransfer.setData('text/plain', index);
+                        block.style.opacity = '0.5';
+                    });
+                    block.addEventListener('dragend', () => block.style.opacity = '1');
+                    
+                    track.appendChild(block);
+                });
+
+                // Attach Drag/Drop Sequence Event Routing Rules
+                track.addEventListener('dragover', (e) => e.preventDefault());
+                track.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const fromIndex = e.dataTransfer.getData('text/plain');
+                    const targetEl = e.target.closest('.draggable-item');
+                    if(targetEl && fromIndex !== '') {
+                        SoundEngine.play('click');
+                        const targetIndex = Array.from(track.children).indexOf(targetEl);
+                        const items = Array.from(track.children);
+                        if (fromIndex < targetIndex) {
+                            track.insertBefore(items[fromIndex], targetEl.nextSibling);
+                        } else {
+                            track.insertBefore(items[fromIndex], targetEl);
+                        }
+                        AppEngine.verifyTrainSequence(track);
+                    }
+                });
+
+                container.appendChild(track);
+
+                const feedback = document.createElement('div');
+                feedback.className = 'display-panel';
+                feedback.id = 'train-feedback';
+                feedback.innerHTML = `Move train parts around. Left-most side is front.`;
+                container.appendChild(feedback);
+            },
+            verifyTrainSequence(trackContainer) {
+                const items = Array.from(trackContainer.children);
+                let sorted = true;
+                for(let i=0; i<items.length; i++) {
+                    if(parseInt(items[i].dataset.index) !== i) {
+                        sorted = false;
+                        break;
+                    }
+                }
+                const fb = document.getElementById('train-feedback');
+                if(sorted) {
+                    SoundEngine.play('correct');
+                    fb.innerHTML = `<span style="color:var(--green); font-weight:bold;">🎉 Complete Train Alignment Set Successfully!</span>`;
+                    ProgressTracker.award('train');
+                    Celebration.triggerSparkles();
+                } else {
+                    fb.innerHTML = `Constructing... Alignment position sequence currently offset.`;
+                }
+            },
+
+            // 3. Child Target Line Queue Manipulative View
+            renderQueueLab(container) {
+                container.innerHTML = `<h2>👧 Interactive Queue Explorer</h2><p style="color:var(--text-muted)">Rearrange child vector representations and study relation arrays.</p>`;
+                const queueBox = document.createElement('div');
+                queueBox.className = 'dropzone-container';
+                queueBox.id = 'queue-box-container';
+
+                let order = [];
+                for(let i=0; i<Math.min(AppState.currentLevel.limit, 6); i++) order.push(i);
+                order.sort(() => Math.random() - 0.5);
+
+                order.forEach((posIndex) => {
+                    const person = document.createElement('div');
+                    person.className = 'draggable-item';
+                    person.draggable = true;
+                    person.dataset.pos = posIndex;
+                    person.style.minWidth = '90px';
+                    person.innerHTML = CONFIG.svgTemplates.child + `<div class="obj-label" style="position:relative; bottom:0;">${CONFIG.ordinals[posIndex].num}</div>`;
+                    
+                    person.onclick = () => {
+                        SoundEngine.play('click');
+                        const currentIdx = Array.from(queueBox.children).indexOf(person);
+                        const kids = Array.from(queueBox.children);
+                        
+                        let relStr = `Selected Child is at index slot ${currentIdx + 1}. `;
+                        if(currentIdx > 0) relStr += `Behind the <b>${CONFIG.ordinals[parseInt(kids[currentIdx-1].dataset.pos)].word}</b> student. `;
+                        if(currentIdx < kids.length - 1) relStr += `Ahead of the <b>${CONFIG.ordinals[parseInt(kids[currentIdx+1].dataset.pos)].word}</b> student.`;
+                        
+                        document.getElementById('queue-output').innerHTML = relStr;
+                    };
+
+                    person.addEventListener('dragstart', (e) => e.dataTransfer.setData('text', posIndex));
+                    queueBox.appendChild(person);
+                });
+
+                queueBox.addEventListener('dragover', (e) => e.preventDefault());
+                queueBox.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const draggedPos = e.dataTransfer.getData('text');
+                    const targetNode = e.target.closest('.draggable-item');
+                    if(targetNode) {
+                        const items = Array.from(queueBox.children);
+                        const sourceNode = items.find(n => n.dataset.pos === draggedPos);
+                        if(sourceNode) {
+                            queueBox.insertBefore(sourceNode, targetNode);
+                            SoundEngine.play('click');
+                        }
+                    }
+                });
+
+                container.appendChild(queueBox);
+
+                const out = document.createElement('div');
+                out.className = 'display-panel';
+                out.id = 'queue-output';
+                out.innerHTML = `Click individual children items to evaluate local before/after context bounds.`;
+                container.appendChild(out);
+            },
+
+            // 4. Staircase Step Vector Manipulative Module
+            renderStaircaseLab(container) {
+                container.innerHTML = `<h2>🪜 Staircase Explorer</h2><p style="color:var(--text-muted)">Ascend and descend levels sequentially to analyze metric steps.</p>`;
+                
+                const stairs = document.createElement('div');
+                stairs.className = 'staircase-container';
+                
+                const stepsCount = Math.min(AppState.currentLevel.limit, 10);
+                
+                const avatar = document.createElement('div');
+                avatar.className = 'stair-avatar';
+                avatar.id = 'stair-token';
+                avatar.innerHTML = CONFIG.svgTemplates.toy;
+                stairs.appendChild(avatar);
+
+                for(let i=0; i<stepsCount; i++) {
+                    const step = document.createElement('div');
+                    step.className = 'stair-step';
+                    step.style.height = `${(i+1) * (300 / stepsCount)}px`;
+                    step.innerHTML = `<span style="font-size:0.8rem">${CONFIG.ordinals[i].num}</span>`;
+                    
+                    step.onclick = () => {
+                        SoundEngine.play('click');
+                        // Calculate transformation coordinates dynamically
+                        const pctLeft = (i / stepsCount) * 100;
+                        avatar.style.left = `calc(${pctLeft}% + (${600 / stepsCount / 2}px))`;
+                        avatar.style.bottom = `${(i+1) * (300 / stepsCount)}px`;
+                        
+                        document.getElementById('stair-output').innerHTML = `
+                            Climbed to the <b>${CONFIG.ordinals[i].word} step</b> (${CONFIG.ordinals[i].num}). 
+                            Remaining steps up to baseline limit: ${stepsCount - (i+1)}.
+                        `;
+                    };
+                    stairs.appendChild(step);
+                }
+
+                container.appendChild(stairs);
+
+                const out = document.createElement('div');
+                out.className = 'display-panel';
+                out.id = 'stair-output';
+                out.innerHTML = `Select any step tier to change token altitude position instantly.`;
+                container.appendChild(out);
+            },
+
+            // 5. Library Grid Layout Shelf Lab Component
+            renderShelfLab(container) {
+                container.innerHTML = `<h2>📚 Library Shelf Explorer</h2><p style="color:var(--text-muted)">Re-order specific textbooks across catalog slots.</p>`;
+                
+                const shelf = document.createElement('div');
+                shelf.className = 'dropzone-container';
+                shelf.style.background = '#78350f';
+                shelf.style.borderRadius = '8px';
+                shelf.style.padding = '20px';
+                
+                let books = [];
+                for(let i=0; i<Math.min(AppState.currentLevel.limit, 8); i++) books.push(i);
+                books.sort(() => Math.random() - 0.5);
+
+                books.forEach(bId => {
+                    const book = document.createElement('div');
+                    book.className = 'draggable-item';
+                    book.draggable = true;
+                    book.style.background = `hsl(${(bId * 45) % 360}, 70%, 80%)`;
+                    book.style.height = '110px';
+                    book.style.width = '55px';
+                    book.style.border = '2px solid rgba(0,0,0,0.15)';
+                    book.dataset.id = bId;
+                    book.innerHTML = `<div style="font-weight:900; writing-mode: vertical-rl; text-orientation: mixed;">BOOK ${CONFIG.ordinals[bId].num}</div>`;
+                    
+                    book.addEventListener('dragstart', (e) => e.dataTransfer.setData('text', bId));
+                    shelf.appendChild(book);
+                });
+
+                shelf.addEventListener('dragover', (e) => e.preventDefault());
+                shelf.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const draggedId = e.dataTransfer.setData ? e.dataTransfer.getData('text') : null;
+                    const target = e.target.closest('.draggable-item');
+                    if(target) {
+                        const currentArr = Array.from(shelf.children);
+                        const matchNode = currentArr.find(n => n.dataset.id === draggedId);
+                        if(matchNode) shelf.insertBefore(matchNode, target);
+                        SoundEngine.play('click');
+                    }
+                });
+
+                container.appendChild(shelf);
+
+                const out = document.createElement('div');
+                out.className = 'display-panel';
+                out.innerHTML = `Organize books inside the wooden framework case. Left represents standard initial priority order indexes.`;
+                container.appendChild(out);
+            },
+
+            // 6. Dimensional Matrix Grid Position Explorer
+            renderGridLab(container) {
+                container.innerHTML = `<h2>🗺 Grid Coordinate Position Explorer</h2><p style="color:var(--text-muted)">Map double-axis elements using rows and columns configurations.</p>`;
+                
+                const gridOuter = document.createElement('div');
+                gridOuter.className = 'grid-container';
+                
+                const rows = 4;
+                const cols = 4;
+                gridOuter.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+                for(let r=0; r<rows; r++) {
+                    for(let c=0; c<cols; c++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'grid-cell';
+                        if(r === 1 && c === 2) cell.innerHTML = CONFIG.svgTemplates.fruit;
+                        if(r === 2 && c === 0) cell.innerHTML = CONFIG.svgTemplates.ball;
+
+                        cell.onclick = () => {
+                            SoundEngine.play('click');
+                            document.getElementById('grid-output').innerHTML = `
+                                Checked location point: <b>${CONFIG.ordinals[c].word} column</b> inside the <b>${CONFIG.ordinals[r].word} row rowline</b>.
+                            `;
+                        };
+                        gridOuter.appendChild(cell);
+                    }
+                }
+
+                container.appendChild(gridOuter);
+
+                const out = document.createElement('div');
+                out.className = 'display-panel';
+                out.id = 'grid-output';
+                out.innerHTML = `Identify items intersecting multiple axes. Rows scan vertically, columns track horizontal patterns.`;
+                container.appendChild(out);
+            },
+
+            // 7. Context Scenery Environment Framework Modules
+            renderRealWorld(container) {
+                container.innerHTML = `<h2>🌍 Real-Life Scenario Systems</h2><p style="color:var(--text-muted)">Scan embedded layouts directly inside physical ecosystem frameworks.</p>`;
+                
+                const viewport = document.createElement('div');
+                viewport.className = 'scenery-viewport';
+                viewport.style.background = 'linear-gradient(to bottom, #bae6fd, #fef08a)';
+
+                // Draw procedural simple racetrack markings
+                viewport.innerHTML = `
+                    <div style="position:absolute; top:120px; left:0; width:100%; height:8px; background:white; opacity:0.6; stroke-dasharray:10;"></div>
+                    <div style="position:absolute; top:240px; left:0; width:100%; height:8px; background:white; opacity:0.6; stroke-dasharray:10;"></div>
+                `;
+
+                // Add clickable item layers manually mapping distances
+                const spot1 = document.createElement('div');
+                spot1.className = 'hotspot';
+                spot1.style.left = '75%'; spot1.style.top = '80px'; spot1.style.width = '60px';
+                spot1.innerHTML = CONFIG.svgTemplates.car;
+                spot1.onclick = () => { SoundEngine.play('click'); document.getElementById('scene-output').innerHTML = "Blue Car is racing in front: <b>1st Position!</b>"; };
+
+                const spot2 = document.createElement('div');
+                spot2.className = 'hotspot';
+                spot2.style.left = '45%'; spot2.style.top = '180px'; spot2.style.width = '60px';
+                spot2.innerHTML = CONFIG.svgTemplates.ball;
+                spot2.onclick = () => { SoundEngine.play('click'); document.getElementById('scene-output').innerHTML = "Orange rolling ball lagging center track: <b>2nd Position!</b>"; };
+
+                viewport.appendChild(spot1);
+                viewport.appendChild(spot2);
+                container.appendChild(viewport);
+
+                const out = document.createElement('div');
+                out.className = 'display-panel';
+                out.id = 'scene-output';
+                out.innerHTML = `Interact directly with specific object structures tracking horizontal track vector layers.`;
+                container.appendChild(out);
+            },
+
+            // 8. Abbreviations Matrix Match Module Engine
+            renderMatchingMatrix(container) {
+                container.innerHTML = `<h2>🔄 Notation Matching Matrix</h2><p style="color:var(--text-muted)">Pair index structures cleanly against matching text strings.</p>`;
+                
+                const board = document.createElement('div');
+                board.className = 'matching-board';
+
+                const leftCol = document.createElement('div'); leftCol.className = 'match-column';
+                const rightCol = document.createElement('div'); rightCol.className = 'match-column';
+
+                let pool = [];
+                for(let i=0; i<Math.min(AppState.currentLevel.limit, 5); i++) pool.push(CONFIG.ordinals[i]);
+
+                let leftItems = [...pool].sort(() => Math.random() - 0.5);
+                let rightItems = [...pool].sort(() => Math.random() - 0.5);
+
+                let selectedLeft = null;
+                let selectedRight = null;
+
+                leftItems.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'match-card';
+                    card.innerText = item.num;
+                    card.onclick = () => {
+                        SoundEngine.play('click');
+                        leftCol.querySelectorAll('.match-card').forEach(c=>c.classList.remove('selected'));
+                        card.classList.add('selected');
+                        selectedLeft = item;
+                        checkMatch();
+                    };
+                    leftCol.appendChild(card);
+                });
+
+                rightItems.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'match-card';
+                    card.innerText = item.word;
+                    card.onclick = () => {
+                        SoundEngine.play('click');
+                        rightCol.querySelectorAll('.match-card').forEach(c=>c.classList.remove('selected'));
+                        card.classList.add('selected');
+                        selectedRight = item;
+                        checkMatch();
+                    };
+                    rightCol.appendChild(card);
+                });
+
+                function checkMatch() {
+                    if(selectedLeft && selectedRight) {
+                        if(selectedLeft.num === selectedRight.num) {
+                            SoundEngine.play('correct');
+                            leftCol.querySelector('.match-card.selected').classList.add('resolved');
+                            rightCol.querySelector('.match-card.selected').classList.add('resolved');
+                            Celebration.triggerSparkles();
+                        } else {
+                            SoundEngine.play('wrong');
+                            NotificationCenter.trigger('Matching failed. Try matching alternative rows!', 'error');
+                        }
+                        leftCol.querySelectorAll('.match-card').forEach(c=>c.classList.remove('selected'));
+                        rightCol.querySelectorAll('.match-card').forEach(c=>c.classList.remove('selected'));
+                        selectedLeft = null; selectedRight = null;
+                    }
+                }
+
+                board.appendChild(leftCol);
+                board.appendChild(rightCol);
+                container.appendChild(board);
+            },
+
+            // 9. Custom Instructor Sandbox Configuration Builder Panel
+            renderCustomBuilder(container) {
+                container.innerHTML = `
+                    <h2>🎨 Custom Teacher Demonstration Lab</h2>
+                    <p style="color:var(--text-muted)">Configure item parameters manually for tailored class setups.</p>
+                    
+                    <div style="margin:20px 0; display:flex; flex-wrap:wrap; gap:15px; background:rgba(0,0,0,0.02); padding:15px; border-radius:12px; width:100%;">
+                        <label><b>Object Volume count:</b> 
+                            <input type="number" id="custom-count" min="2" max="20" value="${AppState.customObjectCount}" style="padding:6px; width:60px;">
+                        </label>
+                        <label><b>Vector Graphics:</b>
+                            <select id="custom-type" style="padding:6px;">
+                                <option value="car" ${AppState.customObjectType==='car'?'selected':''}>Cars Channel</option>
+                                <option value="child" ${AppState.customObjectType==='child'?'selected':''}>Children Line</option>
+                                <option value="ball" ${AppState.customObjectType==='ball'?'selected':''}>Playground Balls</option>
+                            </select>
+                        </label>
+                        <button class="btn" style="padding:6px 14px; font-size:0.9rem;" onclick="AppEngine.applyCustomBuild()">Generate Workspace</button>
+                    </div>
+                    <div id="custom-output-row" class="object-row"></div>
+                `;
+                this.renderCustomPreview();
+            },
+            applyCustomBuild() {
+                AppState.customObjectCount = parseInt(document.getElementById('custom-count').value) || 5;
+                AppState.customObjectType = document.getElementById('custom-type').value;
+                SoundEngine.play('click');
+                this.renderCustomPreview();
+            },
+            renderCustomPreview() {
+                const row = document.getElementById('custom-output-row');
+                if(!row) return;
+                row.innerHTML = '';
+                for(let i=0; i<Math.min(AppState.customObjectCount, 20); i++) {
+                    const b = document.createElement('div');
+                    b.className = 'interactive-obj';
+                    b.innerHTML = CONFIG.svgTemplates[AppState.customObjectType] + `<div class="obj-label">${CONFIG.ordinals[i].num}</div>`;
+                    row.appendChild(b);
+                }
+            },
+
+            // 10. Interactive Standard Game Selection Hub Module Component
+            renderGamesArcade(container) {
+                container.innerHTML = `<h2>🎲 Integrated Core Games Arcade</h2><p style="color:var(--text-muted)">Select structured algorithmic games below to practice ordinal positions.</p>`;
+                
+                const grid = document.createElement('div');
+                grid.className = 'dashboard-grid';
+                grid.style.width = '100%';
+
+                CONFIG.games.forEach(g => {
+                    const item = document.createElement('div');
+                    item.className = 'glass-card module-card';
+                    item.style.borderLeft = '6px solid var(--purple)';
+                    item.innerHTML = `<h4>${g.name}</h4><span class="badge" style="background:var(--purple);">Launch Interactive Challenge</span>`;
+                    item.onclick = () => GameRuntime.start(g.id, container);
+                    grid.appendChild(item);
+                });
+                container.appendChild(grid);
+            }
+        };
+
+        // Algorithmic Challenge Level Evaluation Game Execution Framework Core
+        const GameRuntime = {
+            activeTargetIndex: 0,
+            start(gameId, container) {
+                SoundEngine.play('click');
+                container.innerHTML = `
+                    <button class="btn" style="background:#64748b; padding:6px 12px; margin-bottom:15px;" onclick="AppEngine.initCurrentModule()">⬅ Quit Game</button>
+                    <h3>Challenge Mode Active</h3>
+                    <div id="game-arena-panel" class="sandbox" style="width:100%; min-height:350px;"></div>
+                `;
+                this.generateRound(gameId);
+            },
+            generateRound(gameId) {
+                const arena = document.getElementById('game-arena-panel');
+                arena.innerHTML = '';
+                
+                const totalOptions = Math.min(AppState.currentLevel.limit, 6);
+                this.activeTargetIndex = Math.floor(Math.random() * totalOptions);
+                
+                const targetObj = CONFIG.ordinals[this.activeTargetIndex];
+
+                const labelPrompt = document.createElement('div');
+                labelPrompt.style.fontSize = '1.4rem';
+                labelPrompt.style.fontWeight = '700';
+                labelPrompt.style.marginBottom = '20px';
+                labelPrompt.innerHTML = `Locate the item currently at the <span style="color:var(--blue); font-weight:900;">${targetObj.word} (${targetObj.num})</span> position slot:`;
+                arena.appendChild(labelPrompt);
+
+                const track = document.createElement('div');
+                track.className = 'object-row';
+
+                const types = Object.keys(CONFIG.svgTemplates);
+                const roundStyle = types[Math.floor(Math.random() * types.length)];
+
+                for(let i=0; i<totalOptions; i++) {
+                    const block = document.createElement('div');
+                    block.className = 'interactive-obj';
+                    block.innerHTML = CONFIG.svgTemplates[roundStyle];
+                    
+                    block.onclick = () => {
+                        if(i === this.activeTargetIndex) {
+                            SoundEngine.play('correct');
+                            block.style.background = '#bbf7d0';
+                            NotificationCenter.trigger('Excellent Accuracy! Position sequence resolved.', 'success');
+                            Celebration.triggerSparkles();
+                            setTimeout(() => this.generateRound(gameId), 1500);
+                        } else {
+                            SoundEngine.play('wrong');
+                            block.style.background = '#fecaca';
+                            NotificationCenter.trigger('Incorrect selection index. Recount slots from left to right!', 'error');
+                        }
+                    };
+                    track.appendChild(block);
+                }
+                arena.appendChild(track);
+            }
+        };
+
+        // Presentation, Projection Smartboard Layer Tools Modules
+        const TeacherTools = {
+            currentTool: 'pointer',
+            canvas: null, ctx: null, drawing: false,
+            init() {
+                this.canvas = document.getElementById('annotation-layer');
+                this.ctx = this.canvas.getContext('2d');
+                this.resizeCanvas();
+                window.addEventListener('resize', () => this.resizeCanvas());
+
+                // Hook Mouse/Touch Events directly to structural canvas interface bounds
+                this.canvas.addEventListener('mousedown', (e)=>this.startDraw(e));
+                this.canvas.addEventListener('mousemove', (e)=>this.draw(e));
+                this.canvas.addEventListener('mouseup', ()=>this.stopDraw());
+                
+                this.canvas.addEventListener('touchstart', (e)=>{ this.startDraw(e.touches[0]); e.preventDefault(); });
+                this.canvas.addEventListener('touchmove', (e)=>{ this.draw(e.touches[0]); e.preventDefault(); });
+                this.canvas.addEventListener('touchend', ()=>this.stopDraw());
+
+                // Track spotlight positional coordinates globally
+                window.addEventListener('mousemove', (e) => {
+                    if(document.getElementById('spotlight').style.display === 'block') {
+                        document.getElementById('spotlight').style.clipPath = `circle(120px at ${e.clientX}px ${e.clientY}px)`;
+                    }
+                });
+            },
+            resizeCanvas() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            },
+            setTool(tool) {
+                SoundEngine.play('click');
+                this.currentTool = tool;
+                document.getElementById('t-pointer').classList.remove('active');
+                document.getElementById('t-draw').classList.remove('active');
+                
+                if(tool === 'draw') {
+                    this.canvas.classList.add('active');
+                    document.getElementById('t-draw').classList.add('active');
+                } else {
+                    this.canvas.classList.remove('active');
+                    document.getElementById('t-pointer').classList.add('active');
+                }
+            },
+            startDraw(e) {
+                if(this.currentTool !== 'draw') return;
+                this.drawing = true;
+                this.ctx.beginPath();
+                this.ctx.moveTo(e.clientX, e.clientY);
+                this.ctx.strokeStyle = '#ef4444';
+                this.ctx.lineWidth = 4;
+                this.ctx.lineCap = 'round';
+            },
+            draw(e) {
+                if(!this.drawing || this.currentTool !== 'draw') return;
+                this.ctx.lineTo(e.clientX, e.clientY);
+                this.ctx.stroke();
+            },
+            stopDraw() { this.drawing = false; },
+            clearDrawing() { SoundEngine.play('click'); this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height); },
+            toggleLabels() {
+                SoundEngine.play('click');
+                AppState.labelsHiddenGlobal = !AppState.labelsHiddenGlobal;
+                const view = document.getElementById('sandbox-viewport');
+                if(view) view.classList.toggle('hide-labels', AppState.labelsHiddenGlobal);
+                NotificationCenter.trigger(AppState.labelsHiddenGlobal ? "Global labels hidden" : "Global labels visible", "info");
+            },
+            triggerRandomization() {
+                SoundEngine.play('click');
+                AppEngine.initCurrentModule();
+                NotificationCenter.trigger("Rescrambled module items", "info");
+            },
+            toggleSpotlight() {
+                SoundEngine.play('click');
+                const s = document.getElementById('spotlight');
+                const active = s.style.display === 'block';
+                s.style.display = active ? 'none' : 'block';
+                document.getElementById('t-spot').classList.toggle('active', !active);
+            },
+            adjustZoom(delta) {
+                SoundEngine.play('click');
+                let cur = parseFloat(document.documentElement.style.getPropertyValue('--zoom-level')) || 1.0;
+                cur = Math.min(Math.max(cur + delta, 0.7), 1.4);
+                document.documentElement.style.setProperty('--zoom-level', cur);
+                document.getElementById('app-container').style.transform = `scale(${cur})`;
+            },
+            toggleFullscreen() {
+                SoundEngine.play('click');
+                if(!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(()=>{});
+                } else {
+                    document.exitFullscreen();
+                }
+            }
+        };
+
+        // Accessibility Interface Configuration Manager Handles Modifiers
+        const Accessibility = {
+            toggleContrast() {
+                SoundEngine.play('click');
+                document.body.classList.toggle('high-contrast');
+            },
+            toggleTextSize() {
+                SoundEngine.play('click');
+                document.body.classList.toggle('large-text');
+            }
+        };
+
+        // Local Storage State Progress Sync Engine Profiles Manager
+        const ProgressTracker = {
+            achievements: { 'explorer': 'First Steps Checked', 'train': 'Locomotive Conductor Mastered' },
+            award(id) {
+                if(!localStorage.getItem(`ach_ord_${id}`)) {
+                    localStorage.setItem(`ach_ord_${id}`, 'true');
+                    SoundEngine.play('unlock');
+                    NotificationCenter.trigger(`🏆 Achievement Unlocked: ${this.achievements[id] || id.toUpperCase()}`, 'success');
+                }
+            },
+            showAchievementsModal() {
+                SoundEngine.play('click');
+                const box = document.getElementById('achievements-list');
+                box.innerHTML = '';
+                Object.keys(this.achievements).forEach(key => {
+                    const unlocked = localStorage.getItem(`ach_ord_${key}`) === 'true';
+                    const item = document.createElement('div');
+                    item.style.padding = '10px';
+                    item.style.borderRadius = '8px';
+                    item.style.background = unlocked ? '#dcfce7' : '#f1f5f9';
+                    item.style.border = unlocked ? '2px solid #22c55e' : '1px solid #cbd5e1';
+                    item.innerHTML = `<b>${unlocked ? '✅' : '🔒'} ${this.achievements[key]}</b>`;
+                    box.appendChild(item);
+                });
+                document.getElementById('stats-modal').style.display = 'flex';
+            }
+        };
+
+        // Fast Client-Side Instanced Floating Confetti Vector Particle Generator Engine
+        const Celebration = {
+            triggerSparkles() {
+                for(let i=0; i<30; i++) {
+                    const el = document.createElement('div');
+                    el.className = 'confetti-piece';
+                    el.style.left = Math.random() * 100 + 'vw';
+                    el.style.background = `hsl(${Math.random()*360}, 100%, 50%)`;
+                    el.style.transform = `scale(${Math.random()*0.8 + 0.4})`;
+                    el.style.animationDelay = Math.random() * 0.4 + 's';
+                    el.style.animationDuration = Math.random() * 2 + 1.5 + 's';
+                    document.body.appendChild(el);
+                    setTimeout(() => el.remove(), 3500);
+                }
+            }
+        };
+
+        // Action Toast Messaging Alert Router Framework
+        const NotificationCenter = {
+            trigger(msg, type='info') {
+                const center = document.getElementById('notification-center');
+                const toast = document.createElement('div');
+                toast.className = 'toast';
+                toast.style.borderLeftColor = type==='success'?'var(--green)':type==='error'?'#ef4444':'var(--blue)';
+                toast.innerHTML = `<span>${type==='success'?'⭐':type==='error'?'❌':'ℹ'}</span> <span>${msg}</span>`;
+                center.appendChild(toast);
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateY(-10px)';
+                    toast.style.transition = 'all 0.4s ease';
+                    setTimeout(() => toast.remove(), 400);
+                }, 3000);
+            }
+        };
+
+        // Window Hardware Resource Initialization Handlers Array
+        window.addEventListener('DOMContentLoaded', () => {
+            UIBuilder.init();
+            TeacherTools.init();
+            
+            // Set Initial Active State on Pointer Mode Selector Tool
+            document.getElementById('t-pointer').classList.add('active');
+        });
+    </script>
+</body>
+</html>

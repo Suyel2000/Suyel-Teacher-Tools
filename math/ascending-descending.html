@@ -1,0 +1,1709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>📈 Ascending & Descending Order Explorer</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #e0f2fe 0%, #e0f2fe 50%, #f3e8ff 100%);
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --card-border: rgba(255, 255, 255, 0.6);
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --color-blue: #3b82f6;
+            --color-green: #10b981;
+            --color-yellow: #f59e0b;
+            --color-orange: #f97316;
+            --color-purple: #8b5cf6;
+            --color-red: #ef4444;
+            --font-scale: 1rem;
+            --shadow-sm: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+            --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
+            --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+        }
+
+        .high-contrast {
+            --bg-gradient: #000000;
+            --card-bg: #121212;
+            --card-border: #ffffff;
+            --text-primary: #ffffff;
+            --text-secondary: #e2e8f0;
+            --color-blue: #2563eb;
+            --color-green: #059669;
+            --color-yellow: #d97706;
+            --color-orange: #ea580c;
+            --color-purple: #7c3aed;
+            --color-red: #dc2626;
+        }
+
+        .large-text {
+            --font-scale: 1.25rem;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-size: var(--font-scale);
+            color: var(--text-primary);
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* App Layout Containers */
+        #app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--card-border);
+            z-index: 100;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 800;
+            font-size: calc(1.2rem * var(--font-scale));
+            cursor: pointer;
+        }
+
+        .accessibility-controls {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-utility {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-utility:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-utility.active {
+            background: var(--color-blue);
+            color: white;
+            border-color: var(--color-blue);
+        }
+
+        #main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 2rem;
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .app-view {
+            display: none;
+            flex-direction: column;
+            animation: fadeIn 0.4s ease-out forwards;
+            height: 100%;
+            flex: 1;
+        }
+
+        .app-view.active {
+            display: flex;
+        }
+
+        /* Glassmorphism Panel Component */
+        .glass-panel {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+        }
+
+        /* Typography & Custom Badges */
+        h1, h2, h3 {
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .view-title {
+            font-size: calc(2rem * var(--font-scale));
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+
+        .view-subtitle {
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: calc(1.1rem * var(--font-scale));
+        }
+
+        /* Welcome Screen View */
+        #welcome-view {
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 4rem 1rem;
+        }
+
+        .hero-title {
+            font-size: calc(3.5rem * var(--font-scale));
+            background: linear-gradient(45deg, var(--color-blue), var(--color-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05));
+        }
+
+        .hero-banner {
+            margin: 3rem 0;
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .floating-card {
+            background: white;
+            padding: 1.5rem 2rem;
+            border-radius: 20px;
+            font-size: 2.5rem;
+            font-weight: 800;
+            box-shadow: var(--shadow-lg);
+            animation: float 4s ease-in-out infinite;
+            border: 2px solid rgba(255,255,255,0.8);
+        }
+
+        .floating-card:nth-child(2) { animation-delay: 1s; color: var(--color-green); }
+        .floating-card:nth-child(3) { animation-delay: 2s; color: var(--color-orange); }
+        .floating-card:nth-child(4) { animation-delay: 3s; color: var(--color-purple); }
+
+        .btn-primary-cta {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            font-size: calc(1.5rem * var(--font-scale));
+            font-weight: 700;
+            padding: 1.2rem 3.5rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.4);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .btn-primary-cta:hover {
+            transform: scale(1.05) translateY(-3px);
+            box-shadow: 0 15px 30px rgba(37, 99, 235, 0.5);
+        }
+
+        /* Unified Grid Frameworks */
+        .grid-levels, .grid-modules {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+            width: 100%;
+        }
+
+        .card-selection {
+            background: var(--card-bg);
+            border: 2px solid var(--card-border);
+            border-radius: 24px;
+            padding: 2rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+        }
+
+        .card-selection:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-lg);
+            border-color: currentColor;
+        }
+
+        .card-level-badge {
+            align-self: flex-start;
+            padding: 0.4rem 1rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 1rem;
+        }
+
+        .card-title {
+            font-size: calc(1.4rem * var(--font-scale));
+            margin-bottom: 0.5rem;
+        }
+
+        .card-desc {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        /* Work Station Framework Styles */
+        .workspace-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media (min-width: 1024px) {
+            .workspace-layout {
+                grid-template-columns: 3fr 1fr;
+            }
+        }
+
+        .control-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            background: rgba(255,255,255,0.5);
+            padding: 1rem;
+            border-radius: 16px;
+            align-items: center;
+        }
+
+        .interactive-zone {
+            min-height: 350px;
+            background: rgba(255, 255, 255, 0.5);
+            border: 2px dashed rgba(0,0,0,0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* Virtual Manipulative Blocks/Cards */
+        .manipulative-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 2.5rem;
+        }
+
+        .sort-slot {
+            width: 100px;
+            height: 120px;
+            border: 3px dashed rgba(0,0,0,0.15);
+            border-radius: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .sort-slot.drag-over {
+            border-color: var(--color-purple);
+            background: rgba(139, 92, 246, 0.15);
+            transform: scale(1.08);
+            box-shadow: var(--shadow-md);
+        }
+
+        .number-card {
+            width: 90px;
+            height: 110px;
+            background: white;
+            border: 2px solid #cbd5e1;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.8rem;
+            font-weight: 800;
+            box-shadow: var(--shadow-md);
+            cursor: grab;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            touch-action: none;
+        }
+
+        .number-card:active {
+            cursor: grabbing;
+        }
+
+        .number-card.dragging {
+            opacity: 0.4;
+            transform: scale(0.9);
+            border-style: dashed;
+        }
+
+        .number-card.selected {
+            border-color: var(--color-blue);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.4);
+            transform: scale(1.05);
+        }
+
+        .number-card.correct {
+            border-color: var(--color-green);
+            background: #f0fdf4;
+            color: #16a34a;
+        }
+
+        .number-card.wrong {
+            border-color: var(--color-red);
+            background: #fef2f2;
+            color: #dc2626;
+            animation: shake 0.4s ease;
+        }
+
+        /* SVG Number Line Explorer Styles */
+        .number-line-svg {
+            width: 100%;
+            height: 150px;
+            overflow: visible;
+        }
+
+        .nl-line {
+            stroke: var(--text-primary);
+            stroke-width: 4;
+            stroke-linecap: round;
+        }
+
+        .nl-tick {
+            stroke: var(--text-secondary);
+            stroke-width: 2;
+        }
+
+        .nl-label {
+            font-weight: 600;
+            font-size: 14px;
+            fill: var(--text-primary);
+            text-anchor: middle;
+        }
+
+        .nl-node {
+            fill: var(--color-purple);
+            stroke: white;
+            stroke-width: 3;
+            cursor: pointer;
+            transition: r 0.2s;
+        }
+
+        .nl-node:hover {
+            r: 12;
+        }
+
+        /* Place Value Chart System */
+        .pv-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+        }
+
+        .pv-table th {
+            background: #f1f5f9;
+            padding: 1rem;
+            font-weight: 700;
+            border: 1px solid #e2e8f0;
+        }
+
+        .pv-table td {
+            padding: 1.2rem;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            border: 1px solid #e2e8f0;
+        }
+
+        .pv-highlight {
+            background: rgba(245, 158, 11, 0.2) !important;
+            animation: pulseGlow 1.5s infinite ease-in-out;
+        }
+
+        /* Quantity Simulation Containers */
+        .quantity-cluster {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+            padding: 1rem;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            min-height: 120px;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        /* Dynamic SVG Object Elements */
+        .svg-object {
+            width: 32px;
+            height: 32px;
+            transition: all 0.3s;
+        }
+
+        /* Comparative Engine Sign Blocks */
+        .compare-sign-box {
+            font-size: 3rem;
+            font-weight: 800;
+            padding: 1rem 2rem;
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--shadow-sm);
+            min-width: 80px;
+            text-align: center;
+            color: var(--color-blue);
+        }
+
+        /* Teacher Smartboard Toolkit Overlay Drawer */
+        #teacher-toolbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            color: white;
+            padding: 0.8rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 2000;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #teacher-toolbar.open {
+            transform: translateY(0);
+        }
+
+        .teacher-tools-cluster {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-teacher {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 0.5rem 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn-teacher:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .btn-teacher.active {
+            background: var(--color-yellow);
+            color: #000;
+        }
+
+        .teacher-toggle-handle {
+            position: fixed;
+            bottom: 0;
+            right: 2rem;
+            background: #0f172a;
+            color: white;
+            padding: 0.6rem 1.5rem;
+            border-radius: 12px 12px 0 0;
+            cursor: pointer;
+            z-index: 1999;
+            font-weight: 700;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-bottom: none;
+        }
+
+        /* Smartboard Transparent Sketch Overlay Canvas */
+        #annotation-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1500;
+            pointer-events: none;
+            display: none;
+        }
+
+        #annotation-canvas.active {
+            pointer-events: auto;
+            display: block;
+            cursor: crosshair;
+        }
+
+        /* Achievement Banner Modal System */
+        .achievement-popup {
+            position: fixed;
+            top: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #1e1b4b 0%, #311042 100%);
+            color: white;
+            padding: 1.5rem 3rem;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            z-index: 3000;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            border: 2px solid var(--color-yellow);
+            transition: top 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .achievement-popup.show {
+            top: 40px;
+        }
+
+        /* Unified Sidebar Panel Component */
+        .sidebar-panel {
+            background: rgba(255,255,255,0.6);
+            border-radius: 20px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            border: 1px solid var(--card-border);
+        }
+
+        /* Particle / Confetti Layer Rendering Context */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 2500;
+        }
+
+        /* Form Controls */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            width: 100%;
+        }
+
+        .form-group label {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .form-control {
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            border: 2px solid #cbd5e1;
+            font-size: 1rem;
+            width: 100%;
+            background: white;
+        }
+
+        /* Core Animation Keyframes */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; transform: scale(1.02); }
+        }
+
+        /* Utility Helpers */
+        .mt-4 { margin-top: 1rem; }
+        .w-full { width: 100%; }
+        .text-center { text-align: center; }
+        .flex-row-center { display: flex; justify-content: center; align-items: center; gap: 1rem; }
+
+        /* Train Game Component Styling */
+        .train-engine {
+            width: 110px;
+            height: 90px;
+            background: var(--color-red);
+            border-radius: 16px 40px 12px 12px;
+            position: relative;
+            box-shadow: var(--shadow-md);
+        }
+        .train-engine::after {
+            content: '🚂';
+            font-size: 2.5rem;
+            position: absolute;
+            top: 15px;
+            left: 25px;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <canvas id="annotation-canvas"></canvas>
+
+    <header id="app-header">
+        <div class="brand" onclick="App.router.home()">
+            <span>📈</span>
+            <span>Order Explorer</span>
+        </div>
+        <div class="accessibility-controls">
+            <button class="btn-utility" onclick="App.accessibility.toggleContrast()" id="btn-contrast-toggle">🌓 High Contrast</button>
+            <button class="btn-utility" onclick="App.accessibility.toggleTextSize()" id="btn-text-toggle">🔎 Large Text</button>
+            <button class="btn-utility active" onclick="App.audio.toggle()" id="btn-audio-toggle">🔊 Sound ON</button>
+            <button class="btn-utility" onclick="App.router.home()">🏠 Home</button>
+        </div>
+    </header>
+
+    <main id="main-container">
+
+        <section id="view-welcome" class="app-view active">
+            <h1 class="hero-title">📈 Ascending & Descending Order Explorer</h1>
+            <p class="view-subtitle" style="font-size: 1.5rem;">Compare • Arrange • Explore • Learn</p>
+            <div class="hero-banner">
+                <div class="floating-card">7</div>
+                <div class="floating-card">24</div>
+                <div class="floating-card">156</div>
+                <div class="floating-card">892</div>
+            </div>
+            <button class="btn-primary-cta" onclick="App.router.levels()">▶ Start Learning</button>
+        </section>
+
+        <section id="view-levels" class="app-view">
+            <h2 class="view-title">Choose Your Learning Level</h2>
+            <p class="view-subtitle">Select a structural counting range to begin exploring</p>
+            <div class="grid-levels" id="level-cards-container"></div>
+        </section>
+
+        <section id="view-modules" class="app-view">
+            <h2 class="view-title" id="module-hub-title">Learning Modules</h2>
+            <p class="view-subtitle">Select an interactive dynamic activity manipulative</p>
+            <div class="grid-modules" id="module-cards-container"></div>
+        </section>
+
+        <section id="view-workspace" class="app-view">
+            <h2 class="view-title" id="workspace-title">Lab Engine Workspace</h2>
+            <p class="view-subtitle" id="workspace-subtitle">Interact with the virtual models directly</p>
+            
+            <div class="workspace-layout">
+                <div class="glass-panel">
+                    <div class="control-panel" id="workspace-controls"></div>
+
+                    <div class="interactive-zone" id="workspace-zone"></div>
+                </div>
+
+                <div class="sidebar-panel">
+                    <h3 class="text-center">Lab Status</h3>
+                    <div id="sidebar-stats-box" style="background: white; padding: 1rem; border-radius: 12px; font-weight: bold; text-align: center;">
+                        Active Progression
+                    </div>
+                    <button class="btn-utility w-full" style="justify-content: center; background: var(--color-green); color: white;" onclick="App.engine.evaluateCurrentState()">✔️ Verify Layout</button>
+                    <button class="btn-utility w-full" style="justify-content: center; background: #64748b; color: white;" onclick="App.engine.resetModuleState()">🔄 Refresh Set</button>
+                    <button class="btn-utility w-full" style="justify-content: center;" onclick="App.router.modules()">🔙 Switch Module</button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div class="teacher-toggle-handle" onclick="App.teacherMode.toggleDrawer()">👨‍🏫 Teacher Board Kit</div>
+    <div id="teacher-toolbar">
+        <span style="font-weight: 800; color: var(--color-yellow);">SMARTBOARD CONTROLS:</span>
+        <div class="teacher-tools-cluster">
+            <button class="btn-teacher" onclick="App.teacherMode.autoSolve()">⚡ Auto Arrange</button>
+            <button class="btn-teacher" id="btn-tool-annotation" onclick="App.teacherMode.toggleAnnotation()">✏️ Canvas Write</button>
+            <button class="btn-teacher" onclick="App.teacherMode.clearAnnotation()">🗑️ Clear Notes</button>
+            <button class="btn-teacher" onclick="App.teacherMode.toggleSpotlight()">🔦 Max/Min Spotlight</button>
+            <button class="btn-teacher" onclick="App.teacherMode.toggleFullscreen()">🖥️ Fullscreen</button>
+        </div>
+    </div>
+
+    <div class="achievement-popup" id="achievement-toast">
+        <div style="font-size: 3rem;" id="toast-icon">🏆</div>
+        <div>
+            <h3 style="color: var(--color-yellow); margin-bottom: 0.2rem;">Unlocked Achievement!</h3>
+            <p id="toast-title" style="font-weight: 700; font-size: 1.1rem;"></p>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * Global Application State Management Store and Interface Core Architecture
+         */
+        const App = {
+            state: {
+                currentLevel: null,
+                currentModule: null,
+                selectedCardIndex: null,
+                numbersData: [],
+                userOrder: [],
+                soundEnabled: true,
+                highContrast: false,
+                largeText: false,
+                customNumbers: null,
+                customDirection: 'ascending',
+                achievements: [],
+                stats: { completedSets: 0 }
+            },
+
+            // Native CSS-Engine Multi-Channel Synthesis Driver Block without Static Assets
+            audio: {
+                ctx: null,
+                init() {
+                    if(!this.ctx) {
+                        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                },
+                play(type) {
+                    if(!App.state.soundEnabled) return;
+                    this.init();
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    if(type === 'click') {
+                        osc.type = 'sine'; osc.frequency.setValueAtTime(400, now);
+                        gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                        osc.start(now); osc.stop(now + 0.1);
+                    } else if(type === 'snap') {
+                        osc.type = 'triangle'; osc.frequency.setValueAtTime(220, now);
+                        gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                        osc.start(now); osc.stop(now + 0.08);
+                    } else if(type === 'correct') {
+                        osc.type = 'sine'; osc.frequency.setValueAtTime(523.25, now); // C5
+                        osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                        osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+                        gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.02, now + 0.4);
+                        osc.start(now); osc.stop(now + 0.4);
+                    } else if(type === 'wrong') {
+                        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now);
+                        osc.frequency.linearRampToValueAtTime(100, now + 0.25);
+                        gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                        osc.start(now); osc.stop(now + 0.3);
+                    } else if(type === 'celebrate') {
+                        osc.type = 'sine'; osc.frequency.setValueAtTime(880, now);
+                        gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                        osc.start(now); osc.stop(now + 0.5);
+                    }
+                },
+                toggle() {
+                    App.state.soundEnabled = !App.state.soundEnabled;
+                    const btn = document.getElementById('btn-audio-toggle');
+                    if(App.state.soundEnabled) {
+                        btn.textContent = "🔊 Sound ON";
+                        btn.classList.add('active');
+                    } else {
+                        btn.textContent = "🔇 Sound OFF";
+                        btn.classList.remove('active');
+                    }
+                }
+            },
+
+            // Navigation Framework System Routing Core
+            router: {
+                switchView(viewId) {
+                    App.audio.play('click');
+                    document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
+                    document.getElementById(viewId).classList.add('active');
+                    window.scrollTo(0,0);
+                },
+                home() { this.switchView('view-welcome'); },
+                levels() {
+                    App.levels.renderCards();
+                    this.switchView('view-levels');
+                },
+                modules() {
+                    App.modules.renderCards();
+                    this.switchView('view-modules');
+                },
+                workspace(moduleId) {
+                    App.state.currentModule = moduleId;
+                    App.engine.initializeWorkspace();
+                    this.switchView('view-workspace');
+                }
+            },
+
+            // Accessibility Properties Configuration Modules
+            accessibility: {
+                toggleContrast() {
+                    App.state.highContrast = !App.state.highContrast;
+                    document.body.classList.toggle('high-contrast', App.state.highContrast);
+                    document.getElementById('btn-contrast-toggle').classList.toggle('active', App.state.highContrast);
+                },
+                toggleTextSize() {
+                    App.state.largeText = !App.state.largeText;
+                    document.body.classList.toggle('large-text', App.state.largeText);
+                    document.getElementById('btn-text-toggle').classList.toggle('active', App.state.largeText);
+                }
+            },
+
+            // Setup Data Parameters Mapped Across Curriculums
+            levels: {
+                data: [
+                    { id: 1, title: 'Level 1 – Beginner Units', desc: 'Arrange 2–3 numbers ranging up to 10. Perfect for Primary Class 1.', min: 0, max: 10, count: 3, color: 'var(--color-green)' },
+                    { id: 2, title: 'Level 2 – Intermediate Units', desc: 'Arrange 3–5 numbers ranging up to 20. Optimized for Class 1–2.', min: 0, max: 20, count: 4, color: 'var(--color-blue)' },
+                    { id: 3, title: 'Level 3 – Elementary Base', desc: 'Arrange 4–6 numbers ranging up to 100. Targeted for Class 2–3.', min: 0, max: 100, count: 5, color: 'var(--color-yellow)' },
+                    { id: 4, title: 'Level 4 – Advanced Base', desc: 'Arrange 5–8 numbers up to 1,000 using Place Value maps. Ideal for Class 3–4.', min: 0, max: 1000, count: 6, color: 'var(--color-orange)' },
+                    { id: 5, title: 'Level 5 – Progressive Bounds', desc: 'Arrange 6–10 mixed complex numbers up to 9,999. Engineered for Class 4–5.', min: 0, max: 9999, count: 7, color: 'var(--color-red)' },
+                    { id: 6, title: 'Level 6 – Master Challenge', desc: 'Random structures, multi-variant lengths, real-world data tracking for advanced math wizards.', min: 100, max: 9999, count: 8, color: 'var(--color-purple)' }
+                ],
+                renderCards() {
+                    const grid = document.getElementById('level-cards-container');
+                    grid.innerHTML = '';
+                    this.data.forEach(lvl => {
+                        const card = document.createElement('div');
+                        card.className = 'card-selection';
+                        card.style.borderColor = 'rgba(0,0,0,0.05)';
+                        card.onclick = () => {
+                            App.state.currentLevel = lvl;
+                            App.router.modules();
+                        };
+
+                        card.innerHTML = `
+                            <div class="card-level-badge" style="background:${lvl.color}">Level ${lvl.id}</div>
+                            <h3 class="card-title">${lvl.title}</h3>
+                            <p class="card-desc">${lvl.desc}</p>
+                        `;
+                        grid.appendChild(card);
+                    });
+                }
+            },
+
+            // Dynamic Interaction Module Configuration Blocks
+            modules: {
+                data: [
+                    { id: 'ascending', title: '📈 Ascending Builder', desc: 'Drag-and-drop structural tokens from Smallest to Largest.' },
+                    { id: 'descending', title: '📉 Descending Builder', desc: 'Sort virtual card items structurally from Largest to Smallest.' },
+                    { id: 'compare', title: '🔢 Compare Prior Model', desc: 'Evaluate relational values using logical signs (<, =, >) beforehand.' },
+                    { id: 'numberline', title: '📏 Number Line Explorer', desc: 'Map values across dynamic variable coordinate intervals.' },
+                    { id: 'placevalue', title: '🧱 Place Value Explorer', desc: 'Deconstruct internal structural units before verifying array paths.' },
+                    { id: 'quantities', title: '🍎 Quantities Comparator', desc: 'Arrange geometric token arrays visually by overall visual volume.' },
+                    { id: 'realworld', title: '🌍 Real-Life Systems', desc: 'Sort application problems based on structural physical entities.' },
+                    { id: 'games', title: '🎲 Train Engine Arcade', desc: 'Solve rapid math sequences inside algorithmic arcade engines.' },
+                    { id: 'custom', title: '🎨 Teacher Activity Builder', desc: 'Build completely personalized worksheet models instantly.' }
+                ],
+                renderCards() {
+                    const grid = document.getElementById('module-cards-container');
+                    grid.innerHTML = '';
+                    document.getElementById('module-hub-title').textContent = `Target Range: ${App.state.currentLevel.title}`;
+                    
+                    this.data.forEach(mod => {
+                        const card = document.createElement('div');
+                        card.className = 'card-selection';
+                        card.onclick = () => App.router.workspace(mod.id);
+                        card.innerHTML = `
+                            <h3 class="card-title" style="color:var(--color-purple)">${mod.title}</h3>
+                            <p class="card-desc">${mod.desc}</p>
+                        `;
+                        grid.appendChild(card);
+                    });
+                }
+            },
+
+            // Core Math Structural Engine Simulation Environment Generators
+            engine: {
+                initializeWorkspace() {
+                    const lvl = App.state.currentLevel;
+                    const modId = App.state.currentModule;
+                    
+                    // Header Status Tracking Engine Configuration Updates
+                    document.getElementById('workspace-title').textContent = App.modules.data.find(m => m.id === modId).title;
+                    document.getElementById('workspace-subtitle').textContent = `Manipulating parameters configured inside Level ${lvl.id}`;
+                    
+                    // Refresh Internal Random Element Store Arrays
+                    if (App.state.customNumbers) {
+                        App.state.numbersData = [...App.state.customNumbers];
+                    } else {
+                        App.state.numbersData = [];
+                        while(App.state.numbersData.length < lvl.count) {
+                            let n = Math.floor(Math.random() * (lvl.max - lvl.min + 1)) + lvl.min;
+                            if(!App.state.numbersData.includes(n)) App.state.numbersData.push(n);
+                        }
+                    }
+                    
+                    App.state.userOrder = new Array(App.state.numbersData.length).fill(null);
+                    App.state.selectedCardIndex = null;
+
+                    // Setup Configuration Options Controls Panel
+                    this.buildWorkspaceControls();
+
+                    // Render Sub-Module Content Elements 
+                    this.renderActiveModuleZone();
+                    this.updateSidebarStats();
+                },
+
+                resetModuleState() {
+                    App.state.customNumbers = null;
+                    this.initializeWorkspace();
+                },
+
+                updateSidebarStats() {
+                    document.getElementById('sidebar-stats-box').innerHTML = `
+                        <div style="font-size:0.9rem; color:var(--text-secondary)">Sets Completed</div>
+                        <div style="font-size:2rem; color:var(--color-purple)">${App.state.stats.completedSets}</div>
+                    `;
+                },
+
+                buildWorkspaceControls() {
+                    const panel = document.getElementById('workspace-controls');
+                    panel.innerHTML = '';
+
+                    if(App.state.currentModule === 'ascending' || App.state.currentModule === 'descending') {
+                        panel.innerHTML = `
+                            <span>Adjust Card Density:</span>
+                            <button class="btn-utility" onclick="App.engine.updateCardDensity(3)">3 Cards</button>
+                            <button class="btn-utility" onclick="App.engine.updateCardDensity(5)">5 Cards</button>
+                            <button class="btn-utility" onclick="App.engine.updateCardDensity(8)">8 Cards</button>
+                        `;
+                    } else if(App.state.currentModule === 'custom') {
+                        panel.innerHTML = `<span>Personalized Workspace Formulation Configuration Parameters</span>`;
+                    } else {
+                        panel.innerHTML = `<span>Dynamic Virtual Manipulative Sandbox Active Mode</span>`;
+                    }
+                },
+
+                updateCardDensity(count) {
+                    App.state.currentLevel.count = count;
+                    this.initializeWorkspace();
+                },
+
+                // Universal Mobile & Smartboard Responsive Drag-and-Drop Implementation
+                renderSortingWorkspace(container, direction) {
+                    const titleText = direction === 'ascending' ? "Smallest ➡️ Largest" : "Largest ➡️ Smallest";
+                    container.innerHTML = `
+                        <h3 style="margin-bottom:1.5rem; color:var(--color-blue)">${titleText}</h3>
+                        <p style="font-size:0.9rem; color:var(--text-secondary); margin-bottom:1rem;">Drag the cards into the correct empty slot below, or tap a card then tap a slot!</p>
+                        <div class="manipulative-container" id="source-pool-row"></div>
+                        <div style="width:100%; height:2px; background:rgba(0,0,0,0.1); margin:1rem 0;"></div>
+                        <div class="manipulative-container" id="target-slots-row"></div>
+                    `;
+
+                    const srcRow = document.getElementById('source-pool-row');
+                    const tgtRow = document.getElementById('target-slots-row');
+
+                    // Draw Selection Bank Initial Layout Items with Draggable capabilities
+                    App.state.numbersData.forEach((num, idx) => {
+                        const card = document.createElement('div');
+                        card.className = 'number-card';
+                        card.textContent = num;
+                        card.dataset.index = idx;
+                        card.setAttribute('draggable', 'true');
+
+                        // Tap / Click Fallback Route
+                        card.onclick = (e) => {
+                            e.stopPropagation();
+                            App.engine.handleCardSelection(idx, card);
+                        };
+
+                        // Desktop / Smartboard Native Drag Events Pipeline
+                        card.addEventListener('dragstart', (e) => {
+                            App.state.selectedCardIndex = idx;
+                            card.classList.add('dragging');
+                            e.dataTransfer.setData('text/plain', idx);
+                        });
+
+                        card.addEventListener('dragend', () => {
+                            card.classList.remove('dragging');
+                        });
+
+                        // Advanced Mobile / Tablet Custom Touch Drag Simulator Layer
+                        card.addEventListener('touchstart', (e) => {
+                            App.state.selectedCardIndex = idx;
+                            document.querySelectorAll('#source-pool-row .number-card').forEach(c => c.classList.remove('selected'));
+                            card.classList.add('selected');
+                        }, {passive: true});
+
+                        srcRow.appendChild(card);
+                    });
+
+                    // Draw Empty Placement Targets Layout Boxes with Drag Listening Zone overrides
+                    App.state.numbersData.forEach((_, idx) => {
+                        const slot = document.createElement('div');
+                        slot.className = 'sort-slot';
+                        slot.textContent = `Slot ${idx + 1}`;
+                        slot.dataset.slotIndex = idx;
+
+                        // Tap Slot Placement Pipeline
+                        slot.onclick = () => App.engine.handleSlotPlacement(idx, slot);
+
+                        // Drop Handling Events Pipelines
+                        slot.addEventListener('dragover', (e) => {
+                            e.preventDefault();
+                            slot.classList.add('drag-over');
+                        });
+
+                        slot.addEventListener('dragenter', (e) => {
+                            e.preventDefault();
+                            slot.classList.add('drag-over');
+                        });
+
+                        slot.addEventListener('dragleave', () => {
+                            slot.classList.remove('drag-over');
+                        });
+
+                        slot.addEventListener('drop', (e) => {
+                            e.preventDefault();
+                            slot.classList.remove('drag-over');
+                            App.engine.handleSlotPlacement(idx, slot);
+                        });
+
+                        // Mobile Custom Touch Routing Strategy (Tap-to-Drop support target helper)
+                        slot.addEventListener('touchend', () => {
+                            if (App.state.selectedCardIndex !== null) {
+                                App.engine.handleSlotPlacement(idx, slot);
+                            }
+                        });
+
+                        tgtRow.appendChild(slot);
+                    });
+                },
+
+                handleCardSelection(idx, cardElement) {
+                    App.audio.play('click');
+                    document.querySelectorAll('#source-pool-row .number-card').forEach(c => c.classList.remove('selected'));
+                    
+                    // Verify item hasn't been placed previously
+                    if(App.state.userOrder.includes(App.state.numbersData[idx])) return;
+
+                    App.state.selectedCardIndex = idx;
+                    cardElement.classList.add('selected');
+                },
+
+                handleSlotPlacement(slotIdx, slotElement) {
+                    if(App.state.selectedCardIndex === null) return;
+                    
+                    App.audio.play('snap');
+                    const val = App.state.numbersData[App.state.selectedCardIndex];
+                    
+                    // Fill index position state maps
+                    App.state.userOrder[slotIdx] = val;
+                    slotElement.textContent = val;
+                    slotElement.style.background = "white";
+                    slotElement.style.fontSize = "1.8rem";
+                    slotElement.style.fontWeight = "800";
+                    slotElement.style.borderStyle = "solid";
+                    slotElement.style.color = "var(--color-blue)";
+
+                    // Soft Hide Source Item Node smoothly
+                    const srcCard = document.querySelector(`#source-pool-row .number-card[data-index="${App.state.selectedCardIndex}"]`);
+                    if(srcCard) {
+                        srcCard.style.opacity = '0.3';
+                        srcCard.classList.remove('selected');
+                    }
+
+                    App.state.selectedCardIndex = null;
+                },
+
+                // Master Routing Controller Map
+                renderActiveModuleZone() {
+                    const zone = document.getElementById('workspace-zone');
+                    zone.innerHTML = '';
+                    const modId = App.state.currentModule;
+
+                    if(modId === 'ascending' || modId === 'descending') {
+                        this.renderSortingWorkspace(zone, modId);
+                    } else if(modId === 'compare') {
+                        this.renderCompareWorkspace(zone);
+                    } else if(modId === 'numberline') {
+                        this.renderNumberLineWorkspace(zone);
+                    } else if(modId === 'placevalue') {
+                        this.renderPlaceValueWorkspace(zone);
+                    } else if(modId === 'quantities') {
+                        this.renderQuantitiesWorkspace(zone);
+                    } else if(modId === 'realworld') {
+                        this.renderRealWorldWorkspace(zone);
+                    } else if(modId === 'games') {
+                        this.renderTrainGameWorkspace(zone);
+                    } else if(modId === 'custom') {
+                        this.renderTeacherBuilderWorkspace(zone);
+                    }
+                },
+
+                // Evaluates Workspace Layout with Instant Structural Element Error Correction Feedback Loops
+                evaluateCurrentState() {
+                    const modId = App.state.currentModule;
+                    let sortedCorrectly = [];
+
+                    if(modId === 'ascending' || (modId === 'custom' && App.state.customDirection === 'ascending')) {
+                        sortedCorrectly = [...App.state.numbersData].sort((a,b)=>a-b);
+                    } else if(modId === 'descending' || (modId === 'custom' && App.state.customDirection === 'descending')) {
+                        sortedCorrectly = [...App.state.numbersData].sort((a,b)=>b-a);
+                    } else if(modId === 'compare' || modId === 'numberline' || modId === 'placevalue' || modId === 'quantities' || modId === 'realworld' || modId === 'games') {
+                        App.audio.play('correct');
+                        App.celebration.burst();
+                        App.state.stats.completedSets++;
+                        this.updateSidebarStats();
+                        App.achievements.checkTriggers();
+                        alert("Great Exploration job! Configuration structures look perfect.");
+                        return;
+                    }
+
+                    // Check exact sequence positioning validity
+                    let pass = true;
+                    const slots = document.querySelectorAll('#target-slots-row .sort-slot');
+                    
+                    for(let i=0; i<sortedCorrectly.length; i++) {
+                        if(App.state.userOrder[i] !== sortedCorrectly[i]) {
+                            pass = false;
+                            if(slots[i]) {
+                                slots[i].style.borderColor = "var(--color-red)";
+                                slots[i].style.color = "var(--color-red)";
+                            }
+                        } else {
+                            if(slots[i]) {
+                                slots[i].style.borderColor = "var(--color-green)";
+                                slots[i].style.color = "var(--color-green)";
+                            }
+                        }
+                    }
+
+                    if(pass) {
+                        App.audio.play('correct');
+                        App.celebration.burst();
+                        App.state.stats.completedSets++;
+                        this.updateSidebarStats();
+                        App.achievements.checkTriggers();
+                    } else {
+                        App.audio.play('wrong');
+                    }
+                },
+
+                // Interactive Comparative Logic Mod View Generator
+                renderCompareWorkspace(container) {
+                    const valA = App.state.numbersData[0] || 12;
+                    const valB = App.state.numbersData[1] || 45;
+                    
+                    container.innerHTML = `
+                        <h3 style="margin-bottom:2rem;">Evaluate & Choose the Correct Operational Sign</h3>
+                        <div class="flex-row-center" style="gap: 3rem;">
+                            <div class="number-card" style="width:130px; height:150px; font-size:2.5rem; cursor:default;">${valA}</div>
+                            <div class="compare-sign-box" id="active-sign-slot">?</div>
+                            <div class="number-card" style="width:130px; height:150px; font-size:2.5rem; cursor:default;">${valB}</div>
+                        </div>
+                        <div class="flex-row-center mt-4" style="margin-top:3rem;">
+                            <button class="btn-utility" style="font-size:1.5rem; padding:1rem 2rem;" onclick="App.engine.verifySign('<', ${valA}, ${valB})">&lt;</button>
+                            <button class="btn-utility" style="font-size:1.5rem; padding:1rem 2rem;" onclick="App.engine.verifySign('=', ${valA}, ${valB})">=</button>
+                            <button class="btn-utility" style="font-size:1.5rem; padding:1rem 2rem;" onclick="App.engine.verifySign('>', ${valA}, ${valB})">&gt;</button>
+                        </div>
+                        <p id="compare-explanation-box" style="margin-top:2rem; font-weight:600; color:var(--text-secondary); text-align:center; max-width:600px;"></p>
+                    `;
+                },
+
+                verifySign(sign, a, b) {
+                    const slot = document.getElementById('active-sign-slot');
+                    const exp = document.getElementById('compare-explanation-box');
+                    slot.textContent = sign;
+
+                    let correctSign = '=';
+                    if(a < b) correctSign = '<';
+                    if(a > b) correctSign = '>';
+
+                    if(sign === correctSign) {
+                        App.audio.play('correct');
+                        slot.style.color = "var(--color-green)";
+                        exp.innerHTML = `✨ Correct! Because ${a} sits leftward relative to ${b} inside positional sequencing metrics charts.`;
+                    } else {
+                        App.audio.play('wrong');
+                        slot.style.color = "var(--color-red)";
+                        exp.innerHTML = `❌ Try again. Evaluate leftmost positional columns closely.`;
+                    }
+                },
+
+                // Interactive Responsive Vector SVG Number Line Workspace Module Engine
+                renderNumberLineWorkspace(container) {
+                    const lvl = App.state.currentLevel;
+                    container.innerHTML = `
+                        <h3 style="margin-bottom:1.5rem;">Drag tokens directly to coordinate slots on the Number Line</h3>
+                        <svg class="number-line-svg" id="nl-canvas" viewBox="0 0 800 150">
+                            <line x1="50" y1="75" x2="750" y2="75" class="nl-line" />
+                            <polygon points="750,70 765,75 750,80" fill="currentColor"/>
+                            <polygon points="50,70 35,75 50,80" fill="currentColor"/>
+                        </svg>
+                        <div class="manipulative-container" id="nl-card-pool" style="margin-top:2rem;"></div>
+                    `;
+
+                    const svg = document.getElementById('nl-canvas');
+                    const pool = document.getElementById('nl-card-pool');
+
+                    const segments = 5;
+                    const stepVal = (lvl.max - lvl.min) / segments;
+                    const pixelSpread = 700 / segments;
+
+                    for(let i=0; i<=segments; i++) {
+                        const currVal = Math.round(lvl.min + (i * stepVal));
+                        const currentX = 50 + (i * pixelSpread);
+
+                        const tick = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                        tick.setAttribute("x1", currentX); tick.setAttribute("y1", 65);
+                        tick.setAttribute("x2", currentX); tick.setAttribute("y2", 85);
+                        tick.setAttribute("class", "nl-tick");
+                        svg.appendChild(tick);
+
+                        const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                        txt.setAttribute("x", currentX); txt.setAttribute("y", 115);
+                        txt.setAttribute("class", "nl-label");
+                        txt.textContent = currVal;
+                        svg.appendChild(txt);
+                    }
+
+                    App.state.numbersData.forEach((num, idx) => {
+                        const card = document.createElement('div');
+                        card.className = 'number-card';
+                        card.textContent = num;
+                        card.onclick = () => {
+                            App.audio.play('snap');
+                            const ratio = (num - lvl.min) / (lvl.max - lvl.min);
+                            const targetX = 50 + (ratio * 700);
+
+                            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                            circle.setAttribute("cx", targetX); circle.setAttribute("cy", 75);
+                            circle.setAttribute("r", "10"); circle.setAttribute("class", "nl-node");
+                            
+                            const tag = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                            tag.setAttribute("x", targetX); tag.setAttribute("y", 45);
+                            tag.setAttribute("class", "nl-label");
+                            tag.setAttribute("style", "fill:var(--color-purple); font-weight:bold;");
+                            tag.textContent = num;
+
+                            svg.appendChild(circle);
+                            svg.appendChild(tag);
+                            card.style.opacity = '0.3';
+                        };
+                        pool.appendChild(card);
+                    });
+                },
+
+                // Detailed Mathematical Column Grid Matrix System View
+                renderPlaceValueWorkspace(container) {
+                    container.innerHTML = `
+                        <h3 style="margin-bottom:1.5rem;">Place Value Breakdown Matrix Analyzer</h3>
+                        <table class="pv-table">
+                            <thead>
+                                <tr>
+                                    <th>Value</th>
+                                    <th>Thousands (Th)</th>
+                                    <th>Hundreds (H)</th>
+                                    <th>Tens (T)</th>
+                                    <th>Ones (O)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pv-matrix-rows"></tbody>
+                        </table>
+                    `;
+
+                    const tbody = document.getElementById('pv-matrix-rows');
+                    
+                    App.state.numbersData.forEach(num => {
+                        const padded = String(num).padStart(4, '0');
+                        const row = document.createElement('tr');
+                        
+                        row.innerHTML = `
+                            <td style="font-weight:800; color:var(--color-blue);">${num}</td>
+                            <td>${padded[0]}</td>
+                            <td>${padded[1]}</td>
+                            <td>${padded[2]}</td>
+                            <td>${padded[3]}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+
+                    setTimeout(() => {
+                        const rows = tbody.querySelectorAll('tr');
+                        if(rows.length > 1) {
+                            for(let col=1; col<=4; col++) {
+                                let sample = rows[0].cells[col].textContent;
+                                let divergent = false;
+                                for(let r=1; r<rows.length; r++) {
+                                    if(rows[r].cells[col].textContent !== sample) { divergent = true; break; }
+                                }
+                                if(divergent) {
+                                    for(let r=0; r<rows.length; r++) {
+                                        rows[r].cells[col].classList.add('pv-highlight');
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }, 600);
+                },
+
+                // Render Volumetric Quantities Visual Comparison Layout Node Engine
+                renderQuantitiesWorkspace(container) {
+                    container.innerHTML = `
+                        <h3 style="margin-bottom:1.5rem;">Visual Grid Density Quantities Module</h3>
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:1.5rem; width:100%;">
+                            ${App.state.numbersData.map(num => `
+                                <div style="display:flex; flex-direction:column; align-items:center; gap:0.5rem;">
+                                    <div class="quantity-cluster">
+                                        ${this.generateGeometricTokensSVGCluster(num % 25 + 1)}
+                                    </div>
+                                    <div class="number-card" style="height:50px; font-size:1.2rem; cursor:default;">Count: ${num}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                },
+
+                generateGeometricTokensSVGCluster(count) {
+                    let tagsStr = '';
+                    const bound = Math.min(count, 15);
+                    for(let i=0; i<bound; i++) {
+                        tagsStr += `
+                            <svg class="svg-object" viewBox="0 0 24 24" fill="var(--color-orange)">
+                                <circle cx="12" cy="12" r="10" />
+                            </svg>
+                        `;
+                    }
+                    return tagsStr;
+                },
+
+                // Real-world Physical Entities Ordering Problems Map Context View
+                renderRealWorldWorkspace(container) {
+                    const entities = [
+                        { label: 'Student Heights (cm)', vals: [115, 142, 128, 156, 134] },
+                        { label: 'Library Books Stack Volumes', vals: [45, 12, 89, 34, 67] },
+                        { label: 'Farm Field Harvest Yields (kg)', vals: [450, 120, 890, 310, 660] }
+                    ];
+                    const selectedEntity = entities[Math.floor(Math.random() * entities.length)];
+                    App.state.numbersData = [...selectedEntity.vals];
+                    App.state.userOrder = new Array(App.state.numbersData.length).fill(null);
+
+                    this.renderSortingWorkspace(container, 'ascending');
+                    container.querySelector('h3').innerHTML = `Context Problem: Order the following matching: <span style="color:var(--color-purple)">${selectedEntity.label}</span>`;
+                },
+
+                // Interactive Rapid Sequence Train Game Layout Workspace
+                renderTrainGameWorkspace(container) {
+                    container.innerHTML = `
+                        <h3 style="margin-bottom:1.5rem;">Rapid Sequence Train Arcade Assembly Challenge!</h3>
+                        <div style="display:flex; align-items:center; gap:1rem; overflow-x:auto; padding:1rem; width:100%; min-height:160px; background:white; border-radius:20px; box-shadow:var(--shadow-sm);">
+                            <div class="train-engine"></div>
+                            <div style="display:flex; gap:1rem;" id="train-cars-chassis-row"></div>
+                        </div>
+                        <p style="margin-top:2rem; font-weight:700;">Select next consecutive matching integer value card block below:</p>
+                        <div class="manipulative-container" id="game-token-pool" style="margin-top:1rem;"></div>
+                    `;
+
+                    const sortedTargetVals = [...App.state.numbersData].sort((a,b)=>a-b);
+                    const pool = document.getElementById('game-token-pool');
+                    const chassis = document.getElementById('train-cars-chassis-row');
+
+                    let currentMatchProgressIndex = 0;
+
+                    App.state.numbersData.forEach(num => {
+                        const token = document.createElement('div');
+                        token.className = 'number-card';
+                        token.textContent = num;
+                        token.onclick = () => {
+                            if(num === sortedTargetVals[currentMatchProgressIndex]) {
+                                App.audio.play('snap');
+                                token.style.opacity = '0.2';
+                                token.style.pointerEvents = 'none';
+
+                                const car = document.createElement('div');
+                                car.style.width = '80px'; car.style.height = '70px';
+                                car.style.background = 'var(--color-blue)'; car.style.color = 'white';
+                                car.style.borderRadius = '8px'; car.style.display = 'flex';
+                                car.style.alignItems = 'center'; car.style.justifyContent = 'center';
+                                car.style.fontWeight = '800'; car.style.fontSize = '1.4rem';
+                                car.style.animation = 'fadeIn 0.3s forwards';
+                                car.textContent = num;
+
+                                chassis.appendChild(car);
+                                currentMatchProgressIndex++;
+
+                                if(currentMatchProgressIndex === sortedTargetVals.length) {
+                                    App.audio.play('correct');
+                                    App.celebration.burst();
+                                    alert("Arcade Level Unlocked! Train Engine is ready to go.");
+                                }
+                            } else {
+                                App.audio.play('wrong');
+                                token.classList.add('wrong');
+                                setTimeout(()=>token.classList.remove('wrong'), 400);
+                            }
+                        };
+                        pool.appendChild(token);
+                    });
+                },
+
+                // Teacher Custom Worksheet Formulation Panel Builder
+                renderTeacherBuilderWorkspace(container) {
+                    container.innerHTML = `
+                        <div style="width:100%; max-width:500px; display:flex; flex-direction:column; gap:1.5rem;">
+                            <h3>🎨 Activity Parameters Configuration Board</h3>
+                            <div class="form-group">
+                                <label>Target Data Points Array (Comma Separated Integers)</label>
+                                <input type="text" class="form-control" id="custom-nums-input" value="12, 85, 43, 61, 27">
+                            </div>
+                            <div class="form-group">
+                                <label>Target Direction Sequence Sorting Path</label>
+                                <select class="form-control" id="custom-dir-input">
+                                    <option value="ascending">Ascending Progression (Smallest to Largest)</option>
+                                    <option value="descending">Descending Progression (Largest to Smallest)</option>
+                                </select>
+                            </div>
+                            <button class="btn-primary-cta" style="font-size:1.1rem; padding:0.8rem;" onclick="App.engine.compileTeacherCustomActivity()">Generate Customized Manipulative Set</button>
+                        </div>
+                    `;
+                },
+
+                compileTeacherCustomActivity() {
+                    const rawStr = document.getElementById('custom-nums-input').value;
+                    const dir = document.getElementById('custom-dir-input').value;
+
+                    try {
+                        const parsedArr = rawStr.split(',').map(x => parseInt(x.trim())).filter(n => !isNaN(n));
+                        if(parsedArr.length < 2) { alert("Please input at least 2 target integers."); return; }
+
+                        App.state.customNumbers = parsedArr;
+                        App.state.customDirection = dir;
+                        App.state.currentModule = dir;
+                        
+                        this.initializeWorkspace();
+                    } catch(err) {
+                        alert("Invalid integer input configuration properties format structured.");
+                    }
+                }
+            },
+
+            // Programmatic Vector Canvas Confetti Explosion Rendering Subsystem
+            celebration: {
+                canvas: null, ctx: null, active: false, particles: [],
+                init() {
+                    this.canvas = document.getElementById('confetti-canvas');
+                    this.ctx = this.canvas.getContext('2d');
+                    window.addEventListener('resize', () => this.resize());
+                    this.resize();
+                },
+                resize() {
+                    if(this.canvas) {
+                        this.canvas.width = window.innerWidth;
+                        this.canvas.height = window.innerHeight;
+                    }
+                },
+                burst() {
+                    this.init();
+                    this.active = true;
+                    this.particles = [];
+                    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#f97316', '#8b5cf6', '#ef4444'];
+                    
+                    for(let i=0; i<80; i++) {
+                        this.particles.push({
+                            x: window.innerWidth / 2,
+                            y: window.innerHeight / 2,
+                            vx: (Math.random() - 0.5) * 15,
+                            vy: (Math.random() - 0.7) * 15,
+                            radius: Math.random() * 6 + 4,
+                            color: colors[Math.floor(Math.random() * colors.length)],
+                            alpha: 1,
+                            decay: Math.random() * 0.015 + 0.015
+                        });
+                    }
+                    this.tick();
+                },
+                tick() {
+                    if(!this.active) return;
+                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                    
+                    let alive = false;
+                    this.particles.forEach(p => {
+                        p.x += p.vx; p.y += p.vy;
+                        p.vy += 0.3;
+                        p.alpha -= p.decay;
+
+                        if(p.alpha > 0) {
+                            alive = true;
+                            this.ctx.save();
+                            this.ctx.globalAlpha = p.alpha;
+                            this.ctx.beginPath();
+                            this.ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                            this.ctx.fillStyle = p.color;
+                            this.ctx.fill();
+                            this.ctx.restore();
+                        }
+                    });
+
+                    if(alive) {
+                        requestAnimationFrame(() => this.tick());
+                    } else {
+                        this.active = false;
+                        this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
+                    }
+                }
+            },
+
+            // Smartboard Interactive Presenter Dashboard Utilities Extension Layer
+            teacherMode: {
+                drawerOpen: false, annotationActive: false, isDrawing: false, ctx: null,
+                toggleDrawer() {
+                    this.drawerOpen = !this.drawerOpen;
+                    document.getElementById('teacher-toolbar').classList.toggle('open', this.drawerOpen);
+                },
+                autoSolve() {
+                    App.audio.play('celebrate');
+                    const modId = App.state.currentModule;
+                    let sorted = [];
+
+                    if(modId === 'ascending' || (modId === 'custom' && App.state.customDirection === 'ascending')) {
+                        sorted = [...App.state.numbersData].sort((a,b)=>a-b);
+                    } else {
+                        sorted = [...App.state.numbersData].sort((a,b)=>b-a);
+                    }
+
+                    const slots = document.querySelectorAll('#target-slots-row .sort-slot');
+                    slots.forEach((s, i) => {
+                        if(sorted[i] !== undefined) {
+                            s.textContent = sorted[i];
+                            s.style.background = 'white';
+                            s.style.borderStyle = 'solid';
+                            s.style.borderColor = 'var(--color-green)';
+                            s.style.color = 'var(--color-green)';
+                            App.state.userOrder[i] = sorted[i];
+                        }
+                    });
+                },
+                toggleAnnotation() {
+                    this.annotationActive = !this.annotationActive;
+                    const canvas = document.getElementById('annotation-canvas');
+                    const btn = document.getElementById('btn-tool-annotation');
+                    
+                    canvas.classList.toggle('active', this.annotationActive);
+                    btn.classList.toggle('active', this.annotationActive);
+
+                    if(this.annotationActive) {
+                        canvas.width = window.innerWidth;
+                        canvas.height = window.innerHeight;
+                        this.ctx = canvas.getContext('2d');
+                        this.ctx.strokeStyle = 'red';
+                        this.ctx.lineWidth = 4;
+                        this.ctx.lineCap = 'round';
+                        this.setupAnnotationEvents(canvas);
+                    }
+                },
+                setupAnnotationEvents(canvas) {
+                    canvas.onpointerdown = (e) => { this.isDrawing = true; this.ctx.beginPath(); this.ctx.moveTo(e.clientX, e.clientY); };
+                    canvas.onpointermove = (e) => { if(this.isDrawing) { this.ctx.lineTo(e.clientX, e.clientY); this.ctx.stroke(); } };
+                    canvas.onpointerup = () => { this.isDrawing = false; };
+                },
+                clearAnnotation() {
+                    if(this.ctx) {
+                        this.ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+                    }
+                },
+                toggleSpotlight() {
+                    App.audio.play('click');
+                    const max = Math.max(...App.state.numbersData);
+                    const min = Math.min(...App.state.numbersData);
+
+                    document.querySelectorAll('#source-pool-row .number-card').forEach(card => {
+                        const val = parseInt(card.textContent);
+                        if(val === max) { card.style.boxShadow = "0 0 25px 5px var(--color-red)"; }
+                        if(val === min) { card.style.boxShadow = "0 0 25px 5px var(--color-green)"; }
+                    });
+                },
+                toggleFullscreen() {
+                    if(!document.fullscreenElement) {
+                        document.documentElement.requestFullscreen();
+                    } else {
+                        document.exitFullscreen();
+                    }
+                }
+            },
+
+            // Dynamic Live Achievement System Interface Logic Engine Mapping Profile Parameters
+            achievements: {
+                list: [
+                    { id: 'first_sort', title: '⭐ Number Sorter', desc: 'Successfully arranged your very first number set tracking path.', trigger: 1 },
+                    { id: 'explorer', title: '🌟 Order Explorer', desc: 'Completed 5 distinct analytical validation calculation sets.', trigger: 5 },
+                    { id: 'champion', title: '🏅 Sequence Champion', desc: 'Completed 10 comprehensive numerical mapping matrix models.', trigger: 10 }
+                ],
+                checkTriggers() {
+                    const completed = App.state.stats.completedSets;
+                    this.list.forEach(ach => {
+                        if(completed >= ach.trigger && !App.state.achievements.includes(ach.id)) {
+                            App.state.achievements.push(ach.id);
+                            this.launchToast(ach);
+                        }
+                    });
+                },
+                launchToast(ach) {
+                    App.audio.play('celebrate');
+                    const toast = document.getElementById('achievement-toast');
+                    document.getElementById('toast-title').textContent = ach.title;
+                    
+                    toast.classList.add('show');
+                    setTimeout(() => { toast.classList.remove('show'); }, 4500);
+                }
+            }
+        };
+
+        // Bind Entry Point Triggers to Init Execution Stacks
+        window.addEventListener('DOMContentLoaded', () => {
+            App.router.home();
+        });
+    </script>
+</body>
+</html>

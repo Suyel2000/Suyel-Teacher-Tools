@@ -1,0 +1,2428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔵🟠 Odd & Even Numbers Explorer</title>
+    <style>
+        :root {
+            --bg-even: #2563eb;
+            --bg-even-light: #dbeafe;
+            --bg-odd: #ea580c;
+            --bg-odd-light: #ffedd5;
+            --color-green: #10b981;
+            --color-yellow: #f59e0b;
+            --color-purple: #8b5cf6;
+            --color-pink: #ec4899;
+            --text-dark: #1e293b;
+            --text-light: #ffffff;
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --font-main: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            --base-scale: 1;
+        }
+
+        .high-contrast {
+            --bg-even: #0000ff;
+            --bg-even-light: #e0e0ff;
+            --bg-odd: #ff6600;
+            --bg-odd-light: #ffe0cc;
+            --text-dark: #000000;
+            --glass-bg: rgba(255, 255, 255, 0.95);
+        }
+
+        .large-text {
+            --base-scale: 1.25;
+            font-size: 1.2rem;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background: linear-gradient(135deg, #e0f2fe 0%, #fef3c7 50%, #f3e8ff 100%);
+            background-size: 400% 400%;
+            animation: gradientBg 15s ease infinite;
+            color: var(--text-dark);
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @keyframes gradientBg {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* App Layout Containers */
+        #app-container {
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: calc(1rem * var(--base-scale));
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            margin-bottom: 1rem;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.05);
+            z-index: 10;
+        }
+
+        .brand h1 {
+            font-size: calc(1.5rem * var(--base-scale));
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .brand p {
+            font-size: calc(0.85rem * var(--base-scale));
+            opacity: 0.8;
+            font-weight: 600;
+        }
+
+        .global-controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        button {
+            padding: 0.6rem 1.2rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.4);
+            background: white;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: calc(0.9rem * var(--base-scale));
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .btn-even { background-color: var(--bg-even); color: white; }
+        .btn-odd { background-color: var(--bg-odd); color: white; }
+        .btn-green { background-color: var(--color-green); color: white; }
+        .btn-purple { background-color: var(--color-purple); color: white; }
+
+        /* Screens Layout */
+        .screen {
+            display: none;
+            flex-direction: column;
+            gap: 1.5rem;
+            animation: fadeIn 0.4s ease-in-out forwards;
+            flex: 1;
+        }
+
+        .screen.active { display: flex; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Welcome Screen Styling */
+        #screen-welcome {
+            text-align: center;
+            justify-content: center;
+            align-items: center;
+            min-height: 70vh;
+        }
+
+        .hero-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 2px solid var(--glass-border);
+            padding: 3rem;
+            border-radius: 32px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.08);
+            max-width: 650px;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-title {
+            font-size: calc(2.5rem * var(--base-scale));
+            font-weight: 900;
+            margin-bottom: 0.5rem;
+        }
+
+        .hero-subtitle {
+            font-size: calc(1.2rem * var(--base-scale));
+            font-weight: 600;
+            color: #4b5563;
+            margin-bottom: 2rem;
+            letter-spacing: 2px;
+        }
+
+        .animated-cards-container {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .floating-num-card {
+            width: 70px;
+            height: 90px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 800;
+            color: white;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(5deg); }
+        }
+
+        .btn-start {
+            font-size: calc(1.3rem * var(--base-scale));
+            padding: 1rem 2.5rem;
+            border-radius: 50px;
+            background: linear-gradient(45deg, var(--bg-even), var(--color-purple));
+            color: white;
+            border: none;
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3);
+            cursor: pointer;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3); }
+            50% { transform: scale(1.05); box-shadow: 0 15px 35px rgba(37, 99, 235, 0.5); }
+            100% { transform: scale(1); box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3); }
+        }
+
+        /* Level Selector & Dashboard Units */
+        .grid-layout {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.25rem;
+            width: 100%;
+        }
+
+        .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 16px 36px rgba(0,0,0,0.08);
+        }
+
+        .level-badge {
+            align-self: flex-start;
+            padding: 0.25rem 0.75rem;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+        }
+
+        .card h3 {
+            font-size: calc(1.25rem * var(--base-scale));
+            margin-bottom: 0.5rem;
+        }
+
+        .card p {
+            font-size: calc(0.9rem * var(--base-scale));
+            color: #4b5563;
+            flex-grow: 1;
+        }
+
+        .card .meta-class {
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-top: 1rem;
+            color: var(--color-purple);
+        }
+
+        /* Main Workspace & Modules Structure */
+        .workspace-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 1.5rem;
+            flex: 1;
+        }
+
+        @media (max-width: 900px) {
+            .workspace-layout { grid-template-columns: 1fr; }
+            .sidebar-nav { display: flex; overflow-x: auto; padding-bottom: 0.5rem; gap: 0.5rem; }
+            .sidebar-nav button { flex-shrink: 0; }
+        }
+
+        .sidebar-nav {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            height: fit-content;
+        }
+
+        .sidebar-nav button {
+            width: 100%;
+            justify-content: flex-start;
+            padding: 0.8rem 1rem;
+            border-radius: 14px;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            color: #4b5563;
+        }
+
+        .sidebar-nav button.active {
+            background: white;
+            color: var(--text-dark);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            border-left: 5px solid var(--color-purple);
+        }
+
+        .main-stage {
+            background: white;
+            border-radius: 28px;
+            border: 1px solid rgba(0,0,0,0.05);
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.02);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            min-height: 550px;
+            position: relative;
+        }
+
+        /* Specialized Interactive Views Elements */
+        /* Module 1: Explorer View */
+        .explorer-input-zone {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .large-input {
+            width: 180px;
+            padding: 0.8rem 1.5rem;
+            font-size: 1.8rem;
+            font-weight: 800;
+            border-radius: 16px;
+            border: 3px solid #cbd5e1;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .large-input:focus { border-color: var(--color-purple); }
+
+        .explorer-dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .readout-box {
+            padding: 1.25rem;
+            border-radius: 20px;
+            text-align: center;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+        }
+
+        .readout-box h4 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin-bottom: 0.5rem;}
+        .readout-box p { font-size: 1.6rem; font-weight: 800; }
+
+        .pairing-render-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 20px;
+            padding: 2rem;
+            min-height: 180px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .pair-container-box {
+            display: inline-flex;
+            background: #f1f5f9;
+            padding: 0.75rem;
+            border-radius: 16px;
+            border: 2px solid #e2e8f0;
+            gap: 0.75rem;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .pair-container-box.even-pair { border-color: var(--bg-even); background-color: var(--bg-even-light); }
+        .pair-container-box.odd-leftover { border-color: var(--bg-odd); background-color: var(--bg-odd-light); }
+
+        /* Manipulatives styling */
+        .manipulative-item {
+            width: 48px;
+            height: 48px;
+            transition: transform 0.2s;
+        }
+
+        /* Module 2: Drag & Drop Pairing Manipulative */
+        .pairing-sandbox-container {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 1rem;
+        }
+
+        @media (max-width: 800px) {
+            .pairing-sandbox-container { grid-template-columns: 1fr; }
+        }
+
+        .source-objects-pool {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 1rem;
+            min-height: 120px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-content: flex-start;
+            border: 1px solid #e2e8f0;
+        }
+
+        .dropzone-grid {
+            background: #ffffff;
+            border: 2px dashed #cbd5e1;
+            border-radius: 20px;
+            padding: 1.5rem;
+            min-height: 300px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 1rem;
+        }
+
+        .pairing-slot {
+            height: 80px;
+            border: 2px dashed #94a3b8;
+            border-radius: 16px;
+            background: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.25rem;
+            position: relative;
+        }
+
+        .pairing-slot::before {
+            content: 'Pair Deck';
+            position: absolute;
+            font-size: 0.7rem;
+            color: #94a3b8;
+            font-weight: 700;
+            bottom: 4px;
+        }
+
+        .draggable-node {
+            cursor: grab;
+            touch-action: none;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+
+        .draggable-node:active { cursor: grabbing; }
+
+        /* Module 3: Interactive Number Line */
+        .numberline-viewport {
+            overflow-x: auto;
+            padding: 2rem 1rem;
+            background: #fdfdfd;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .numberline-axis {
+            position: relative;
+            height: 60px;
+            margin-top: 20px;
+            border-bottom: 4px solid #475569;
+            display: flex;
+            justify-content: space-between;
+            min-width: 800px;
+        }
+
+        .numberline-axis::before, .numberline-axis::after {
+            content: '';
+            position: absolute;
+            bottom: -9px;
+            border: 8px solid transparent;
+        }
+        .numberline-axis::before { left: -5px; border-right-color: #475569; }
+        .numberline-axis::after { right: -5px; border-left-color: #475569; }
+
+        .numberline-tick {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .tick-mark {
+            width: 3px;
+            height: 15px;
+            background: #475569;
+            position: absolute;
+            bottom: 0;
+        }
+
+        .tick-label {
+            position: absolute;
+            bottom: -32px;
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        .tick-indicator {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #cbd5e1;
+            position: absolute;
+            bottom: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 800;
+            transition: all 0.2s ease;
+        }
+
+        .numberline-tick.highlight-even .tick-indicator { background: var(--bg-even); transform: scale(1.1); }
+        .numberline-tick.highlight-odd .tick-indicator { background: var(--bg-odd); transform: scale(1.1); }
+
+        /* Module 4: Hundreds Chart Matrix */
+        .hundreds-matrix {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 6px;
+            background: #f1f5f9;
+            padding: 10px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 650px;
+            margin: 0 auto;
+        }
+
+        .matrix-cell {
+            aspect-ratio: 1;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: calc(1rem * var(--base-scale));
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            border: 2px solid transparent;
+        }
+
+        .matrix-cell:hover { transform: scale(1.08); z-index: 2; }
+        .matrix-cell.cell-even { background-color: var(--bg-even-light); border-color: var(--bg-even); color: var(--bg-even); }
+        .matrix-cell.cell-odd { background-color: var(--bg-odd-light); border-color: var(--bg-odd); color: var(--bg-odd); }
+
+        /* Module 5: Blocks Builder */
+        .blocks-workspace {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 750px) {
+            .blocks-workspace { grid-template-columns: 1fr; }
+        }
+
+        .block-column-container {
+            border: 1px solid #cbd5e1;
+            border-radius: 20px;
+            padding: 1rem;
+            min-height: 350px;
+            background: #fafafa;
+            display: flex;
+            flex-direction: column-reverse;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .cube-block-pair-row {
+            display: flex;
+            gap: 6px;
+        }
+
+        .cube-unit {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
+            border: 3px solid #1d4ed8;
+            border-radius: 6px;
+            box-shadow: inset 2px 2px 0px rgba(255,255,255,0.4), 0 4px 6px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .cube-unit.odd-cube {
+            background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);
+            border-color: #c2410c;
+        }
+
+        /* Module 6: Real Life Context Scopes */
+        .real-life-scene-picker {
+            display: flex;
+            gap: 0.5rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+        }
+
+        .scene-stage-canvas {
+            background: #f0fdf4;
+            border: 2px solid #bbf7d0;
+            border-radius: 24px;
+            padding: 2rem;
+            min-height: 300px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .scene-asset-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            background: white;
+            padding: 1rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+        }
+
+        /* Module 7: Games Play Arena Layout */
+        .games-arena-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            flex: 1;
+        }
+
+        .game-canvas-container {
+            width: 100%;
+            height: 400px;
+            background: #1e1e2e;
+            border-radius: 24px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 4px 20px rgba(0,0,0,0.4);
+        }
+
+        .game-canvas-element {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .game-hud-overlay {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            justify-content: space-between;
+            color: white;
+            font-weight: 800;
+            pointer-events: none;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            font-size: 1.1rem;
+        }
+
+        .game-start-modal {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(4px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            gap: 1rem;
+            z-index: 5;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        /* Floating Widgets & Overlays */
+        /* Achievements Popup System */
+        #achievement-popup {
+            position: fixed;
+            bottom: -150px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            border: 3px solid var(--color-yellow);
+            border-radius: 24px;
+            padding: 1.25rem 2.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            transition: bottom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 2000;
+        }
+
+        #achievement-popup.show { bottom: 30px; }
+
+        /* Teacher Utilities Presentation Controls Drawer overlay */
+        #teacher-tools-panel {
+            display: none;
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 2px solid var(--color-purple);
+            border-radius: 20px;
+            padding: 1rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+            z-index: 1000;
+            max-width: 320px;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        #teacher-tools-panel.active { display: flex; }
+
+        /* Drawing Presentation Layer Overlay Canvas */
+        #annotation-canvas-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 999;
+            display: none;
+        }
+
+        #annotation-canvas-overlay.active { pointer-events: auto; display: block; cursor: crosshair; }
+
+        /* Spotlight Layer Mask Mode Component Overlay */
+        #spotlight-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            pointer-events: none;
+            z-index: 998;
+            display: none;
+            mix-blend-mode: multiply;
+        }
+
+        /* Utility Footer Config status labels tracking bar */
+        .status-tracking-footer {
+            margin-top: auto;
+            padding: 0.75rem 1rem;
+            background: var(--glass-bg);
+            backdrop-filter: blur(8px);
+            border-radius: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            opacity: 0.9;
+            border: 1px solid var(--glass-border);
+        }
+
+        .badge-list-display {
+            display: flex;
+            gap: 0.4rem;
+        }
+        .mini-badge-icon {
+            padding: 0.15rem 0.4rem;
+            background: #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.7rem;
+        }
+        .mini-badge-icon.unlocked { background: #fef08a; border: 1px solid #facc15; }
+
+        /* Utility classes */
+        .flex-row-wrap { display: flex; flex-wrap: wrap; gap: 0.7rem; }
+        .text-center { text-align: center; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        
+        <header>
+            <div class="brand">
+                <h1 id="app-logo-trigger">🔵🟠 Odd & Even Explorer</h1>
+                <p>Pair • Discover • Compare • Learn</p>
+            </div>
+            <div class="global-controls">
+                <button id="btn-nav-home" class="btn-green hidden">🏠 Home</button>
+                <button id="btn-nav-levels" class="btn-purple hidden">🎚 Levels</button>
+                <button id="btn-toggle-teacher" style="border-color: var(--color-purple);">👨‍🏫 Teacher Tools</button>
+                <button id="btn-toggle-contrast" title="Toggle Accessibility Contrast Mode">👁️ Contrast</button>
+                <button id="btn-toggle-text-scale" title="Toggle Larger Font Sizing Mode">Aa</button>
+                <button id="btn-toggle-audio" title="Toggle Audio Synthesizer Engine Feedback">🔊 Sound</button>
+            </div>
+        </header>
+
+        <div id="screen-welcome" class="screen active">
+            <div class="hero-card">
+                <h2 class="hero-title">Odd & Even Numbers Explorer</h2>
+                <p class="hero-subtitle">Interactive Premium Learning Lab</p>
+                
+                <div class="animated-cards-container">
+                    <div class="floating-num-card" style="background-color: var(--bg-odd); animation-delay: 0s;">7</div>
+                    <div class="floating-num-card" style="background-color: var(--bg-even); animation-delay: 0.5s;">12</div>
+                    <div class="floating-num-card" style="background-color: var(--bg-odd); animation-delay: 1s;">3</div>
+                    <div class="floating-num-card" style="background-color: var(--bg-even); animation-delay: 1.5s;">20</div>
+                </div>
+
+                <button id="btn-welcome-start" class="btn-start">▶ Start Learning</button>
+            </div>
+        </div>
+
+        <div id="screen-levels" class="screen">
+            <div class="text-center">
+                <h2>Select Your Learning Level Range</h2>
+                <p style="color: #4b5563;">Progressive modules engineered tailored matching Primary Class competencies.</p>
+            </div>
+            <div class="grid-layout" id="levels-cards-grid-target">
+                </div>
+        </div>
+
+        <div id="screen-dashboard" class="screen">
+            <div class="workspace-layout">
+                
+                <div class="sidebar-nav" id="dashboard-sidebar-menu-target">
+                    <button data-target="explorer" class="active">🔵🟠 Number Explorer</button>
+                    <button data-target="pairing">👥 Pair the Objects</button>
+                    <button data-target="numberline">📏 Number Line Explorer</button>
+                    <button data-target="hundreds">🟦 Hundreds Chart Explorer</button>
+                    <button data-target="blocks">🧱 Build with Blocks</button>
+                    <button data-target="real-life">🌍 Real-Life Contexts</button>
+                    <button data-target="patterns">📈 Pattern Explorer</button>
+                    <button data-target="sandbox">🎨 Build Own Sandbox</button>
+                    <button data-target="games">🎲 Arcade Play Games</button>
+                </div>
+
+                <div class="main-stage" id="stage-viewport-root">
+                    
+                    <div id="submod-explorer" class="submodule-panel active-panel">
+                        <h2>🔵🟠 Odd & Even Numbers Analytics Explorer</h2>
+                        <p>Input or click arrows to explore any mathematical figure within structural matrix range limits.</p>
+                        <hr style="opacity: 0.2; margin: 1rem 0;">
+                        
+                        <div class="explorer-input-zone">
+                            <button id="explorer-btn-decrement" style="font-size: 1.5rem; padding: 0.5rem 1rem;">-</button>
+                            <input type="number" id="explorer-main-input" class="large-input" value="7" min="0" max="10">
+                            <button id="explorer-btn-increment" style="font-size: 1.5rem; padding: 0.5rem 1rem;">+</button>
+                            <button id="explorer-btn-random" class="btn-purple">🎲 Randomize</button>
+                        </div>
+
+                        <div class="explorer-dashboard">
+                            <div class="readout-box" id="explorer-readout-classification">
+                                <h4>Classification</h4>
+                                <p id="explorer-text-class" style="color: var(--bg-odd);">ODD NUMBER</p>
+                            </div>
+                            <div class="readout-box">
+                                <h4>Last Digit Clue</h4>
+                                <p id="explorer-text-lastdigit" style="color: var(--bg-odd);">7</p>
+                            </div>
+                            <div class="readout-box">
+                                <h4>Number Name String</h4>
+                                <p id="explorer-text-name" style="font-size: 1.1rem; padding-top: 0.5rem;">Seven</p>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 1rem;">
+                            <h4 style="margin-bottom: 0.5rem; color:#475569;">Visual Auto-Pairing Breakdown:</h4>
+                            <div class="pairing-render-area" id="explorer-pairing-render-target">
+                                </div>
+                        </div>
+                        
+                        <div class="readout-box" style="margin-top: 1rem; text-align: left;" id="explorer-explanation-block">
+                            <strong>Why?</strong> Since grouping structural objects by pairs leaves 1 single unit remaining left over without a matching partner, the integer is classified as an Odd number.
+                        </div>
+                    </div>
+
+                    <div id="submod-pairing" class="submodule-panel" style="display:none;">
+                        <h2>👥 Object Pairing Virtual Manipulative Workspace</h2>
+                        <p>Drag the independent items from the target object repository pool deck straight onto the dual pairing landing slot docking panels.</p>
+                        
+                        <div style="margin: 1rem 0; display:flex; gap:0.5rem; align-items:center;">
+                            <label>Choose Object Asset Visual: </label>
+                            <select id="pairing-asset-selector" style="padding:0.4rem; border-radius:8px;">
+                                <option value="apple">🍏 Fresh Apples</option>
+                                <option value="star">⭐ Golden Stars</option>
+                                <option value="ball">⚽ Play Balls</option>
+                                <option value="flower">🌸 Spring Flowers</option>
+                            </select>
+                            <button id="pairing-btn-reset" class="btn-even">🔄 Reset Stage Canvas</button>
+                            <button id="pairing-btn-autoplay" class="btn-purple">⚡ Auto-Group Pairs</button>
+                        </div>
+
+                        <div class="pairing-sandbox-container">
+                            <div>
+                                <h4 style="margin-bottom:0.5rem;">Dual Docking Pair Slots Grid:</h4>
+                                <div class="dropzone-grid" id="pairing-dropzone-grid-target">
+                                    </div>
+                            </div>
+                            <div>
+                                <h4 style="margin-bottom:0.5rem;">Object Repository Pool Deck:</h4>
+                                <div class="source-objects-pool" id="pairing-source-pool-target">
+                                    </div>
+                                <div class="readout-box" style="margin-top:1rem; padding:0.75rem;">
+                                    <div id="pairing-live-status-feedback" style="font-weight:700; font-size:1rem;">Items Placed: 0</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="submod-numberline" class="submodule-panel" style="display:none;">
+                        <h2>📏 Interactive Modular Number Line Workspace</h2>
+                        <p>Tap and traverse nodes across custom configured contextual classroom level ranges to dissect pattern matrices.</p>
+                        
+                        <div class="flex-row-wrap" style="margin: 1rem 0; align-items:center;">
+                            <button id="numline-toggle-all" class="active">Show All</button>
+                            <button id="numline-toggle-even" style="border-bottom: 3px solid var(--bg-even);">Highlight Even Numbers</button>
+                            <button id="numline-toggle-odd" style="border-bottom: 3px solid var(--bg-odd);">Highlight Odd Numbers</button>
+                            <span style="font-size:0.85rem; font-weight:700; margin-left:auto;" id="numline-range-readout-lbl">Range Context: 0 - 10</span>
+                        </div>
+
+                        <div class="numberline-viewport" id="numberline-scrollable-container-root">
+                            <div class="numberline-axis" id="numberline-axis-ticks-target">
+                                </div>
+                        </div>
+                        <div class="readout-box" style="margin-top: 1.5rem; text-align: left;">
+                            💡 <strong>Pattern Rule Found:</strong> Notice that skipping items sequentially by every 2 steps alternating systematically guarantees landings land precisely exclusively matching matching counterparts.
+                        </div>
+                    </div>
+
+                    <div id="submod-hundreds" class="submodule-panel" style="display:none;">
+                        <h2>🟦 Hundreds Matrix Layout Sequence Pattern Finder</h2>
+                        <p>Click individual cells to activate tracking filters or apply auto-color sequence layouts across rows and columns.</p>
+                        
+                        <div class="flex-row-wrap" style="margin: 1rem 0;">
+                            <button id="hundreds-cmd-clear">Clear Markers</button>
+                            <button id="hundreds-cmd-evens" class="btn-even">Paint Evens Grid</button>
+                            <button id="hundreds-cmd-odds" class="btn-odd">Paint Odds Grid</button>
+                            <button id="hundreds-cmd-mult2" class="btn-purple">Highlight Multiples of 2</button>
+                        </div>
+
+                        <div class="hundreds-matrix" id="hundreds-matrix-dom-container">
+                            </div>
+                    </div>
+
+                    <div id="submod-blocks" class="submodule-panel" style="display:none;">
+                        <h2>🧱 Base-Ten Cube Block Pairing Structural Builder</h2>
+                        <p>Click layout controller actions to append structural base interlocking modern cubes to analyze architectural balancing stability shapes.</p>
+                        
+                        <div class="flex-row-wrap" style="margin: 1rem 0; align-items:center;">
+                            <button id="blocks-action-add" class="btn-green">➕ Add 1 Cube Block Unit</button>
+                            <button id="blocks-action-remove">➖ Remove 1 Cube Block</button>
+                            <button id="blocks-action-clear">🔄 Clear Tower Structure</button>
+                            <span style="font-weight:700; font-size:1.1rem; margin-left:auto;" id="blocks-lbl-total-count">Total Blocks: 0</span>
+                        </div>
+
+                        <div class="blocks-workspace">
+                            <div class="block-column-container" id="blocks-structural-stack-target">
+                                </div>
+                            <div style="display:flex; flex-direction:column; gap:1rem; justify-content:center;">
+                                <div class="readout-box" id="blocks-readout-analytics">
+                                    <h4>Structure Classification State</h4>
+                                    <p id="blocks-analytics-status-text" style="font-size:2rem; color:#94a3b8;">EMPTY</p>
+                                </div>
+                                <div class="readout-box" style="text-align:left;">
+                                    ℹ️ <strong>Structural Principle:</strong> Even values construct symmetrical aligned twin columns of matching tower levels. Odd integers consistently exhibit an extended top block protruding asymmetrical profile heights.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="submod-real-life" class="submodule-panel" style="display:none;">
+                        <h2>🌍 Real-Life Odd & Even Quantities Lab</h2>
+                        <p>Evaluate real-life scenarios to determine whether situational assets equate to odd or even totals.</p>
+                        
+                        <div class="real-life-scene-picker" id="real-life-scene-tabs-row">
+                            <button class="active" data-scene="bus">🚌 School Bus Passengers</button>
+                            <button data-scene="classroom">🪑 Classroom Group Chairs</button>
+                            <button data-scene="orchard">🌳 Orchard Apple Trees</button>
+                        </div>
+
+                        <div class="scene-stage-canvas" id="real-life-scene-rendering-viewport">
+                            </div>
+
+                        <div class="flex-row-wrap" style="justify-content:center; margin-top:1rem; align-items:center;">
+                            <span style="font-size:1.2rem; font-weight:800;" id="real-life-lbl-question-prompt">Are the passengers on the bus Odd or Even?</span>
+                            <button id="real-life-btn-reveal-answer" class="btn-purple">👁️ Toggle Reveal Explanation Answer</button>
+                        </div>
+                    </div>
+
+                    <div id="submod-patterns" class="submodule-panel" style="display:none;">
+                        <h2>📈 Sequence Pattern Sequence Builder & Skip Counter</h2>
+                        <p>Analyze how skipping elements structurally correlates mathematical series directly alongside properties of multiples.</p>
+                        
+                        <div class="flex-row-wrap" style="margin:1rem 0;">
+                            <button id="pattern-btn-run-evens" class="btn-even">Generate Even Skip Progression Sequence</button>
+                            <button id="pattern-btn-run-odds" class="btn-odd">Generate Odd Skip Progression Sequence</button>
+                        </div>
+
+                        <div class="pairing-render-area" id="pattern-visualizer-output-strip-row" style="min-height:120px; background:#f8fafc;">
+                            </div>
+
+                        <div class="readout-box" style="text-align:left; margin-top:1rem;">
+                            <h4>💡 Mathematical Pattern Insight Breakdown:</h4>
+                            <p style="font-size:1rem; font-weight:500; color:#475569; margin-top:0.5rem;" id="pattern-dynamic-explanation-text">
+                                Select an interactive option above to run structured sequencing formulas.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div id="submod-sandbox" class="submodule-panel" style="display:none;">
+                        <h2>🎨 Teacher Activity Creation Sandbox Suite</h2>
+                        <p>Design bespoke customizable scenarios, toggle layouts, generate unique random bounds, and save activities to memory storage.</p>
+                        
+                        <div class="grid-layout" style="margin-top:1rem;">
+                            <div class="readout-box" style="text-align:left; display:flex; flex-direction:column; gap:0.5rem;">
+                                <h4>Configure Parameters</h4>
+                                <label>Target Specific Sandbox Integer: </label>
+                                <input type="number" id="sandbox-config-number" class="large-input" style="font-size:1.2rem; width:100%; padding:0.4rem;" value="24">
+                                
+                                <label>Hide/Show Solutions Mask: </label>
+                                <select id="sandbox-config-solutions" style="padding:0.4rem; border-radius:8px;">
+                                    <option value="show">Show Mathematical Answers Instantly</option>
+                                    <option value="hide">Hide Assessment Answers For Class Display Quiz</option>
+                                </select>
+
+                                <button id="sandbox-action-generate" class="btn-purple" style="margin-top:0.5rem; justify-content:center;">⚡ Render Sandbox Lab Environment</button>
+                            </div>
+
+                            <div class="readout-box" style="text-align:left; display:flex; flex-direction:column; gap:0.5rem;">
+                                <h4>Activity Clipboard Registry Memory</h4>
+                                <button id="sandbox-action-save-preset" class="btn-green" style="justify-content:center;">💾 Save Current Configuration Template</button>
+                                <div style="font-size:0.8rem; font-weight:700; color:#64748b; margin-top:0.5rem;">Saved Custom Sandbox Activities List:</div>
+                                <ul id="sandbox-saved-registry-list-root" style="padding-left:1.2rem; font-size:0.85rem; display:flex; flex-direction:column; gap:4px;">
+                                    </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="submod-games" class="submodule-panel" style="display:none;">
+                        <div style="display:flex; justify-content:between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+                            <h2>🎲 Premium Multi-Game Learning Arcade Arena</h2>
+                            <div style="margin-left:auto; display:flex; gap:0.4rem;">
+                                <button id="arcade-game-tab-1" class="btn-even game-tab-trigger active">🎈 Pop Target Values</button>
+                                <button id="arcade-game-tab-2" class="btn-odd game-tab-trigger">🚂 Train Cargo Sorter</button>
+                            </div>
+                        </div>
+                        <p style="margin-top:0.25rem;">Reinforce classification fluencies using playful tactile mechanics.</p>
+                        
+                        <div class="games-arena-wrapper" style="margin-top:1rem;">
+                            <div class="game-canvas-container" id="arcade-game-viewport-mount">
+                                <div class="game-hud-overlay">
+                                    <span id="game-hud-score-lbl">Score: 0</span>
+                                    <span id="game-hud-objective-lbl">Objective: Click EVEN Numbers</span>
+                                </div>
+                                
+                                <div class="game-start-modal" id="game-welcome-modal-element">
+                                    <h3 id="game-modal-title-text" style="font-size:1.8rem;">Game Module Ready</h3>
+                                    <p id="game-modal-desc-text">Tap the specified items ascending into view space before timers collapse.</p>
+                                    <button id="game-action-start-trigger" class="btn-green" style="font-size:1.2rem; padding:0.6rem 2rem;">▶ Launch Game Stage</button>
+                                </div>
+
+                                <canvas class="game-canvas-element" id="arcade-rendering-canvas-node"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        <footer class="status-tracking-footer">
+            <div>Active Context Level Range: <span id="footer-lbl-active-level-scope" style="color:var(--color-purple);">Level 1 (0-10)</span></div>
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+                <span>Earned Achievements:</span>
+                <div class="badge-list-display" id="footer-badges-list-target">
+                    </div>
+            </div>
+        </footer>
+
+    </div>
+
+    <div id="teacher-tools-panel">
+        <div style="display:flex; justify-content:between; align-items:center; font-weight:800; border-bottom:1px solid rgba(0,0,0,0.1); padding-bottom:4px;">
+            <span>👨‍🏫 Teacher Presentation Mode</span>
+            <button id="teacher-panel-close-btn" style="padding:2px 6px; font-size:0.7rem; margin-left:auto;">X</button>
+        </div>
+        <div class="flex-row-wrap" style="gap:4px;">
+            <button id="teach-tool-random-num" style="font-size:0.75rem; padding:4px 8px;">🎲 Random Number</button>
+            <button id="teach-tool-toggle-line" style="font-size:0.75rem; padding:4px 8px;">📏 Toggle Line Mask</button>
+            <button id="teach-tool-toggle-chart" style="font-size:0.75rem; padding:4px 8px;">🟦 Toggle Grid Mask</button>
+        </div>
+        <div style="border-top:1px solid rgba(0,0,0,0.1); padding-top:4px; display:flex; flex-direction:column; gap:4px;">
+            <span style="font-size:0.75rem; font-weight:700;">Interactive Smartboard Presentation Utilities:</span>
+            <button id="teach-action-annotation" style="font-size:0.75rem; justify-content:center;">🖍️ Toggle Freehand Drawing Overlay</button>
+            <button id="teach-action-spotlight" style="font-size:0.75rem; justify-content:center;">🔦 Toggle Spotlight Focus Highlight</button>
+            <button id="teach-action-fullscreen" style="font-size:0.75rem; justify-content:center;">🖥️ Toggle Full Screen Canvas View</button>
+        </div>
+    </div>
+
+    <canvas id="annotation-canvas-overlay"></canvas>
+    <div id="spotlight-overlay"></div>
+
+    <div id="achievement-popup">
+        <div style="font-size:2.5rem;" id="achievement-toast-icon">🏆</div>
+        <div>
+            <h4 style="color:var(--color-yellow); font-size:1.1rem; font-weight:900;">Achievement Unlocked!</h4>
+            <p id="achievement-toast-title-text" style="font-weight:700; font-size:0.95rem; color:var(--text-dark);">Math Wizard Champion</p>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * Core Application Orchestration Object Model State Control Logic
+         */
+        const AppState = {
+            currentScreen: 'welcome',
+            activeLevel: 1,
+            soundEnabled: true,
+            highContrast: false,
+            largeText: false,
+            activeSubmodule: 'explorer',
+            activeGameId: 'pop_balloon',
+            explorerValue: 7,
+            blocksValue: 0,
+            activeRealLifeScene: 'bus',
+            realLifeValues: { bus: 7, classroom: 12, orchard: 5 },
+            realLifeReveal: false,
+            sandboxValue: 24,
+            sandboxHideAnswers: false,
+            
+            // Local Storage Tracking Profile Node Variables
+            profile: {
+                completedLevels: [],
+                savedSandboxPresets: [],
+                unlockedBadges: []
+            },
+
+            // Level Configuration Metadata Definitions Array Rules
+            levelsConfig: {
+                1: { title: "Numbers 0–10", desc: "Identify odd and even elements easily.", range: [0, 10], cls: "Class 1 Target" },
+                2: { title: "Numbers 0–20", desc: "Pair items and analyze collections structural layouts.", range: [0, 20], cls: "Class 1–2 Target" },
+                3: { title: "Numbers 0–100", desc: "Unlock number lines and horizontal matrix tracking grids.", range: [0, 100], cls: "Class 2–3 Target" },
+                4: { title: "Numbers 0–500", desc: "Explore multi-step sequence patterns and skip intervals.", range: [0, 500], cls: "Class 3–4 Target" },
+                5: { title: "Numbers 0–9,999", desc: "Examine advanced place value tracking and large integers.", range: [0, 9999], cls: "Class 4–5 Target" },
+                6: { title: "Challenge Mode", desc: "Randomized bounds sandbox structures tailored for expert exploration.", range: [0, 9999], cls: "Advanced Lab Showcase" }
+            },
+
+            // Badges Definitions Matrix Configuration
+            badgesConfig: {
+                'pair_star': { name: "Pairing Star", icon: "⭐", criteria: "Group visual components correctly." },
+                'explorer_master': { name: "Number Explorer", icon: "🌟", criteria: "Investigate analytics views." },
+                'pattern_master': { name: "Pattern Master", icon: "🏅", criteria: "Analyze mathematical skips." },
+                'arcade_champion': { name: "Odd & Even Champion", icon: "👑", criteria: "Conquer high scores in the game arenas." },
+                'maths_wizard': { name: "Maths Wizard", icon: "💎", criteria: "Complete configurations across advanced criteria parameters." }
+            }
+        };
+
+        /**
+         * Sound Effects Engine Powered via Web Audio API Native Synthesizer Node Filters
+         */
+        const SoundFX = {
+            ctx: null,
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
+            play(type) {
+                if (!AppState.soundEnabled) return;
+                this.init();
+                
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                switch(type) {
+                    case 'click':
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(400, now);
+                        osc.frequency.exponentialRampToValueAtTime(150, now + 0.1);
+                        gain.gain.setValueAtTime(0.15, now);
+                        gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+                        osc.start(now);
+                        osc.stop(now + 0.1);
+                        break;
+                    case 'correct':
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(300, now);
+                        osc.frequency.setValueAtTime(450, now + 0.08);
+                        osc.frequency.setValueAtTime(600, now + 0.16);
+                        gain.gain.setValueAtTime(0.2, now);
+                        gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                        osc.start(now);
+                        osc.stop(now + 0.3);
+                        break;
+                    case 'wrong':
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(180, now);
+                        osc.frequency.linearRampToValueAtTime(90, now + 0.25);
+                        gain.gain.setValueAtTime(0.25, now);
+                        gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+                        osc.start(now);
+                        osc.stop(now + 0.25);
+                        break;
+                    case 'badge':
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(261.6, now); // C4
+                        osc.frequency.setValueAtTime(329.6, now + 0.1); // E4
+                        osc.frequency.setValueAtTime(392.0, now + 0.2); // G4
+                        osc.frequency.setValueAtTime(523.3, now + 0.3); // C5
+                        gain.gain.setValueAtTime(0.2, now);
+                        gain.gain.linearRampToValueAtTime(0.02, now + 0.6);
+                        osc.start(now);
+                        osc.stop(now + 0.6);
+                        break;
+                }
+            }
+        };
+
+        /**
+         * SVG String Vector Graphic Asset Factory Template Generators Loader
+         */
+        const SVGFactory = {
+            get(type) {
+                const colors = {
+                    apple: { primary: '#ef4444', leaf: '#22c55e' },
+                    star: { primary: '#eab308' },
+                    ball: { primary: '#3b82f6', secondary: '#ffffff' },
+                    flower: { primary: '#ec4899', core: '#eab308' }
+                };
+
+                switch(type) {
+                    case 'apple':
+                        return `<svg class="manipulative-item" viewBox="0 0 100 100">
+                            <circle cx="50" cy="55" r="35" fill="${colors.apple.primary}"/>
+                            <path d="M50,25 C45,10 55,5 50,5" stroke="${colors.apple.leaf}" stroke-width="6" fill="none"/>
+                            <path d="M52,22 C65,12 60,30 52,22" fill="${colors.apple.leaf}"/>
+                        </svg>`;
+                    case 'star':
+                        return `<svg class="manipulative-item" viewBox="0 0 100 100">
+                            <polygon points="50,5 64,36 98,36 70,57 81,91 50,70 19,91 30,57 2,36 36,36" fill="${colors.star.primary}"/>
+                        </svg>`;
+                    case 'ball':
+                        return `<svg class="manipulative-item" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="45" fill="${colors.ball.primary}" stroke="#1e293b" stroke-width="3"/>
+                            <path d="M20,30 Q50,60 80,30 M10,50 Q50,50 90,50 M20,70 Q50,40 80,70" stroke="${colors.ball.secondary}" stroke-width="4" fill="none"/>
+                        </svg>`;
+                    case 'flower':
+                        return `<svg class="manipulative-item" viewBox="0 0 100 100">
+                            <circle cx="50" cy="25" r="18" fill="${colors.flower.primary}"/>
+                            <circle cx="50" cy="75" r="18" fill="${colors.flower.primary}"/>
+                            <circle cx="25" cy="50" r="18" fill="${colors.flower.primary}"/>
+                            <circle cx="75" cy="50" r="18" fill="${colors.flower.primary}"/>
+                            <circle cx="50" cy="50" r="16" fill="${colors.flower.core}"/>
+                        </svg>`;
+                    case 'bus':
+                        return `<svg width="80" height="60" viewBox="0 0 120 90">
+                            <rect x="10" y="20" width="100" height="50" rx="10" fill="#facc15" stroke="#1e293b" stroke-width="3"/>
+                            <rect x="20" y="30" width="20" height="15" rx="3" fill="#cbd5e1" stroke="#1e293b" stroke-width="2"/>
+                            <rect x="50" y="30" width="20" height="15" rx="3" fill="#cbd5e1" stroke="#1e293b" stroke-width="2"/>
+                            <rect x="80" y="30" width="20" height="15" rx="3" fill="#cbd5e1" stroke="#1e293b" stroke-width="2"/>
+                            <circle cx="35" cy="70" r="12" fill="#1e293b"/>
+                            <circle cx="35" cy="70" r="4" fill="#cbd5e1"/>
+                            <circle cx="85" cy="70" r="12" fill="#1e293b"/>
+                            <circle cx="85" cy="70" r="4" fill="#cbd5e1"/>
+                        </svg>`;
+                    case 'chair':
+                        return `<svg width="50" height="60" viewBox="0 0 60 90">
+                            <path d="M10,10 L10,50 L50,50 L50,10 Z" fill="#b45309" stroke="#451a03" stroke-width="3"/>
+                            <rect x="5" y="50" width="50" height="8" rx="2" fill="#d97706"/>
+                            <line x1="12" y1="58" x2="12" y2="85" stroke="#451a03" stroke-width="5"/>
+                            <line x1="48" y1="58" x2="48" y2="85" stroke="#451a03" stroke-width="5"/>
+                        </svg>`;
+                    case 'tree':
+                        return `<svg width="70" height="80" viewBox="0 0 80 100">
+                            <rect x="34" y="60" width="12" height="35" fill="#78350f"/>
+                            <circle cx="40" cy="35" r="30" fill="#16a34a"/>
+                            <circle cx="30" cy="25" r="8" fill="#ef4444"/>
+                            <circle cx="50" cy="45" r="8" fill="#ef4444"/>
+                        </svg>`;
+                    default:
+                        return `<div style="width:20px; height:20px; background:red; border-radius:50%;"></div>`;
+                }
+            }
+        };
+
+        /**
+         * System Storage Integration Helper Layer
+         */
+        const Persistence = {
+            key: '_odd_even_explorer_v1_data',
+            load() {
+                try {
+                    const data = localStorage.getItem(this.key);
+                    if (data) {
+                        const parsed = JSON.parse(data);
+                        AppState.profile = { ...AppState.profile, ...parsed };
+                    }
+                } catch(e) { console.error("Error context checking memory database read sync hooks.", e); }
+            },
+            save() {
+                try {
+                    localStorage.setItem(this.key, JSON.stringify(AppState.profile));
+                } catch(e) { console.error("Error flashing configuration maps payload state storage data.", e); }
+            }
+        };
+
+        /**
+         * Global View Controller Navigation Interface Manager Framework Switchboard
+         */
+        const ScreenManager = {
+            switchScreen(screenName) {
+                SoundFX.play('click');
+                AppState.currentScreen = screenName;
+                
+                document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+                const activeEl = document.getElementById(`screen-${screenName}`);
+                if (activeEl) activeEl.classList.add('active');
+
+                // Dynamic Header Navigation Button Visibility Handler Rule
+                const homeBtn = document.getElementById('btn-nav-home');
+                const levelsBtn = document.getElementById('btn-nav-levels');
+                
+                if (screenName === 'welcome') {
+                    homeBtn.classList.add('hidden');
+                    levelsBtn.classList.add('hidden');
+                } else if (screenName === 'levels') {
+                    homeBtn.classList.remove('hidden');
+                    levelsBtn.classList.add('hidden');
+                } else {
+                    homeBtn.classList.remove('hidden');
+                    levelsBtn.classList.remove('hidden');
+                }
+
+                if (screenName === 'dashboard') {
+                    this.refreshActiveSubmoduleView();
+                }
+            },
+
+            setSubmodule(modId) {
+                SoundFX.play('click');
+                AppState.activeSubmodule = modId;
+                
+                document.querySelectorAll('#dashboard-sidebar-menu-target button').forEach(btn => {
+                    if (btn.getAttribute('data-target') === modId) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                });
+
+                document.querySelectorAll('.submodule-panel').forEach(panel => panel.style.display = 'none');
+                const targetPanel = document.getElementById(`submod-${modId}`);
+                if (targetPanel) targetPanel.style.display = 'block';
+
+                this.refreshActiveSubmoduleView();
+            },
+
+            refreshActiveSubmoduleView() {
+                // Bounds enforcement normalization pass mapping checks
+                const bounds = AppState.levelsConfig[AppState.activeLevel].range;
+                
+                switch(AppState.activeSubmodule) {
+                    case 'explorer':
+                        if (AppState.explorerValue < bounds[0]) AppState.explorerValue = bounds[0];
+                        if (AppState.explorerValue > bounds[1]) AppState.explorerValue = bounds[1];
+                        document.getElementById('explorer-main-input').min = bounds[0];
+                        document.getElementById('explorer-main-input').max = bounds[1];
+                        document.getElementById('explorer-main-input').value = AppState.explorerValue;
+                        Renderers.explorerModule();
+                        break;
+                    case 'pairing':
+                        Renderers.pairingModule();
+                        break;
+                    case 'numberline':
+                        Renderers.numberLineModule();
+                        break;
+                    case 'hundreds':
+                        Renderers.hundredsChartModule();
+                        break;
+                    case 'blocks':
+                        Renderers.blocksModule();
+                        break;
+                    case 'real-life':
+                        Renderers.realLifeModule();
+                        break;
+                    case 'patterns':
+                        Renderers.patternsModule();
+                        break;
+                    case 'sandbox':
+                        Renderers.sandboxModule();
+                        break;
+                    case 'games':
+                        ArcadeGameEngine.init(AppState.activeGameId);
+                        break;
+                }
+                
+                // Track interaction profile telemetry logic
+                AchievementsTracker.triggerCheck('explorer_master');
+            }
+        };
+
+        /**
+         * View Component Template Processing & DOM Drawing Engines Bundle
+         */
+        const Renderers = {
+            
+            initLevelsGrid() {
+                const container = document.getElementById('levels-cards-grid-target');
+                container.innerHTML = '';
+                
+                const colorBadges = ['#10b981', '#059669', '#f59e0b', '#ea580c', '#dc2626', '#8b5cf6'];
+                
+                Object.keys(AppState.levelsConfig).forEach((lvlStr) => {
+                    const lvl = parseInt(lvlStr);
+                    const conf = AppState.levelsConfig[lvl];
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.style.borderTop = `6px solid ${colorBadges[lvl - 1]}`;
+                    
+                    card.innerHTML = `
+                        <span class="level-badge" style="background-color: ${colorBadges[lvl - 1]}">Level ${lvl}</span>
+                        <h3>${conf.title}</h3>
+                        <p>${conf.desc}</p>
+                        <div class="meta-class">${conf.cls}</div>
+                    `;
+                    
+                    card.addEventListener('click', () => {
+                        AppState.activeLevel = lvl;
+                        document.getElementById('footer-lbl-active-level-scope').innerText = `Level ${lvl} (${conf.range[0]}-${conf.range[1]})`;
+                        SoundFX.play('correct');
+                        ScreenManager.switchScreen('dashboard');
+                    });
+                    
+                    container.appendChild(card);
+                });
+            },
+
+            explorerModule() {
+                const val = AppState.explorerValue;
+                const isEven = (val % 2 === 0);
+                
+                // Color formatting definitions variables
+                const textClass = document.getElementById('explorer-text-class');
+                const textLastDigit = document.getElementById('explorer-text-lastdigit');
+                const textName = document.getElementById('explorer-text-name');
+                const explanationBlock = document.getElementById('explorer-explanation-block');
+                
+                if (isEven) {
+                    textClass.innerText = "EVEN NUMBER";
+                    textClass.style.color = "var(--bg-even)";
+                    textLastDigit.style.color = "var(--bg-even)";
+                } else {
+                    textClass.innerText = "ODD NUMBER";
+                    textClass.style.color = "var(--bg-odd)";
+                    textLastDigit.style.color = "var(--bg-odd)";
+                }
+
+                // Render string structural definitions data
+                const lastDigitStr = val.toString().slice(-1);
+                textLastDigit.innerText = lastDigitStr;
+                
+                // Number name formatter convert lookup array
+                const namesMap = {0:"Zero",1:"One",2:"Two",3:"Three",4:"Four",5:"Five",6:"Six",7:"Seven",8:"Eight",9:"Nine",10:"Ten",
+                                  11:"Eleven",12:"Twelve",13:"Thirteen",14:"Fourteen",15:"Fifteen",16:"Sixteen",17:"Seventeen",18:"Eighteen",19:"Nineteen",20:"Twenty"};
+                textName.innerText = namesMap[val] || `Integer Value: ${val}`;
+
+                // Process dynamic calculation explanation block texts syntax
+                if (val === 0) {
+                    explanationBlock.innerHTML = `💡 <strong>Zero Exploration Rule:</strong> Zero leaves exactly no remaining units left over and lines up symmetrically as a baseline matching target multiple of 2, establishing it firmly as an <strong>Even Number</strong>.`;
+                } else {
+                    explanationBlock.innerHTML = isEven ? 
+                        `💡 Since grouping this number by 2s leaves <strong>exactly zero</strong> units remaining leftover without matching partners, <strong>${val} is an Even Number</strong>.` :
+                        `💡 Since grouping this number by 2s leaves <strong>exactly 1 single unit remaining leftover</strong> alone, <strong>${val} is an Odd Number</strong>.`;
+                }
+
+                // Append visual pairs blocks nodes
+                const renderTarget = document.getElementById('explorer-pairing-render-target');
+                renderTarget.innerHTML = '';
+                
+                const assetType = 'star';
+                const totalPairs = Math.floor(val / 2);
+                const remainder = val % 2;
+
+                for (let i = 0; i < totalPairs; i++) {
+                    const pairBox = document.createElement('div');
+                    pairBox.className = 'pair-container-box even-pair';
+                    pairBox.innerHTML = SVGFactory.get(assetType) + SVGFactory.get(assetType);
+                    renderTarget.appendChild(pairBox);
+                }
+
+                if (remainder > 0) {
+                    const oddBox = document.createElement('div');
+                    oddBox.className = 'pair-container-box odd-leftover';
+                    oddBox.innerHTML = SVGFactory.get(assetType) + `<span style="font-size:0.7rem; font-weight:800; color:var(--bg-odd);">Leftover Alone!</span>`;
+                    renderTarget.appendChild(oddBox);
+                }
+
+                if (val === 0) {
+                    renderTarget.innerHTML = `<span style="color:#64748b; font-style:italic;">Empty Workspace Deck (Value 0)</span>`;
+                }
+            },
+
+            pairingModule() {
+                const asset = document.getElementById('pairing-asset-selector').value;
+                const pool = document.getElementById('pairing-source-pool-target');
+                const dropzoneGrid = document.getElementById('pairing-dropzone-grid-target');
+                
+                pool.innerHTML = '';
+                dropzoneGrid.innerHTML = '';
+                
+                // Configure specific layout limits based on current application active difficulty context rule
+                const maxObjectsMap = { 1: 10, 2: 20, 3: 30, 4: 40, 5: 50, 6: 20 };
+                const targetsCount = maxObjectsMap[AppState.activeLevel] || 10;
+
+                // Load object item blocks array
+                for (let i = 0; i < targetsCount; i++) {
+                    const node = document.createElement('div');
+                    node.className = 'draggable-node';
+                    node.id = `drag-item-node-${i}`;
+                    node.setAttribute('draggable', 'true');
+                    node.innerHTML = SVGFactory.get(asset);
+                    
+                    // Setup internal core events handlers for structural drag capability interfaces
+                    node.addEventListener('dragstart', (e) => {
+                        e.dataTransfer.setData('text/plain', node.id);
+                    });
+                    
+                    pool.appendChild(node);
+                }
+
+                // Render matching container receiver slots layouts matching total pairing half splits
+                const totalPairSlots = Math.ceil(targetsCount / 2);
+                for (let j = 0; j < totalPairSlots; j++) {
+                    const slot = document.createElement('div');
+                    slot.className = 'pairing-slot';
+                    slot.id = `pair-dock-slot-${j}`;
+                    
+                    slot.addEventListener('dragover', (e) => e.preventDefault());
+                    slot.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        const id = e.dataTransfer.getData('text/plain');
+                        const draggedNode = document.getElementById(id);
+                        if (draggedNode && slot.querySelectorAll('.draggable-node').length < 2) {
+                            slot.appendChild(draggedNode);
+                            SoundFX.play('click');
+                            this.updatePairingCounterMetrics();
+                        }
+                    });
+
+                    dropzoneGrid.appendChild(slot);
+                }
+
+                this.updatePairingCounterMetrics();
+            },
+
+            updatePairingCounterMetrics() {
+                const grid = document.getElementById('pairing-dropzone-grid-target');
+                const placedCount = grid.querySelectorAll('.draggable-node').length;
+                const label = document.getElementById('pairing-live-status-feedback');
+                label.innerText = `Items Grouped: ${placedCount}`;
+
+                if (placedCount > 0) {
+                    AchievementsTracker.triggerCheck('pair_star');
+                }
+            },
+
+            numberLineModule() {
+                const targetAxis = document.getElementById('numberline-axis-ticks-target');
+                targetAxis.innerHTML = '';
+                
+                const bounds = AppState.levelsConfig[AppState.activeLevel].range;
+                const min = bounds[0];
+                const max = bounds[1];
+                
+                // Determine layout step distribution to maximize viewport horizontal visibility widths
+                let step = 1;
+                if (max - min > 150) step = 50;
+                else if (max - min > 40) step = 10;
+                else if (max - min > 15) step = 2;
+
+                for (let i = min; i <= max; i += step) {
+                    const tick = document.createElement('div');
+                    tick.className = 'numberline-tick';
+                    
+                    const isEven = (i % 2 === 0);
+                    
+                    tick.innerHTML = `
+                        <div class="tick-indicator">${i}</div>
+                        <div class="tick-mark"></div>
+                        <div class="tick-label">${i}</div>
+                    `;
+                    
+                    tick.addEventListener('click', () => {
+                        AppState.explorerValue = i;
+                        SoundFX.play('click');
+                        // Fast flash visual highlight toggle on select trigger bounds pass
+                        document.querySelectorAll('.tick-indicator').forEach(el => el.style.transform = 'scale(1)');
+                        tick.querySelector('.tick-indicator').style.transform = 'scale(1.4)';
+                    });
+
+                    targetAxis.appendChild(tick);
+                }
+                
+                document.getElementById('numline-range-readout-lbl').innerText = `Range Horizon Bounds: [${min} to ${max}]`;
+            },
+
+            hundredsChartModule() {
+                const matrix = document.getElementById('hundreds-matrix-dom-container');
+                matrix.innerHTML = '';
+
+                const bounds = AppState.levelsConfig[AppState.activeLevel].range;
+                // Clamp chart scope range to ensure standard responsive UI matrices viewports fit perfectly
+                const ceilingLimit = Math.min(bounds[1], 100);
+                const floorVal = bounds[0] === 0 ? 1 : bounds[0];
+
+                if (ceilingLimit === 0) {
+                    matrix.innerHTML = `<p style="grid-column: span 10; text-align:center; padding:2rem; color:#64748b;">Grid Matrix scope hidden below value 1 levels configurations.</p>`;
+                    return;
+                }
+
+                for (let i = floorVal; i <= ceilingLimit; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'matrix-cell';
+                    cell.innerText = i;
+                    
+                    cell.addEventListener('click', () => {
+                        SoundFX.play('click');
+                        if (i % 2 === 0) {
+                            cell.classList.toggle('cell-even');
+                        } else {
+                            cell.classList.toggle('cell-odd');
+                        }
+                    });
+
+                    matrix.appendChild(cell);
+                }
+            },
+
+            blocksModule() {
+                const total = AppState.blocksValue;
+                const container = document.getElementById('blocks-structural-stack-target');
+                container.innerHTML = '';
+
+                const totalRows = Math.ceil(total / 2);
+                for (let i = 0; i < totalRows; i++) {
+                    const row = document.createElement('div');
+                    row.className = 'cube-block-pair-row';
+                    
+                    // Column Unit 1 block
+                    const block1 = document.createElement('div');
+                    block1.className = 'cube-unit';
+                    row.appendChild(block1);
+
+                    // Column Unit 2 block check if pairing satisfies slot sequence
+                    if ((i * 2 + 2) <= total) {
+                        const block2 = document.createElement('div');
+                        block2.className = 'cube-unit';
+                        row.appendChild(block2);
+                    } else {
+                        // Protruding asymmetric leftover odd block element item design pattern modifier tag
+                        block1.classList.add('odd-cube');
+                    }
+
+                    container.appendChild(row);
+                }
+
+                const displayAnalyticsText = document.getElementById('blocks-analytics-status-text');
+                if (total === 0) {
+                    displayAnalyticsText.innerText = "EMPTY";
+                    displayAnalyticsText.style.color = "#94a3b8";
+                } else if (total % 2 === 0) {
+                    displayAnalyticsText.innerText = "BALANCED EVEN";
+                    displayAnalyticsText.style.color = "var(--bg-even)";
+                } else {
+                    displayAnalyticsText.innerText = "UNBALANCED ODD";
+                    displayAnalyticsText.style.color = "var(--bg-odd)";
+                }
+
+                document.getElementById('blocks-lbl-total-count').innerText = `Total Structural Cubes: ${total}`;
+            },
+
+            realLifeModule() {
+                const scene = AppState.activeRealLifeScene;
+                const canvas = document.getElementById('real-life-scene-rendering-viewport');
+                canvas.innerHTML = '';
+
+                const targetCount = AppState.realLifeValues[scene];
+                
+                let assetKey = 'bus';
+                if (scene === 'classroom') assetKey = 'chair';
+                if (scene === 'orchard') assetKey = 'tree';
+
+                // Core asset scene component loop injector process framework layout map
+                for (let i = 0; i < targetCount; i++) {
+                    const wrap = document.createElement('div');
+                    wrap.className = 'scene-asset-wrapper';
+                    wrap.innerHTML = SVGFactory.get(assetKey) + `<span style="font-weight:800; font-size:0.8rem; color:#64748b;">#${i+1}</span>`;
+                    canvas.appendChild(wrap);
+                }
+
+                const prompt = document.getElementById('real-life-lbl-question-prompt');
+                const isEven = (targetCount % 2 === 0);
+                
+                if (AppState.realLifeReveal) {
+                    prompt.innerHTML = `Counted: <strong>${targetCount}</strong> assets framework units. This is an <strong>${isEven ? 'Even' : 'Odd'} Quantity!</strong>`;
+                } else {
+                    prompt.innerHTML = `Count matches specific setup patterns. Can you figure out if the sequence asset group collection is Odd or Even?`;
+                }
+            },
+
+            patternsModule() {
+                // Pre-generate standard informational components arrays natively
+                document.getElementById('pattern-visualizer-output-strip-row').innerHTML = `<span style="color:#64748b;">Click an option algorithm sequence execution rule above to observe structural matrix layouts mappings.</span>`;
+            },
+
+            runPatternVisualizationSequence(mode) {
+                const strip = document.getElementById('pattern-visualizer-output-strip-row');
+                const textExplain = document.getElementById('pattern-dynamic-explanation-text');
+                strip.innerHTML = '';
+                
+                SoundFX.play('correct');
+                AchievementsTracker.triggerCheck('pattern_master');
+
+                let startVal = (mode === 'even') ? 0 : 1;
+                let bufferArray = [];
+
+                for (let i = 0; i < 6; i++) {
+                    const currentStep = startVal + (i * 2);
+                    bufferArray.push(currentStep);
+
+                    const block = document.createElement('div');
+                    block.className = `floating-num-card`;
+                    block.style.background = (mode === 'even') ? 'var(--bg-even)' : 'var(--bg-odd)';
+                    block.style.animation = 'none';
+                    block.style.width = '60px';
+                    block.style.height = '60px';
+                    block.style.fontSize = '1.3rem';
+                    block.innerText = currentStep;
+
+                    strip.appendChild(block);
+                }
+
+                textExplain.innerHTML = (mode === 'even') ? 
+                    `📈 <strong>Even Skip Pattern String Sequence:</strong> [${bufferArray.join(', ')}...]. Notice that every single digit consistently maps completely cleanly as standard multiples of 2 arithmetic expressions.` :
+                    `📈 <strong>Odd Skip Pattern String Sequence:</strong> [${bufferArray.join(', ')}...]. Observe that skipping by 2s starting out sequence arrays from an odd value systematically constructs an ongoing trail of infinite odd numbers.`;
+            },
+
+            sandboxModule() {
+                // Ensure text rendering inputs match configurations parameters perfectly
+                document.getElementById('sandbox-config-number').value = AppState.sandboxValue;
+                
+                const registry = document.getElementById('sandbox-saved-registry-list-root');
+                registry.innerHTML = '';
+
+                if (AppState.profile.savedSandboxPresets.length === 0) {
+                    registry.innerHTML = `<li style="list-style:none; color:#64748b; font-style:italic;">No custom teacher lesson templates saved in registry memory profiles.</li>`;
+                    return;
+                }
+
+                AppState.profile.savedSandboxPresets.forEach((val, idx) => {
+                    const li = document.createElement('li');
+                    li.style.display = 'flex';
+                    li.style.justifyContent = 'space-between';
+                    li.style.alignItems = 'center';
+                    li.style.background = 'white';
+                    li.style.padding = '4px 8px';
+                    li.style.borderRadius = '6px';
+                    
+                    li.innerHTML = `
+                        <span>Target Item Lesson Workspace: <strong>${val}</strong></span>
+                        <button class="btn-purple" style="font-size:0.65rem; padding:2px 6px;" onclick="Renderers.loadSandboxPresetIndex(${val})">Load</button>
+                    `;
+                    registry.appendChild(li);
+                });
+            },
+
+            loadSandboxPresetIndex(val) {
+                AppState.sandboxValue = val;
+                AppState.explorerValue = val;
+                SoundFX.play('correct');
+                ScreenManager.setSubmodule('explorer');
+            }
+        };
+
+        /**
+         * Arcade Play Games Animation Engine Layout Controller Suite
+         */
+        const ArcadeGameEngine = {
+            canvas: null,
+            ctx: null,
+            animFrameId: null,
+            score: 0,
+            gameState: 'welcome', // welcome, playing, gameover
+            gameType: 'pop_balloon', // pop_balloon, train_sort
+            entities: [],
+            spawnTimer: 0,
+            targetMode: 'even', // even, odd
+            trainCars: { even: { x: 50, y: 300, w: 150, h: 70 }, odd: { x: 450, y: 300, w: 150, h: 70 } },
+            draggedEntity: null,
+
+            init(gameKey) {
+                this.gameType = gameKey;
+                this.canvas = document.getElementById('arcade-rendering-canvas-node');
+                this.ctx = this.canvas.getContext('2d');
+                this.resizeCanvas();
+                
+                this.gameState = 'welcome';
+                this.score = 0;
+                this.entities = [];
+                
+                // Track modal setup rules text presentation details
+                const title = document.getElementById('game-modal-title-text');
+                const desc = document.getElementById('game-modal-desc-text');
+                const modal = document.getElementById('game-welcome-modal-element');
+                
+                modal.style.display = 'flex';
+                this.targetMode = (Math.random() > 0.5) ? 'even' : 'odd';
+
+                if (gameKey === 'pop_balloon') {
+                    title.innerText = "🎈 Pop the Floating Numbers";
+                    desc.innerText = `Click or tap numbers matching target criteria objectives: Burst ALL ${this.targetMode.toUpperCase()} values!`;
+                } else {
+                    title.innerText = "🚂 Odd & Even Train Sort Matcher";
+                    desc.innerText = `Drag floating payload integers directly straight onto their valid marked Train Cars box containers!`;
+                }
+
+                document.getElementById('game-hud-score-lbl').innerText = `Score: ${this.score}`;
+                document.getElementById('game-hud-objective-lbl').innerText = `Target Filter: ${this.targetMode.toUpperCase()}`;
+
+                this.setupInputListeners();
+                this.renderWelcomeBackgroundLoop();
+            },
+
+            resizeCanvas() {
+                if (this.canvas) {
+                    this.canvas.width = this.canvas.parentElement.clientWidth;
+                    this.canvas.height = this.canvas.parentElement.clientHeight;
+                }
+            },
+
+            launchStagePlay() {
+                SoundFX.play('click');
+                document.getElementById('game-welcome-modal-element').style.display = 'none';
+                this.gameState = 'playing';
+                this.score = 0;
+                this.entities = [];
+                this.spawnTimer = 0;
+                
+                if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
+                this.gameLoop();
+            },
+
+            setupInputListeners() {
+                // Clear old bindings to intercept canvas click collision actions safely
+                this.canvas.onmousedown = (e) => this.handlePointerDown(e);
+                this.canvas.onmousemove = (e) => this.handlePointerMove(e);
+                this.canvas.onmouseup = () => this.handlePointerUp();
+                
+                this.canvas.ontouchstart = (e) => {
+                    if (e.touches.length > 0) {
+                        const t = e.touches[0];
+                        const rect = this.canvas.getBoundingClientRect();
+                        this.processHitCollision(t.clientX - rect.left, t.clientY - rect.top);
+                    }
+                };
+            },
+
+            handlePointerDown(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const mx = e.clientX - rect.left;
+                const my = e.clientY - rect.top;
+                
+                if (this.gameState !== 'playing') return;
+
+                if (this.gameType === 'train_sort') {
+                    // Check if picking up cargo node element tracking check
+                    for (let ent of this.entities) {
+                        const dist = Math.hypot(ent.x - mx, ent.y - my);
+                        if (dist < ent.r) {
+                            this.draggedEntity = ent;
+                            ent.isDragged = true;
+                            break;
+                        }
+                    }
+                } else {
+                    this.processHitCollision(mx, my);
+                }
+            },
+
+            handlePointerMove(e) {
+                if (this.gameType === 'train_sort' && this.draggedEntity) {
+                    const rect = this.canvas.getBoundingClientRect();
+                    this.draggedEntity.x = e.clientX - rect.left;
+                    this.draggedEntity.y = e.clientY - rect.top;
+                }
+            },
+
+            handlePointerUp() {
+                if (this.gameType === 'train_sort' && this.draggedEntity) {
+                    const ent = this.draggedEntity;
+                    ent.isDragged = false;
+                    this.draggedEntity = null;
+
+                    // Evaluate drop coordinate alignments zone boxes validation checks
+                    let choice = null;
+                    if (ent.x > this.trainCars.even.x && ent.x < (this.trainCars.even.x + this.trainCars.even.w) &&
+                        ent.y > this.trainCars.even.y && ent.y < (this.trainCars.even.y + this.trainCars.even.h)) {
+                        choice = 'even';
+                    } else if (ent.x > this.trainCars.odd.x && ent.x < (this.trainCars.odd.x + this.trainCars.odd.w) &&
+                               ent.y > this.trainCars.odd.y && ent.y < (this.trainCars.odd.y + this.trainCars.odd.h)) {
+                        choice = 'odd';
+                    }
+
+                    if (choice) {
+                        const isNumberEven = (ent.val % 2 === 0);
+                        const expected = isNumberEven ? 'even' : 'odd';
+                        
+                        if (choice === expected) {
+                            this.score += 15;
+                            SoundFX.play('correct');
+                        } else {
+                            this.score = Math.max(0, this.score - 10);
+                            SoundFX.play('wrong');
+                        }
+                        document.getElementById('game-hud-score-lbl').innerText = `Score: ${this.score}`;
+                        // Filter remove object from play array stack register list references
+                        this.entities = this.entities.filter(item => item !== ent);
+                        
+                        if (this.score >= 50) AchievementsTracker.triggerCheck('arcade_champion');
+                    }
+                }
+            },
+
+            processHitCollision(mx, my) {
+                if (this.gameState !== 'playing') return;
+
+                this.entities.forEach((ent) => {
+                    if (!ent.popped) {
+                        const dist = Math.hypot(ent.x - mx, ent.y - my);
+                        if (dist < ent.r + 10) {
+                            ent.popped = true;
+                            const isCorrect = (this.targetMode === 'even' && ent.val % 2 === 0) || (this.targetMode === 'odd' && ent.val % 2 !== 0);
+                            
+                            if (isCorrect) {
+                                this.score += 10;
+                                SoundFX.play('correct');
+                            } else {
+                                this.score = Math.max(0, this.score - 5);
+                                SoundFX.play('wrong');
+                            }
+                            document.getElementById('game-hud-score-lbl').innerText = `Score: ${this.score}`;
+                            
+                            if (this.score >= 50) AchievementsTracker.triggerCheck('arcade_champion');
+                        }
+                    }
+                });
+            },
+
+            gameLoop() {
+                if (this.gameState !== 'playing') return;
+
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Control spawn pipelines metrics rules
+                this.spawnTimer++;
+                if (this.spawnTimer > 45) {
+                    this.spawnTimer = 0;
+                    const bounds = AppState.levelsConfig[AppState.activeLevel].range;
+                    const generatedRandomInt = Math.floor(Math.random() * (bounds[1] - bounds[0] + 1)) + bounds[0];
+                    
+                    this.entities.push({
+                        id: Date.now(),
+                        x: Math.random() * (this.canvas.width - 60) + 30,
+                        y: this.canvas.height + 20,
+                        vy: -(Math.random() * 2 + 1),
+                        val: generatedRandomInt,
+                        r: 25,
+                        popped: false,
+                        isDragged: false,
+                        color: (generatedRandomInt % 2 === 0) ? 'var(--bg-even)' : 'var(--bg-odd)'
+                    });
+                }
+
+                // Render dynamic background items elements base structures elements arrays loop rules
+                if (this.gameType === 'train_sort') {
+                    // Render structural platform train lines layouts tracks bars base visual overlays
+                    this.ctx.fillStyle = '#4b5563';
+                    this.ctx.fillRect(this.trainCars.even.x, this.trainCars.even.y, this.trainCars.even.w, this.trainCars.even.h);
+                    this.ctx.fillRect(this.trainCars.odd.x, this.trainCars.odd.y, this.trainCars.odd.w, this.trainCars.odd.h);
+                    
+                    this.ctx.fillStyle = '#ffffff';
+                    this.ctx.font = 'bold 14px sans-serif';
+                    this.ctx.fillText("🚂 EVEN CARGO", this.trainCars.even.x + 20, this.trainCars.even.y + 40);
+                    this.ctx.fillText("🚂 ODD CARGO", this.trainCars.odd.x + 25, this.trainCars.odd.y + 40);
+                }
+
+                // Transform and draw layout nodes list iterations checks elements update arrays operations
+                this.entities.forEach((ent, idx) => {
+                    if (!ent.isDragged) ent.y += ent.vy;
+
+                    // Draw operational bubbles balloon layouts geometries properties
+                    if (!ent.popped) {
+                        this.ctx.beginPath();
+                        this.ctx.arc(ent.x, ent.y, ent.r, 0, Math.PI * 2);
+                        this.ctx.fillStyle = ent.color;
+                        this.ctx.fill();
+                        this.ctx.strokeStyle = '#ffffff';
+                        this.ctx.stroke();
+
+                        // Label string layout tags values values text rendering layers metrics parameters
+                        this.ctx.fillStyle = '#ffffff';
+                        this.ctx.font = 'bold 16px sans-serif';
+                        this.ctx.textAlign = 'center';
+                        this.ctx.textBaseline = 'middle';
+                        this.ctx.fillText(ent.val, ent.x, ent.y);
+                    }
+                });
+
+                // Clear outbound elements lists to save system context processing memory speeds
+                this.entities = this.entities.filter(ent => ent.y > -50 && !ent.popped);
+
+                this.animFrameId = requestAnimationFrame(() => this.gameLoop());
+            },
+
+            renderWelcomeBackgroundLoop() {
+                if (this.gameState !== 'welcome') return;
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                this.ctx.fillStyle = 'rgba(255,255,255,0.05)';
+                this.ctx.font = 'italic bold 20px sans-serif';
+                this.ctx.fillText("Arcade Simulation Playground Mode Ready...", 40, 100);
+            }
+        };
+
+        /**
+         * System Achievements & Curricular Competencies Badge Awarding Engine Manager
+         */
+        const AchievementsTracker = {
+            triggerCheck(badgeKey) {
+                if (!AppState.profile.unlockedBadges.includes(badgeKey)) {
+                    AppState.profile.unlockedBadges.push(badgeKey);
+                    Persistence.save();
+                    
+                    this.displayToastAlertPopupNotification(badgeKey);
+                    this.renderFooterBadgesDisplayRow();
+                }
+            },
+
+            displayToastAlertPopupNotification(badgeKey) {
+                const conf = AppState.badgesConfig[badgeKey];
+                if (!conf) return;
+
+                const popup = document.getElementById('achievement-popup');
+                document.getElementById('achievement-toast-icon').innerText = conf.icon;
+                document.getElementById('achievement-toast-title-text').innerText = conf.name;
+
+                SoundFX.play('badge');
+                popup.classList.add('show');
+                
+                setTimeout(() => {
+                    popup.classList.remove('show');
+                }, 4000);
+            },
+
+            renderFooterBadgesDisplayRow() {
+                const row = document.getElementById('footer-badges-list-target');
+                row.innerHTML = '';
+
+                Object.keys(AppState.badgesConfig).forEach((key) => {
+                    const conf = AppState.badgesConfig[key];
+                    const hasIt = AppState.profile.unlockedBadges.includes(key);
+                    
+                    const span = document.createElement('span');
+                    span.className = `mini-badge-icon ${hasIt ? 'unlocked' : ''}`;
+                    span.innerText = `${conf.icon} ${conf.name}`;
+                    span.title = conf.criteria;
+
+                    row.appendChild(span);
+                });
+            }
+        };
+
+        /**
+         * Teacher Smartboard Demonstration Tools Presentation Module Extensions
+         */
+        const PresentationEngine = {
+            drawing: false,
+            ctx: null,
+            canvas: null,
+
+            init() {
+                this.canvas = document.getElementById('annotation-canvas-overlay');
+                this.ctx = this.canvas.getContext('2d');
+                this.syncCanvasDimensionsSize();
+                
+                window.addEventListener('resize', () => this.syncCanvasDimensionsSize());
+                this.wireDrawingEvents();
+            },
+
+            syncCanvasDimensionsSize() {
+                if (this.canvas) {
+                    this.canvas.width = window.innerWidth;
+                    this.canvas.height = window.innerHeight;
+                }
+            },
+
+            wireDrawingEvents() {
+                const c = this.canvas;
+                c.onmousedown = (e) => { this.drawing = true; this.ctx.beginPath(); this.ctx.moveTo(e.clientX, e.clientY); };
+                c.onmousemove = (e) => {
+                    if (this.drawing) {
+                        this.ctx.lineTo(e.clientX, e.clientY);
+                        this.ctx.strokeStyle = '#dc2626';
+                        this.ctx.lineWidth = 4;
+                        this.ctx.lineCap = 'round';
+                        this.ctx.stroke();
+                    }
+                };
+                c.onmouseup = () => this.drawing = false;
+
+                // Wire touch equivalents structural layers configurations matching presentation screens
+                c.ontouchstart = (e) => {
+                    if (e.touches.length>0) {
+                        this.drawing = true; this.ctx.beginPath(); 
+                        this.ctx.moveTo(e.touches[0].clientX, e.touches[0].clientY);
+                    }
+                };
+                c.ontouchmove = (e) => {
+                    if (this.drawing && e.touches.length>0) {
+                        this.ctx.lineTo(e.touches[0].clientX, e.touches[0].clientY);
+                        this.ctx.strokeStyle = '#22c55e';
+                        this.ctx.lineWidth = 5;
+                        this.ctx.stroke();
+                    }
+                };
+                c.ontouchend = () => this.drawing = false;
+            },
+
+            toggleAnnotationLayer() {
+                const overlay = document.getElementById('annotation-canvas-overlay');
+                overlay.classList.toggle('active');
+                const isActive = overlay.classList.contains('active');
+                if (!isActive) {
+                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                }
+                SoundFX.play('click');
+            },
+
+            toggleSpotlightMode() {
+                const spot = document.getElementById('spotlight-overlay');
+                const isCurrentlyActive = (spot.style.display === 'block');
+                
+                if (isCurrentlyActive) {
+                    spot.style.display = 'none';
+                    window.onmousemove = null;
+                } else {
+                    spot.style.display = 'block';
+                    window.onmousemove = (e) => {
+                        spot.style.background = `radial-gradient(circle 130px at ${e.clientX}px ${e.clientY}px, transparent 100%, rgba(0,0,0,0.8) 100%)`;
+                    };
+                }
+                SoundFX.play('click');
+            }
+        };
+
+        /**
+         * Operational Core Initializer Framework Bootstrapping Mounting Sequence Setup Actions
+         */
+        document.addEventListener("DOMContentLoaded", () => {
+            // Load application memory profiles profiles datasets registry structures data models
+            Persistence.load();
+            
+            // Generate structural components UI grids
+            Renderers.initLevelsGrid();
+            AchievementsTracker.renderFooterBadgesDisplayRow();
+            PresentationEngine.init();
+
+            // Bind Navigation UI Element Hooks Control Loops Interchanges Click Bindings
+            document.getElementById('btn-welcome-start').addEventListener('click', () => ScreenManager.switchScreen('levels'));
+            document.getElementById('btn-nav-home').addEventListener('click', () => ScreenManager.switchScreen('welcome'));
+            document.getElementById('btn-nav-levels').addEventListener('click', () => ScreenManager.switchScreen('levels'));
+            
+            // Wire subnav items layouts stack controller selections sidebar links triggers
+            document.querySelectorAll('#dashboard-sidebar-menu-target button').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    ScreenManager.setSubmodule(btn.getAttribute('data-target'));
+                });
+            });
+
+            // Bind Explorer Input Elements Controllers Framework Events
+            const expInput = document.getElementById('explorer-main-input');
+            expInput.addEventListener('input', (e) => {
+                AppState.explorerValue = parseInt(e.target.value) || 0;
+                Renderers.explorerModule();
+            });
+            document.getElementById('explorer-btn-decrement').addEventListener('click', () => {
+                const bounds = AppState.levelsConfig[AppState.activeLevel].range;
+                if (AppState.explorerValue > bounds[0]) { AppState.explorerValue--; ScreenManager.refreshActiveSubmoduleView(); SoundFX.play('click'); }
+            });
+            document.getElementById('explorer-btn-increment').addEventListener('click', () => {
+                const bounds = AppState.levelsConfig[AppState.activeLevel].range;
+                if (AppState.explorerValue < bounds[1]) { AppState.explorerValue++; ScreenManager.refreshActiveSubmoduleView(); SoundFX.play('click'); }
+            });
+            document.getElementById('explorer-btn-random').addEventListener('click', () => {
+                const bounds = AppState.levelsConfig[AppState.activeLevel].range;
+                AppState.explorerValue = Math.floor(Math.random() * (bounds[1] - bounds[0] + 1)) + bounds[0];
+                ScreenManager.refreshActiveSubmoduleView();
+                SoundFX.play('correct');
+            });
+
+            // Wire pairing interactive view deck asset filters selectors change actions
+            document.getElementById('pairing-asset-selector').addEventListener('change', () => Renderers.pairingModule());
+            document.getElementById('pairing-btn-reset').addEventListener('click', () => { SoundFX.play('click'); Renderers.pairingModule(); });
+            document.getElementById('pairing-btn-autoplay').addEventListener('click', () => {
+                SoundFX.play('correct');
+                const slots = document.querySelectorAll('.pairing-slot');
+                const items = Array.from(document.querySelectorAll('#pairing-source-pool-target .draggable-node'));
+                
+                slots.forEach((slot) => {
+                    if (items.length > 0 && slot.querySelectorAll('.draggable-node').length < 2) {
+                        slot.appendChild(items.pop());
+                    }
+                    if (items.length > 0 && slot.querySelectorAll('.draggable-node').length < 2) {
+                        slot.appendChild(items.pop());
+                    }
+                });
+                Renderers.updatePairingCounterMetrics();
+            });
+
+            // Numberline visualization filters controllers link clicks mappings sets
+            document.getElementById('numline-toggle-all').addEventListener('click', () => {
+                document.querySelectorAll('.numberline-tick').forEach(el => { el.classList.remove('highlight-even','highlight-odd'); });
+                SoundFX.play('click');
+            });
+            document.getElementById('numline-toggle-even').addEventListener('click', () => {
+                SoundFX.play('click');
+                document.querySelectorAll('.numberline-tick').forEach(el => {
+                    const val = parseInt(el.querySelector('.tick-label').innerText);
+                    if (val % 2 === 0) el.classList.add('highlight-even');
+                    else el.classList.remove('highlight-odd');
+                });
+            });
+            document.getElementById('numline-toggle-odd').addEventListener('click', () => {
+                SoundFX.play('click');
+                document.querySelectorAll('.numberline-tick').forEach(el => {
+                    const val = parseInt(el.querySelector('.tick-label').innerText);
+                    if (val % 2 !== 0) el.classList.add('highlight-odd');
+                    else el.classList.remove('highlight-even');
+                });
+            });
+
+            // Hundreds Chart control click mechanisms setup hooks
+            document.getElementById('hundreds-cmd-clear').addEventListener('click', () => {
+                SoundFX.play('click');
+                document.querySelectorAll('.matrix-cell').forEach(c => c.className = 'matrix-cell');
+            });
+            document.getElementById('hundreds-cmd-evens').addEventListener('click', () => {
+                SoundFX.play('click');
+                document.querySelectorAll('.matrix-cell').forEach(c => {
+                    const v = parseInt(c.innerText);
+                    if (v % 2 === 0) c.className = 'matrix-cell cell-even';
+                });
+            });
+            document.getElementById('hundreds-cmd-odds').addEventListener('click', () => {
+                SoundFX.play('click');
+                document.querySelectorAll('.matrix-cell').forEach(c => {
+                    const v = parseInt(c.innerText);
+                    if (v % 2 !== 0) c.className = 'matrix-cell cell-odd';
+                });
+            });
+            document.getElementById('hundreds-cmd-mult2').addEventListener('click', () => {
+                SoundFX.play('correct');
+                document.querySelectorAll('.matrix-cell').forEach(c => {
+                    const v = parseInt(c.innerText);
+                    if (v % 2 === 0) { c.style.transform = 'scale(1.1)'; c.style.backgroundColor = 'var(--color-yellow)'; }
+                });
+            });
+
+            // Blocks builder interactive commands triggers
+            document.getElementById('blocks-action-add').addEventListener('click', () => {
+                AppState.blocksValue++; SoundFX.play('click'); Renderers.blocksModule();
+            });
+            document.getElementById('blocks-action-remove').addEventListener('click', () => {
+                if (AppState.blocksValue > 0) { AppState.blocksValue--; SoundFX.play('click'); Renderers.blocksModule(); }
+            });
+            document.getElementById('blocks-action-clear').addEventListener('click', () => {
+                AppState.blocksValue = 0; SoundFX.play('click'); Renderers.blocksModule();
+            });
+
+            // Real life scenes click tab triggers layout management mappings
+            document.querySelectorAll('#real-life-scene-tabs-row button').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('#real-life-scene-tabs-row button').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    AppState.activeRealLifeScene = btn.getAttribute('data-scene');
+                    AppState.realLifeReveal = false;
+                    Renderers.realLifeModule();
+                });
+            });
+            document.getElementById('real-life-btn-reveal-answer').addEventListener('click', () => {
+                AppState.realLifeReveal = !AppState.realLifeReveal;
+                SoundFX.play('click');
+                Renderers.realLifeModule();
+            });
+
+            // Pattern builder visualization simulation engine button routes mappings
+            document.getElementById('pattern-btn-run-evens').addEventListener('click', () => Renderers.runPatternVisualizationSequence('even'));
+            document.getElementById('pattern-btn-run-odds').addEventListener('click', () => Renderers.runPatternVisualizationSequence('odd'));
+
+            // Teacher suite activity management module form actions hooks registration systems
+            document.getElementById('sandbox-action-generate').addEventListener('click', () => {
+                const targetVal = parseInt(document.getElementById('sandbox-config-number').value) || 1;
+                AppState.sandboxValue = targetVal;
+                AppState.explorerValue = targetVal;
+                SoundFX.play('correct');
+                ScreenManager.setSubmodule('explorer');
+                AchievementsTracker.triggerCheck('maths_wizard');
+            });
+            document.getElementById('sandbox-action-save-preset').addEventListener('click', () => {
+                if (!AppState.profile.savedSandboxPresets.includes(AppState.sandboxValue)) {
+                    AppState.profile.savedSandboxPresets.push(AppState.sandboxValue);
+                    Persistence.save();
+                    SoundFX.play('badge');
+                    Renderers.sandboxModule();
+                }
+            });
+
+            // Arcade Game Hub view selector tab bindings link routers actions mechanics
+            document.querySelectorAll('.game-tab-trigger').forEach((tab) => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.game-tab-trigger').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    const gameId = tab.id === 'arcade-game-tab-1' ? 'pop_balloon' : 'train_sort';
+                    ArcadeGameEngine.init(gameId);
+                });
+            });
+            document.getElementById('game-action-start-trigger').addEventListener('click', () => {
+                ArcadeGameEngine.launchStagePlay();
+            });
+
+            // Global Panel Accessibility Overlay Config Toggles Interchanges Handlers
+            document.getElementById('btn-toggle-audio').addEventListener('click', (e) => {
+                AppState.soundEnabled = !AppState.soundEnabled;
+                e.target.innerText = AppState.soundEnabled ? "🔊 Sound" : "🔇 Muted";
+            });
+            document.getElementById('btn-toggle-contrast').addEventListener('click', () => {
+                AppState.highContrast = !AppState.highContrast;
+                document.body.classList.toggle('high-contrast', AppState.highContrast);
+            });
+            document.getElementById('btn-toggle-text-scale').addEventListener('click', () => {
+                AppState.largeText = !AppState.largeText;
+                document.body.classList.toggle('large-text', AppState.largeText);
+            });
+
+            // Teacher Drawer Presentation HUD Layout Toggles Actions
+            const teacherPanel = document.getElementById('teacher-tools-panel');
+            document.getElementById('btn-toggle-teacher').addEventListener('click', () => {
+                teacherPanel.classList.toggle('active');
+                SoundFX.play('click');
+            });
+            document.getElementById('teacher-panel-close-btn').addEventListener('click', () => teacherPanel.classList.remove('active'));
+
+            document.getElementById('teach-tool-random-num').addEventListener('click', () => {
+                AppState.explorerValue = Math.floor(Math.random() * 100);
+                ScreenManager.refreshActiveSubmoduleView();
+            });
+            document.getElementById('teach-tool-toggle-line').addEventListener('click', () => ScreenManager.setSubmodule('numberline'));
+            document.getElementById('teach-tool-toggle-chart').addEventListener('click', () => ScreenManager.setSubmodule('hundreds'));
+            
+            document.getElementById('teach-action-annotation').addEventListener('click', () => PresentationEngine.toggleAnnotationLayer());
+            document.getElementById('teach-action-spotlight').addEventListener('click', () => PresentationEngine.toggleSpotlightMode());
+            document.getElementById('teach-action-fullscreen').addEventListener('click', () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(() => {});
+                } else {
+                    document.exitFullscreen();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

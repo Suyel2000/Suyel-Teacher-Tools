@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📝 One Word Substitution Quiz</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --easy-color: #2ecc71;
+            --medium-color: #f1c40f;
+            --hard-color: #e74c3c;
+            --correct-color: #2ecc71;
+            --wrong-color: #ea2027;
+            --card-bg: rgba(255, 255, 255, 0.92);
+            --text-color: #2c3e50;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            color: var(--text-color);
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 780px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 28px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            text-align: center;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        /* Floating Backing Vocabulary Cards & Decorations */
+        .floating-decor {
+            position: absolute;
+            font-size: 28px;
+            opacity: 0.15;
+            animation: floatAnimation 6s ease-in-out infinite;
+            z-index: -1;
+        }
+        @keyframes floatAnimation {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-25px) rotate(20deg); }
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #ffffff;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            margin-bottom: 5px;
+        }
+
+        h2 {
+            font-size: 1.2rem;
+            color: #e8f8f5;
+            font-weight: 400;
+            margin-bottom: 25px;
+            letter-spacing: 0.8px;
+        }
+
+        .screen {
+            display: none;
+            animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 18px 25px;
+            margin: 15px 0;
+            border: none;
+            border-radius: 18px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-easy { background-color: var(--easy-color); color: white; }
+        .btn-easy:hover { background-color: #27ae60; }
+        .btn-medium { background-color: var(--medium-color); color: #2c3e50; }
+        .btn-medium:hover { background-color: #f39c12; }
+        .btn-hard { background-color: var(--hard-color); color: white; }
+        .btn-hard:hover { background-color: #c0392b; }
+        
+        .option-btn {
+            background-color: white;
+            color: var(--text-color);
+            text-align: left;
+            border: 2px solid #e2e8f0;
+            font-size: 1.15rem;
+            padding: 15px 20px;
+        }
+        .option-btn:hover:not([disabled]) {
+            background-color: #f1f5f9;
+            border-color: #94a3b8;
+            transform: translateX(4px);
+        }
+
+        .option-btn.correct {
+            background-color: #d4edda !important;
+            border-color: var(--correct-color) !important;
+            color: #155724 !important;
+            font-weight: bold;
+        }
+        .option-btn.wrong {
+            background-color: #f8d7da !important;
+            border-color: var(--wrong-color) !important;
+            color: #721c24 !important;
+        }
+
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 14px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: #ffffff;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+        }
+
+        .question-text {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .svg-illustration {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 20px auto;
+            display: block;
+        }
+
+        .explanation-box {
+            margin-top: 15px;
+            padding: 18px;
+            border-radius: 16px;
+            font-weight: 500;
+            display: none;
+            text-align: left;
+            line-height: 1.5;
+            font-size: 1.1rem;
+            animation: slideUp 0.3s ease;
+        }
+        .explanation-box.correct-style { background-color: #d4edda; color: #155724; border-left: 6px solid var(--correct-color); }
+        .explanation-box.wrong-style { background-color: #f8d7da; color: #721c24; border-left: 6px solid var(--wrong-color); }
+
+        /* Structural Navigation Ordering Requirements */
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        .nav-btn {
+            flex: 1;
+            padding: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            background: #ffffff;
+            color: var(--text-color);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: all 0.2s;
+        }
+        .nav-btn:active { transform: scale(0.96); }
+        .nav-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 25px 0;
+        }
+        .summary-stat {
+            background: white;
+            padding: 15px;
+            border-radius: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        .badge-box {
+            font-size: 1.8rem;
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 20px;
+            border: 4px dashed #f1c40f;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 9999;
+            display: none;
+        }
+
+        /* Certificate Print Layout View */
+        @media print {
+            body * { visibility: hidden; }
+            #printable-certificate, #printable-certificate * { visibility: visible; }
+            #printable-certificate { position: absolute; left: 0; top: 0; width: 100%; border: 12px double #2ecc71; padding: 50px; }
+        }
+
+        #printable-certificate {
+            display: none;
+            background: #ffffff;
+            color: #2c3e50;
+            padding: 50px 30px;
+            border: 10px double #11998e;
+            border-radius: 20px;
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        @media(max-width: 600px) {
+            h1 { font-size: 2rem; }
+            .app-container { padding: 20px; }
+            .btn { padding: 15px; font-size: 1.15rem; }
+            .question-text { font-size: 1.2rem; }
+            .summary-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <div class="app-container">
+        <div class="floating-decor" style="top:5%; left:5%;">📖</div>
+        <div class="floating-decor" style="top:8%; right:6%;">⭐</div>
+        <div class="floating-decor" style="bottom:6%; left:7%;">✏️</div>
+        <div class="floating-decor" style="bottom:8%; right:5%;">💡</div>
+
+        <h1>📝 One Word Substitution Quiz</h1>
+        <h2>Read • Think • Choose • Build Vocabulary</h2>
+
+        <div id="start-screen" class="screen active">
+            <div class="card">
+                <p style="font-size: 1.2rem; line-height: 1.6; font-weight: 500;">
+                    Learn how to express a whole sentence with just <b>one smart word</b>! Select a level matching your class group below to begin.
+                </p>
+            </div>
+            <button class="btn btn-easy" onclick="initiateQuiz('easy')">🟢 Easy Level (Classes 3-4)</button>
+            <button class="btn btn-medium" onclick="initiateQuiz('medium')">🟡 Medium Level (Classes 4-5)</button>
+            <button class="btn btn-hard" onclick="initiateQuiz('hard')">🔴 Hard Level (Class 5)</button>
+        </div>
+
+        <div id="quiz-screen" class="screen">
+            <div class="quiz-header">
+                <span id="question-counter">Question: 1/50</span>
+                <span id="score-counter">Score: 0</span>
+            </div>
+            <div class="progress-bar-container">
+                <div id="progress-bar" class="progress-bar"></div>
+            </div>
+
+            <div class="card">
+                <div id="illustration-holder"></div>
+                <div id="question-container" class="question-text"></div>
+                <div id="options-holder"></div>
+            </div>
+
+            <div id="explanation-container" class="explanation-box"></div>
+
+            <div class="nav-container">
+                <button id="prev-btn" class="nav-btn" onclick="goToPrevQuestion()">⬅️ Previous</button>
+                <button id="home-btn" class="nav-btn" onclick="returnToMainMenu()">🏠 Home</button>
+                <button id="next-btn" class="nav-btn" onclick="goToNextQuestion()">➡️ Next</button>
+            </div>
+        </div>
+
+        <div id="summary-screen" class="screen">
+            <div class="card">
+                <h3 style="font-size: 1.8rem; margin-bottom: 10px;">✨ Level Complete!</h3>
+                <p>Wonderful! You have successfully completed all fifty questions in this level.</p>
+                
+                <div class="badge-box" id="earned-badge-display"></div>
+
+                <div class="summary-grid">
+                    <div class="summary-stat" style="border-left: 5px solid var(--hard-color);">Level: <span id="sum-level"></span></div>
+                    <div class="summary-stat" style="border-left: 5px solid var(--easy-color);">Score: <span id="sum-score"></span> / 50</div>
+                    <div class="summary-stat" style="border-left: 5px solid #3498db;">Accuracy: <span id="sum-accuracy"></span></div>
+                    <div class="summary-stat" style="border-left: 5px solid #9b59b6;">Time Taken: <span id="sum-time"></span></div>
+                </div>
+            </div>
+
+            <button class="btn btn-easy" onclick="retryCurrentLevel()">🔄 Play This Level Again</button>
+            <button class="btn btn-medium" onclick="returnToMainMenu()">🏠 Choose Another Level</button>
+            <button class="btn btn-hard" onclick="invokeCertificatePrint()">🖨️ Print Achievement Certificate</button>
+
+            <div id="printable-certificate">
+                <h1 style="color:#11998e; font-size: 2.5rem; margin-bottom: 10px;">📜 CERTIFICATE OF VOCABULARY</h1>
+                <p style="font-size: 1.3rem; margin: 20px 0;">This is to proudly certify that a superstar student completed</p>
+                <h2 style="color:#ecf0f1; background:#2c3e50; padding: 10px; border-radius:10px; font-size: 1.6rem; display:inline-block;" id="cert-level-title">ONE WORD SUBSTITUTION QUIZ</h2>
+                <p style="font-size: 1.3rem; margin: 20px 0;">Achieving a brilliant performance score of</p>
+                <h3 style="font-size: 2.2rem; color: #e74c3c; margin: 10px 0;" id="cert-final-score">50 / 50</h3>
+                <p style="font-size: 1.2rem; font-style: italic; margin-top: 30px; color:#7f8c8d;" id="cert-badge-subtitle">Ranked Status: Vocabulary Master</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* Vector Icons Mapping Layer for dynamic context embedding (No external asset paths used) */
+        const graphicMap = {
+            teacher: `<svg class="svg-illustration" viewBox="0 0 100 100"><circle cx="50" cy="35" r="18" fill="#34495e"/><path d="M20 80 C20 55, 80 55, 80 80 Z" fill="#2c3e50"/><rect x="42" y="75" width="16" height="20" fill="#f1c40f"/><line x1="10" y1="20" x2="35" y2="20" stroke="#e67e22" stroke-width="6"/></svg>`,
+            doctor: `<svg class="svg-illustration" viewBox="0 0 100 100"><circle cx="50" cy="35" r="18" fill="#e74c3c"/><path d="M20 80 C20 60, 80 60, 80 80 Z" fill="#ecf0f1"/><path d="M45 15 H55 V35 H45 Z" fill="#e74c3c"/><path d="M35 25 H65 V35 H35 Z" fill="#e74c3c"/></svg>`,
+            library: `<svg class="svg-illustration" viewBox="0 0 100 100"><rect x="15" y="20" width="70" height="70" rx="5" fill="#d35400"/><rect x="25" y="35" width="50" height="10" fill="#f39c12"/><rect x="25" y="55" width="50" height="10" fill="#f39c12"/><rect x="25" y="75" width="50" height="10" fill="#f39c12"/></svg>`,
+            zoo: `<svg class="svg-illustration" viewBox="0 0 100 100"><rect x="10" y="20" width="80" height="70" fill="#27ae60"/><line x1="25" y1="20" x2="25" y2="90" stroke="#7f8c8d" stroke-width="4"/><line x1="45" y1="20" x2="45" y2="90" stroke="#7f8c8d" stroke-width="4"/><line x1="65" y1="20" x2="65" y2="90" stroke="#7f8c8d" stroke-width="4"/></svg>`,
+            astronaut: `<svg class="svg-illustration" viewBox="0 0 100 100"><circle cx="50" cy="50" r="30" fill="#ecf0f1" stroke="#34495e" stroke-width="4"/><circle cx="50" cy="48" r="18" fill="#3498db"/><circle cx="42" cy="40" r="4" fill="#ffffff" opacity="0.7"/></svg>`,
+            star: `<svg class="svg-illustration" viewBox="0 0 100 100"><polygon points="50,5 64,36 98,36 70,57 81,91 50,70 19,91 30,57 2,36 36,36" fill="#f1c40f"/></svg>`
+        };
+
+        /* Dataset housing exactly 50 entirely unique primary-tier entries per array layer */
+        const MasterQuizBank = {
+            easy: [
+                { type: "occupation", q: "A person who teaches students in a school or classroom is a ______.", options: ["Teacher", "Doctor", "Farmer", "Pilot"], answer: "Teacher", exp: "A <b>Teacher</b> guides and helps students learn new things in school.", img: "teacher" },
+                { type: "occupation", q: "A person who drives a big yellow bus or car is a ______.", options: ["Driver", "Painter", "Singer", "Cook"], answer: "Driver", exp: "A <b>Driver</b> safely handles vehicles to move people or things." },
+                { type: "occupation", q: "A person who creates colorful artwork with paints and brushes is a ______.", options: ["Painter", "Writer", "Dancer", "Actor"], answer: "Painter", exp: "A <b>Painter</b> makes beautiful pictures using colors." },
+                { type: "occupation", q: "A person who writes interesting stories and books for children is a ______.", options: ["Writer", "Singer", "Musician", "Barber"], answer: "Writer", exp: "A <b>Writer</b> creates stories, poems, or books using words." },
+                { type: "occupation", q: "A person who sings beautiful songs with an amazing voice is a ______.", options: ["Singer", "Dancer", "Farmer", "Cobbler"], answer: "Singer", exp: "A <b>Singer</b> uses their musical voice to perform songs." },
+                { type: "occupation", q: "A person who moves their body gracefully to the rhythm of music is a ______.", options: ["Dancer", "Cook", "Actor", "Pilot"], answer: "Dancer", exp: "A <b>Dancer</b> performs movements using balance and rhythm." },
+                { type: "occupation", q: "A person who grows healthy crops, fruits, and vegetables on a farm is a ______.", options: ["Farmer", "Doctor", "Fisherman", "Musician"], answer: "Farmer", exp: "A <b>Farmer</b> works hard on fields to produce food items." },
+                { type: "occupation", q: "A person who cooks delicious meals inside a restaurant kitchen is a ______.", options: ["Cook", "Actor", "Barber", "Cobbler"], answer: "Cook", exp: "A <b>Cook</b> prepares raw ingredients into yummy dishes." },
+                { type: "occupation", q: "A person who acts in movies, television shows, or stage plays is an ______.", options: ["Actor", "Singer", "Writer", "Pilot"], answer: "Actor", exp: "An <b>Actor</b> plays characters or figures inside dramas and films." },
+                { type: "occupation", q: "A person who plays musical instruments like the piano or guitar is a ______.", options: ["Musician", "Painter", "Dancer", "Fisherman"], answer: "Musician", exp: "A <b>Musician</b> composes or plays sweet instrument audio tracks." },
+                { type: "occupation", q: "A person who flies an aeroplane high up across the clouds is a ______.", options: ["Pilot", "Doctor", "Teacher", "Barber"], answer: "Pilot", exp: "A <b>Pilot</b> is trained to operate steering controls of flying aircraft." },
+                { type: "occupation", q: "A person who treats sick people and gives them helpful medical advice is a ______.", options: ["Doctor", "Farmer", "Writer", "Driver"], answer: "Doctor", exp: "A <b>Doctor</b> checks our health parameters and prescribes cures.", img: "doctor" },
+                { type: "occupation", q: "A person who cuts your hair and styles it neatly inside a salon is a ______.", options: ["Barber", "Cobbler", "Cook", "Singer"], answer: "Barber", exp: "A <b>Barber</b> uses scissors and tools to trim or change human hairstyles." },
+                { type: "occupation", q: "A person who fixes broken shoes or mends torn leather boots is a ______.", options: ["Cobbler", "Fisherman", "Painter", "Teacher"], answer: "Cobbler", exp: "A <b>Cobbler</b> repairs structural damage found on foot apparel items." },
+                { type: "occupation", q: "A person who catches fish from rivers, lakes, or deep oceans is a ______.", options: ["Fisherman", "Dancer", "Doctor", "Driver"], answer: "Fisherman", exp: "A <b>Fisherman</b> uses lines, hooks, or specialized nets to gather aquatic animals." },
+                { type: "text", q: "A person who defends a country by fighting in an army unit is a ______.", options: ["Soldier", "Tailor", "Sailor", "Builder"], answer: "Soldier", exp: "A <b>Soldier</b> works inside militaries to safeguard borders." },
+                { type: "text", q: "A person who travels across oceans on large navy boats or ships is a ______.", options: ["Sailor", "Pilot", "Driver", "Farmer"], answer: "Sailor", exp: "A <b>Sailor</b> helps navigate or operate boats out at sea." },
+                { type: "text", q: "A person who delivers letters and paper parcels straight to your house door is a ______.", options: ["Postman", "Milkman", "Butcher", "Baker"], answer: "Postman", exp: "A <b>Postman</b> works for postal networks delivering physical mail packages." },
+                { type: "text", q: "A person who bakes soft fresh bread, sweet cakes, and cookies is a ______.", options: ["Baker", "Grocer", "Painter", "Doctor"], answer: "Baker", exp: "A <b>Baker</b> uses heated ovens to prepare flour goods." },
+                { type: "text", q: "A person who serves food items to guests sitting at a restaurant table is a ______.", options: ["Waiter", "Cashier", "Manager", "Cook"], answer: "Waiter", exp: "A <b>Waiter</b> writes down customer orders and carries meal plates out." },
+                { type: "text", q: "A person who builds brick walls and constructs durable houses is a ______.", options: ["Mason", "Plumber", "Tailor", "Artist"], answer: "Mason", exp: "A <b>Mason</b> or builder cuts stone blocks or stacks concrete bricks together." },
+                { type: "text", q: "A person who installs or repairs water pipes, taps, and bathroom sinks is a ______.", options: ["Plumber", "Electrician", "Gardener", "Author"], answer: "Plumber", exp: "A <b>Plumber</b> fixes pipeline paths carrying clean water or fluid waste." },
+                { type: "text", q: "A person who sets up electrical wires, light bulbs, and power switches is an ______.", options: ["Electrician", "Architect", "Engineer", "Artist"], answer: "Electrician", exp: "An <b>Electrician</b> installs or services hardware working on electricity electricity lines." },
+                { type: "text", q: "A person who makes or fixes beautiful wooden furniture like tables and chairs is a ______.", options: ["Carpenter", "Cobbler", "Barber", "Painter"], answer: "Carpenter", exp: "A <b>Carpenter</b> shapes raw timber logs into domestic timber products." },
+                { type: "text", q: "A person who cleans or sweeps classrooms, school halls, and public floors is a ______.", options: ["Janitor", "Teacher", "Writer", "Singer"], answer: "Janitor", exp: "A <b>Janitor</b> or cleaner ensures indoor rooms stay sanitized and orderly." },
+                { type: "text", q: "A person who watches over a treasure vault or guards house gates is a ______.", options: ["Guard", "Pilot", "Dancer", "Farmer"], answer: "Guard", exp: "A <b>Guard</b> monitors entry points to maintain physical security." },
+                { type: "text", q: "A person who sells fresh meats inside a market store stall is a ______.", options: ["Butcher", "Baker", "Grocer", "Florist"], answer: "Butcher", exp: "A <b>Butcher</b> cuts and prepares animal meats for food purchase." },
+                { type: "text", q: "A person who sells green vegetables and fresh fruits is a ______.", options: ["Greengrocer", "Jeweller", "Tailor", "Barber"], answer: "Greengrocer", exp: "A <b>Greengrocer</b> deals specifically in raw fresh plant groceries." },
+                { type: "text", q: "A person who crafts beautiful gold rings, necklaces, and silver trinkets is a ______.", options: ["Jeweller", "Mason", "Cobbler", "Plumber"], answer: "Jeweller", exp: "A <b>Jeweller</b> cuts gemstones or casts fine metallic ornaments." },
+                { type: "text", q: "A person who plays professional games like football, tennis, or cricket is an ______.", options: ["Athlete", "Actor", "Author", "Artist"], answer: "Athlete", exp: "An <b>Athlete</b> or sportsman exercises bodies to participate in competitive sports events." },
+                { type: "text", q: "A person who checks and counts cash money transactions inside a retail store is a ______.", options: ["Cashier", "Manager", "Cook", "Driver"], answer: "Cashier", exp: "A <b>Cashier</b> handles electronic billing tills where currency changes hands." },
+                { type: "text", q: "A person who puts out dangerous fires and saves people from burning buildings is a ______.", options: ["Firefighter", "Police Officer", "Soldier", "Pilot"], answer: "Firefighter", exp: "A <b>Firefighter</b> sprays high-pressure water hoses to extinguish flames safely." },
+                { type: "text", q: "A person who helps passengers find seats on commercial aeroplanes is a ______.", options: ["Flight Attendant", "Captain", "Driver", "Janitor"], answer: "Flight Attendant", exp: "A <b>Flight Attendant</b> ensures airborne safety standards and serves food snacks." },
+                { type: "text", q: "A person who designs or creates lovely sketches, drawings, and portraits is an ______.", options: ["Artist", "Author", "Actor", "Auditor"], answer: "Artist", exp: "An <b>Artist</b> expresses inner thoughts through charcoal outlines or canvas brush strokes." },
+                { type: "text", q: "A person who washes or grooms pet dogs and domestic animals is an animal ______.", options: ["Groomer", "Trainer", "Hunter", "Farmer"], answer: "Groomer", exp: "An animal <b>Groomer</b> baths furry pets, cuts nails, and brushes coats." },
+                { type: "text", q: "A person who reports breaking news events on television channels is a ______.", options: ["Reporter", "Writer", "Singer", "Musician"], answer: "Reporter", exp: "A <b>Reporter</b> interviews witnesses to relay current events to the audience." },
+                { type: "text", q: "A person whose primary job is to extract shiny black coal out from under mines is a ______.", options: ["Miner", "Mason", "Mechanic", "Magician"], answer: "Miner", exp: "A <b>Miner</b> digs deep below the crust layer to extract valuable ore minerals." },
+                { type: "text", q: "A person who performs funny magic illusions and picks rabbits from hats is a ______.", options: ["Magician", "Actor", "Musician", "Painter"], answer: "Magician", exp: "A <b>Magician</b> uses quick hand trick movements to entertain crowd stages." },
+                { type: "text", q: "A person who collects milk from dairy cows and distributes bottles is a ______.", options: ["Milkman", "Postman", "Baker", "Butcher"], answer: "Milkman", exp: "A <b>Milkman</b> manages fresh daily liquid shipments from dairy yards." },
+                { type: "text", q: "A person who flies inside a rocket to look closely at planets is an ______.", options: ["Astronaut", "Astronomer", "Architect", "Author"], answer: "Astronaut", exp: "An <b>Astronaut</b> travels deep past outer cloud boundaries into space vacuums." },
+                { type: "text", q: "A person who enforces speed laws and locks criminals up in jail cells is a ______.", options: ["Police Officer", "Soldier", "Firefighter", "Sailor"], answer: "Police Officer", exp: "A <b>Police Officer</b> ensures community public spaces stay peaceful and legal." },
+                { type: "text", q: "A person who looks after sweet flowers and trims lawn grasses is a ______.", options: ["Gardener", "Tailor", "Farmer", "Plumber"], answer: "Gardener", exp: "A <b>Gardener</b> seeds new blossoms and protects growing shrubs from garden weeds." },
+                { type: "text", q: "A person who uses sewing machine threads to make stylish clothes is a ______.", options: ["Tailor", "Barber", "Cobbler", "Mason"], answer: "Tailor", exp: "A <b>Tailor</b> measures shirts, cuts fabrics, and stitches structural clothes patches." },
+                { type: "text", q: "A person who fixes broken vehicle engines or car brakes is a ______.", options: ["Mechanic", "Electrician", "Carpenter", "Pilot"], answer: "Mechanic", exp: "A <b>Mechanic</b> changes dirty motor oils and spins wrenches to fix broken cars." },
+                { type: "text", q: "A person who safely manages and stores books inside a public library room is a ______.", options: ["Librarian", "Author", "Teacher", "Janitor"], answer: "Librarian", exp: "A <b>Librarian</b> catalogs book titles so readers can locate them easily." },
+                { type: "text", q: "A person who cuts up green logs or harvests forest trees for timber lumber is a ______.", options: ["Lumberjack", "Miner", "Gardener", "Farmer"], answer: "Lumberjack", exp: "A <b>Lumberjack</b> handles large axes or chainsaws to pull down heavy logs." },
+                { type: "text", q: "A child who studies lessons and takes spelling tests in a class is a ______.", options: ["Student", "Teacher", "Principal", "Librarian"], answer: "Student", exp: "A <b>Student</b> attends school to acquire academic skills from teachers." },
+                { type: "text", q: "A brave person who guides tourists through risky paths on tall mountains is a ______.", options: ["Guide", "Driver", "Sailor", "Actor"], answer: "Guide", exp: "A <b>Guide</b> explains local maps to prevent travelers from getting lost." },
+                { type: "text", q: "A person who prepares dental checkups and cleans dirty human teeth cavities is a ______.", options: ["Dentist", "Doctor", "Barber", "Plumber"], answer: "Dentist", exp: "A <b>Dentist</b> works directly on mouth hygiene, gums, and teeth health profiles." },
+                { type: "text", q: "A person who operates camera equipment to film videos or shoot photographs is a ______.", options: ["Photographer", "Artist", "Painter", "Musician"], answer: "Photographer", exp: "A <b>Photographer</b> captures still visual images using lenses and lighting setups." }
+            ],
+            medium: [
+                { type: "place", q: "A large public room where thousands of books are neatly filed for reading is a ______.", options: ["Library", "Hospital", "Airport", "Zoo"], answer: "Library", exp: "A <b>Library</b> holds books for research or borrowing.", img: "library" },
+                { type: "place", q: "A clean medical building where sick patients receive operations from doctors is a ______.", options: ["Hospital", "School", "Zoo", "Airport"], answer: "Hospital", exp: "A <b>Hospital</b> provides clinical care to heal injuries." },
+                { type: "place", q: "A major transit base with flat runway paths where aeroplanes land and take off is an ______.", options: ["Airport", "Library", "School", "Zoo"], answer: "Airport", exp: "An <b>Airport</b> serves as a terminal for commercial aircraft flight paths." },
+                { type: "place", q: "A secure park facility where wild exotic animals are safely housed inside enclosures is a ______.", options: ["Zoo", "Hospital", "Airport", "Library"], answer: "Zoo", exp: "A <b>Zoo</b> lets the public observe living animal habitats safely.", img: "zoo" },
+                { type: "place", q: "An educational center where young children go every day to learn lessons is a ______.", options: ["School", "Airport", "Hospital", "Zoo"], answer: "School", exp: "A <b>School</b> provides classrooms where teachers guide growing students." },
+                { type: "person", q: "A person who operates optical camera equipment to capture beautiful photographs is a ______.", options: ["Photographer", "Gardener", "Pharmacist", "Architect"], answer: "Photographer", exp: "A <b>Photographer</b> manages camera lenses to document scenic shots." },
+                { type: "person", q: "A person who works with soil beds, prunes shrubs, and cares for garden plants is a ______.", options: ["Gardener", "Tailor", "Mechanic", "Police Officer"], answer: "Gardener", exp: "A <b>Gardener</b> ensures flowers and landscaping stay lush and green." },
+                { type: "person", q: "A trained professional who mixes or sells liquid medicines inside a drug store is a ______.", options: ["Pharmacist", "Architect", "Tailor", "Mechanic"], answer: "Pharmacist", exp: "A <b>Pharmacist</b> securely dispenses medical tablet prescriptions." },
+                { type: "person", q: "A skilled professional who draws precise structural blue sketches to design houses is an ______.", options: ["Architect", "Tailor", "Mechanic", "Police Officer"], answer: "Architect", exp: "An <b>Architect</b> plans safe building dimensions before construction starts." },
+                { type: "person", q: "A person who measures, cuts, and stitches fabrics to make custom wearable clothes is a ______.", options: ["Tailor", "Mechanic", "Police Officer", "Photographer"], answer: "Tailor", exp: "A <b>Tailor</b> fixes loose apparel sizes using sewing machine needles." },
+                { type: "person", q: "A technician who repairs damaged car engines or fixes truck transmissions is a ______.", options: ["Mechanic", "Police Officer", "Photographer", "Gardener"], answer: "Mechanic", exp: "A <b>Mechanic</b> handles mechanical tools to fix automotive vehicles." },
+                { type: "person", q: "A brave uniformed official who prevents local street crime and protects citizens is a ______.", options: ["Police Officer", "Pharmacist", "Architect", "Tailor"], answer: "Police Officer", exp: "A <b>Police Officer</b> maintains law compliance inside a town zone." },
+                { type: "place", q: "A large enclosed building where birds are kept safe to fly around is an ______.", options: ["Aviary", "Aquarium", "Orchard", "Apiary"], answer: "Aviary", exp: "An <b>Aviary</b> is a large cage structure designed to hold birds." },
+                { type: "place", q: "A specialized glass tank facility built to exhibit colorful living fish is an ______.", options: ["Aquarium", "Aviary", "Nursery", "Stable"], answer: "Aquarium", exp: "An <b>Aquarium</b> keeps aquatic animals alive inside water tanks." },
+                { type: "place", q: "A fenced field structure where athletic horses are fed and sheltered is a ______.", options: ["Stable", "Kennel", "Burrow", "Sty"], answer: "Stable", exp: "A <b>Stable</b> offers separate clean wooden stalls for horses." },
+                { type: "place", q: "A small outdoor shelter box built for a pet domestic dog to sleep in is a ______.", options: ["Kennel", "Stable", "Coop", "Barn"], answer: "Kennel", exp: "A <b>Kennel</b> serves as a safe resting home for canines." },
+                { type: "place", q: "A wooden cage box where farm chickens lay edible eggs is a ______.", options: ["Coop", "Sty", "Den", "Hutch"], answer: "Coop", exp: "A <b>Coop</b> keeps poultry chickens warm and safe from predators." },
+                { type: "place", q: "A muddy, fenced outdoor enclosure where farm pigs wallow is a pig______.", options: ["Sty", "Stable", "Kennel", "Burrow"], answer: "Sty", exp: "A <b>Sty</b> is a dedicated pen area optimized for farming pigs." },
+                { type: "place", q: "An open plot of land dedicated to growing sweet fruit trees like apples is an ______.", options: ["Orchard", "Aviary", "Aquarium", "Apiary"], answer: "Orchard", exp: "An <b>Orchard</b> focuses entirely on growing fruit-bearing trees." },
+                { type: "place", q: "A place where a collection of bee hives are managed to collect sweet honey is an ______.", options: ["Apiary", "Aviary", "Orchard", "Nursery"], answer: "Apiary", exp: "An <b>Apiary</b> holds artificial hive structures where honeybees live." },
+                { type: "place", q: "A greenhouse facility where delicate young plant sprouts are raised is a ______.", options: ["Nursery", "Aquarium", "Stable", "Hutch"], answer: "Nursery", exp: "A <b>Nursery</b> propagates vulnerable seedlings until they can be planted outside." },
+                { type: "place", q: "A large farm building used for storing golden hay stalks and parking tractors is a ______.", options: ["Barn", "Coop", "Sty", "Stable"], answer: "Barn", exp: "A <b>Barn</b> serves as primary agricultural storage space on a farm." },
+                { type: "place", q: "A factory site where heavy machinery parts melt iron ores and manufacture steel items is a ______.", options: ["Foundry", "Bakery", "Laundry", "Kitchen"], answer: "Foundry", exp: "A <b>Foundry</b> casts liquid metals into solid industrial molds." },
+                { type: "place", q: "A modern commercial shop where customers pay to wash and dry dirty clothes is a ______.", options: ["Laundromat", "Laboratory", "Library", "Gymnasium"], answer: "Laundromat", exp: "A <b>Laundromat</b> provides self-service washers for public laundry cleaning." },
+                { type: "place", q: "A secure clean room equipped with test tubes and microscopes for scientific experiments is a ______.", options: ["Laboratory", "Laundromat", "Library", "Gymnasium"], answer: "Laboratory", exp: "A <b>Laboratory</b> allows chemical testing to be carried out safely." },
+                { type: "place", q: "A spacious hall containing heavy weights, exercise treadmills, and indoor sports mats is a ______.", options: ["Gymnasium", "Laboratory", "Laundromat", "Library"], answer: "Gymnasium", exp: "A <b>Gymnasium</b> or gym is a dedicated indoor fitness center." },
+                { type: "place", q: "A major kitchen facility where freshly baked breads and sweet cookies are sold daily is a ______.", options: ["Bakery", "Foundry", "Stable", "Aviary"], answer: "Bakery", exp: "A <b>Bakery</b> specializes in selling freshly baked goods." },
+                { type: "place", q: "A grand historical palace structure with tall stone walls built to defend kings is a ______.", options: ["Castle", "Cottage", "Cabin", "Barrack"], answer: "Castle", exp: "A <b>Castle</b> is a fortified royal residence from medieval times." },
+                { type: "place", q: "A small, cozy residential home usually located out in rural country villages is a ______.", options: ["Cottage", "Castle", "Barrack", "Foundry"], answer: "Cottage", exp: "A <b>Cottage</b> is a modest, simple dwelling typical of rural locations." },
+                { type: "place", q: "A simple, rustic shelter home built completely from wood logs up in mountain forests is a log ______.", options: ["Cabin", "Castle", "Cottage", "Laundromat"], answer: "Cabin", exp: "A <b>Cabin</b> provides minimal, basic shelter deep inside wilderness areas." },
+                { type: "place", q: "A specialized military compound building where large groups of army soldiers sleep is a ______.", options: ["Barrack", "Cabin", "Castle", "Cottage"], answer: "Barrack", exp: "A <b>Barrack</b> housing block organizes military personnel efficiently." },
+                { type: "place", q: "A public facility where people view ancient dinosaur bone fossils and historical artifacts is a ______.", options: ["Museum", "Theater", "Restaurant", "Aquarium"], answer: "Museum", exp: "A <b>Museum</b> protects and displays valuable historical collections." },
+                { type: "place", q: "An indoor auditorium hall where stage plays are acted or films are projected is a ______.", options: ["Theater", "Museum", "Restaurant", "Laundromat"], answer: "Theater", exp: "A <b>Theater</b> features seating configured for viewing artistic shows." },
+                { type: "place", q: "A commercial public dining room where guests pay money to eat prepared chef meals is a ______.", options: ["Restaurant", "Theater", "Museum", "Laboratory"], answer: "Restaurant", exp: "A <b>Restaurant</b> cooks and serves food on demand for patrons." },
+                { type: "description", q: "An interactive book containing alphabetically ordered word entries along with their meanings is a ______.", options: ["Dictionary", "Atlas", "Novel", "Journal"], answer: "Dictionary", exp: "A <b>Dictionary</b> is a reference book used to check correct vocabulary definitions." },
+                { type: "description", q: "A bound collection of geographic map sheets illustrating global land borders is an ______.", options: ["Atlas", "Dictionary", "Novel", "Journal"], answer: "Atlas", exp: "An <b>Atlas</b> compiles topographic maps detailing countries and land shapes." },
+                { type: "description", q: "A handwritten personal notebook diary used to record daily thoughts and events is a ______.", options: ["Journal", "Atlas", "Dictionary", "Encyclopedia"], answer: "Journal", exp: "A <b>Journal</b> preserves historical, everyday thoughts or notes from an individual." },
+                { type: "description", q: "A massive multi-volume set of books explaining comprehensive information on all academic topics is an ______.", options: ["Encyclopedia", "Journal", "Atlas", "Dictionary"], answer: "Encyclopedia", exp: "An <b>Encyclopedia</b> summarizes global human knowledge across various topics." },
+                { type: "description", q: "An annual calendar book tracking upcoming celestial holiday dates and tide cycles is an ______.", options: ["Almanac", "Encyclopedia", "Journal", "Atlas"], answer: "Almanac", exp: "An <b>Almanac</b> projects weather trends and seasonal schedules for the year." },
+                { type: "description", q: "A sweet confection liquid produced by boiling concentrated natural sugarcane juice is called ______.", options: ["Molasses", "Vinegar", "Nectar", "Sap"], answer: "Molasses", exp: "<b>Molasses</b> is a dark, thick sugar syrup byproduct." },
+                { type: "description", q: "A sour fluid compound used to preserve pickled cucumbers or dress salads is ______.", options: ["Vinegar", "Molasses", "Nectar", "Sap"], answer: "Vinegar", exp: "<b>Vinegar</b> is an acidic liquid produced via ethanol fermentation." },
+                { type: "description", q: "The sweet sugary fluid substance harvested by buzzing bees directly from flower centers is ______.", options: ["Nectar", "Vinegar", "Molasses", "Sap"], answer: "Nectar", exp: "<b>Nectar</b> is a sugary liquid plants yield to attract insect pollinators." },
+                { type: "description", q: "The sticky structural fluid running inside vascular channels of growing forest trees is ______.", options: ["Sap", "Nectar", "Vinegar", "Molasses"], answer: "Sap", exp: "<b>Sap</b> circulates nutrients through the root and stem networks of plants." },
+                { type: "description", q: "A dense low cloud form resting close to the ground that blocks clear human eyesight is ______.", options: ["Fog", "Smog", "Haze", "Mist"], answer: "Fog", exp: "<b>Fog</b> is water vapor that condenses into air layers near the surface." },
+                { type: "description", q: "A hazardous mix of smoky industrial chimney gases and natural atmospheric fog is ______.", options: ["Smog", "Fog", "Haze", "Mist"], answer: "Smog", exp: "<b>Smog</b> refers to chemical air pollution that clouds urban areas." },
+                { type: "description", q: "A light dust suspension that creates a blurry view due to dry heat in the air is ______.", options: ["Haze", "Smog", "Fog", "Mist"], answer: "Haze", exp: "<b>Haze</b> occurs when dry dust or smoke particles cloud clear air views." },
+                { type: "description", q: "A thin spray of tiny water droplets suspended in the air, similar to light drizzle, is ______.", options: ["Mist", "Haze", "Smog", "Fog"], answer: "Mist", exp: "<b>Mist</b> is a fine water spray created by cool air over moist landscapes." },
+                { type: "description", q: "A high-speed revolving wind funnel storm that pulls objects upward into its vortex is a ______.", options: ["Tornado", "Blizzard", "Avalanche", "Drought"], answer: "Tornado", exp: "A <b>Tornado</b> is a powerful, rotating column of air extending from a thunderstorm." },
+                { type: "description", q: "A severe winter weather storm characterized by heavy snow and freezing winds is a ______.", options: ["Blizzard", "Tornado", "Avalanche", "Drought"], answer: "Blizzard", exp: "A <b>Blizzard</b> brings freezing temperatures and low visibility due to blowing snow." },
+                { type: "description", q: "A dangerous cascade of snow sliding down mountain slopes is an ______.", options: ["Avalanche", "Blizzard", "Tornado", "Drought"], answer: "Avalanche", exp: "An <b>Avalanche</b> happens when unstable layers of snow slip off a steep peak." }
+            ],
+            hard: [
+                { type: "medical", q: "A person who is completely unable to hear any audible sound signals is described as ______.", options: ["Deaf", "Blind", "Mute", "Anxious"], answer: "Deaf", exp: "<b>Deaf</b> is the medical term for severe or complete hearing loss." },
+                { type: "medical", q: "A person who has completely lost their eyesight and cannot see anything is described as ______.", options: ["Blind", "Mute", "Deaf", "Fatigued"], answer: "Blind", exp: "<b>Blind</b> is the medical definition for a complete lack of visual perception." },
+                { type: "medical", q: "A person who is physically unable to speak or vocalize words is described as ______.", options: ["Mute", "Blind", "Deaf", "Numb"], answer: "Mute", exp: "<b>Mute</b> refers to someone who cannot produce vocal speech sounds." },
+                { type: "hobby", q: "An enthusiastic person who loves reading and collecting physical books is a ______.", options: ["Bibliophile", "Biologist", "Botanist", "Baker"], answer: "Bibliophile", exp: "A <b>Bibliophile</b> is a passionate reader and collector of books." },
+                { type: "science", q: "A professional scientist who uses high-powered telescopes to study distant stars is an ______.", options: ["Astronomer", "Botanist", "Zoologist", "Geologist"], answer: "Astronomer", exp: "An <b>Astronomer</b> studies planets, stars, galaxies, and celestial phenomena.", img: "star" },
+                { type: "science", q: "A biological scientist who spends time researching plant lifecycles and leaves is a ______.", options: ["Botanist", "Zoologist", "Meteorologist", "Geologist"], answer: "Botanist", exp: "A <b>Botanist</b> specializes in plant biology and flora ecosystems." },
+                { type: "science", q: "A scientist who studies animal behaviors, habitats, and lifecycles is a ______.", options: ["Zoologist", "Meteorologist", "Geologist", "Entomologist"], answer: "Zoologist", exp: "A <b>Zoologist</b> researches animal anatomy, genetics, and wildlife patterns." },
+                { type: "science", q: "A scientist who monitors atmospheric pressure tracks to forecast weekly weather trends is a ______.", options: ["Meteorologist", "Geologist", "Entomologist", "Astronaut"], answer: "Meteorologist", exp: "A <b>Meteorologist</b> analyzes atmospheric data to project storm or rain forecasts." },
+                { type: "science", q: "A scientist who inspects subterranean stone layers, earth fossils, and mineral rocks is a ______.", options: ["Geologist", "Entomologist", "Astronaut", "Explorer"], answer: "Geologist", exp: "A <b>Geologist</b> studies the physical composition, history, and structure of the Earth." },
+                { type: "science", q: "A specialized scientist who studies insect anatomy, beetles, and small bugs is an ______.", options: ["Entomologist", "Astronaut", "Explorer", "Leader"], answer: "Entomologist", exp: "An <b>Entomologist</b> investigates insect behaviors and life cycles." },
+                { type: "science", q: "A trained professional who travels into outer space inside a rocket ship is an ______.", options: ["Astronaut", "Explorer", "Leader", "Storyteller"], answer: "Astronaut", exp: "An <b>Astronaut</b> is equipped to navigate and work inside weightless space environments.", img: "astronaut" },
+                { type: "science", q: "A brave traveler who maps unchartered geographic zones or discovers new things is an ______.", options: ["Explorer", "Leader", "Storyteller", "Deaf"], answer: "Explorer", exp: "An <b>Explorer</b> ventures into unknown geographic areas to gain knowledge." },
+                { type: "text", q: "A highly responsible figure who coordinates a group or leads a sports team is a ______.", options: ["Leader", "Storyteller", "Blind", "Mute"], answer: "Leader", exp: "A <b>Leader</b> guides, directs, and motivates a group of people toward a shared goal." },
+                { type: "text", q: "A creative person who narrates oral tales and folk fables to groups is a ______.", options: ["Storyteller", "Bibliophile", "Astronomer", "Botanist"], answer: "Storyteller", exp: "A <b>Storyteller</b> recites fictional narratives to engage an audience." },
+                { type: "text", q: "A written account detailing a real person's entire life history, penned by another author, is a ______.", options: ["Biography", "Autobiography", "Anthology", "Chronicle"], answer: "Biography", exp: "A <b>Biography</b> is a detailed description of someone's life written by another person." },
+                { type: "text", q: "A life history book written entirely by the same person who experienced it is an ______.", options: ["Autobiography", "Biography", "Anthology", "Chronicle"], answer: "Autobiography", exp: "An <b>Autobiography</b> is a self-authored account of one's own life experiences." },
+                { type: "text", q: "A curated collection of selected poems or short stories compiled inside one volume is an ______.", options: ["Anthology", "Chronicle", "Autobiography", "Biography"], answer: "Anthology", exp: "An <b>Anthology</b> gathers literary pieces from different authors into a single book." },
+                { type: "text", q: "A historic register keeping continuous factual records of past royal kingdom events is a ______.", options: ["Chronicle", "Anthology", "Biography", "Autobiography"], answer: "Chronicle", exp: "A <b>Chronicle</b> registers historical events in the exact order they happened." },
+                { type: "text", q: "A word that shares an identical meaning with another word in the same language is a ______.", options: ["Synonym", "Antonym", "Homonym", "Acronym"], answer: "Synonym", exp: "A <b>Synonym</b> is a word that means the same as another word (e.g., big and large)." },
+                { type: "text", q: "A word that expresses the exact opposite meaning of a chosen word is an ______.", options: ["Antonym", "Synonym", "Homonym", "Acronym"], answer: "Antonym", exp: "An <b>Antonym</b> is a word opposite in meaning to another (e.g., hot and cold)." },
+                { type: "text", q: "A word that sounds like another word but carries a different spelling and definition is a ______.", options: ["Homonym", "Acronym", "Antonym", "Synonym"], answer: "Homonym", exp: "A <b>Homonym</b> or homophone has the same sound but a distinct meaning (e.g., sea and see)." },
+                { type: "text", q: "A short word formed using the initial first letters of a long title phrase is an ______.", options: ["Acronym", "Homonym", "Antonym", "Synonym"], answer: "Acronym", exp: "An <b>Acronym</b> creates a pronouncable short term from initial letters (e.g., NASA)." },
+                { type: "text", q: "A person who is chosen to look after an estate or property while the owner is away is a ______.", options: ["Caretaker", "Tenant", "Landlord", "Leaser"], answer: "Caretaker", exp: "A <b>Caretaker</b> looks after a building, keeping it clean and safe." },
+                { type: "text", q: "A person who pays monthly rent money to live inside an apartment room is a ______.", options: ["Tenant", "Caretaker", "Landlord", "Leaser"], answer: "Tenant", exp: "A <b>Tenant</b> rents land or a building from a property owner." },
+                { type: "text", q: "A person who owns a building and collects rental money from people living there is a ______.", options: ["Landlord", "Tenant", "Caretaker", "Leaser"], answer: "Landlord", exp: "A <b>Landlord</b> owns property and rents it out to tenants." },
+                { type: "text", q: "A person who provides a temporary asset lease agreement is a ______.", options: ["Leaser", "Landlord", "Tenant", "Caretaker"], answer: "Leaser", exp: "A <b>Leaser</b> signs legal papers to grant temporary use of an asset." },
+                { type: "text", q: "An organism that feeds exclusively on fresh green grass and leafy plants is an ______.", options: ["Herbivore", "Carnivore", "Omnivore", "Scavenger"], answer: "Herbivore", exp: "An <b>Herbivore</b> consumes only plant matter to get energy." },
+                { type: "text", q: "A wild animal that hunts and eats only other animals for meat food is a ______.", options: ["Carnivore", "Herbivore", "Omnivore", "Scavenger"], answer: "Carnivore", exp: "A <b>Carnivore</b> is a meat-eating predator (e.g., a lion)." },
+                { type: "text", q: "A living creature that eats both green plants and animal meat items is an ______.", options: ["Omnivore", "Carnivore", "Herbivore", "Scavenger"], answer: "Omnivore", exp: "An <b>Omnivore</b> eats a mixed diet of both plants and meats (e.g., humans)." },
+                { type: "text", q: "An animal that feeds on the remains of dead creatures it finds is a ______.", options: ["Scavenger", "Omnivore", "Carnivore", "Herbivore"], answer: "Scavenger", exp: "A <b>Scavenger</b> helps clean environments by consuming organic debris." },
+                { type: "text", q: "A speaker who can converse fluently in two different modern languages is ______.", options: ["Bilingual", "Monolingual", "Multilingual", "Polyglot"], answer: "Bilingual", exp: "A <b>Bilingual</b> person can speak two languages with ease." },
+                { type: "text", q: "A speaker who knows and uses only one single native language is ______.", options: ["Monolingual", "Bilingual", "Multilingual", "Polyglot"], answer: "Monolingual", exp: "A <b>Monolingual</b> person uses just one language for communication." },
+                { type: "text", q: "A talented scholar who can speak or write in many different languages is ______.", options: ["Multilingual", "Monolingual", "Bilingual", "Dialectal"], answer: "Multilingual", exp: "A <b>Multilingual</b> individual communicates across several global languages." },
+                { type: "text", q: "An expert linguist who masterfully decodes various foreign languages is a ______.", options: ["Polyglot", "Multilingual", "Monolingual", "Bilingual"], answer: "Polyglot", exp: "A <b>Polyglot</b> is someone who can read, write, or speak multiple languages." },
+                { type: "text", q: "An optical object that is perfectly transparent, allowing all light to pass through clearly, is ______.", options: ["Translucent", "Transparent", "Opaque", "Reflective"], answer: "Transparent", exp: "A <b>Transparent</b> material allows light to pass through so objects behind it can be clearly seen." },
+                { type: "text", q: "An object that allows only a little light to pass through, making things look blurry, is ______.", options: ["Translucent", "Transparent", "Opaque", "Reflective"], answer: "Translucent", exp: "A <b>Translucent</b> material scatters light rays, showing only partial details." },
+                { type: "text", q: "A solid material that blocks all light rays from passing through it is ______.", options: ["Opaque", "Translucent", "Transparent", "Glossy"], answer: "Opaque", exp: "An <b>Opaque</b> material completely blocks light from passing through." },
+                { type: "text", q: "A smooth surface, like a glass mirror, that bounces light back to show an image is ______.", options: ["Reflective", "Opaque", "Translucent", "Transparent"], answer: "Reflective", exp: "A <b>Reflective</b> surface bounces light waves back cleanly." },
+                { type: "text", q: "Something that can be easily heard by the human ear is described as ______.", options: ["Audible", "Inaudible", "Visible", "Invisible"], answer: "Audible", exp: "An <b>Audible</b> sound is loud enough to be noticed by our ears." },
+                { type: "text", q: "A sound that is too quiet or faint to be heard by human ears is ______.", options: ["Inaudible", "Audible", "Invisible", "Visible"], answer: "Inaudible", exp: "An <b>Inaudible</b> signal falls outside our range of hearing." },
+                { type: "text", q: "An object that can be clearly observed using human eyesight is ______.", options: ["Visible", "Inaudible", "Audible", "Invisible"], answer: "Visible", exp: "Something <b>Visible</b> can be perceived by our eyes." },
+                { type: "text", q: "Something completely hidden from view that cannot be seen with the eyes is ______.", options: ["Invisible", "Visible", "Inaudible", "Audible"], answer: "Invisible", exp: "An <b>Invisible</b> object does not bounce back visible light wavelengths." },
+                { type: "text", q: "Food or water that is safe and clean enough to be consumed without danger is ______.", options: ["Edible", "Potable", "Inedible", "Toxic"], answer: "Edible", exp: "Something <b>Edible</b> is safe to be consumed as food." },
+                { type: "text", q: "Clean running water that is completely safe to fill in bottles and drink is ______.", options: ["Potable", "Edible", "Inedible", "Contaminated"], answer: "Potable", exp: "<b>Potable</b> water means it is safe for human consumption." },
+                { type: "text", q: "A substance that is harmful or unsafe to eat is described as ______.", options: ["Inedible", "Potable", "Edible", "Nutritious"], answer: "Inedible", exp: "Something <b>Inedible</b> is not fit for eating." },
+                { type: "text", q: "A dangerous chemical compound that causes sickness if it enters the body is ______.", options: ["Toxic", "Inedible", "Potable", "Edible"], answer: "Toxic", exp: "A <b>Toxic</b> compound is poisonous and harmful to living things." },
+                { type: "text", q: "A story, fable, or event that is completely made up and not real is ______.", options: ["Fictional", "Historical", "Authentic", "Documented"], answer: "Fictional", exp: "A <b>Fictional</b> story comes from an author's imagination rather than real events." },
+                { type: "text", q: "An account based on real events from the past is ______.", options: ["Historical", "Fictional", "Imaginary", "Fabricated"], answer: "Historical", exp: "Something <b>Historical</b> is based on real past events." },
+                { type: "text", q: "Something that is genuine, true, and verified by facts is ______.", options: ["Authentic", "Historical", "Fictional", "Imaginary"], answer: "Authentic", exp: "An <b>Authentic</b> item is proven to be real and genuine." },
+                { type: "text", q: "Something created purely in the mind that does not exist in reality is ______.", options: ["Imaginary", "Authentic", "Historical", "Fictional"], answer: "Imaginary", exp: "An <b>Imaginary</b> concept exists only in the mind." }
+            ]
+        };
+
+        /* State management counters */
+        let levelChoice = 'easy';
+        let currentArray = [];
+        let indexCounter = 0;
+        let runningTally = 0;
+        let responseBook = [];
+        let timeAnchor = null;
+
+        // Initialize Audio context infrastructure via standard Web Audio specs
+        const dynamicAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        function dispatchBeep(freq, shape, duration) {
+            try {
+                const generator = dynamicAudioContext.createOscillator();
+                const gainFader = dynamicAudioContext.createGain();
+                generator.connect(gainFader);
+                gainFader.connect(dynamicAudioContext.destination);
+                generator.type = shape;
+                generator.frequency.value = freq;
+                gainFader.gain.setValueAtTime(0.12, dynamicAudioContext.currentTime);
+                gainFader.gain.exponentialRampToValueAtTime(0.006, dynamicAudioContext.currentTime + duration);
+                generator.start();
+                generator.stop(dynamicAudioContext.currentTime + duration);
+            } catch(e) { console.log("Audio waiting for interaction tap events."); }
+        }
+
+        function playClickFX() { dispatchBeep(620, 'sine', 0.08); }
+        function playCorrectFX() { dispatchBeep(880, 'triangle', 0.2); setTimeout(() => dispatchBeep(1200, 'triangle', 0.15), 80); }
+        function playWrongFX() { dispatchBeep(180, 'sawtooth', 0.35); }
+        function playBadgeFX() {
+            dispatchBeep(523, 'sine', 0.12);
+            setTimeout(() => dispatchBeep(659, 'sine', 0.12), 120);
+            setTimeout(() => dispatchBeep(784, 'sine', 0.12), 240);
+            setTimeout(() => dispatchBeep(1046, 'sine', 0.3), 360);
+        }
+
+        /* Standard Fisher-Yates array shuffling algorithm */
+        function shakeUpArray(inputArray) {
+            for (let i = inputArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [inputArray[i], inputArray[j]] = [inputArray[j], inputArray[i]];
+            }
+            return inputArray;
+        }
+
+        /* Routing: Enter level state loop */
+        function initiateQuiz(chosenLevel) {
+            playClickFX();
+            levelChoice = chosenLevel;
+            
+            // Extract a fresh deep copy clone from static question banks
+            let staticExtract = JSON.parse(JSON.stringify(MasterQuizBank[chosenLevel]));
+            currentArray = shakeUpArray(staticExtract).slice(0, 50);
+
+            indexCounter = 0;
+            runningTally = 0;
+            responseBook = new Array(50).fill(null);
+            timeAnchor = new Date();
+
+            document.getElementById('start-screen').classList.remove('active');
+            document.getElementById('quiz-screen').classList.add('active');
+
+            renderCurrentQuestionCard();
+        }
+
+        /* UI Paint Loop Engine */
+        function renderCurrentQuestionCard() {
+            document.getElementById('question-counter').innerText = `Question: ${indexCounter + 1} / 50`;
+            document.getElementById('score-counter').innerText = `Score: ${runningTally}`;
+            document.getElementById('progress-bar').style.width = `${((indexCounter + 1) / 50) * 100}%`;
+
+            const explBox = document.getElementById('explanation-container');
+            explBox.style.display = "none";
+            explBox.className = "explanation-box";
+
+            const graphicSlot = document.getElementById('illustration-holder');
+            graphicSlot.innerHTML = "";
+
+            const targetQuestion = currentArray[indexCounter];
+            document.getElementById('question-container').innerHTML = targetQuestion.q;
+
+            if(targetQuestion.img && graphicMap[targetQuestion.img]) {
+                graphicSlot.innerHTML = graphicMap[targetQuestion.img];
+            }
+
+            const frameOptions = document.getElementById('options-holder');
+            frameOptions.innerHTML = "";
+
+            // Dynamic Option Shuffle per unique runtime run
+            if(!targetQuestion.scrambledChoices) {
+                targetQuestion.scrambledChoices = shakeUpArray([...targetQuestion.options]);
+            }
+
+            targetQuestion.scrambledChoices.forEach(choiceText => {
+                const optButton = document.createElement('button');
+                optButton.className = "btn option-btn";
+                optButton.innerHTML = choiceText;
+                optButton.onclick = () => validateSelection(optButton, choiceText);
+
+                // Preserve marked buttons during historical backward/forward review paths
+                if(responseBook[indexCounter] !== null) {
+                    optButton.disabled = true;
+                    if(choiceText === targetQuestion.answer) optButton.classList.add('correct');
+                    if(responseBook[indexCounter] === choiceText && choiceText !== targetQuestion.answer) optButton.classList.add('wrong');
+                }
+
+                frameOptions.appendChild(optButton);
+            });
+
+            if(responseBook[indexCounter] !== null) {
+                paintExplanationText(responseBook[indexCounter] === targetQuestion.answer);
+            }
+
+            document.getElementById('prev-btn').disabled = (indexCounter === 0);
+        }
+
+        function validateSelection(clickedBtn, userChoice) {
+            const currentQuestion = currentArray[indexCounter];
+            responseBook[indexCounter] = userChoice;
+
+            const domesticOptions = document.querySelectorAll('#options-holder .option-btn');
+            domesticOptions.forEach(btn => btn.disabled = true);
+
+            const isCorrect = (userChoice === currentQuestion.answer);
+            if(isCorrect) {
+                clickedBtn.classList.add('correct');
+                runningTally++;
+                document.getElementById('score-counter').innerText = `Score: ${runningTally}`;
+                playCorrectFX();
+            } else {
+                clickedBtn.classList.add('wrong');
+                domesticOptions.forEach(btn => {
+                    if(btn.innerHTML === currentQuestion.answer) btn.classList.add('correct');
+                });
+                playWrongFX();
+            }
+
+            paintExplanationText(isCorrect);
+        }
+
+        function paintExplanationText(isCorrect) {
+            const questionData = currentArray[indexCounter];
+            const feedbackContainer = document.getElementById('explanation-container');
+            feedbackContainer.style.display = "block";
+
+            if(isCorrect) {
+                feedbackContainer.innerHTML = `✅ <b>Correct!</b> ${questionData.exp}`;
+                feedbackContainer.classList.add('correct-style');
+            } else {
+                feedbackContainer.innerHTML = `❌ <b>Not quite!</b> ${questionData.exp}`;
+                feedbackContainer.classList.add('wrong-style');
+            }
+        }
+
+        function goToNextQuestion() {
+            playClickFX();
+            if(indexCounter < 49) {
+                indexCounter++;
+                renderCurrentQuestionCard();
+            } else {
+                compileFinalTally();
+            }
+        }
+
+        function goToPrevQuestion() {
+            playClickFX();
+            if(indexCounter > 0) {
+                indexCounter--;
+                renderCurrentQuestionCard();
+            }
+        }
+
+        function returnToMainMenu() {
+            playClickFX();
+            document.getElementById('quiz-screen').classList.remove('active');
+            document.getElementById('summary-screen').classList.remove('active');
+            document.getElementById('start-screen').classList.add('active');
+        }
+
+        function retryCurrentLevel() {
+            initiateQuiz(levelChoice);
+        }
+
+        /* Scoring Analysis and Certification Engine */
+        function compileFinalTally() {
+            playBadgeFX();
+            document.getElementById('quiz-screen').classList.remove('active');
+            document.getElementById('summary-screen').classList.add('active');
+
+            const scoreRatio = Math.round((runningTally / 50) * 100);
+            const absoluteSec = Math.round((new Date() - timeAnchor) / 1000);
+            const minStr = Math.floor(absoluteSec / 60);
+            const secStr = absoluteSec % 60;
+            const parsedDuration = `${minStr}m ${secStr}s`;
+
+            let gradeBadge = "📚 Keep Practising";
+            if(scoreRatio >= 90) gradeBadge = "🏆 Vocabulary Master";
+            else if(scoreRatio >= 70) gradeBadge = "🌟 Word Explorer";
+            else if(scoreRatio >= 50) gradeBadge = "👍 Good Learner";
+
+            document.getElementById('earned-badge-display').innerText = gradeBadge;
+            document.getElementById('sum-level').innerText = levelChoice.toUpperCase();
+            document.getElementById('sum-score').innerText = runningTally;
+            document.getElementById('sum-accuracy').innerText = `${scoreRatio}%`;
+            document.getElementById('sum-time').innerText = parsedDuration;
+
+            // Cache metrics down into localized cross-session storage tracks
+            localStorage.setItem(`oneword_highscore_${levelChoice}`, runningTally);
+
+            // Synchronize variables into the printable certificate container frame
+            document.getElementById('cert-level-title').innerText = `ONE WORD SUBSTITUTION QUIZ - ${levelChoice.toUpperCase()} LEVEL`;
+            document.getElementById('cert-final-score').innerText = `${runningTally} / 50 (${scoreRatio}%)`;
+            document.getElementById('cert-badge-subtitle').innerText = `Ranked Performance Status: ${gradeBadge}`;
+
+            triggerConfettiCanvasAnimation();
+        }
+
+        function invokeCertificatePrint() {
+            window.print();
+        }
+
+        /* Confetti Visual Framework */
+        function triggerConfettiCanvasAnimation() {
+            const surface = document.getElementById('confetti-canvas');
+            const renderingCtx = surface.getContext('2d');
+            surface.style.display = 'block';
+            surface.width = window.innerWidth;
+            surface.height = window.innerHeight;
+
+            let particles = [];
+            for(let k=0; k<120; k++) {
+                particles.push({
+                    x: Math.random() * surface.width,
+                    y: Math.random() * surface.height - surface.height,
+                    radius: Math.random() * 5 + 6,
+                    density: Math.random() * surface.height,
+                    color: `hsl(${Math.random() * 360}, 90%, 55%)`,
+                    swing: Math.random() * 10 - 5
+                });
+            }
+
+            let framesElapsed = 0;
+            function executionLoop() {
+                renderingCtx.clearRect(0, 0, surface.width, surface.height);
+                particles.forEach((item, index) => {
+                    renderingCtx.beginPath();
+                    renderingCtx.lineWidth = item.radius;
+                    renderingCtx.strokeStyle = item.color;
+                    renderingCtx.moveTo(item.x + item.swing + item.radius/2, item.y);
+                    renderingCtx.lineTo(item.x + item.swing, item.y + item.swing + item.radius/2);
+                    renderingCtx.stroke();
+
+                    item.y += Math.cos(item.density) + 1.5 + item.radius/2;
+                    item.x += Math.sin(0.01) * 3;
+                    
+                    if(item.y > surface.height) {
+                        particles[index] = {
+                            x: Math.random() * surface.width,
+                            y: -20,
+                            radius: item.radius,
+                            density: item.density,
+                            color: item.color,
+                            swing: Math.random() * 10 - 5
+                        };
+                    }
+                });
+
+                framesElapsed++;
+                if(framesElapsed < 250) {
+                    requestAnimationFrame(executionLoop);
+                } else {
+                    surface.style.display = 'none';
+                }
+            }
+            executionLoop();
+        }
+    </script>
+</body>
+</html>

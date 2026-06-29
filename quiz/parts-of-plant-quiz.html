@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🌿 Parts of a Plant Quiz</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 50%, #a5d6a7 100%);
+            --primary: #2e7d32;
+            --primary-light: #4caf50;
+            --primary-dark: #1b5e20;
+            --accent-easy: #4caf50;
+            --accent-medium: #ffb300;
+            --accent-hard: #e53935;
+            --glass-bg: rgba(255, 255, 255, 0.9);
+            --glass-border: rgba(255, 255, 255, 0.7);
+            --text-dark: #2c3e50;
+            --text-light: #ffffff;
+            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --radius-sm: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-dark);
+            overflow-x: hidden;
+            position: relative;
+            padding: 15px;
+        }
+
+        /* --- Ambient Animation Background Details --- */
+        .ambient-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .floating-element {
+            position: absolute;
+            font-size: 2.5rem;
+            opacity: 0.2;
+            animation: float 10s ease-in-out infinite alternate;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            100% { transform: translateY(-40px) rotate(15deg); }
+        }
+
+        /* --- Application Glassmorphism Frame --- */
+        .app-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 750px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+            z-index: 10;
+            position: relative;
+            transition: all 0.4s ease;
+        }
+
+        h1.title {
+            font-size: 2.6rem;
+            color: var(--primary-dark);
+            text-align: center;
+            margin-bottom: 5px;
+            font-weight: 800;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #388e3c;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .screen {
+            display: none;
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .level-selector-container {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            margin-top: 20px;
+        }
+
+        .btn-level {
+            padding: 20px 25px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            color: white;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.10);
+        }
+
+        .btn-easy { background-color: var(--accent-easy); }
+        .btn-medium { background-color: var(--accent-medium); color: #2c3e50; }
+        .btn-hard { background-color: var(--accent-hard); }
+
+        .btn-level:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .quiz-header-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: var(--text-dark);
+            background: rgba(255,255,255,0.6);
+            padding: 12px 18px;
+            border-radius: var(--radius-sm);
+        }
+
+        .progress-bar-wrapper {
+            background: rgba(0, 0, 0, 0.06);
+            border-radius: 20px;
+            height: 16px;
+            width: 100%;
+            overflow: hidden;
+            margin-bottom: 25px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary-light), var(--primary-dark));
+            border-radius: 20px;
+            transition: width 0.4s ease;
+        }
+
+        .question-box {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 25px;
+            line-height: 1.45;
+        }
+
+        .options-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-bottom: 25px;
+        }
+
+        .btn-option {
+            background: white;
+            border: 2.5px solid rgba(0, 0, 0, 0.08);
+            border-radius: var(--radius-md);
+            padding: 18px 22px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-option:hover:not([disabled]) {
+            border-color: var(--primary-light);
+            background: rgba(232, 245, 233, 0.6);
+            transform: translateX(5px);
+        }
+
+        .btn-option.correct {
+            background-color: #d4edda !important;
+            border-color: #28a745 !important;
+            color: #155724 !important;
+            font-weight: 700;
+        }
+
+        .btn-option.wrong {
+            background-color: #f8d7da !important;
+            border-color: #dc3545 !important;
+            color: #721c24 !important;
+        }
+
+        .explanation-box {
+            display: none;
+            background: #e8f5e9;
+            border-left: 6px solid var(--primary-light);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+            line-height: 1.4;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; } to { opacity: 1; }
+        }
+
+        /* --- Mandatory Strict Navigation Order Layout --- */
+        .navigation-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-top: 25px;
+            border-top: 2px solid rgba(0,0,0,0.06);
+            padding-top: 22px;
+        }
+
+        .btn-nav {
+            flex: 1;
+            padding: 16px 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: white;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .btn-prev { background-color: #78909c; }
+        .btn-home { background-color: #0288d1; }
+        .btn-next { background-color: #2e7d32; }
+
+        .btn-nav:hover:not([disabled]) {
+            filter: brightness(0.9);
+            transform: translateY(-2px);
+        }
+
+        .btn-nav:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .summary-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+            margin: 22px 0;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 14px;
+            border-radius: var(--radius-md);
+            text-align: center;
+            border: 1px solid rgba(0,0,0,0.06);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+
+        .stat-val {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--primary-dark);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #616161;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+
+        .badge-display-container {
+            text-align: center;
+            background: linear-gradient(135deg, #fffde7 0%, #fff9c4 100%);
+            padding: 22px;
+            border-radius: var(--radius-md);
+            border: 2.5px dashed #fbc02d;
+            margin-bottom: 25px;
+        }
+
+        .badge-icon {
+            font-size: 3.8rem;
+            margin-bottom: 6px;
+        }
+
+        .badge-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #f57f17;
+            text-transform: uppercase;
+        }
+
+        .actions-vertical {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .btn-action {
+            width: 100%;
+            padding: 16px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            filter: brightness(0.95);
+        }
+
+        .btn-primary-action { background-color: var(--primary); color: white; }
+        .btn-secondary-action { background-color: #eceff1; color: #37474f; }
+        .btn-print-action { background-color: #ffe082; color: #5d4037; }
+
+        #confetti-canvas {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none; z-index: 999; display: none;
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            #printable-certificate, #printable-certificate * { visibility: visible; }
+            #printable-certificate {
+                position: absolute; left: 0; top: 0; width: 100%;
+                border: 12px double #2e7d32; padding: 50px; text-align: center; background: white;
+                color: #2e7d32; border-radius: 0; box-shadow: none; display: block !important;
+            }
+        }
+
+        #printable-certificate { display: none; }
+
+        @media(max-width: 600px) {
+            h1.title { font-size: 2rem; }
+            .subtitle { font-size: 0.95rem; margin-bottom: 20px; }
+            .app-container { padding: 20px; }
+            .btn-option { padding: 15px 18px; font-size: 1.1rem; }
+            .btn-nav { font-size: 0.95rem; padding: 14px 8px; }
+            .question-box { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <div class="ambient-layer">
+        <div class="floating-element" style="top: 8%; left: 6%;">🌱</div>
+        <div class="floating-element" style="top: 78%; left: 84%; animation-delay: 2s;">☀️</div>
+        <div class="floating-element" style="top: 45%; left: 88%; animation-delay: 4s;">🌸</div>
+        <div class="floating-element" style="top: 82%; left: 10%; animation-delay: 1s;">🍂</div>
+    </div>
+
+    <div class="app-container">
+        <h1 class="title">🌿 Parts of a Plant Quiz</h1>
+        <div class="subtitle">Observe • Identify • Explore • Learn</div>
+
+        <div id="screen-start" class="screen active">
+            <div style="text-align: center; margin-bottom: 25px; font-weight: 600; font-size: 1.2rem; color: var(--text-dark); line-height: 1.5;">
+                Welcome young botanist! Choose an educational difficulty track below to start your text learning quest:
+            </div>
+            <div class="level-selector-container">
+                <button class="btn-level btn-easy" onclick="quizManager.initiateQuizRun('easy')">🟢 Easy Level</button>
+                <button class="btn-level btn-medium" onclick="quizManager.initiateQuizRun('medium')">🟡 Medium Level</button>
+                <button class="btn-level btn-hard" onclick="quizManager.initiateQuizRun('hard')">🔴 Hard Level</button>
+            </div>
+        </div>
+
+        <div id="screen-quiz" class="screen">
+            <div class="quiz-header-info">
+                <div>Level: <span id="runtime-level" style="text-transform: capitalize; color: var(--primary-dark);"></span></div>
+                <div>Question: <span id="runtime-counter">0/30</span></div>
+                <div>Score: <span id="runtime-score">0</span></div>
+            </div>
+
+            <div class="progress-bar-wrapper">
+                <div id="runtime-progress-bar" class="progress-bar-fill"></div>
+            </div>
+
+            <div id="runtime-question-text" class="question-box"></div>
+            <div id="runtime-options-container" class="options-grid"></div>
+            <div id="runtime-explanation-box" class="explanation-box"></div>
+
+            <div class="navigation-row">
+                <button id="nav-action-prev" class="btn-nav btn-prev" onclick="quizManager.actionMovePrevious()">⬅️ Previous</button>
+                <button id="nav-action-home" class="btn-nav btn-home" onclick="quizManager.actionNavigateHome()">🏠 Home</button>
+                <button id="nav-action-next" class="btn-nav btn-next" onclick="quizManager.actionMoveNext()">➡️ Next</button>
+            </div>
+        </div>
+
+        <div id="screen-summary" class="screen">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="color: var(--primary-dark); font-size: 1.9rem; font-weight: 800;">Quiz Summary!</h2>
+                <p style="font-weight: 600; color: #555; margin-top: 6px;">Here is your complete primary performance review:</p>
+            </div>
+
+            <div class="badge-display-container">
+                <div id="summary-badge-emblem" class="badge-icon">📚</div>
+                <div id="summary-badge-text" class="badge-title">Keep Learning</div>
+            </div>
+
+            <div class="summary-stats-grid">
+                <div class="stat-card"><div class="stat-val" id="sum-val-level" style="text-transform: capitalize;">-</div><div class="stat-label">Selected Track</div></div>
+                <div class="stat-card"><div class="stat-val" id="sum-val-score">-</div><div class="stat-label">Final Score</div></div>
+                <div class="stat-card"><div class="stat-val" id="sum-val-percent">-</div><div class="stat-label">Percentage</div></div>
+                <div class="stat-card"><div class="stat-val" id="sum-val-time">-</div><div class="stat-label">Time Taken</div></div>
+                <div class="stat-card"><div class="stat-val" id="sum-val-correct" style="color: #2e7d32;">-</div><div class="stat-label">Correct</div></div>
+                <div class="stat-card"><div class="stat-val" id="sum-val-wrong" style="color: #c62828;">-</div><div class="stat-label">Wrong</div></div>
+            </div>
+
+            <div class="actions-vertical">
+                <button class="btn-action btn-primary-action" onclick="quizManager.actionRestartCurrentTrack()">🔄 Play Again</button>
+                <button class="btn-action btn-secondary-action" onclick="quizManager.actionNavigateHome()">📂 Choose Another Level</button>
+                <button class="btn-action btn-print-action" onclick="window.print()">🖨️ Print Certificate</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="printable-certificate">
+        <h1 style="font-size: 3rem; font-weight: 800; margin-bottom: 10px;">🏆 Certificate of Achievement</h1>
+        <h3 style="font-size: 1.6rem; font-style: italic; color: #555; margin-bottom: 30px;">Parts of a Plant Quiz</h3>
+        <p style="font-size: 1.4rem; line-height: 1.6; margin-bottom: 25px;">
+            This document proudly certifies that a magnificent **Nature Student** has successfully traversed the comprehensive 
+            <span id="cert-val-level" style="text-transform: uppercase; font-weight: 700;"></span> difficulty level, answering 30 curriculum-aligned questions.
+        </p>
+        <p style="font-size: 1.5rem; margin-bottom: 40px;">
+            Final Attained Score: <strong id="cert-val-score"></strong> (<span id="cert-val-percent"></span> Accuracy Rate)
+        </p>
+        <div style="margin-top: 60px; font-size: 1.1rem; border-top: 2px dashed #2e7d32; padding-top: 20px; display: inline-block; width: 60%;">
+            Verified Offline via Primary EVS Interactive Learning Application Module
+        </div>
+    </div>
+
+    <script>
+        /**
+         * Comprehensive 90 Question Matrix Array — Fully Compiled
+         */
+        const QuizBanks = {
+            easy: [
+                { q: "Which part of the plant grows down under the dark soil?", o: ["Leaf", "Flower", "Root", "Fruit"], a: 2, e: "Roots grow deep down inside the soil to hold the plant firmly." },
+                { q: "Which part of the plant is usually bright green and catches sunlight?", o: ["Root", "Leaf", "Seed", "Bud"], a: 1, e: "Leaves are mostly green because they help collect light to look after the plant." },
+                { q: "Which colorful, pretty part grows into a juicy fruit later?", o: ["Root", "Stem", "Flower", "Thorn"], a: 2, e: "Beautiful flowers grow and slowly transform into delicious fruits." },
+                { q: "Which long part stands up straight above the ground and holds up the branches?", o: ["Root", "Stem", "Seed", "Bud"], a: 1, e: "The stem acts like a strong pillar keeping the plant standing upright." },
+                { q: "Which part of the plant contains hidden seeds safely inside it?", o: ["Root", "Leaf", "Fruit", "Stem"], a: 2, e: "Fruits like apples, oranges, and watermelons store seeds safely in their centers." },
+                { q: "Which tiny part can grow into a completely new baby plant if put in soil?", o: ["Leaf", "Seed", "Stem", "Root"], a: 1, e: "Seeds are wonderful packages that hold the life of a brand new baby plant." },
+                { q: "Which part makes a rose bush look very colorful and smell sweet?", o: ["The roots", "The leaves", "The flowers", "The stems"], a: 2, e: "Flowers use beautiful colors and lovely scents to welcome visitors in nature." },
+                { q: "Which part absorbs water like a straw from inside the wet ground?", o: ["Flower", "Leaf", "Root", "Fruit"], a: 2, e: "Roots drink up water and moisture from the soil around them." },
+                { q: "True or False: Leaves are usually bright red or blue to match the sky.", o: ["True", "False"], a: 1, e: "False! Leaves are almost always green because of a special helper called chlorophyll." },
+                { q: "What is a small, tightly closed flower that hasn't opened up yet called?", o: ["Fruit", "Bud", "Trunk", "Seed"], a: 1, e: "A bud is a baby flower waiting patiently for the right time to open." },
+                { q: "Complete the sentence: A huge apple tree gets its water directly through its...", o: ["Apples", "Leaves", "Roots", "Branches"], a: 2, e: "Roots absorb water from underground and pass it upward." },
+                { q: "Which part of a strawberry plant has tiny seeds stuck all over the outside?", o: ["The root", "The fruit", "The wood", "The underground branch"], a: 1, e: "The strawberry is a sweet red fruit with seeds on its surface." },
+                { q: "What part of a plant are you eating when you munch on a crisp leaf of spinach?", o: ["Fruit", "Root", "Leaf", "Seed"], a: 2, e: "Spinach is a super healthy vegetable where we eat the leafy green parts." },
+                { q: "Which part looks like a long green stick holding up a single beautiful tulip flower?", o: ["The root", "The seed", "The stem", "The fruit"], a: 2, e: "The stem carries the flower high up so everyone can see it." },
+                { q: "True or False: Seeds grow directly on the tips of the green leaves.", o: ["True", "False"], a: 1, e: "False. Seeds are formed inside flowers and are kept inside fruits." },
+                { q: "Which part opens its petals wide to welcome bees and beautiful butterflies?", o: ["Root", "Flower", "Woody Bark", "Seed coat"], a: 1, e: "Flowers use wide open petals to attract friendly flying insects." },
+                { q: "When you eat a crunchy orange carrot, which part of the plant are you eating?", o: ["The flower", "The seed", "The root", "The stem"], a: 2, e: "A carrot is a large orange root that stores food underground." },
+                { q: "Where do new leaves sprout from on a growing branch?", o: ["From old fruit skins", "From small nodes on the stem", "From the tips of old roots", "From deep inside the mud"], a: 1, e: "Stems have special spots called buds or nodes where fresh leaves appear." },
+                { q: "What color is the stem of most tiny baby plants?", o: ["Black", "Green", "Bright Purple", "Silver"], a: 1, e: "Young baby plants have soft green stems that are flexible." },
+                { q: "True or False: All plants have exactly the same size of leaves.", o: ["True", "False"], a: 1, e: "False! Some leaves are tiny like mint leaves, and others are giant like banana leaves." },
+                { q: "Which part drops off the plant after a fruit starts to swell and grow?", o: ["The deep root", "The flower petals", "The whole main stem", "The trunk wood"], a: 1, e: "Once a fruit starts growing, the old flower petals wither and fall away." },
+                { q: "What do we find tucked safely inside a bean pod?", o: ["Flowers", "Leaves", "Seeds", "Roots"], a: 2, e: "A bean pod is a fruit that protects delicious green seeds." },
+                { q: "Which part acts like a strong anchor so a big tree doesn't blow away in heavy wind?", o: ["The leaves", "The roots", "The fruit skins", "The sweet flower petals"], a: 1, e: "Roots act like anchors, gripping the earth to hold trees steady." },
+                { q: "Identify the correct plant part: I grow on a stem, I am flat, and I make plants look green. What am I?", o: ["A seed", "A flower", "A leaf", "A root"], a: 2, e: "Leaves are flat green structures that grow along branches." },
+                { q: "What do we call the big, hard, woody main stem of a giant mango tree?", o: ["A leaf branch", "A trunk", "A flower bud", "A fiber root"], a: 1, e: "Large mature trees have a strong wooden center stem called a trunk." },
+                { q: "True or False: Without roots, a plant could easily stand up during a storm.", o: ["True", "False"], a: 1, e: "False. Without roots to hold on, a plant would immediately tumble over." },
+                { q: "Which part of a pea plant do humans love to pop open and eat?", o: ["The roots", "The woody stem", "The green seeds", "The flower petals"], a: 2, e: "Peas are small, round, healthy seeds that we eat." },
+                { q: "What is the very first thing that comes out of a seed when it starts to awaken?", o: ["A big red apple", "A tiny baby root", "A colorful flower blossom", "A giant wooden trunk"], a: 1, e: "A tiny root grows downward first to secure water for the baby plant." },
+                { q: "Which part of the plant helps it catch fresh air and sunshine every single day?", o: ["The roots under mud", "The green leaves", "The hard seed coats", "The internal wood"], a: 1, e: "Leaves spread out wide to catch as much air and sunshine as possible." },
+                { q: "Match the part: Which part is most like a protective house for baby seeds?", o: ["The root", "The fruit", "The stem trunk", "The leaf tip"], a: 1, e: "Fruits act as protective coverings for developing seeds." }
+            ],
+            medium: [
+                { q: "What is the primary function of a plant's green leaves?", o: ["To anchor the plant", "To absorb mud", "To manufacture food using light", "To protect the trunk"], a: 2, e: "Leaves prepare food for the whole plant through photosynthesis using sunshine." },
+                { q: "What do we call a single thick main root that grows straight down with smaller roots on the sides?", o: ["Fibrous root", "Tap root", "Water root", "Floating root"], a: 1, e: "A tap root is a large main root, like what we see in carrots or mustard plants." },
+                { q: "Grass has many thin, bushy roots of the same size. What are these called?", o: ["Tap roots", "Fibrous roots", "Thorn roots", "Trunk roots"], a: 1, e: "Fibrous roots look like a bushy bunch of threads spreading near the surface." },
+                { q: "How does water travel from the underground roots up to the high leaves?", o: ["Through the fruit", "It climbs up the outside", "Through pipelines inside the stem", "Through flower petals"], a: 2, e: "The stem contains microscopic tubes that carry water up to the leaves." },
+                { q: "Why do flowers have bright colors and nice smells?", o: ["To scare birds away", "To keep leaves warm", "To attract insects for pollination", "To make the soil clean"], a: 2, e: "Bright colors and perfume attract bees and butterflies to help the flowers." },
+                { q: "What important thing is found inside almost every fruit in nature?", o: ["A small new leaf", "One or more seeds", "A baby flower bud", "A green rootlet"], a: 1, e: "Fruits contain seeds which are meant to grow into future plants." },
+                { q: "Why do plants make so many seeds?", o: ["To show off colors", "To reproduce and grow new plants", "To fill the soil with wood", "To feed insects only"], a: 1, e: "Plants make seeds to ensure new plants can grow after them." },
+                { q: "What do we call the movement of seeds to new places by wind, water, or animals?", o: ["Seed cooking", "Seed dispersal", "Seed sleeping", "Seed melting"], a: 1, e: "Seed dispersal means spreading seeds around so they have room to grow." },
+                { q: "Which of these stems is soft, green, and needs a stick or wall to climb upwards?", o: ["A tree trunk", "A climber stem", "A woody shrub", "A hard thorn"], a: 1, e: "Climbers like money plants or pea plants have weak stems that need a support." },
+                { q: "What happens to a flower after it gets pollinated by a friendly bee?", o: ["It turns into a root", "It drops off and grows into a leaf", "It slowly grows into a fruit", "It disappears forever"], a: 2, e: "The base of the flower swells up after pollination to become a fruit." },
+                { q: "True or False: Fibrous roots grow much deeper into the earth than tap roots.", o: ["True", "False"], a: 1, e: "False! Tap roots grow deep straight down, while fibrous roots stay shallow and spread wide." },
+                { q: "What are the tiny holes on leaves called that help the plant breathe air?", o: ["Pores", "Stomata", "Vins", "Trunk lets"], a: 1, e: "Stomata are small openings under leaves that let the plant exchange gases." },
+                { q: "Which plant part holds branches, leaves, fruits, and flowers in their proper places?", o: ["The Root system", "The Stem system", "The Seed coat", "The Flower center"], a: 1, e: "The stem provides the framework that supports all other upper parts." },
+                { q: "A dandelion seed has fluffy hairs that help it float away. How is it dispersed?", o: ["By water", "By wind", "By sticky animal fur", "By bursting open"], a: 1, e: "Light, fluffy seeds travel through the sky carried by air currents." },
+                { q: "Why are fruits often sweet and delicious to eat?", o: ["To poison animals", "So animals eat them and drop seeds elsewhere", "To clean the plant branches", "To help the leaves stay green"], a: 1, e: "Animals eat the fruit and drop the seeds away from the parent plant." },
+                { q: "True or False: Stems only carry water up, they never carry food down.", o: ["True", "False"], a: 1, e: "False. Stems carry water upwards and also distribute food downwards from leaves." },
+                { q: "Which part of a plant protects a baby flower before it opens up completely?", o: ["The petals", "The sepals", "The root hair", "The seed shell"], a: 1, e: "Sepals are the small green leaf-like structures that wrap around a young bud." },
+                { q: "What do leaves require from the environment to manufacture food successfully?", o: ["Sugar and soil grains", "Sunlight, water, and carbon dioxide", "Milk and clean stones", "Fruit juices and pollen"], a: 1, e: "Leaves perform photosynthesis using sunlight, water, and carbon dioxide gas." },
+                { q: "What type of root system does a giant oak or neem tree have?", o: ["Fibrous roots", "Tap root system", "No roots at all", "Floating water roots"], a: 1, e: "Big trees require a deep, strong tap root system to hold their heavy weight." },
+                { q: "How do coconut seeds travel across the planet to grow on new sandy beaches?", o: ["They fly in the air", "They float on ocean water", "They stick to animal fur", "They are carried by ants"], a: 1, e: "Coconuts are hollow and waterproof, allowing them to travel via water." },
+                { q: "What makes the stem of a rose bush dangerous to touch?", o: ["It is too hot", "It has protective thorns", "It is made of sticky glue", "It can bite"], a: 1, e: "Thorns on stems serve as a protection mechanism against herbivores." },
+                { q: "True or False: Seeds do not require air to start growing into a plant.", o: ["True", "False"], a: 1, e: "False! Seeds absolutely need oxygen, moisture, and warmth to germinate." },
+                { q: "Which part of the flower produces the powdery yellow grains called pollen?", o: ["The root cap", "The stamen / anther", "The green sepal", "The fruit flesh"], a: 1, e: "The stamen is the male part of a flower that generates pollen." },
+                { q: "What is the main reason a leaf turns yellow and falls off a plant?", o: ["It is happy", "It is old or not getting what it needs", "It wants to turn into a fruit", "It is sleeping"], a: 1, e: "Old leaves drop off when they finish their life cycle or lack nutrients." },
+                { q: "Which plant part contains a mini food storage area to feed a baby seed sprout?", o: ["The bark", "The cotyledon / seed leaves", "The root tip", "The thorn base"], a: 1, e: "The seed leaves or cotyledons store nutrients for the early embryo." },
+                { q: "What sort of stem do herb plants like coriander or parsley have?", o: ["Thick and woody", "Soft, thin, and green", "Sharp and covered in bark", "Underground tuber"], a: 1, e: "Herbs are defined by their soft, bendable, non-woody green stems." },
+                { q: "Complete the sentence: Water lilies have wide, flat floating leaves to help them...", o: ["Sink in water", "Catch sunlight on the water surface", "Catch fish", "Dig holes in sand"], a: 1, e: "Flat leaves maximize surface area to capture light while floating." },
+                { q: "Which of these items is a seed that we regularly grind up to make cooking oil?", o: ["Mustard seed", "Apple seed", "Rose seed", "Mango seed"], a: 0, e: "Mustard seeds are pressed to create healthy mustard oil." },
+                { q: "True or False: Plants can easily survive without any stems.", o: ["True", "False"], a: 1, e: "False! Stems link the roots to the leaves; without them, nutrients cannot travel." },
+                { q: "What name is given to the lines or patterns visible on a green leaf surface?", o: ["Trunk cuts", "Veins", "Bark lines", "Pollen paths"], a: 1, e: "Leaf veins provide structural support and move water throughout the leaf." }
+            ],
+            hard: [
+                { q: "What is the scientific name for the process where a seed wakes up and sprouts?", o: ["Pollination", "Germination", "Photosynthesis", "Dispersal"], a: 1, e: "Germination is the official term for when a seed begins to sprout into a seedling." },
+                { q: "Why do flowers transform into fruits containing seeds?", o: ["To shed excess weight", "To protect developing seeds and aid reproduction", "To change their color", "To stop looking pretty"], a: 1, e: "Fruits act as protective vessels that help disperse seeds securely." },
+                { q: "Some seeds have tiny hooks that clip onto moving dog fur. What method is this?", o: ["Wind travel", "Animal dispersal (Epizoochory)", "Water floating", "Explosive popping"], a: 1, e: "Hooked seeds hitch a ride on animal coats to reach new ground." },
+                { q: "Which of these is an underground stem that stores extra food for the plant?", o: ["Carrot", "Potato", "Radish", "Turnip"], a: 1, e: "A potato is a modified underground stem called a tuber. Carrots are roots." },
+                { q: "Which plant is known to store a massive reservoir of nutrients in its thick tap root?", o: ["Banyan Tree", "Beetroot", "Potato Tuber", "Grass plant"], a: 1, e: "Beetroots, carrots, and radishes store all their food reserves inside their tap roots." },
+                { q: "Why do scientists refer to leaves as the 'food factories' of the plant kingdom?", o: ["They package groceries", "They synthesize organic compounds using light energy", "They consume other insects", "They store stones"], a: 1, e: "Leaves produce glucose food via chemical reactions fueled by solar light." },
+                { q: "Which structure safeguards the tender growing embryo inside a dormant seed?", o: ["The flower petal", "The seed coat (Testa)", "The root hair", "The sepal ring"], a: 1, e: "The seed coat protects the delicate inner embryo from disease and drying out." },
+                { q: "How do root hairs benefit the overall survival of a massive terrestrial plant?", o: ["They perform pollination", "They multiply surface area for water absorption", "They make the plant look beautiful", "They produce sweet nectar"], a: 1, e: "Root hairs increase contact with soil particles to optimize water uptake." },
+                { q: "What is the name for the pattern of veins found on a blade of grass?", o: ["Reticulate venation", "Parallel venation", "Circular venation", "Crossed venation"], a: 1, e: "Grass leaves have parallel venation where veins run straight side-by-side." },
+                { q: "What is the female reproductive part located at the very center of a flower called?", o: ["Stamen", "Pistil / Carpel", "Anther", "Filament"], a: 1, e: "The pistil or carpel is the central female organ that holds the ovules." },
+                { q: "What happens during a dramatic seed dispersal event known as 'explosive mechanism'?", o: ["The seed burns up", "The dried pod splits open forcefully launching seeds", "Birds carry it away", "It dissolves in rainwater"], a: 1, e: "Peas and balsam pods dry up, build tension, and snap open to launch seeds." },
+                { q: "Ginger is an example of which specialized plant modification?", o: ["An air root", "An underground stem (Rhizome)", "A modified leaf", "A colorful petal"], a: 1, e: "Ginger is a horizontal underground stem structure called a rhizome." },
+                { q: "What would happen if a farmer stripped all the leaves off a growing tomato plant?", o: ["It would grow faster", "It would starve because it cannot produce food", "It would turn into a tree", "It would create more seeds instantly"], a: 1, e: "No leaves means no photosynthesis, causing the plant to wither from starvation." },
+                { q: "Which type of leaf venation looks like a complex net or web across a hibiscus leaf?", o: ["Parallel venation", "Reticulate venation", "Straight venation", "Block venation"], a: 1, e: "Reticulate venation is a web-like network common in dicot plant leaves." },
+                { q: "What substance travels through the phloem pipelines found inside plant stems?", o: ["Muddy groundwater", "Synthesized food syrup", "Pollen grains", "Pure air bubbles"], a: 1, e: "Phloem transports prepared nutritional glucose from leaves to other regions." },
+                { q: "What substance is carried upward specifically through xylem tissues in the stem?", o: ["Dissolved food sugars", "Water and dissolved minerals", "Spore cells", "Flower perfumes"], a: 1, e: "Xylem tissue acts as a structural plumbing pipeline for water and minerals." },
+                { q: "True or False: Banyan tree prop roots grow from branches down into the soil to give extra support.", o: ["True", "False"], a: 0, e: "True! Prop roots act like pillars to support the massive heavy branches of a Banyan." },
+                { q: "What part of a plant turns into the hard outer woody shell of a walnut fruit?", o: ["The leaf tip", "The ovary wall", "The root cap", "The pollen tube"], a: 1, e: "The wall of the ovary thickens and cures to form the shell of the fruit." },
+                { q: "Why do desert plants like the cactus reduce their leaves down into sharp spines?", o: ["To catch insects", "To minimize water loss through transpiration", "To absorb extra dew", "To make photosynthesis faster"], a: 1, e: "Spines cut down water loss and defend the plant from thirsty animals." },
+                { q: "What do we call the green chemical inside leaves that captures solar light waves?", o: ["Hemoglobin", "Chlorophyll", "Starch", "Resin"], a: 1, e: "Chlorophyll gives leaves their green hue and absorbs solar energy." },
+                { q: "What major role do the sepals fulfill during the early childhood of a flower?", o: ["They produce pollen", "They protect the delicate bud from predators and weather", "They turn into seeds", "They attract butterflies"], a: 1, e: "Sepals serve as a defensive shield over the developing flower bud." },
+                { q: "True or False: Onion bulbs are actually shortened underground stems wrapped in fleshy leaves.", o: ["True", "False"], a: 0, e: "True! An onion is a modified bulbous stem surrounded by food-storing leaves." },
+                { q: "What dynamic environmental process is called transpiration?", o: ["Water vapor escaping from leaf stomata", "Roots drinking water from soil", "Seeds flying away", "Flowers changing colors"], a: 0, e: "Transpiration is the evaporation of excess water from the surface of leaves." },
+                { q: "What do the tiny cotyledons provide for a seedling before true leaves develop?", o: ["Thorns for battle", "Stored nourishment and energy", "Anchor hooks", "Sweet nectar drops"], a: 1, e: "Cotyledons hold food reserves that sustain life until the plant can perform photosynthesis." },
+                { q: "How do the deep roots of a forest stop soil erosion from happening during heavy rain storms?", o: ["They block the sky", "They bind soil particles together with a root network", "They turn soil into rock", "They evaporate the rain water"], a: 1, e: "Roots act like a subterranean net, binding soil particles to stop them from washing away." },
+                { q: "Which section of a root is responsible for digging safely through rough stones?", o: ["Root hair zone", "Protective Root Cap", "Stem connection node", "Pith center"], a: 1, e: "The root cap is a tough cell shield covering the fragile tip as it pushes through soil." },
+                { q: "What is pollination?", o: ["Water moving up stems", "Transfer of pollen from stamen to pistil", "Seeds falling into dirt", "Leaves dropping in autumn"], a: 1, e: "Pollination enables fertilization, which causes flowers to create fruits." },
+                { q: "Why do insectivorous plants like the Pitcher Plant trap bugs if they have green leaves?", o: ["They hate insects", "To obtain nitrogen and nutrients missing from poor soil", "To protect their flowers", "To store water inside bugs"], a: 1, e: "Bug-trapping plants live in poor soils and extract nutrients from caught insects." },
+                { q: "True or False: Every single species of plant on Earth reproduces exclusively by making seeds.", o: ["True", "False"], a: 1, e: "False. Ferns and mosses do not produce seeds; they reproduce using tiny spores." },
+                { q: "What essential planetary gas is consumed by leaves during the process of respiration?", o: ["Carbon Dioxide", "Oxygen", "Nitrogen", "Helium"], a: 1, e: "For respiration (breathing), plants consume Oxygen gas to break down food." }
+            ]
+        };
+
+        /**
+         * Core Application Orchestrator Framework Object
+         */
+        class EducationalQuizManager {
+            constructor() {
+                this.selectedTrack = '';
+                this.activeQuestionDataset = [];
+                this.pointerIndex = 0;
+                this.cumulativeScore = 0;
+                this.loggedUserChoices = [];
+                this.epochStartTime = null;
+                this.webAudioContext = null;
+            }
+
+            initializeSoundSystem() {
+                if (!this.webAudioContext) {
+                    this.webAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            generateAudioTone(frequencyValue, waveformType, playbackDuration) {
+                try {
+                    this.initializeSoundSystem();
+                    const audioOscillator = this.webAudioContext.createOscillator();
+                    const volumeGainNode = this.webAudioContext.createGain();
+                    
+                    audioOscillator.type = waveformType;
+                    audioOscillator.frequency.value = frequencyValue;
+                    
+                    volumeGainNode.gain.setValueAtTime(0.12, this.webAudioContext.currentTime);
+                    volumeGainNode.gain.exponentialRampToValueAtTime(0.0001, this.webAudioContext.currentTime + playbackDuration);
+                    
+                    audioOscillator.connect(volumeGainNode);
+                    volumeGainNode.connect(this.webAudioContext.destination);
+                    
+                    audioOscillator.start();
+                    audioOscillator.stop(this.webAudioContext.currentTime + playbackDuration);
+                } catch (audioException) { 
+                    console.warn("Audio Context engine initialization deferred.", audioException); 
+                }
+            }
+
+            triggerFeedbackAudio(soundProfileMode) {
+                switch(soundProfileMode) {
+                    case 'tap': 
+                        this.generateAudioTone(580, 'sine', 0.07); 
+                        break;
+                    case 'correct': 
+                        this.generateAudioTone(440, 'triangle', 0.08); 
+                        setTimeout(() => this.generateAudioTone(554.37, 'triangle', 0.12), 80);
+                        break;
+                    case 'incorrect': 
+                        this.generateAudioTone(180, 'sawtooth', 0.22); 
+                        break;
+                    case 'finished': 
+                        this.generateAudioTone(523.25, 'sine', 0.12);
+                        setTimeout(() => this.generateAudioTone(659.25, 'sine', 0.12), 100);
+                        setTimeout(() => this.generateAudioTone(783.99, 'sine', 0.12), 200);
+                        setTimeout(() => this.generateAudioTone(1046.50, 'sine', 0.35), 300);
+                        break;
+                }
+            }
+
+            knuthShuffle(targetArray) {
+                let currentItemIndex = targetArray.length, temporaryValue, targetRandomIndex;
+                while (currentItemIndex) {
+                    targetRandomIndex = Math.floor(Math.random() * currentItemIndex--);
+                    temporaryValue = targetArray[currentItemIndex];
+                    targetArray[currentItemIndex] = targetArray[targetRandomIndex];
+                    targetArray[targetRandomIndex] = temporaryValue;
+                }
+                return targetArray;
+            }
+
+            transitionUIWindow(screenDomId) {
+                document.querySelectorAll('.screen').forEach(viewElement => viewElement.classList.remove('active'));
+                document.getElementById(screenDomId).classList.add('active');
+                window.scrollTo(0,0);
+            }
+
+            initiateQuizRun(difficultyTrackKey) {
+                this.triggerFeedbackAudio('tap');
+                this.selectedTrack = difficultyTrackKey;
+                
+                // Perform deep cloning clone of target question arrays
+                let baseQuestions = JSON.parse(JSON.stringify(QuizBanks[difficultyTrackKey]));
+                this.activeQuestionDataset = this.knuthShuffle(baseQuestions);
+                
+                // Shuffle choices variant positions safely mapped with original indexes preserved
+                this.activeQuestionDataset.forEach(questionNode => {
+                    let wrappedChoices = questionNode.o.map((choiceText, trackIndex) => ({ 
+                        textStr: choiceText, 
+                        truthStatus: trackIndex === questionNode.a 
+                    }));
+                    this.knuthShuffle(wrappedChoices);
+                    questionNode.o = wrappedChoices.map(c => c.textStr);
+                    questionNode.a = wrappedChoices.findIndex(c => c.truthStatus);
+                });
+
+                this.pointerIndex = 0;
+                this.cumulativeScore = 0;
+                this.loggedUserChoices = new Array(this.activeQuestionDataset.length).fill(null);
+                this.epochStartTime = new Date();
+                
+                document.getElementById('runtime-level').innerText = difficultyTrackKey;
+                this.transitionUIWindow('screen-quiz');
+                this.renderActiveQuestionStructure();
+            }
+
+            renderActiveQuestionStructure() {
+                const activeQuestionItem = this.activeQuestionDataset[this.pointerIndex];
+                
+                document.getElementById('runtime-counter').innerText = `${this.pointerIndex + 1}/${this.activeQuestionDataset.length}`;
+                document.getElementById('runtime-score').innerText = this.cumulativeScore;
+                
+                const completePercentage = ((this.pointerIndex + 1) / this.activeQuestionDataset.length) * 100;
+                document.getElementById('runtime-progress-bar').style.width = `${completePercentage}%`;
+
+                document.getElementById('runtime-question-text').innerText = activeQuestionItem.q;
+
+                const choicesBox = document.getElementById('runtime-options-container');
+                choicesBox.innerHTML = '';
+                
+                const explFrame = document.getElementById('runtime-explanation-box');
+                explFrame.style.display = 'none';
+
+                activeQuestionItem.o.forEach((choiceLabel, labelIdx) => {
+                    const optionButton = document.createElement('button');
+                    optionButton.className = 'btn-option';
+                    optionButton.innerText = choiceLabel;
+                    optionButton.onclick = () => this.evaluateUserSelection(labelIdx);
+                    choicesBox.appendChild(optionButton);
+                });
+
+                // Apply dynamic visibility states down to functional elements
+                document.getElementById('nav-action-prev').disabled = (this.pointerIndex === 0);
+                document.getElementById('nav-action-next').disabled = (this.loggedUserChoices[this.pointerIndex] === null);
+
+                if (this.loggedUserChoices[this.pointerIndex] !== null) {
+                    this.reapplyHistoricalFeedbackLayout(this.loggedUserChoices[this.pointerIndex]);
+                }
+            }
+
+            evaluateUserSelection(selectedChoiceIdx) {
+                if (this.loggedUserChoices[this.pointerIndex] !== null) return;
+                
+                const workingQuestionData = this.activeQuestionDataset[this.pointerIndex];
+                this.loggedUserChoices[this.pointerIndex] = selectedChoiceIdx;
+                
+                const optionNodesCollection = document.getElementById('runtime-options-container').children;
+
+                if (selectedChoiceIdx === workingQuestionData.a) {
+                    optionNodesCollection[selectedChoiceIdx].classList.add('correct');
+                    this.cumulativeScore += 1;
+                    document.getElementById('runtime-score').innerText = this.cumulativeScore;
+                    this.triggerFeedbackAudio('correct');
+                } else {
+                    optionNodesCollection[selectedChoiceIdx].classList.add('wrong');
+                    optionNodesCollection[workingQuestionData.a].classList.add('correct');
+                    this.triggerFeedbackAudio('incorrect');
+                }
+
+                for (let childButton of optionNodesCollection) {
+                    childButton.disabled = true;
+                }
+
+                this.exposeExplanationBlock(workingQuestionData);
+                document.getElementById('nav-action-next').disabled = false;
+            }
+
+            reapplyHistoricalFeedbackLayout(previouslySelectedIndex) {
+                const workingQuestionData = this.activeQuestionDataset[this.pointerIndex];
+                const optionNodesCollection = document.getElementById('runtime-options-container').children;
+
+                for (let targetIdx = 0; targetIdx < optionNodesCollection.length; targetIdx++) {
+                    optionNodesCollection[targetIdx].disabled = true;
+                    if (targetIdx === workingQuestionData.a) {
+                        optionNodesCollection[targetIdx].classList.add('correct');
+                    }
+                    if (targetIdx === previouslySelectedIndex && previouslySelectedIndex !== workingQuestionData.a) {
+                        optionNodesCollection[targetIdx].classList.add('wrong');
+                    }
+                }
+                this.exposeExplanationBlock(workingQuestionData);
+            }
+
+            exposeExplanationBlock(questionObject) {
+                const blockElement = document.getElementById('runtime-explanation-box');
+                blockElement.innerHTML = `<strong>💡 Explanation:</strong> ${questionObject.e}`;
+                blockElement.style.display = 'block';
+            }
+
+            actionMovePrevious() {
+                this.triggerFeedbackAudio('tap');
+                if (this.pointerIndex > 0) {
+                    this.pointerIndex--;
+                    this.renderActiveQuestionStructure();
+                }
+            }
+
+            actionMoveNext() {
+                this.triggerFeedbackAudio('tap');
+                if (this.pointerIndex < this.activeQuestionDataset.length - 1) {
+                    this.pointerIndex++;
+                    this.renderActiveQuestionStructure();
+                } else {
+                    this.compileQuizMetricsSummary();
+                }
+            }
+
+            actionNavigateHome() {
+                this.triggerFeedbackAudio('tap');
+                this.transitionUIWindow('screen-start');
+            }
+
+            actionRestartCurrentTrack() {
+                this.initiateQuizRun(this.selectedTrack);
+            }
+
+            compileQuizMetricsSummary() {
+                this.triggerFeedbackAudio('finished');
+                const totalCalculatedDurationSeconds = Math.floor((new Date() - this.epochStartTime) / 1000);
+                const computedMinutes = Math.floor(totalCalculatedDurationSeconds / 60);
+                const computedSeconds = totalCalculatedDurationSeconds % 60;
+                const structuredTimeOutputString = `${computedMinutes}m ${computedSeconds}s`;
+                
+                const finalAccuracyPercentage = Math.round((this.cumulativeScore / this.activeQuestionDataset.length) * 100);
+                const calculatedErrorsSum = this.activeQuestionDataset.length - this.cumulativeScore;
+
+                let badgeGraphicSymbol = '📚';
+                let badgeClassTitleText = 'Keep Learning';
+                
+                if (finalAccuracyPercentage >= 90) { 
+                    badgeGraphicSymbol = '🏆'; badgeClassTitleText = 'Plant Scientist'; 
+                } else if (finalAccuracyPercentage >= 70) { 
+                    badgeGraphicSymbol = '🌟'; badgeClassTitleText = 'Nature Explorer'; 
+                } else if (finalAccuracyPercentage >= 50) { 
+                    badgeGraphicSymbol = '👍'; badgeClassTitleText = 'Green Learner'; 
+                }
+
+                document.getElementById('sum-val-level').innerText = this.selectedTrack;
+                document.getElementById('sum-val-score').innerText = `${this.cumulativeScore} / ${this.activeQuestionDataset.length}`;
+                document.getElementById('sum-val-percent').innerText = `${finalAccuracyPercentage}%`;
+                document.getElementById('sum-val-time').innerText = structuredTimeOutputString;
+                document.getElementById('sum-val-correct').innerText = this.cumulativeScore;
+                document.getElementById('sum-val-wrong').innerText = calculatedErrorsSum;
+                
+                document.getElementById('summary-badge-emblem').innerText = badgeGraphicSymbol;
+                document.getElementById('summary-badge-text').innerText = badgeClassTitleText;
+
+                document.getElementById('cert-val-level').innerText = this.selectedTrack;
+                document.getElementById('cert-val-score').innerText = `${this.cumulativeScore}/${this.activeQuestionDataset.length}`;
+                document.getElementById('cert-val-percent').innerText = `${finalAccuracyPercentage}%`;
+
+                if (finalAccuracyPercentage >= 50) {
+                    executeConfettiExplosion();
+                }
+
+                try {
+                    localStorage.setItem('evs_botany_quiz_highscore_rate', finalAccuracyPercentage);
+                } catch(storageException) { 
+                    console.error("Local Storage access restricted.", storageException); 
+                }
+
+                this.transitionUIWindow('screen-summary');
+            }
+        }
+
+        /**
+         * Canvas Particle System Simulator Engine (Pure Procedural - 100% Asset Free)
+         */
+        function executeConfettiExplosion() {
+            const viewportCanvas = document.getElementById('confetti-canvas');
+            const drawingContext2d = viewportCanvas.getContext('2d');
+            viewportCanvas.style.display = 'block';
+            viewportCanvas.width = window.innerWidth;
+            viewportCanvas.height = window.innerHeight;
+
+            let structuralParticles = [];
+            const paletteMatrix = ['#4caf50', '#ffeb3b', '#2196f3', '#e91e63', '#ff9800', '#8e24aa'];
+
+            for (let itemIdx = 0; itemIdx < 110; itemIdx++) {
+                structuralParticles.push({
+                    x: Math.random() * viewportCanvas.width,
+                    y: Math.random() * viewportCanvas.height - viewportCanvas.height,
+                    radius: Math.random() * 5 + 5,
+                    density: Math.random() * viewportCanvas.height,
+                    colorHex: paletteMatrix[Math.floor(Math.random() * paletteMatrix.length)],
+                    tiltValue: Math.random() * 10 - 5,
+                    tiltIncremental: Math.random() * 0.06 + 0.02,
+                    currentTiltAngle: 0
+                });
+            }
+
+            let sequentialFrameTracker;
+            let tickCounter = 0;
+
+            function executionRenderLoop() {
+                drawingContext2d.clearRect(0, 0, viewportCanvas.width, viewportCanvas.height);
+                let visualFlowStillActive = false;
+
+                structuralParticles.forEach((particleItem) => {
+                    particleItem.currentTiltAngle += particleItem.tiltIncremental;
+                    particleItem.y += (Math.cos(particleItem.density) + 3 + particleItem.radius / 2) / 2;
+                    particleItem.x += Math.sin(particleItem.currentTiltAngle);
+                    particleItem.tiltValue = Math.sin(particleItem.currentTiltAngle - tickCounter / 4) * 12;
+
+                    if (particleItem.y <= viewportCanvas.height) {
+                        visualFlowStillActive = true;
+                    }
+
+                    drawingContext2d.beginPath();
+                    drawingContext2d.lineWidth = particleItem.radius;
+                    drawingContext2d.strokeStyle = particleItem.colorHex;
+                    drawingContext2d.moveTo(particleItem.x + particleItem.tiltValue + particleItem.radius / 2, particleItem.y);
+                    drawingContext2d.lineTo(particleItem.x + particleItem.tiltValue, particleItem.y + particleItem.tiltValue + particleItem.radius / 2);
+                    drawingContext2d.stroke();
+                });
+
+                tickCounter++;
+                if (visualFlowStillActive && tickCounter < 260) {
+                    sequentialFrameTracker = requestAnimationFrame(executionRenderLoop);
+                } else {
+                    drawingContext2d.clearRect(0, 0, viewportCanvas.width, viewportCanvas.height);
+                    viewportCanvas.style.display = 'none';
+                    cancelAnimationFrame(sequentialFrameTracker);
+                }
+            }
+            executionRenderLoop();
+        }
+
+        // Operational Global Context Instance Instantiate
+        const quizManager = new EducationalQuizManager();
+    </script>
+</body>
+</html>

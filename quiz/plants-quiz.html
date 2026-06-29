@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🌱 Plants Around Us Quiz</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #e0f2f1 0%, #e8f5e9 50%, #c8e6c9 100%);
+            --primary: #2e7d32;
+            --primary-light: #4caf50;
+            --primary-dark: #1b5e20;
+            --accent-easy: #4caf50;
+            --accent-medium: #ffb300;
+            --accent-hard: #e53935;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --text-dark: #2c3e50;
+            --text-light: #ffffff;
+            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --radius-sm: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-dark);
+            overflow-x: hidden;
+            position: relative;
+            padding: 15px;
+        }
+
+        /* --- Ambient Background Elements --- */
+        .ambient-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .floating-element {
+            position: absolute;
+            font-size: 2rem;
+            opacity: 0.3;
+            animation: float 8s ease-in-out infinite alternate;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            100% { transform: translateY(-30px) rotate(20deg); }
+        }
+
+        /* --- Main Container with Glassmorphism --- */
+        .app-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 750px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+            z-index: 10;
+            position: relative;
+            transition: all 0.4s ease;
+        }
+
+        h1.title {
+            font-size: 2.5rem;
+            color: var(--primary-dark);
+            text-align: center;
+            margin-bottom: 5px;
+            font-weight: 800;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #558b2f;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .screen {
+            display: none;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .level-selector-container {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            margin-top: 20px;
+        }
+
+        .btn-level {
+            padding: 18px 25px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            color: white;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .btn-easy { background-color: var(--accent-easy); }
+        .btn-medium { background-color: var(--accent-medium); color: #333; }
+        .btn-hard { background-color: var(--accent-hard); }
+
+        .btn-level:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .quiz-header-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--text-dark);
+            background: rgba(255,255,255,0.5);
+            padding: 10px 15px;
+            border-radius: var(--radius-sm);
+        }
+
+        .progress-bar-wrapper {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 20px;
+            height: 14px;
+            width: 100%;
+            overflow: hidden;
+            margin-bottom: 25px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary-light), var(--primary-dark));
+            border-radius: 20px;
+            transition: width 0.4s ease;
+        }
+
+        .question-box {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 25px;
+            line-height: 1.4;
+        }
+
+        .options-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .btn-option {
+            background: white;
+            border: 2px solid rgba(0, 0, 0, 0.08);
+            border-radius: var(--radius-md);
+            padding: 16px 20px;
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-option:hover:not([disabled]) {
+            border-color: var(--primary-light);
+            background: rgba(232, 245, 233, 0.5);
+            transform: translateX(4px);
+        }
+
+        .btn-option.correct {
+            background-color: #d4edda !important;
+            border-color: #28a745 !important;
+            color: #155724 !important;
+        }
+
+        .btn-option.wrong {
+            background-color: #f8d7da !important;
+            border-color: #dc3545 !important;
+            color: #721c24 !important;
+        }
+
+        .explanation-box {
+            display: none;
+            background: #e8f5e9;
+            border-left: 5px solid var(--primary-light);
+            border-radius: var(--radius-sm);
+            padding: 15px;
+            margin-bottom: 25px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+
+        /* --- Mandatory Navigation Layout Order --- */
+        .navigation-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            border-top: 2px solid rgba(0,0,0,0.05);
+            padding-top: 20px;
+        }
+
+        .btn-nav {
+            flex: 1;
+            padding: 14px 10px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: white;
+            transition: all 0.2s ease;
+        }
+
+        .btn-prev { background-color: #78909c; }
+        .btn-home { background-color: #0288d1; }
+        .btn-next { background-color: #2e7d32; }
+
+        .btn-nav:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .summary-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            text-align: center;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .stat-val {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--primary-dark);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-display-container {
+            text-align: center;
+            background: linear-gradient(135deg, #fffde7 0%, #fff9c4 100%);
+            padding: 20px;
+            border-radius: var(--radius-md);
+            border: 2px dashed #fbc02d;
+            margin-bottom: 25px;
+        }
+
+        .badge-icon {
+            font-size: 3.5rem;
+            margin-bottom: 5px;
+        }
+
+        .badge-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #f57f17;
+        }
+
+        .actions-vertical {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .btn-action {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .btn-primary-action { background-color: var(--primary); color: white; }
+        .btn-secondary-action { background-color: #eceff1; color: #37474f; }
+
+        #confetti-canvas {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none; z-index: 999; display: none;
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            #printable-certificate, #printable-certificate * { visibility: visible; }
+            #printable-certificate {
+                position: absolute; left: 0; top: 0; width: 100%;
+                border: 10px double #2e7d32; padding: 40px; text-align: center; background: white;
+            }
+        }
+
+        #printable-certificate { display: none; }
+
+        @media(max-width: 600px) {
+            h1.title { font-size: 1.9rem; }
+            .app-container { padding: 18px; }
+            .btn-option { padding: 14px 16px; font-size: 1.05rem; }
+            .btn-nav { font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <div class="ambient-layer">
+        <div class="floating-element" style="top: 10%; left: 5%;">🍃</div>
+        <div class="floating-element" style="top: 75%; left: 85%; animation-delay: 2s;">🦋</div>
+        <div class="floating-element" style="top: 40%; left: 90%; animation-delay: 4s;">🌸</div>
+    </div>
+
+    <div class="app-container">
+        <h1 class="title">🌱 Plants Around Us Quiz</h1>
+        <div class="subtitle">Observe • Identify • Explore • Learn</div>
+
+        <div id="screen-start" class="screen active">
+            <div style="text-align: center; margin-bottom: 25px; font-weight: 600; font-size: 1.15rem; color: var(--text-dark);">
+                Hello young explorer! Choose a level below to start your text quiz adventure:
+            </div>
+            <div class="level-selector-container">
+                <button class="btn-level btn-easy" onclick="quizEngine.startQuiz('easy')">🟢 Easy Level</button>
+                <button class="btn-level btn-medium" onclick="quizEngine.startQuiz('medium')">🟡 Medium Level</button>
+                <button class="btn-level btn-hard" onclick="quizEngine.startQuiz('hard')">🔴 Hard Level</button>
+            </div>
+        </div>
+
+        <div id="screen-quiz" class="screen">
+            <div class="quiz-header-info">
+                <div>Level: <span id="display-level" style="text-transform: capitalize;">-</span></div>
+                <div>Question: <span id="display-counter">0/30</span></div>
+                <div>Score: <span id="display-score">0</span></div>
+            </div>
+
+            <div class="progress-bar-wrapper">
+                <div id="progress-bar" class="progress-bar-fill"></div>
+            </div>
+
+            <div id="quiz-question" class="question-box"></div>
+            <div id="quiz-options" class="options-grid"></div>
+            <div id="quiz-explanation" class="explanation-box"></div>
+
+            <div class="navigation-row">
+                <button id="nav-btn-prev" class="btn-nav btn-prev" onclick="quizEngine.navigatePrevious()">⬅️ Previous</button>
+                <button id="nav-btn-home" class="btn-nav btn-home" onclick="quizEngine.navigateHome()">🏠 Home</button>
+                <button id="nav-btn-next" class="btn-nav btn-next" onclick="quizEngine.navigateNext()">➡️ Next</button>
+            </div>
+        </div>
+
+        <div id="screen-summary" class="screen">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="color: var(--primary-dark); font-size: 1.8rem; font-weight: 800;">Quiz Completed!</h2>
+                <p style="font-weight: 600; color: #555; margin-top: 5px;">Here is your performance report card:</p>
+            </div>
+
+            <div class="badge-display-container">
+                <div id="summary-badge-icon" class="badge-icon">🏆</div>
+                <div id="summary-badge-title" class="badge-title">Plant Expert</div>
+            </div>
+
+            <div class="summary-stats-grid">
+                <div class="stat-card"><div class="stat-val" id="sum-level">-</div><div class="stat-label">Level</div></div>
+                <div class="stat-card"><div class="stat-val" id="sum-score">-</div><div class="stat-label">Final Score</div></div>
+                <div class="stat-card"><div class="stat-val" id="sum-percent">-</div><div class="stat-label">Percentage</div></div>
+                <div class="stat-card"><div class="stat-val" id="sum-time">-</div><div class="stat-label">Time Taken</div></div>
+                <div class="stat-card"><div class="stat-val" id="sum-correct" style="color: #2e7d32;">-</div><div class="stat-label">Correct</div></div>
+                <div class="stat-card"><div class="stat-val" id="sum-wrong" style="color: #c62828;">-</div><div class="stat-label">Wrong</div></div>
+            </div>
+
+            <div class="actions-vertical">
+                <button class="btn-action btn-primary-action" onclick="quizEngine.restartCurrentLevel()">🔄 Play Again</button>
+                <button class="btn-action btn-secondary-action" onclick="quizEngine.navigateHome()">📂 Choose Another Level</button>
+                <button class="btn-action btn-secondary-action" style="background-color: #ffe082;" onclick="window.print()">🖨️ Print Certificate</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="printable-certificate">
+        <h1>🌱 Plants Around Us Champion Certificate</h1>
+        <p style="font-size: 1.4rem; margin: 20px 0;">This proudly certifies that a phenomenal Nature Explorer has finished the</p>
+        <h2><span id="cert-level" style="text-transform: capitalize;"></span> Level Quiz</h2>
+        <p style="font-size: 1.3rem; margin: 20px 0;">with a wonderful final score of <b id="cert-score"></b> (<span id="cert-percent"></span>)</p>
+        <div style="margin-top: 50px; font-style: italic; color: #555;">Awarded by the Plants Around Us Interactive Learning Platform</div>
+    </div>
+
+    <script>
+        /**
+         * Complete 90 Questions Database Array - 100% Pure Text-Based Questions
+         */
+        const QuizDatabase = {
+            easy: [
+                { q: "Which plant has a very strong, thick, and woody trunk?", o: ["Rose Bush", "Mango Tree", "Mint Plant", "Money Plant"], a: 1, e: "Trees like the Mango Tree have a large, heavy woody stem called a trunk." },
+                { q: "Which of these plants is a climber that must have support to grow upwards?", o: ["Water Lily", "Banyan Tree", "Grapevine", "Rose Shrub"], a: 2, e: "Grapevine plants have very weak stems and use trees or sticks to climb up." },
+                { q: "What kind of plant is a pumpkin plant, which grows flat along the ground?", o: ["Big Tree", "Creeper", "Woody Shrub", "Small Herb"], a: 1, e: "Creepers like the pumpkin plant crawl and spread out directly on the ground." },
+                { q: "Which plant gives us sweet yellow mangoes?", o: ["Mango Tree", "Coconut Tree", "Rose Shrub", "Cactus Plant"], a: 0, e: "Mangoes grow on large, beautiful Mango Trees." },
+                { q: "Which plant is very small with a soft green stem?", o: ["Mint", "Neem Tree", "Rose Shrub", "Coconut Tree"], a: 0, e: "Herbs like mint are tiny plants with soft green stems." },
+                { q: "Which plant grows tall near sandy beaches and gives us big round nuts?", o: ["Cactus", "Coconut Tree", "Rose Plant", "Grapevine"], a: 1, e: "Coconut trees grow very tall and are found in warm coastal areas." },
+                { q: "Which beautiful flowering plant has bright yellow petals and turns to face the Sun?", o: ["Rose", "Sunflower", "Tulsi", "Cactus"], a: 1, e: "The Sunflower is a large yellow flower that turns toward the sunshine." },
+                { q: "Which plant has sharp thorns on its body and grows easily in dry spaces?", o: ["Lotus", "Cactus", "Mango Tree", "Banana Plant"], a: 1, e: "Cactus plants have sharp thorns to protect themselves in hot dry places." },
+                { q: "Where do we usually see many pretty, colorful flowering plants grown carefully together?", o: ["In a deep cave", "In a beautiful garden", "Inside a dark room", "In the ocean deep"], a: 1, e: "A garden is a wonderful place where people grow beautiful plants." },
+                { q: "Which of these is considered a giant tree?", o: ["Banyan", "Rose", "Mint", "Money Plant"], a: 0, e: "The giant Banyan is a huge tree with a big woody trunk." },
+                { q: "True or False: Herbs are much bigger and stronger than Trees.", o: ["True", "False"], a: 1, e: "False! Trees are much bigger and stronger than tiny herbs." },
+                { q: "Which plant is a medium-sized woody plant with many branches close to the ground?", o: ["Rose Plant", "Mint Herb", "Coconut Tree", "Water Lily"], a: 0, e: "Shrubs like the rose plant are medium-sized with woody stems." },
+                { q: "What is a common example of a woody shrub found in gardens?", o: ["Hibiscus", "Wheat", "Banyan Tree", "Water Lily"], a: 0, e: "Hibiscus is a beautiful woody shrub often seen in home gardens." },
+                { q: "Why can a grapevine plant not stand up straight on its own?", o: ["It has no roots", "It has a very soft and weak stem", "It loves to sleep", "It has too many heavy fruits"], a: 1, e: "Climbers have weak stems, so they wrap around supports to stand up straight." },
+                { q: "Which of these is a common herb found in kitchens with a lovely smell?", o: ["Coriander", "Banyan", "Neem", "Mango"], a: 0, e: "Coriander is a small herb used to make our food taste delicious." },
+                { q: "What name do we give to the thick woody main stem of a tree?", o: ["Leaf", "Trunk", "Flower", "Rootlet"], a: 1, e: "The big, hard center stem of a tree is called the trunk." },
+                { q: "Which plant is famous for growing beautiful red or pink flowers with a sweet smell but has thorns?", o: ["Cactus", "Rose Plant", "Mint", "Grass"], a: 1, e: "The rose plant produces beautiful, sweet-smelling flowers but has protective thorns." },
+                { q: "Watermelon plants grow along the sandy ground. What type of plant are they?", o: ["Trees", "Climbers", "Creepers", "Shrubs"], a: 2, e: "Watermelons are heavy fruits that grow on creeping vines along the ground." },
+                { q: "Which of these plants has a trunk you can hold onto?", o: ["Neem Tree", "Tulsi Shrub", "Money Plant", "Spinach Herb"], a: 0, e: "The Neem tree grows very large with a wide, strong wooden trunk." },
+                { q: "What color are the healthy leaves of most green plants around us?", o: ["Blue", "Green", "Pink", "Purple"], a: 1, e: "Most plants have green leaves to help them gather sunlight." },
+                { q: "True or False: Money plants crawl on the ground because they are trees.", o: ["True", "False"], a: 1, e: "False. Money plants are climbers that love to climb up grids or strings." },
+                { q: "Which of these plants has a soft, green, non-woody stem?", o: ["Mango Tree", "Banyan Tree", "Spinach Plant", "Rose Plant"], a: 2, e: "Spinach is a leafy herb with a very soft, delicate green stem." },
+                { q: "Where do wild bushes and hundreds of giant trees grow all by themselves?", o: ["In a school classroom", "In a natural forest", "Inside a kitchen cabinet", "In a small glass box"], a: 1, e: "Forests are huge natural spaces where many wild plants grow together." },
+                { q: "What type of plant is a Jasmine plant, which is a medium bush with sweet flowers?", o: ["Herb", "Tree", "Shrub", "Creeper"], a: 2, e: "Jasmine is classified as a shrub because it is a medium woody bush." },
+                { q: "Can a giant Apple tree grow inside a tiny teacup?", o: ["Yes", "No"], a: 1, e: "No! Trees need lots of space in real soil to grow deep roots and stand tall." },
+                { q: "Which of these plants would feel soft if you held its stem gently?", o: ["Rose Shrub", "Mint Herb", "Mango Tree", "Neem Tree"], a: 1, e: "Mint is an herb, meaning its stem is completely soft and green." },
+                { q: "What type of plant is grass growing in a playground?", o: ["Tree", "Herb", "Shrub", "Climber"], a: 1, e: "Grass is a type of small herb with simple green shoots." },
+                { q: "Which plant gives us long, yellow, sweet fruit that looks like a crescent moon?", o: ["Banana Plant", "Rose Plant", "Cactus", "Orange Tree"], a: 0, e: "The Banana plant grows huge leaves and large bunches of yellow fruit." },
+                { q: "Why do we see plants in parks and schools?", o: ["To make the area ugly", "To make the area look beautiful and fresh", "To block the pathways", "To stop children from playing"], a: 1, e: "Plants bring natural beauty, cool fresh air, and bright colors to our spaces." },
+                { q: "Identify the plant type: A decorative houseplant climbing up a stick in your living room.", o: ["Tree", "Climber", "Creeper", "Desert Cactus"], a: 1, e: "Plants that wrap around sticks or strings to move upwards are climbers." }
+            ],
+            medium: [
+                { q: "Which special plant grows beautifully floating in water bodies like ponds?", o: ["Cactus", "Lotus", "Neem Tree", "Wheat Plant"], a: 1, e: "Lotus is an aquatic plant that grows floating in clear water bodies." },
+                { q: "Which of these plants is adapted to grow safely in hot, dry deserts?", o: ["Lotus", "Water Lily", "Cactus", "Tea Bush"], a: 2, e: "Cactus plants save water inside their thick bodies to survive in deserts." },
+                { q: "Where does an aquatic plant live and grow successfully?", o: ["On dry desert sand", "Floating or growing in water", "On high snowy mountains", "Inside dark dry caves"], a: 1, e: "Aquatic means water-dwelling. These plants live in lakes, rivers, and ponds." },
+                { q: "Which plant gives us soft, fluffy white fibers to make cool cotton clothes?", o: ["Rose Bush", "Cotton Plant", "Tea Plant", "Bamboo Shrub"], a: 1, e: "The cotton plant grows fluffy seed pods used to spin soft fabric." },
+                { q: "From which plant's special leaves do we get a popular refreshing hot morning drink?", o: ["Coffee Bean Bush", "Tea Plant", "Rose Plant", "Rubber Tree"], a: 1, e: "Tea comes from drying the fresh leaves plucked from tea bushes." },
+                { q: "Which plant is highly valued as a traditional medicine for curing coughs and skin care?", o: ["Tulsi / Neem", "Water Lily", "Pumpkin Vine", "Grapevine"], a: 0, e: "Tulsi and Neem are medical wonder-plants that help fight germs and heal sickness." },
+                { q: "Which giant plants give us strong wood or timber to build home tables and chairs?", o: ["Tiny Herbs", "Large Trees", "Water Lilies", "Climbing Vines"], a: 1, e: "Tall trees give us strong wood to make furniture, windows, and doors." },
+                { q: "Why do wise people grow green plants around their homes?", o: ["To make air dirty", "To get fresh oxygen, shade, and healthy food", "To attract pests", "To stop rain"], a: 1, e: "Plants filter our air, give us fresh oxygen, and provide healthy food." },
+                { q: "Where would you find a wild pine tree growing naturally?", o: ["Floating in the ocean", "On a cold, hilly mountain", "In a hot indoor kitchen", "Deep in a dry desert"], a: 1, e: "Pine trees have cone shapes designed to survive cold mountain weather." },
+                { q: "Which plant gives us sweet, aromatic spices like cardamom or cloves?", o: ["Spice Plants", "Grass Plants", "Cotton Plants", "Lotus Flowers"], a: 0, e: "Spices come from special plants and add delicious flavors to our meals." },
+                { q: "True or False: Desert plants need to be watered ten times every single day.", o: ["True", "False"], a: 1, e: "False! Desert plants can live with very little water for a long time." },
+                { q: "What is a plant that grows in water called?", o: ["Desert plant", "Aquatic plant", "Land tree", "Air plant"], a: 1, e: "Plants that live natively in water are called aquatic plants." },
+                { q: "Which of these plants provides us with sweet grains to make chapatis and bread?", o: ["Wheat Plant", "Rose Plant", "Teak Tree", "Cactus"], a: 0, e: "Wheat plants give us grain seeds which are ground into cooking flour." },
+                { q: "Where does a water lily plant grow?", o: ["In desert soil", "In a freshwater pond", "On a rocky mountain cliff", "Inside a dry cupboard"], a: 1, e: "Water lilies have wide flat leaves that float peacefully on water." },
+                { q: "Which plant gives us sweet juice to make white sugar?", o: ["Sugarcane Stem", "Neem Leaf", "Cactus Spine", "Rose Petal"], a: 0, e: "The sweet juice inside sugarcane stems is refined into sugar." },
+                { q: "From which plant do we harvest seeds to make yellow cooking oil?", o: ["Sunflower", "Fern Bush", "Moss", "Lotus"], a: 0, e: "Sunflower seeds are pressed tightly to extract golden cooking oil." },
+                { q: "Which plant grows incredibly fast and is used to make lightweight mats and baskets?", o: ["Mint", "Bamboo", "Water Lily", "Rose"], a: 1, e: "Bamboo is a giant, super-fast-growing grass used to build strong items." },
+                { q: "What product do we get from aloe vera plants?", o: ["Fibre for shirts", "Soothing skin gel", "Hard wood for heavy boats", "Spicy pepper grains"], a: 1, e: "Aloe vera contains a cool thick gel used to treat skin." },
+                { q: "Which plant gives us jute fibers to weave heavy brown bags and strong ropes?", o: ["Jute Plant", "Cactus", "Water Lily", "Apple Tree"], a: 0, e: "The stems of the jute plant yield strong fibers used for making bags." },
+                { q: "Why are some plants called 'Medicinal Plants'?", o: ["Because they taste like candy", "Because they help heal sickness and diseases", "Because they grow on doctors", "Because they can walk around"], a: 1, e: "Medicinal plants contain natural elements that help heal wounds and illness." },
+                { q: "True or False: Seaweeds are special plants that grow deep inside oceans.", o: ["True", "False"], a: 0, e: "True! Seaweeds are marine plants living underwater in salty seas." },
+                { q: "Which plant gives us real mint leaves used to make cool food flavorings?", o: ["Mint Shrub", "Banyan Tree", "Mint Herb", "Cactus Bush"], a: 2, e: "Mint is a small herb known for its refreshing taste and cool scent." },
+                { q: "What flavor product do we get from the pods of a vanilla orchid vine?", o: ["Salty chips flavor", "Sweet vanilla ice cream flavor", "Spicy chili flavor", "Sour taste"], a: 1, e: "Vanilla beans come from an orchid vine and flavor many sweet desserts." },
+                { q: "Which of these is a grain crop grown by humans for daily food?", o: ["Rice", "Rose", "Teak", "Cactus"], a: 0, e: "Rice is an essential food crop grown extensively across fields." },
+                { q: "Which tree's bark gives us a sweet woody spice called cinnamon?", o: ["Cinnamon Tree", "Mango Tree", "Coconut Tree", "Banyan Tree"], a: 0, e: "Cinnamon is a delicious kitchen spice made from the dried bark of a tree." },
+                { q: "What kind of environment does a cactus plant dislike?", o: ["Very hot sunny days", "A very wet, muddy marshland", "Dry desert air", "Sandy terrain"], a: 1, e: "Too much water rots a cactus; they dislike sitting in wet mud." },
+                { q: "Where do we find wild plants growing without any help from gardeners?", o: ["In deep wild forests", "In plastic indoor pots", "On a city concrete road", "Inside a clean supermarket"], a: 0, e: "Forests allow thousands of native wild plants to grow freely on their own." },
+                { q: "Which plant gives us sweet, sticky dates that grow in hot desert regions?", o: ["Date Palm Tree", "Lotus Plant", "Mint Herb", "Rose Shrub"], a: 0, e: "Date Palms are sturdy trees that thrive in hot desert sunshine." },
+                { q: "What food item do we get directly from tea plant leaves?", o: ["Chocolate syrup", "Beverage tea powder", "Wheat flour", "Tomato sauce"], a: 1, e: "Tea powder is made by processing leaves plucked from the tea plant." },
+                { q: "Can a plant grow normally if we completely block all water and light?", o: ["Yes, perfectly", "No, it will dry up and die"], a: 1, e: "Plants absolutely need water and light to live and grow strong." }
+            ],
+            hard: [
+                { q: "Why are living green trees critically important for our planet's atmosphere?", o: ["They block radio signals", "They create sweet oxygen and clean dirty air", "They make the sky look blue", "They stop the wind completely"], a: 1, e: "Trees absorb carbon dioxide and release fresh oxygen for us to breathe." },
+                { q: "What are wild plants?", o: ["Plants grown by farmers in neat fields", "Plants that grow naturally in nature without human help", "Plastic plants bought from stores", "Plants that can run around like animals"], a: 1, e: "Wild plants grow naturally from seeds dropped by wind, water, or animals." },
+                { q: "What name do we give to plants carefully planted and managed by farmers in large fields?", o: ["Wild plants", "Cultivated / Crop plants", "Desert weeds", "Seaweed flora"], a: 1, e: "Cultivated plants are crops grown by humans for food, clothing, or trade." },
+                { q: "Why must human societies plant more new trees (Afforestation)?", o: ["To crowd out spaces", "To keep the environment clean, green, and healthy", "To build giant wooden walls", "To stop sunshine reaching the earth"], a: 1, e: "Planting trees fights pollution, feeds wild birds, and keeps earth cool." },
+                { q: "Which tree gives us a milky white sap used to manufacture tires and erasers?", o: ["Mango Tree", "Rubber Tree", "Neem Tree", "Coconut Tree"], a: 1, e: "The rubber tree gives us latex sap, which is processed into stretchy rubber." },
+                { q: "From which plant material do factories manufacture writing paper and notebooks?", o: ["Crushed stones", "Wood pulp from trees like bamboo and pine", "Plastic bottles", "Animal skins"], a: 1, e: "Paper is made from soft wood fibers processed into smooth clean sheets." },
+                { q: "Why should deep natural forests be strictly protected by laws?", o: ["To hide secret treasures", "To save homes of wild animals and protect nature", "To make cities look bigger", "To stop people from hiking"], a: 1, e: "Protecting forests keeps our weather safe and saves millions of animal homes." },
+                { q: "How do big trees directly assist land animals during a hot summer day?", o: ["They give them money", "They provide cool shade and tasty fruits", "They teach them how to climb", "They build stone houses for them"], a: 1, e: "Trees offer animals protection from the scorching sun and provide clean food." },
+                { q: "What harmful event happens if humans cut down too many forest trees permanently (Deforestation)?", o: ["Earth gets cleaner air", "Animals lose their homes and soil washes away", "The ground turns into candy", "More rain falls everywhere"], a: 1, e: "Deforestation destroys animal habitats and leads to global climate heating." },
+                { q: "What is an evergreen tree?", o: ["A tree that stays green all year round", "A tree painted green by artists", "A fake plastic holiday tree", "A tree that has no leaves at all"], a: 0, e: "Evergreen trees do not shed all their leaves at once; they stay green all year." },
+                { q: "What do deciduous trees do during the cold autumn or dry winter season?", o: ["They walk to warmer places", "They drop all their leaves to save water", "They grow giant purple flowers", "They turn into stone"], a: 1, e: "Deciduous trees shed leaves seasonally to stay safe during harsh dry weather." },
+                { q: "How do deep plant roots help the earthy soil underneath our feet?", o: ["They break soil into tiny pieces", "They hold soil tightly so rain cannot wash it away", "They turn soil into water", "They make soil disappear"], a: 1, e: "Roots act like a net, gripping the soil tightly to prevent erosion." },
+                { q: "Which of these is a cultivated crop grown to feed millions of people daily?", o: ["Wild forest moss", "Rice fields managed by farmers", "Desert sand cactus", "Poisonous ivy vines"], a: 1, e: "Rice and grains are cultivated carefully in fields to provide staple food." },
+                { q: "What do we call the act of planting trees in an area where there were no trees before?", o: ["Deforestation", "Afforestation", "Pollution", "Mining"], a: 1, e: "Afforestation means planting fresh green forests on barren land." },
+                { q: "Why are plants called our 'Green Friends'?", o: ["Because they look scary", "Because they help us in countless ways without asking for anything", "Because they wear green clothes", "Because they can talk to us"], a: 1, e: "Plants give us air, food, wood, and clothes, making them true friends." },
+                { q: "Which plant part yields fiber used to make strong, durable ropes and gunny bags?", o: ["Jute plant stalks", "Rose petals", "Water lily bulbs", "Cactus needles"], a: 0, e: "Jute fibers are harvested from plant stalks to weave strong sacks." },
+                { q: "How can schoolchildren help protect the environment and local plants?", o: ["By breaking small plant stems for fun", "By watering school plants and planting tiny saplings", "By stepping on small flowers", "By pulling out green grass"], a: 1, e: "Caring for small plants and watering them keeps our environment clean." },
+                { q: "What is the result of keeping indoor plants inside a closed office?", o: ["The air quality gets worse", "The air becomes cleaner and fresher to breathe", "The office fills with desert sand", "Nothing changes at all"], a: 1, e: "Indoor plants extract indoor toxins and release clean oxygen." },
+                { q: "True or False: We should encourage everyone to cut down trees whenever they want.", o: ["True", "False"], a: 1, e: "False! Cutting down trees harms our environment. We must protect them." },
+                { q: "Which tree product can be used to naturally repel insects and bugs from clothes?", o: ["Sweet Mango juice", "Bitter Neem oil or leaves", "Rosewater spray", "Banana skins"], a: 1, e: "Neem leaves are a natural shield that keeps pests away safely." },
+                { q: "What do plants absorb from the air that helps reduce global warming?", o: ["Oxygen", "Carbon Dioxide", "Water Vapor", "Gold Dust"], a: 1, e: "Plants breathe in Carbon Dioxide gas, helping keep the Earth's climate balanced." },
+                { q: "Why do wild animals leave an area when trees are cut down?", o: ["They go on a vacation trip", "They lose their food sources and safe homes", "They get scared of the green color", "They follow the loggers"], a: 1, e: "Animals depend completely on forest trees for safe nesting and daily food." },
+                { q: "What is a major benefit of growing grass on a sloping mud hill?", o: ["It makes the hill look like a giant slide", "It holds the mud together and stops dangerous mudslides", "It grows flowers that turn into gold", "It attracts mountain lions"], a: 1, e: "Grass root networks hold loose hillside mud tightly together when it rains." },
+                { q: "Which of these is a cultivated plant grown for beautiful flowers used in perfumes?", o: ["Wild forest ferns", "Lavender or Rose crops", "Poisonous desert shrubs", "Undersea kelp plants"], a: 1, e: "Lavender and roses are cultivated widely to extract premium aromatic oils." },
+                { q: "What is the best way to celebrate Earth Day at your school?", o: ["By wasting clean paper sheets", "By planting a new young tree sapling in the garden", "By painting all rocks green", "By staying inside and sleeping"], a: 1, e: "Planting a new tree is a wonderful way to give back to Mother Earth." },
+                { q: "True or False: Human beings can survive easily even if every single plant dies.", o: ["True", "False"], a: 1, e: "False! Without plants, there would be no food or oxygen for humans to survive." },
+                { q: "Why do birds build their cozy nests high up in trees?", o: ["To be closer to airplanes", "To stay safe from ground predators and find shelter", "To look at distant cities", "Because they dislike grass"], a: 1, e: "Tree branches offer birds safe, hidden locations to raise baby chicks." },
+                { q: "What kind of plant product is resin, which is used to make glues and varnishes?", o: ["A liquid plant sap or secretion", "A dried crushed leaf powder", "A type of root hair", "A ground seed paste"], a: 0, e: "Resin is a sticky liquid sap produced by pine trees to protect themselves." },
+                { q: "Which plant type would grow best in a place where it almost never rains?", o: ["A broad-leaf water lily", "A desert-adapted cactus or thorny shrub", "A delicate green mint herb", "A high-altitude tea bush"], a: 1, e: "Cactus plants excel at storing moisture to survive severe droughts." },
+                { q: "What is our duty towards the green plants around us?", o: ["To ignore them completely", "To care for them, water them, and preserve them", "To cut them down whenever possible", "To paint their leaves with synthetic colors"], a: 1, e: "It is our responsibility to save and nurture plants for a sustainable future." }
+            ]
+        };
+
+        class EnvironmentalQuizEngine {
+            constructor() {
+                this.currentLevel = '';
+                this.questionsList = [];
+                this.currentIndex = 0;
+                this.score = 0;
+                this.userAnswers = [];
+                this.startTime = null;
+                this.audioCtx = null;
+            }
+
+            initAudio() {
+                if (!this.audioCtx) {
+                    this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            playTone(freq, type, duration) {
+                try {
+                    this.initAudio();
+                    const osc = this.audioCtx.createOscillator();
+                    const gain = this.audioCtx.createGain();
+                    osc.type = type;
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0.15, this.audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, this.audioCtx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.audioCtx.destination);
+                    osc.start();
+                    osc.stop(this.audioCtx.currentTime + duration);
+                } catch (e) { console.warn("Audio Context blocked or unsupported.", e); }
+            }
+
+            playSound(style) {
+                switch(style) {
+                    case 'click': this.playTone(600, 'sine', 0.08); break;
+                    case 'correct': 
+                        this.playTone(523.25, 'triangle', 0.1); 
+                        setTimeout(() => this.playTone(659.25, 'triangle', 0.15), 100);
+                        break;
+                    case 'wrong': 
+                        this.playTone(220, 'sawtooth', 0.25); 
+                        break;
+                    case 'completion': 
+                        this.playTone(523.25, 'sine', 0.15);
+                        setTimeout(() => this.playTone(659.25, 'sine', 0.15), 120);
+                        setTimeout(() => this.playTone(783.99, 'sine', 0.15), 240);
+                        setTimeout(() => this.playTone(1046.50, 'sine', 0.4), 360);
+                        break;
+                }
+            }
+
+            shuffle(array) {
+                let m = array.length, t, i;
+                while (m) {
+                    i = Math.floor(Math.random() * m--);
+                    t = array[m];
+                    array[m] = array[i];
+                    array[i] = t;
+                }
+                return array;
+            }
+
+            switchScreen(screenId) {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                document.getElementById(screenId).classList.add('active');
+                window.scrollTo(0,0);
+            }
+
+            startQuiz(level) {
+                this.playSound('click');
+                this.currentLevel = level;
+                
+                let originalQuestions = JSON.parse(JSON.stringify(QuizDatabase[level]));
+                this.questionsList = this.shuffle(originalQuestions);
+                
+                this.questionsList.forEach(q => {
+                    let optionsWithMeta = q.o.map((opt, i) => ({ text: opt, isCorrect: i === q.a }));
+                    this.shuffle(optionsWithMeta);
+                    q.o = optionsWithMeta.map(o => o.text);
+                    q.a = optionsWithMeta.findIndex(o => o.isCorrect);
+                });
+
+                this.currentIndex = 0;
+                this.score = 0;
+                this.userAnswers = new Array(this.questionsList.length).fill(null);
+                this.startTime = new Date();
+                
+                document.getElementById('display-level').innerText = level;
+                this.switchScreen('screen-quiz');
+                this.renderQuestion();
+            }
+
+            renderQuestion() {
+                const currentQuestion = this.questionsList[this.currentIndex];
+                
+                document.getElementById('display-counter').innerText = `${this.currentIndex + 1}/${this.questionsList.length}`;
+                document.getElementById('display-score').innerText = this.score;
+                
+                const pct = ((this.currentIndex + 1) / this.questionsList.length) * 100;
+                document.getElementById('progress-bar').style.width = `${pct}%`;
+
+                document.getElementById('quiz-question').innerText = currentQuestion.q;
+
+                const optionsGrid = document.getElementById('quiz-options');
+                optionsGrid.innerHTML = '';
+                
+                const explanationBox = document.getElementById('quiz-explanation');
+                explanationBox.style.display = 'none';
+
+                currentQuestion.o.forEach((optText, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn-option';
+                    btn.innerText = optText;
+                    btn.onclick = () => this.handleAnswerSelection(index);
+                    optionsGrid.appendChild(btn);
+                });
+
+                document.getElementById('nav-btn-prev').disabled = (this.currentIndex === 0);
+                document.getElementById('nav-btn-next').disabled = (this.userAnswers[this.currentIndex] === null);
+
+                if (this.userAnswers[this.currentIndex] !== null) {
+                    this.revealSavedAnswerFeedback(this.userAnswers[this.currentIndex]);
+                }
+            }
+
+            handleAnswerSelection(selectedIndex) {
+                if (this.userAnswers[this.currentIndex] !== null) return;
+                
+                const currentQuestion = this.questionsList[this.currentIndex];
+                this.userAnswers[this.currentIndex] = selectedIndex;
+                
+                const optionsButtons = document.getElementById('quiz-options').children;
+
+                if (selectedIndex === currentQuestion.a) {
+                    optionsButtons[selectedIndex].classList.add('correct');
+                    this.score += 1;
+                    document.getElementById('display-score').innerText = this.score;
+                    this.playSound('correct');
+                } else {
+                    optionsButtons[selectedIndex].classList.add('wrong');
+                    optionsButtons[currentQuestion.a].classList.add('correct');
+                    this.playSound('wrong');
+                }
+
+                for (let btn of optionsButtons) {
+                    btn.disabled = true;
+                }
+
+                this.displayExplanationElement(currentQuestion);
+                document.getElementById('nav-btn-next').disabled = false;
+            }
+
+            revealSavedAnswerFeedback(savedIndex) {
+                const currentQuestion = this.questionsList[this.currentIndex];
+                const optionsButtons = document.getElementById('quiz-options').children;
+
+                for (let i = 0; i < optionsButtons.length; i++) {
+                    optionsButtons[i].disabled = true;
+                    if (i === currentQuestion.a) optionsButtons[i].classList.add('correct');
+                    if (i === savedIndex && savedIndex !== currentQuestion.a) optionsButtons[i].classList.add('wrong');
+                }
+                this.displayExplanationElement(currentQuestion);
+            }
+
+            displayExplanationElement(questionObj) {
+                const explanationBox = document.getElementById('quiz-explanation');
+                explanationBox.innerHTML = `<strong>💡 Explanation:</strong> ${questionObj.e}`;
+                explanationBox.style.display = 'block';
+            }
+
+            navigatePrevious() {
+                this.playSound('click');
+                if (this.currentIndex > 0) {
+                    this.currentIndex--;
+                    this.renderQuestion();
+                }
+            }
+
+            navigateNext() {
+                this.playSound('click');
+                if (this.currentIndex < this.questionsList.length - 1) {
+                    this.currentIndex++;
+                    this.renderQuestion();
+                } else {
+                    this.compileQuizSummary();
+                }
+            }
+
+            navigateHome() {
+                this.playSound('click');
+                this.switchScreen('screen-start');
+            }
+
+            restartCurrentLevel() {
+                this.startQuiz(this.currentLevel);
+            }
+
+            compileQuizSummary() {
+                this.playSound('completion');
+                const elapsedSeconds = Math.floor((new Date() - this.startTime) / 1000);
+                const minutesStr = Math.floor(elapsedSeconds / 60);
+                const secondsStr = elapsedSeconds % 60;
+                const timeString = `${minutesStr}m ${secondsStr}s`;
+                
+                const percentage = Math.round((this.score / this.questionsList.length) * 100);
+                const totalWrong = this.questionsList.length - this.score;
+
+                let badgeIcon = '📚';
+                let badgeTitle = 'Keep Exploring';
+                if(percentage >= 90) { badgeIcon = '🏆'; badgeTitle = 'Plant Expert'; }
+                else if(percentage >= 70) { badgeIcon = '🌟'; badgeTitle = 'Nature Explorer'; }
+                else if(percentage >= 50) { badgeIcon = '👍'; badgeTitle = 'Green Learner'; }
+
+                document.getElementById('sum-level').innerText = this.currentLevel;
+                document.getElementById('sum-score').innerText = `${this.score} / ${this.questionsList.length}`;
+                document.getElementById('sum-percent').innerText = `${percentage}%`;
+                document.getElementById('sum-time').innerText = timeString;
+                document.getElementById('sum-correct').innerText = this.score;
+                document.getElementById('sum-wrong').innerText = totalWrong;
+                
+                document.getElementById('summary-badge-icon').innerText = badgeIcon;
+                document.getElementById('summary-badge-title').innerText = badgeTitle;
+
+                document.getElementById('cert-level').innerText = this.currentLevel;
+                document.getElementById('cert-score').innerText = `${this.score}/${this.questionsList.length}`;
+                document.getElementById('cert-percent').innerText = `${percentage}%`;
+
+                if (percentage >= 70) {
+                    triggerConfettiCelebration();
+                }
+
+                try {
+                    localStorage.setItem('evs_quiz_last_score', percentage);
+                } catch(e) { console.error(e); }
+
+                this.switchScreen('screen-summary');
+            }
+        }
+
+        function triggerConfettiCelebration() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.style.display = 'block';
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            let particles = [];
+            const colors = ['#4caf50', '#ffeb3b', '#2196f3', '#e91e63', '#ff9800'];
+
+            for (let i = 0; i < 100; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    r: Math.random() * 6 + 4,
+                    d: Math.random() * canvas.height,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    tilt: Math.random() * 10 - 5,
+                    tiltAngleIncremental: Math.random() * 0.07 + 0.02,
+                    tiltAngle: 0
+                });
+            }
+
+            let animationFrameId;
+            let loopCounter = 0;
+
+            function drawParticlesLoop() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let processingActive = false;
+
+                particles.forEach((p) => {
+                    p.tiltAngle += p.tiltAngleIncremental;
+                    p.y += (Math.cos(p.d) + 3 + p.r / 2) / 2;
+                    p.x += Math.sin(p.tiltAngle);
+                    p.tilt = Math.sin(p.tiltAngle - loopCounter / 3) * 15;
+
+                    if (p.y <= canvas.height) processingActive = true;
+
+                    ctx.beginPath();
+                    ctx.lineWidth = p.r;
+                    ctx.strokeStyle = p.color;
+                    ctx.moveTo(p.x + p.tilt + p.r / 2, p.y);
+                    ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 2);
+                    ctx.stroke();
+                });
+
+                loopCounter++;
+                if (processingActive && loopCounter < 250) {
+                    animationFrameId = requestAnimationFrame(drawParticlesLoop);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    canvas.style.display = 'none';
+                    cancelAnimationFrame(animationFrameId);
+                }
+            }
+            drawParticlesLoop();
+        }
+
+        const quizEngine = new EnvironmentalQuizEngine();
+    </script>
+</body>
+</html>

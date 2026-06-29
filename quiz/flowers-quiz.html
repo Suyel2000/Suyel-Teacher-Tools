@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🌸 Flowers Quiz</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 50%, #f48fb1 100%);
+            --primary: #d81b60;
+            --primary-light: #f06292;
+            --primary-dark: #880e4f;
+            --accent-easy: #4caf50;
+            --accent-medium: #ffa726;
+            --accent-hard: #e53935;
+            --glass-bg: rgba(255, 255, 255, 0.9);
+            --glass-border: rgba(255, 255, 255, 0.7);
+            --text-dark: #2c3e50;
+            --text-light: #ffffff;
+            --shadow: 0 8px 32px 0 rgba(136, 14, 79, 0.15);
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --radius-sm: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-dark);
+            overflow-x: hidden;
+            position: relative;
+            padding: 15px;
+        }
+
+        .ambient-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .floating-element {
+            position: absolute;
+            font-size: 2.5rem;
+            opacity: 0.15;
+            animation: floatAround 12s ease-in-out infinite alternate;
+        }
+
+        @keyframes floatAround {
+            0% { transform: translateY(0px) rotate(0deg) scale(1); }
+            100% { transform: translateY(-50px) rotate(20deg) scale(1.1); }
+        }
+
+        .app-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 750px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+            z-index: 10;
+            position: relative;
+            transition: all 0.4s ease;
+        }
+
+        h1.title {
+            font-size: 2.6rem;
+            color: var(--primary-dark);
+            text-align: center;
+            margin-bottom: 5px;
+            font-weight: 800;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--primary);
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .screen {
+            display: none;
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .level-selector-container {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            margin-top: 20px;
+        }
+
+        .btn-level {
+            padding: 20px 25px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            color: white;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.10);
+        }
+
+        .btn-easy { background-color: var(--accent-easy); }
+        .btn-medium { background-color: var(--accent-medium); color: #2c3e50; }
+        .btn-hard { background-color: var(--accent-hard); }
+
+        .btn-level:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .quiz-header-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: var(--text-dark);
+            background: rgba(255,255,255,0.6);
+            padding: 12px 18px;
+            border-radius: var(--radius-sm);
+        }
+
+        .progress-bar-wrapper {
+            background: rgba(0, 0, 0, 0.06);
+            border-radius: 20px;
+            height: 16px;
+            width: 100%;
+            overflow: hidden;
+            margin-bottom: 25px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary-light), var(--primary-dark));
+            border-radius: 20px;
+            transition: width 0.4s ease;
+        }
+
+        .question-box {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 25px;
+            line-height: 1.45;
+        }
+
+        .options-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-bottom: 25px;
+        }
+
+        .btn-option {
+            background: white;
+            border: 2.5px solid rgba(0, 0, 0, 0.08);
+            border-radius: var(--radius-md);
+            padding: 18px 22px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-option:hover:not([disabled]) {
+            border-color: var(--primary-light);
+            background: rgba(252, 228, 236, 0.4);
+            transform: translateX(5px);
+        }
+
+        .btn-option.correct {
+            background-color: #d4edda !important;
+            border-color: #28a745 !important;
+            color: #155724 !important;
+            font-weight: 700;
+        }
+
+        .btn-option.wrong {
+            background-color: #f8d7da !important;
+            border-color: #dc3545 !important;
+            color: #721c24 !important;
+        }
+
+        .explanation-box {
+            display: none;
+            background: #fce4ec;
+            border-left: 6px solid var(--primary-light);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+            line-height: 1.4;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; } to { opacity: 1; }
+        }
+
+        .navigation-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-top: 25px;
+            border-top: 2px solid rgba(0,0,0,0.06);
+            padding-top: 22px;
+        }
+
+        .btn-nav {
+            flex: 1;
+            padding: 16px 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: white;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .btn-prev { background-color: #78909c; }
+        .btn-home { background-color: #0288d1; }
+        .btn-next { background-color: #2e7d32; }
+
+        .btn-nav:hover:not([disabled]) {
+            filter: brightness(0.9);
+            transform: translateY(-2px);
+        }
+
+        .btn-nav:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .summary-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+            margin: 22px 0;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 14px;
+            border-radius: var(--radius-md);
+            text-align: center;
+            border: 1px solid rgba(0,0,0,0.06);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+
+        .stat-val {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--primary-dark);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #616161;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+
+        .badge-display-container {
+            text-align: center;
+            background: linear-gradient(135deg, #fffde7 0%, #fff9c4 100%);
+            padding: 22px;
+            border-radius: var(--radius-md);
+            border: 2.5px dashed #fbc02d;
+            margin-bottom: 25px;
+        }
+
+        .badge-icon {
+            font-size: 3.8rem;
+            margin-bottom: 6px;
+        }
+
+        .badge-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #f57f17;
+            text-transform: uppercase;
+        }
+
+        .actions-vertical {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .btn-action {
+            width: 100%;
+            padding: 16px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            filter: brightness(0.95);
+        }
+
+        .btn-primary-action { background-color: var(--primary); color: white; }
+        .btn-secondary-action { background-color: #eceff1; color: #37474f; }
+        .btn-print-action { background-color: #ffe082; color: #5d4037; }
+
+        .confetti-container {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none; z-index: 999;
+            overflow: hidden; display: none;
+        }
+
+        .confetti-piece {
+            position: absolute;
+            width: 10px;
+            height: 20px;
+            background: #ff4081;
+            top: -20px;
+            opacity: 0.8;
+            animation: fall 3s linear forwards;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(105vh) rotate(360deg);
+            }
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            #printable-certificate, #printable-certificate * { visibility: visible; }
+            #printable-certificate {
+                position: absolute; left: 0; top: 0; width: 100%;
+                border: 12px double var(--primary); padding: 50px; text-align: center; background: white;
+                color: var(--primary-dark); border-radius: 0; box-shadow: none; display: block !important;
+            }
+        }
+
+        #printable-certificate { display: none; }
+
+        @media(max-width: 600px) {
+            h1.title { font-size: 2rem; }
+            .subtitle { font-size: 0.95rem; margin-bottom: 20px; }
+            .app-container { padding: 20px; }
+            .btn-option { padding: 15px 18px; font-size: 1.1rem; }
+            .btn-nav { font-size: 0.95rem; padding: 14px 8px; }
+            .question-box { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="confetti-container" id="confetti-box"></div>
+
+    <div class="ambient-layer">
+        <div class="floating-element" style="top: 10%; left: 8%;">🌸</div>
+        <div class="floating-element" style="top: 75%; left: 82%; animation-delay: 2s;">🌹</div>
+        <div class="floating-element" style="top: 40%; left: 85%; animation-delay: 4s;">🌻</div>
+        <div class="floating-element" style="top: 80%; left: 12%; animation-delay: 1s;">🌷</div>
+    </div>
+
+    <div class="app-container">
+        <h1 class="title">🌸 Flowers Quiz</h1>
+        <div class="subtitle">Observe • Identify • Explore • Learn</div>
+
+        <div id="screen-start" class="screen active">
+            <div style="text-align: center; margin-bottom: 25px; font-weight: 600; font-size: 1.2rem; color: var(--text-dark); line-height: 1.5;">
+                Welcome young learner! Let's explore the beautiful world of flowers. Choose a level to begin:
+            </div>
+            <div class="level-selector-container">
+                <button class="btn-level btn-easy" onclick="quizManager.startQuizTrack('easy')">🟢 Easy Level</button>
+                <button class="btn-level btn-medium" onclick="quizManager.startQuizTrack('medium')">🟡 Medium Level</button>
+                <button class="btn-level btn-hard" onclick="quizManager.startQuizTrack('hard')">🔴 Hard Level</button>
+            </div>
+        </div>
+
+        <div id="screen-quiz" class="screen">
+            <div class="quiz-header-info">
+                <div>Level: <span id="runtime-level" style="text-transform: capitalize; color: var(--primary-dark);"></span></div>
+                <div>Question: <span id="runtime-counter">0/30</span></div>
+                <div>Score: <span id="runtime-score">0</span></div>
+            </div>
+
+            <div class="progress-bar-wrapper">
+                <div id="runtime-progress-bar" class="progress-bar-fill"></div>
+            </div>
+
+            <div id="runtime-question-text" class="question-box"></div>
+            <div id="runtime-options-container" class="options-grid"></div>
+            <div id="runtime-explanation-box" class="explanation-box"></div>
+
+            <div class="navigation-row">
+                <button id="nav-action-prev" class="btn-nav btn-prev" onclick="quizManager.goToPreviousQuestion()">⬅️ Previous</button>
+                <button id="nav-action-home" class="btn-nav btn-home" onclick="quizManager.resetToHome()">🏠 Home</button>
+                <button id="nav-action-next" class="btn-nav btn-next" onclick="quizManager.goToNextQuestion()">➡️ Next</button>
+            </div>
+        </div>
+
+        <div id="screen-summary" class="screen">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="color: var(--primary-dark); font-size: 1.9rem; font-weight: 800;">Quiz Summary!</h2>
+                <p style="font-weight: 600; color: #555; margin-top: 6px;">Here is your performance report:</p>
+            </div>
+
+            <div class="badge-display-container">
+                <div id="summary-badge-emblem" class="badge-icon">📚</div>
+                <div id="summary-badge-text" class="badge-title">Keep Learning</div>
+            </div>
+
+            <div class="summary-stats-grid">
+                <div class="stat-card"><div class="stat-val" id="sum-val-level" style="text-transform: capitalize;">-</div><div class="stat-label">Level</div></div>
+                <div class="stat-card"><div class="stat-val" id="sum-val-score">-</div><div class="stat-label">Final Score</div></div>
+                <div class="stat-card"><div class="stat-val" id="sum-val-percent">-</div><div class="stat-label">Percentage</div></div>
+                <div class="stat-card"><div class="stat-val" id="sum-val-time">-</div><div class="stat-label">Time Taken</div></div>
+                <div class="stat-card"><div class="stat-val" id="sum-val-correct" style="color: #2e7d32;">-</div><div class="stat-label">Correct</div></div>
+                <div class="stat-card"><div class="stat-val" id="sum-val-wrong" style="color: #c62828;">-</div><div class="stat-label">Wrong</div></div>
+            </div>
+
+            <div class="actions-vertical">
+                <button class="btn-action btn-primary-action" onclick="quizManager.restartCurrentTrack()">🔄 Play Again</button>
+                <button class="btn-action btn-secondary-action" onclick="quizManager.resetToHome()">📂 Choose Another Level</button>
+                <button class="btn-action btn-print-action" onclick="window.print()">🖨️ Print Certificate</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="printable-certificate">
+        <h1 style="font-size: 3rem; font-weight: 800; margin-bottom: 10px;">🏆 Certificate of Achievement</h1>
+        <h3 style="font-size: 1.6rem; font-style: italic; color: #555; margin-bottom: 30px;">Flowers EVS Quiz Completion</h3>
+        <p style="font-size: 1.4rem; line-height: 1.6; margin-bottom: 25px;">
+            This document proudly certifies that a wonderful **Nature Student** has completed the 
+            <span id="cert-val-level" style="text-transform: uppercase; font-weight: 700;"></span> difficulty track of the Flowers educational quiz module.
+        </p>
+        <p style="font-size: 1.5rem; margin-bottom: 40px;">
+            Final Score: <strong id="cert-val-score"></strong> (<span id="cert-val-percent"></span> Accuracy Rate)
+        </p>
+        <div style="margin-top: 60px; font-size: 1.1rem; border-top: 2px dashed #d81b60; padding-top: 20px; display: inline-block; width: 60%;">
+            Verified Offline via Primary EVS Interactive Learning Application Module
+        </div>
+    </div>
+
+    <script>
+        /**
+         * Comprehensive 90 Question Matrix Array — Flowers Dataset
+         */
+        const QuizBanks = {
+            easy: [
+                { q: "Which flower is the national flower of India?", o: ["Rose", "Lotus", "Sunflower", "Marigold"], a: 1, e: "The lotus is the beautiful national flower of India. It grows in muddy ponds." },
+                { q: "Which flower is yellow, round, and turns its face toward the Sun?", o: ["Lily", "Jasmine", "Sunflower", "Tulip"], a: 2, e: "The sunflower always tracks the direction of the golden sun." },
+                { q: "Which beautiful flower is known as the 'King of Flowers' and has sharp thorns on its stem?", o: ["Rose", "Daisy", "Lotus", "Hibiscus"], a: 0, e: "The rose is called the King of Flowers and has sharp thorns to protect itself." },
+                { q: "Where do we usually go to see many colourful flowers growing together?", o: ["A kitchen", "A garden", "A dark cave", "A playroom"], a: 1, e: "Gardens are wonderful green spaces where people plant and grow beautiful flowers." },
+                { q: "Which flower is small, white, and famous for its very sweet smell?", o: ["Marigold", "Jasmine", "Sunflower", "Lotus"], a: 1, e: "Jasmine flowers are small, white, and have an amazing sweet fragrance." },
+                { q: "Which bright orange or yellow flower is commonly woven into garlands during festivals?", o: ["Tulip", "Rose", "Marigold", "Orchid"], a: 2, e: "Marigold flowers are bright orange or yellow and are loved for decorations." },
+                { q: "True or False: Flowers can grow under the deep dark soil without any light.", o: ["True", "False"], a: 1, e: "False! Flowers grow on stems above the ground to get healthy sunlight." },
+                { q: "Which flower shares its name with a bright color we see in a rainbow?", o: ["Rose", "Violet", "Jasmine", "Lotus"], a: 1, e: "The violet is a lovely small flower that shares its name with the color violet." },
+                { q: "Complete the sentence: A baby flower that is tightly closed is called a...", o: ["Root", "Leaf", "Bud", "Fruit"], a: 2, e: "A bud is a baby flower waiting to open its petals wide." },
+                { q: "Which flower floats on water and has big, round flat green leaves around it?", o: ["Rose", "Lotus", "Sunflower", "Marigold"], a: 1, e: "The lotus plant grows directly in water bodies like lakes and ponds." },
+                { q: "What is the soft, colorful part of a flower that makes it look so pretty?", o: ["The root", "The thorn", "The petal", "The bark"], a: 2, e: "Petals are the bright, soft, colorful parts that attract visitors." },
+                { q: "Which flower looks like a grand bell or cup and is very famous in the Netherlands?", o: ["Tulip", "Jasmine", "Marigold", "Daisy"], a: 0, e: "Tulips are cup-shaped flowers that look spectacular growing in wide fields." },
+                { q: "What color is a common sunflower?", o: ["Blue", "Yellow", "Black", "Purple"], a: 1, e: "Sunflowers are bright sunny yellow with dark brown centers filled with seeds." },
+                { q: "True or False: All flowers in the entire world have the exact same smell.", o: ["True", "False"], a: 1, e: "False! Different flowers have unique smells; some smell sweet, others smell like fruit!" },
+                { q: "Which flower has a large white petal shape and looks like a peaceful white cup?", o: ["Lily", "Rose", "Marigold", "Thorn"], a: 0, e: "Lilies are elegant flowers that often represent peace and cleanliness." },
+                { q: "Which flower is bright red, has five petals, and a long pollen stick coming out?", o: ["Jasmine", "Hibiscus", "Tulip", "Daisy"], a: 1, e: "The hibiscus is a gorgeous flower with a prominent stamen sticking right out." },
+                { q: "Where do wild flowers grow without anyone planting them?", o: ["Inside our refrigerators", "In forests and open fields", "On glass windows", "Under deep water caves"], a: 1, e: "Wild flowers spread their own seeds naturally in wild fields and forests." },
+                { q: "What color are the leaves that sit right under the colorful petals of a flower?", o: ["Pink", "Green", "Blue", "White"], a: 1, e: "The tiny protective leaves at the base of a flower are green sepals." },
+                { q: "Which flower has white petals surrounding a bright yellow center disc?", o: ["Rose", "Daisy", "Lotus", "Marigold"], a: 1, e: "The daisy is a clean, classic flower with bright white petals and a sunny yellow center." },
+                { q: "True or False: We should pluck every flower we see in a public garden.", o: ["True", "False"], a: 1, e: "False! We should leave flowers alone so everyone can enjoy their beauty." },
+                { q: "Which of these flowers is often red and is given to show love on special days?", o: ["Rose", "Grass flower", "Cactus flower", "Mud flower"], a: 0, e: "Red roses are symbols of love and care shared across the world." },
+                { q: "What shape are the petals of a typical marigold flower?", o: ["Long and flat like a ruler", "Small, crinkly, and bunched together", "Giant like a plate", "Sharp like a knife"], a: 1, e: "Marigolds have lots of tiny, crinkly petals huddled tightly together." },
+                { q: "Which flower name sounds like a container used to hold fresh water?", o: ["Rose", "Pitcher", "Water Lily", "Daisy"], a: 2, e: "The water lily is a beautiful aquatic flower that loves quiet water." },
+                { q: "True or False: Butterflies enjoy visiting colorful flowers.", o: ["True", "False"], a: 0, e: "True! Colorful flowers act like bright flags that tell butterflies where sweet juice is." },
+                { q: "What part of a plant turns into a flower first?", o: ["A seed coat", "A small green bud", "A woody root", "A trunk line"], a: 1, e: "A tiny bud grows on the stem, opens up slowly, and becomes a flower." },
+                { q: "Which flower has petals that look like a fancy crown or orchid design?", o: ["Rose", "Orchid", "Sunflower", "Marigold"], a: 1, e: "Orchids are exotic flowers with unique shapes that look very beautiful." },
+                { q: "What do flowers need from the environment to blossom nicely?", o: ["Ice and salt water", "Sunlight, water, and care", "Dark rooms and cold air", "Paint and glue"], a: 1, e: "Flowers need clean water, healthy soil, and bright sunshine to flourish." },
+                { q: "Which flower bloom is very popular during autumn and winter festivals?", o: ["Chrysanthemum", "Lotus bud", "Spring tulip", "Water weed"], a: 0, e: "Chrysanthemums are lovely autumn flowers with many layers of petals." },
+                { q: "True or False: Artificial plastic flowers give real sweet smells to a room.", o: ["True", "False"], a: 1, e: "False! Only real living flowers can make natural sweet perfumes." },
+                { q: "Choose the correct description: Flowers are the...", o: ["Hardest wood of a tree", "Beautiful and colorful parts of a plant", "Roots that dig deep", "Leaves that drop in winter"], a: 1, e: "Flowers are widely loved as the most attractive and decorative parts of plants." }
+            ],
+            medium: [
+                { q: "Why do friendly honeybees visit flowers so often?", o: ["To play hide and seek", "To collect sweet juice called nectar", "To sleep on the petals", "To eat the green leaves"], a: 1, e: "Bees visit flowers to collect sweet nectar, which they use to make honey." },
+                { q: "Which flowers are highly valued for making aromatic perfumes and body oils?", o: ["Cactus and grass", "Jasmine and Rose", "Lotus leaves", "Pine needles"], a: 1, e: "Roses and jasmines have wonderful natural oils used to blend premium perfumes." },
+                { q: "Why do people actively grow flowers around their houses and pathways?", o: ["To make the area dirty", "For decoration and beauty", "To stop the wind from blowing", "To make paths slippery"], a: 1, e: "Flowers add immense natural beauty and color to our living spaces." },
+                { q: "Which flower is extensively used to make traditional yellow dye and herbal powders?", o: ["White lily", "Marigold", "Tulip bulb", "Blue orchid"], a: 1, e: "Bright marigolds are often used to produce beautiful natural color dyes." },
+                { q: "What do flowers help the plant create after they are visited by insects?", o: ["Hard stones", "Fruits and seeds", "Longer roots", "Thicker bark"], a: 1, e: "Flowers are vital because they help plants reproduce by forming fruits and seeds." },
+                { q: "Which flower is a favorite offering in traditional Indian temples?", o: ["Marigold", "Cactus flower", "Oak flower", "Pine cone"], a: 0, e: "Marigold garlands are highly popular for prayers and festive offerings." },
+                { q: "What attracts butterflies to a flower from far away?", o: ["The sharp thorns", "Bright colors and sweet scents", "The green mud below", "The shadows of trees"], a: 1, e: "Butterflies are guided by eye-catching colors and rich sweet aromas." },
+                { q: "True or False: Every single flower species on Earth blooms for the entire year.", o: ["True", "False"], a: 1, e: "False! Many flowers are seasonal, meaning they only bloom in spring, summer, or winter." },
+                { q: "What sweet substance do bees store in hives, gathered directly from flowers?", o: ["Milk", "Honey", "Water", "Sugar syrup"], a: 1, e: "Honey is made from the sweet flower nectar that bees harvest diligently." },
+                { q: "Which flower blooms beautifully during the cold winter season?", o: ["Dahlia", "Lotus", "Water Lily", "Summer Sunflower"], a: 0, e: "Dahlias and pansies thrive brilliantly in cooler winter months." },
+                { q: "What is the powdery, usually yellow substance found inside a flower's center?", o: ["Nectar juice", "Pollen grains", "Seed coat", "Sap fluid"], a: 1, e: "Pollen is the fine powder made by flowers to help generate seeds." },
+                { q: "Why do gardens look healthier and livelier when they contain lots of flowers?", o: ["Flowers scare away helpful birds", "They invite birds, bees, and butterflies", "They turn the grass brown", "They block out fresh air"], a: 1, e: "Flowers create a lively mini-ecosystem by inviting beneficial insects and birds." },
+                { q: "Which of these flowers is often used to cook and make delicious fritters or food?", o: ["Banana flower / Pumpkin flower", "Rose stem", "Cactus needle", "Oak blossom"], a: 0, e: "Pumpkin and banana flowers are edible and used to cook tasty dishes!" },
+                { q: "What is the green cup-like part that supports the flower petals from underneath?", o: ["Stamen stick", "Sepal base", "Pollen grain", "Seed core"], a: 1, e: "Sepals act like a supportive green base that holds up the opened petals." },
+                { q: "True or False: Sunflowers can track the position of the sun even on cloudy days.", o: ["True", "False"], a: 0, e: "True! Sunflowers utilize internal biological sensors to trace solar light through clouds." },
+                { q: "Which flower is well known for opening its petals only when night falls?", o: ["Sunflower", "Night-blooming Jasmine (Parijat)", "Hibiscus", "Marigold"], a: 1, e: "Parijat or Night Jasmine blooms in the evening and drops its fragrant flowers by dawn." },
+                { q: "What happens to the petals of a flower after the fruit begins to grow?", o: ["They turn into gold", "They dry up and fall off", "They grow bigger than leaves", "They sink into the roots"], a: 1, e: "Once pollination finishes, the petals wither away as the fruit swells up." },
+                { q: "Which of these insects is NOT a common helper for spreading flower pollen?", o: ["Honeybee", "Earthworm", "Butterfly", "Moth"], a: 1, e: "Earthworms stay deep in the soil, while flying insects go flower-to-flower." },
+                { q: "Complete the sentence: Flowers that have no bright colors often attract insects using...", o: ["Thorns", "A very powerful sweet smell", "Large roots", "Sticky bark"], a: 1, e: "Flowers that look plain or white use strong scents to get noticed at night." },
+                { q: "Which flower plant can grow perfectly well in dry, sandy deserts?", o: ["Lotus plant", "Cactus flower", "Water lily", "Fern plant"], a: 1, e: "Cactus plants produce beautiful flowers even in dry desert heat." },
+                { q: "Why do shops sell fresh flower bouquets during graduations and weddings?", o: ["To throw at people", "To express joy and celebrate", "To clear trash", "To make people feel sleepy"], a: 1, e: "Bouquets of flowers are globally used to celebrate milestones and happy events." },
+                { q: "True or False: Saffron, a very precious food spice, comes from a flower.", o: ["True", "False"], a: 0, e: "True! Saffron is harvested from the delicate center parts of the Crocus flower." },
+                { q: "Which flower looks like a large wheel with many red or pink layered petals?", o: ["Carnation", "Grass tip", "Pine blossom", "Fern tip"], a: 0, e: "Carnations are beautifully ruffled flowers with dense, layered petals." },
+                { q: "What major role do flowers play in a wedding ceremony?", o: ["They are used for beautiful decorations and garlands", "They are used as building bricks", "They are cooked as the main soup", "They keep the floor cold"], a: 0, e: "Flowers provide a festive visual charm during major celebrations." },
+                { q: "Which part of a hibiscus flower holds the sticky pollen high up?", o: ["The root cap", "The stamen column", "The leaf node", "The woody bark"], a: 1, e: "The stamen column elevates the pollen so insects can brush against it easily." },
+                { q: "What do we call the action of insects moving pollen from one flower to another?", o: ["Germination", "Pollination", "Transpiration", "Evaporation"], a: 1, e: "Pollination is the transfer of pollen grains which helps the plant create seeds." },
+                { q: "True or False: Plucking flowers helps the plant grow its fruits faster.", o: ["True", "False"], a: 1, e: "False! If you pluck the flower, that branch can no longer produce fruit." },
+                { q: "Which flower is famously associated with the spring season in Japan?", o: ["Lotus", "Cherry Blossom (Sakura)", "Marigold", "Cactus spike"], a: 1, e: "Cherry blossoms create magnificent pink clouds across Japan every spring." },
+                { q: "What kind of flower would you expect to find on a tomato plant?", o: ["A giant red rose", "A small yellow flower", "A floating blue lotus", "No flower at all"], a: 1, e: "Tomato plants produce small yellow blossoms that slowly grow into red tomatoes." },
+                { q: "Why should we avoid stepping on flower beds in public parks?", o: ["It makes our shoes wet", "It damages the delicate plants and stops blooming", "The flowers can bite", "It makes the sun disappear"], a: 1, e: "Stepping on flower beds crushes young buds and harms the root system." }
+            ],
+            hard: [
+                { q: "What is the primary biological reason a plant spends energy growing flowers?", o: ["To look pretty for humans", "To enable reproduction and produce future generations", "To shed excess water", "To collect extra dirt"], a: 1, e: "Flowers contain reproductive organs that let plants generate fertile seeds." },
+                { q: "Which part of the flower eventually matures and swells to become the flesh of a fruit?", o: ["The sepal ring", "The ovary wall", "The outer petal", "The pollen filament"], a: 1, e: "The ovary at the base of the flower grows into a fruit after fertilization." },
+                { q: "Why are some wild flowers called 'weed flowers' by farmers?", o: ["They are poisonous to touch", "They grow aggressively and compete with farm crops", "They have no roots", "They only grow on rocks"], a: 1, e: "Weeds spread quickly and consume water and nutrients needed by cultivated crops." },
+                { q: "Which flower extract is widely known for its soothing, medicinal properties for skin burns?", o: ["Calendula / Chamomile", "Pine flower", "Oak blossom", "Banyan flower"], a: 0, e: "Calendula and chamomile flowers possess medicinal properties used in healing creams." },
+                { q: "What would happen to an orchard of apple trees if all bees vanished?", o: ["The trees would grow larger wood", "Apple production would drop due to lack of pollination", "The leaves would turn blue", "Seeds would grow on the roots"], a: 1, e: "Bees are key pollinators; without them, flowers cannot convert into apples." },
+                { q: "What do we call a flower that contains both male and female reproductive parts?", o: ["Unisexual flower", "Bisexual / Complete flower", "Sterile flower", "Leafy blossom"], a: 1, e: "Bisexual flowers (like hibiscus) house both stamens and pistils in one bloom." },
+                { q: "Why should we spray natural compost instead of chemical pesticides on flowering plants?", o: ["Chemicals make flowers too heavy", "Pesticides harm friendly bees and butterflies", "Compost makes the leaves turn black", "Chemicals dissolve the roots"], a: 1, e: "Pesticides can eliminate the helpful insects that plants require for pollination." },
+                { q: "Which flower buds are dried and used in our kitchens as a fragrant spice called cloves?", o: ["Rose buds", "Clove flower buds", "Marigold centers", "Jasmine tips"], a: 1, e: "Cloves are actually the dried, aromatic flower buds of the clove tree." },
+                { q: "What is the female reproductive structure inside a flower called?", o: ["Stamen", "Pistil / Carpel", "Anther", "Filament"], a: 1, e: "The pistil or carpel is the central female structure that holds developing ovules." },
+                { q: "How do wind-pollinated flowers differ from insect-pollinated flowers?", o: ["They are much more colorful", "They are plain, light, and produce lots of powdery pollen", "They have huge sweet petals", "They do not have stems"], a: 1, e: "Wind-pollinated flowers don't need to attract bugs, so they emphasize light, fly-away pollen." },
+                { q: "True or False: Sunflowers can clean toxic chemicals out of damaged soil.", o: ["True", "False"], a: 0, e: "True! Sunflowers can absorb heavy metals and harmful toxins from the ground." },
+                { q: "Which flower asset is harvested to create the soothing herbal tea known to reduce stress?", o: ["Rose thorn", "Chamomile flower", "Lotus root skin", "Cactus pulp"], a: 1, e: "Chamomile flowers are dried and steeped to brew a relaxing herbal tea." },
+                { q: "What specific part of the stamen produces and holds the pollen grains?", o: ["The sepal", "The anther", "The style tube", "The root hair"], a: 1, e: "The anther is the sac-like structure at the top of the stamen where pollen forms." },
+                { q: "Why do some flowers like Rafflesia smell like rotting meat instead of perfume?", o: ["They are sick", "To attract carrion flies for pollination", "Because they grow in water", "To scare away butterflies"], a: 1, e: "Rafflesia uses a bad odor to attract carrion flies, which act as its pollinators." },
+                { q: "What does a seed require to survive inside the fruit once the flower falls?", o: ["Protection and time to mature", "Constant artificial painting", "To be kept in total ice", "Salt and vinegar"], a: 0, e: "The fruit provides structural shelter while the embryo inside matures." },
+                { q: "True or False: Ferns and mosses grow giant colorful flowers during springtime.", o: ["True", "False"], a: 1, e: "False! Ferns and mosses are non-flowering plants that reproduce using spores." },
+                { q: "Which part of the flower receives the pollen grains during a pollination event?", o: ["The root base", "The sticky stigma", "The outer sepal", "The petal tip"], a: 1, e: "The stigma is the sticky top part of the pistil engineered to catch pollen." },
+                { q: "Why is conserving wild flowering meadows important for global agriculture?", o: ["They look nice from airplanes", "They maintain healthy populations of wild pollinating insects", "They stop the rain from falling", "They turn into stone reserves"], a: 1, e: "Wild meadows act as breeding grounds for pollinators that cross-pollinate farm crops." },
+                { q: "What is the name of the sweet liquid produced by nectar glands to reward visiting bugs?", o: ["Sap syrup", "Nectar", "Resin fluid", "Pollen juice"], a: 1, e: "Nectar is a high-energy sugary liquid made specifically to reward visiting pollinators." },
+                { q: "Complete the sentence: A flower that has only stamens and lacks a pistil is a...", o: ["Female flower", "Male flower", "Complete flower", "Fruit bloom"], a: 1, e: "Flowers containing only male parts (stamens) are classified as male flowers." },
+                { q: "Why are some flowers sticky to touch in their central zones?", o: ["They are covered in honey glue", "To trap and secure incoming pollen grains", "Because rain melted them", "To catch small lizards"], a: 1, e: "The sticky surface helps trap drifting pollen carried by the wind or insects." },
+                { q: "Which flower belongs to an insect-eating plant that traps bugs for nutrition?", o: ["Rose blossom", "Bladderwort / Venus flytrap flower", "Sunflower disc", "Lotus bud"], a: 1, e: "Carnivorous plants also produce flowers on long stalks to get pollinated safely." },
+                { q: "True or False: Flowers help cool down the air temperature around a plant through transpiration.", o: ["True", "False"], a: 0, e: "True! Plants lose water vapor through various parts including flowers, which cools them." },
+                { q: "What field of science specializes in the study and cultivation of flowers?", o: ["Geology", "Floriculture / Botany", "Astronomy", "Zoology"], a: 1, e: "Floriculture is the specific branch of botany that deals with growing flowers." },
+                { q: "Why do overnight desert blooms disappear so rapidly the next afternoon?", o: ["They get scared of shadows", "They wither quickly to save water under extreme heat", "They sink back into seeds", "Birds eat them instantly"], a: 1, e: "Desert flowers have short lifespans to maximize reproduction before water vanishes." },
+                { q: "Which flower part forms the colorful flag that advertises nectar to bees?", o: ["The sepal cup", "The petal corolla", "The underground root", "The inner seed ovule"], a: 1, e: "The group of petals is called the corolla, acting as a visual advertisement." },
+                { q: "How do humans benefit from understanding flower blooming schedules?", o: ["It helps us predict winter snowfall", "It helps gardeners and farmers plant crops at the right time", "It makes clocks tick faster", "It changes the color of mud"], a: 1, e: "Knowing when flowers bloom allows farmers to manage pollination cycles efficiently." },
+                { q: "True or False: The tiny green grains inside plant cells that help make food are found in flower petals too.", o: ["True", "False"], a: 1, e: "False! Bright petals usually have chromoplasts for color, not green chlorophyll." },
+                { q: "What long tube must a pollen grain grow to fertilize an egg inside the flower ovary?", o: ["Root pipeline", "Pollen tube", "Leaf vein", "Stamen stick"], a: 1, e: "Pollen grows a microscopic pollen tube down the style to deliver its cells." },
+                { q: "Why is establishing flower gardens in urban cities highly encouraged by environmentalists?", o: ["To fill spaces with concrete", "To support urban biodiversity and counter habitat loss", "To block traffic sound completely", "To keep city roads wet"], a: 1, e: "Urban flower gardens provide critical food networks for city-dwelling insects." }
+            ]
+        };
+
+        /**
+         * Core Application Orchestrator Framework Object
+         */
+        class EducationalQuizManager {
+            constructor() {
+                this.selectedTrack = '';
+                this.activeQuestionDataset = [];
+                this.pointerIndex = 0;
+                this.cumulativeScore = 0;
+                this.loggedUserChoices = [];
+                this.epochStartTime = null;
+                this.webAudioContext = null;
+            }
+
+            initializeSoundSystem() {
+                if (!this.webAudioContext) {
+                    this.webAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            generateAudioTone(frequencyValue, waveformType, playbackDuration) {
+                try {
+                    this.initializeSoundSystem();
+                    const audioOscillator = this.webAudioContext.createOscillator();
+                    const volumeGainNode = this.webAudioContext.createGain();
+                    
+                    audioOscillator.type = waveformType;
+                    audioOscillator.frequency.value = frequencyValue;
+                    
+                    volumeGainNode.gain.setValueAtTime(0.12, this.webAudioContext.currentTime);
+                    volumeGainNode.gain.exponentialRampToValueAtTime(0.0001, this.webAudioContext.currentTime + playbackDuration);
+                    
+                    audioOscillator.connect(volumeGainNode);
+                    volumeGainNode.connect(this.webAudioContext.destination);
+                    
+                    audioOscillator.start();
+                    audioOscillator.stop(this.webAudioContext.currentTime + playbackDuration);
+                } catch (audioException) { 
+                    console.warn("Audio Context engine deferred setup.", audioException); 
+                }
+            }
+
+            triggerFeedbackAudio(soundProfileMode) {
+                switch(soundProfileMode) {
+                    case 'tap': 
+                        this.generateAudioTone(600, 'sine', 0.06); 
+                        break;
+                    case 'correct': 
+                        this.generateAudioTone(523.25, 'triangle', 0.08); 
+                        setTimeout(() => this.generateAudioTone(659.25, 'triangle', 0.12), 70);
+                        break;
+                    case 'incorrect': 
+                        this.generateAudioTone(220, 'sawtooth', 0.2); 
+                        break;
+                    case 'finished': 
+                        this.generateAudioTone(523.25, 'sine', 0.1);
+                        setTimeout(() => this.generateAudioTone(659.25, 'sine', 0.1), 90);
+                        setTimeout(() => this.generateAudioTone(783.99, 'sine', 0.1), 180);
+                        setTimeout(() => this.generateAudioTone(1046.50, 'sine', 0.3), 270);
+                        break;
+                }
+            }
+
+            knuthShuffle(targetArray) {
+                let currentItemIndex = targetArray.length, temporaryValue, targetRandomIndex;
+                while (currentItemIndex) {
+                    targetRandomIndex = Math.floor(Math.random() * currentItemIndex--);
+                    temporaryValue = targetArray[currentItemIndex];
+                    targetArray[currentItemIndex] = targetArray[targetRandomIndex];
+                    targetArray[targetRandomIndex] = temporaryValue;
+                }
+                return targetArray;
+            }
+
+            transitionUIWindow(screenDomId) {
+                document.querySelectorAll('.screen').forEach(viewElement => viewElement.classList.remove('active'));
+                document.getElementById(screenDomId).classList.add('active');
+                window.scrollTo(0,0);
+            }
+
+            startQuizTrack(difficultyTrackKey) {
+                this.triggerFeedbackAudio('tap');
+                this.selectedTrack = difficultyTrackKey;
+                
+                let baseQuestions = JSON.parse(JSON.stringify(QuizBanks[difficultyTrackKey]));
+                this.activeQuestionDataset = this.knuthShuffle(baseQuestions);
+                
+                this.activeQuestionDataset.forEach(questionNode => {
+                    let wrappedChoices = questionNode.o.map((choiceText, trackIndex) => ({ 
+                        textStr: choiceText, 
+                        truthStatus: trackIndex === questionNode.a 
+                    }));
+                    this.knuthShuffle(wrappedChoices);
+                    questionNode.o = wrappedChoices.map(c => c.textStr);
+                    questionNode.a = wrappedChoices.findIndex(c => c.truthStatus);
+                });
+
+                this.pointerIndex = 0;
+                this.cumulativeScore = 0;
+                this.loggedUserChoices = new Array(this.activeQuestionDataset.length).fill(null);
+                this.epochStartTime = new Date();
+                
+                document.getElementById('runtime-level').innerText = difficultyTrackKey;
+                this.transitionUIWindow('screen-quiz');
+                this.renderActiveQuestionStructure();
+            }
+
+            renderActiveQuestionStructure() {
+                const activeQuestionItem = this.activeQuestionDataset[this.pointerIndex];
+                
+                document.getElementById('runtime-counter').innerText = `${this.pointerIndex + 1}/${this.activeQuestionDataset.length}`;
+                document.getElementById('runtime-score').innerText = this.cumulativeScore;
+                
+                const completePercentage = ((this.pointerIndex + 1) / this.activeQuestionDataset.length) * 100;
+                document.getElementById('runtime-progress-bar').style.width = `${completePercentage}%`;
+
+                document.getElementById('runtime-question-text').innerText = activeQuestionItem.q;
+
+                const choicesBox = document.getElementById('runtime-options-container');
+                choicesBox.innerHTML = '';
+                
+                const explFrame = document.getElementById('runtime-explanation-box');
+                explFrame.style.display = 'none';
+
+                activeQuestionItem.o.forEach((choiceLabel, labelIdx) => {
+                    const optionButton = document.createElement('button');
+                    optionButton.className = 'btn-option';
+                    optionButton.innerText = choiceLabel;
+                    optionButton.onclick = () => this.evaluateUserSelection(labelIdx);
+                    choicesBox.appendChild(optionButton);
+                });
+
+                document.getElementById('nav-action-prev').disabled = (this.pointerIndex === 0);
+                document.getElementById('nav-action-next').disabled = (this.loggedUserChoices[this.pointerIndex] === null);
+
+                if (this.loggedUserChoices[this.pointerIndex] !== null) {
+                    this.reapplyHistoricalFeedbackLayout(this.loggedUserChoices[this.pointerIndex]);
+                }
+            }
+
+            evaluateUserSelection(selectedChoiceIdx) {
+                if (this.loggedUserChoices[this.pointerIndex] !== null) return;
+                
+                const workingQuestionData = this.activeQuestionDataset[this.pointerIndex];
+                this.loggedUserChoices[this.pointerIndex] = selectedChoiceIdx;
+                
+                const optionNodesCollection = document.getElementById('runtime-options-container').children;
+
+                if (selectedChoiceIdx === workingQuestionData.a) {
+                    optionNodesCollection[selectedChoiceIdx].classList.add('correct');
+                    this.cumulativeScore += 1;
+                    document.getElementById('runtime-score').innerText = this.cumulativeScore;
+                    this.triggerFeedbackAudio('correct');
+                } else {
+                    optionNodesCollection[selectedChoiceIdx].classList.add('wrong');
+                    optionNodesCollection[workingQuestionData.a].classList.add('correct');
+                    this.triggerFeedbackAudio('incorrect');
+                }
+
+                for (let childButton of optionNodesCollection) {
+                    childButton.disabled = true;
+                }
+
+                this.exposeExplanationBlock(workingQuestionData);
+                document.getElementById('nav-action-next').disabled = false;
+            }
+
+            reapplyHistoricalFeedbackLayout(previouslySelectedIndex) {
+                const workingQuestionData = this.activeQuestionDataset[this.pointerIndex];
+                const optionNodesCollection = document.getElementById('runtime-options-container').children;
+
+                for (let targetIdx = 0; targetIdx < optionNodesCollection.length; targetIdx++) {
+                    optionNodesCollection[targetIdx].disabled = true;
+                    if (targetIdx === workingQuestionData.a) {
+                        optionNodesCollection[targetIdx].classList.add('correct');
+                    }
+                    if (targetIdx === previouslySelectedIndex && previouslySelectedIndex !== workingQuestionData.a) {
+                        optionNodesCollection[targetIdx].classList.add('wrong');
+                    }
+                }
+                this.exposeExplanationBlock(workingQuestionData);
+            }
+
+            exposeExplanationBlock(questionObject) {
+                const blockElement = document.getElementById('runtime-explanation-box');
+                blockElement.innerHTML = `<strong>💡 Explanation:</strong> ${questionObject.e}`;
+                blockElement.style.display = 'block';
+            }
+
+            goToPreviousQuestion() {
+                this.triggerFeedbackAudio('tap');
+                if (this.pointerIndex > 0) {
+                    this.pointerIndex--;
+                    this.renderActiveQuestionStructure();
+                }
+            }
+
+            goToNextQuestion() {
+                this.triggerFeedbackAudio('tap');
+                if (this.pointerIndex < this.activeQuestionDataset.length - 1) {
+                    this.pointerIndex++;
+                    this.renderActiveQuestionStructure();
+                } else {
+                    this.compileQuizMetricsSummary();
+                }
+            }
+
+            resetToHome() {
+                this.triggerFeedbackAudio('tap');
+                this.transitionUIWindow('screen-start');
+            }
+
+            restartCurrentTrack() {
+                this.startQuizTrack(this.selectedTrack);
+            }
+
+            compileQuizMetricsSummary() {
+                this.triggerFeedbackAudio('finished');
+                const totalCalculatedDurationSeconds = Math.floor((new Date() - this.epochStartTime) / 1000);
+                const computedMinutes = Math.floor(totalCalculatedDurationSeconds / 60);
+                const computedSeconds = totalCalculatedDurationSeconds % 60;
+                const structuredTimeOutputString = `${computedMinutes}m ${computedSeconds}s`;
+                
+                const finalAccuracyPercentage = Math.round((this.cumulativeScore / this.activeQuestionDataset.length) * 100);
+                const calculatedErrorsSum = this.activeQuestionDataset.length - this.cumulativeScore;
+
+                let badgeGraphicSymbol = '📚';
+                let badgeClassTitleText = 'Keep Learning';
+                
+                if (finalAccuracyPercentage >= 90) { 
+                    badgeGraphicSymbol = '🏆'; badgeClassTitleText = 'Flower Expert'; 
+                } else if (finalAccuracyPercentage >= 70) { 
+                    badgeGraphicSymbol = '🌟'; badgeClassTitleText = 'Nature Explorer'; 
+                } else if (finalAccuracyPercentage >= 50) { 
+                    badgeGraphicSymbol = '👍'; badgeClassTitleText = 'Garden Learner'; 
+                }
+
+                document.getElementById('sum-val-level').innerText = this.selectedTrack;
+                document.getElementById('sum-val-score').innerText = `${this.cumulativeScore} / ${this.activeQuestionDataset.length}`;
+                document.getElementById('sum-val-percent').innerText = `${finalAccuracyPercentage}%`;
+                document.getElementById('sum-val-time').innerText = structuredTimeOutputString;
+                document.getElementById('sum-val-correct').innerText = this.cumulativeScore;
+                document.getElementById('sum-val-wrong').innerText = calculatedErrorsSum;
+                
+                document.getElementById('summary-badge-emblem').innerText = badgeGraphicSymbol;
+                document.getElementById('summary-badge-text').innerText = badgeClassTitleText;
+
+                document.getElementById('cert-val-level').innerText = this.selectedTrack;
+                document.getElementById('cert-val-score').innerText = `${this.cumulativeScore}/${this.activeQuestionDataset.length}`;
+                document.getElementById('cert-val-percent').innerText = `${finalAccuracyPercentage}%`;
+
+                if (finalAccuracyPercentage >= 50) {
+                    launchConfettiCelebration();
+                }
+
+                try {
+                    localStorage.setItem('evs_flowers_quiz_highscore', finalAccuracyPercentage);
+                } catch(storageException) { 
+                    console.error("Local Storage interaction skipped.", storageException); 
+                }
+
+                this.transitionUIWindow('screen-summary');
+            }
+        }
+
+        /**
+         * Asset-Free Pure CSS-DOM Confetti System Variant
+         */
+        function launchConfettiCelebration() {
+            const container = document.getElementById('confetti-box');
+            container.innerHTML = '';
+            container.style.display = 'block';
+            const colors = ['#ff4081', '#ffeb3b', '#00e676', '#00b0ff', '#d500f9', '#ff6d00'];
+
+            for (let i = 0; i < 100; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'confetti-piece';
+                piece.style.left = Math.random() * 100 + 'vw';
+                piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                piece.style.animationDelay = Math.random() * 2 + 's';
+                piece.style.transform = `scale(${Math.random() * 0.6 + 0.5})`;
+                container.appendChild(piece);
+            }
+
+            setTimeout(() => {
+                container.style.display = 'none';
+                container.innerHTML = '';
+            }, 5000);
+        }
+
+        const quizManager = new EducationalQuizManager();
+    </script>
+</body>
+</html>

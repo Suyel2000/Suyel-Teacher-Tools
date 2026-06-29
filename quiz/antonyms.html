@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>↔️ Antonyms Quiz</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --easy-color: #2ec4b6;
+            --medium-color: #ffb703;
+            --hard-color: #e63946;
+            --correct-color: #4caf50;
+            --wrong-color: #f44336;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --text-color: #2b2d42;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            color: var(--text-color);
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 750px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            text-align: center;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        /* Floating background items */
+        .floating-decor {
+            position: absolute;
+            font-size: 24px;
+            opacity: 0.15;
+            animation: float 4s ease-in-out infinite;
+            z-index: -1;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(10deg); }
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #ffffff;
+            text-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 5px;
+        }
+
+        h2 {
+            font-size: 1.2rem;
+            color: #f1f5f9;
+            font-weight: 400;
+            margin-bottom: 25px;
+        }
+
+        .screen {
+            display: none;
+            animation: fadeIn 0.4s ease-in-out forwards;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Buttons styling */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 16px 24px;
+            margin: 12px 0;
+            border: none;
+            border-radius: 16px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-easy { background-color: var(--easy-color); color: white; }
+        .btn-medium { background-color: var(--medium-color); color: white; }
+        .btn-hard { background-color: var(--hard-color); color: white; }
+        
+        .option-btn {
+            background-color: white;
+            color: var(--text-color);
+            text-align: left;
+            border: 2px solid #e2e8f0;
+        }
+        .option-btn:hover {
+            background-color: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        /* Feedback styling */
+        .option-btn.correct {
+            background-color: #dcfce7 !important;
+            border-color: var(--correct-color) !important;
+            color: #166534 !important;
+        }
+        .option-btn.wrong {
+            background-color: #fee2e2 !important;
+            border-color: var(--wrong-color) !important;
+            color: #991b1b !important;
+        }
+
+        /* Progress Header */
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 12px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 6px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: #4cc9f0;
+            transition: width 0.3s ease;
+        }
+
+        /* Card container */
+        .card {
+            background: var(--card-bg);
+            border-radius: 18px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .question-text {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .highlight {
+            background-color: #fef08a;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border-bottom: 2px dashed #ca8a04;
+        }
+
+        .quiz-image {
+            max-width: 120px;
+            height: auto;
+            margin-bottom: 15px;
+            border-radius: 8px;
+        }
+
+        /* Explanation box */
+        .explanation-box {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 500;
+            display: none;
+            text-align: left;
+            animation: fadeIn 0.3s ease;
+        }
+        .explanation-box.correct-style { background-color: #dcfce7; color: #166534; border-left: 5px solid var(--correct-color); }
+        .explanation-box.wrong-style { background-color: #fee2e2; color: #991b1b; border-left: 5px solid var(--wrong-color); }
+
+        /* Navigation buttons strictly mapped */
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .nav-btn {
+            flex: 1;
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            background: white;
+            color: var(--text-color);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Summary layout */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 15px 0;
+        }
+        .summary-stat {
+            background: rgba(255,255,255,0.9);
+            padding: 10px;
+            border-radius: 12px;
+            font-weight: bold;
+        }
+        .badge-display {
+            font-size: 1.5rem;
+            margin: 20px 0;
+            padding: 15px;
+            background: #fff;
+            border-radius: 16px;
+            border: 3px dashed var(--medium-color);
+            font-weight: bold;
+        }
+
+        /* Confetti Overlay */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 999;
+            display: none;
+        }
+
+        /* Print styling rules */
+        @media print {
+            body * { visibility: hidden; }
+            #certificate-print, #certificate-print * { visibility: visible; }
+            #certificate-print { position: absolute; left: 0; top: 0; width: 100%; }
+        }
+
+        #certificate-print {
+            display: none;
+            background: white;
+            color: #000;
+            padding: 30px;
+            border: 10px double #11998e;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        @media(max-width: 500px) {
+            h1 { font-size: 1.8rem; }
+            .app-container { padding: 15px; }
+            .btn { padding: 12px 16px; font-size: 1rem; }
+            .question-text { font-size: 1.1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <div class="app-container">
+        <div class="floating-decor" style="top:5%; left:5%;">📚</div>
+        <div class="floating-decor" style="top:8%; right:8%;">⭐</div>
+        <div class="floating-decor" style="bottom:6%; left:7%;">✏️</div>
+        <div class="floating-decor" style="bottom:8%; right:6%;">📖</div>
+
+        <h1>↔️ Antonyms Quiz</h1>
+        <h2>Learn • Compare • Match • Master Opposite Words</h2>
+
+        <div id="start-screen" class="screen active">
+            <div class="card" style="margin-bottom: 25px;">
+                <p style="font-size: 1.1rem; line-height: 1.5; font-weight: 500;">
+                    Welcome! Ready to practice words with <b>opposite meanings</b>? Choose your level below to start!
+                </p>
+            </div>
+            <button class="btn btn-easy" onclick="startQuiz('easy')">🟢 Easy Level (Classes 1-2)</button>
+            <button class="btn btn-medium" onclick="startQuiz('medium')">🟡 Medium Level (Classes 3-4)</button>
+            <button class="btn btn-hard" onclick="startQuiz('hard')">🔴 Hard Level (Classes 4-5)</button>
+        </div>
+
+        <div id="quiz-screen" class="screen">
+            <div class="quiz-header">
+                <span id="counter-txt">Question: 1/50</span>
+                <span id="score-txt">Score: 0</span>
+            </div>
+            <div class="progress-bar-container">
+                <div id="progress-bar" class="progress-bar"></div>
+            </div>
+
+            <div class="card">
+                <div id="image-container"></div>
+                <div id="question-text" class="question-text"></div>
+                <div id="options-container"></div>
+            </div>
+
+            <div id="explanation" class="explanation-box"></div>
+
+            <div class="nav-container">
+                <button id="prev-btn" class="nav-btn" onclick="prevQuestion()">⬅️ Previous</button>
+                <button id="home-btn" class="nav-btn" onclick="goHome()">🏠 Home</button>
+                <button id="next-btn" class="nav-btn" onclick="nextQuestion()">➡️ Next</button>
+            </div>
+        </div>
+
+        <div id="summary-screen" class="screen">
+            <div class="card">
+                <h3 style="font-size:1.6rem; margin-bottom:10px;">🎉 Level Completed!</h3>
+                <p>Outstanding job practicing antonyms!</p>
+                
+                <div class="badge-display" id="badge-display"></div>
+
+                <div class="summary-grid">
+                    <div class="summary-stat">Level: <span id="sum-level" style="color:var(--hard-color)"></span></div>
+                    <div class="summary-stat">Score: <span id="sum-score"></span>/50</div>
+                    <div class="summary-stat">Percentage: <span id="sum-percent"></span></div>
+                    <div class="summary-stat">Time: <span id="sum-time"></span></div>
+                </div>
+            </div>
+
+            <button class="btn btn-easy" onclick="restartLevel()">🔄 Play Again</button>
+            <button class="btn btn-medium" onclick="goHome()">🏠 Choose Another Level</button>
+            <button class="btn btn-hard" onclick="printCertificate()">🖨️ Print Certificate</button>
+
+            <div id="certificate-print">
+                <h1 style="color:#11998e; margin-bottom:10px;">📜 CERTIFICATE OF ACHIEVEMENT</h1>
+                <p style="font-size:1.2rem; margin:15px 0;">This proudly certifies completion of the</p>
+                <h2 style="color:#2ec4b6; font-size:1.8rem; font-weight:bold; margin:10px 0;" id="cert-level-name">ANTONYMS QUIZ</h2>
+                <p style="font-size:1.2rem; margin:15px 0;">With a magnificent record performance score of</p>
+                <div style="font-size:2rem; font-weight:bold; margin:10px 0;" id="cert-score">50 / 50</div>
+                <p style="font-size:1.1rem; font-style:italic; margin-top:20px;" id="cert-badge">Awarded Status Badge: Master</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* SVGs generated via standard layout parameters for visual help options */
+        const svgLibrary = {
+            sun: `<svg viewBox="0 0 100 100" class="quiz-image"><circle cx="50" cy="50" r="20" fill="#ffb703"/><path d="M50 10 V25 M50 75 V90 M10 50 H25 M75 50 H90" stroke="#ffb703" stroke-width="6" stroke-linecap="round"/></svg>`,
+            ice: `<svg viewBox="0 0 100 100" class="quiz-image"><rect x="25" y="25" width="50" height="50" rx="8" fill="#a8dadc"/><path d="M35 35 H65 M35 50 H65" stroke="#fff" stroke-width="4" stroke-linecap="round"/></svg>`,
+            arrowup: `<svg viewBox="0 0 100 100" class="quiz-image"><path d="M50 15 L20 50 H40 V85 H60 V50 H80 Z" fill="#4ea8de"/></svg>`,
+            arrowdown: `<svg viewBox="0 0 100 100" class="quiz-image"><path d="M50 85 L20 50 H40 V15 H60 V50 H80 Z" fill="#e63946"/></svg>`,
+            moon: `<svg viewBox="0 0 100 100" class="quiz-image"><path d="M30 20 A35 35 0 1 0 85 75 A40 40 0 1 1 30 20 Z" fill="#ffd166"/></svg>`,
+            boxempty: `<svg viewBox="0 0 100 100" class="quiz-image"><rect x="20" y="30" width="60" height="50" fill="none" stroke="#2b2d42" stroke-width="5"/></svg>`
+        };
+
+        /* Data arrays with 50 completely unique items for each category track */
+        const questionsData = {
+            easy: [
+                { type: "choice", q: "Find the antonym (opposite) of <b>Big</b>.", options: ["Small", "Large", "Huge", "Tall"], answer: "Small", exp: "Small is the opposite of Big!" },
+                { type: "choice", q: "Find the antonym (opposite) of <b>Hot</b>.", options: ["Cold", "Warm", "Boiling", "Spicy"], answer: "Cold", exp: "Cold and Hot have opposite meanings.", img: "ice" },
+                { type: "choice", q: "Find the antonym (opposite) of <b>Happy</b>.", options: ["Sad", "Glad", "Joyful", "Cheerful"], answer: "Sad", exp: "Sad is the opposite of Happy." },
+                { type: "choice", q: "Find the antonym (opposite) of <b>Open</b>.", options: ["Close", "Unlock", "Free", "Wide"], answer: "Close", exp: "Close is the opposite of Open." },
+                { type: "choice", q: "Find the antonym (opposite) of <b>Up</b>.", options: ["Down", "High", "Above", "Top"], answer: "Down", exp: "Down is the opposite of Up.", img: "arrowup" },
+                { type: "choice", q: "Find the antonym (opposite) of <b>Fast</b>.", options: ["Slow", "Quick", "Rapid", "Swift"], answer: "Slow", exp: "Slow is the opposite of Fast." },
+                { type: "choice", q: "Find the antonym (opposite) of <b>Tall</b>.", options: ["Short", "High", "Big", "Long"], answer: "Short", exp: "Short is the opposite of Tall." },
+                { type: "choice", q: "Find the antonym (opposite) of <b>Day</b>.", options: ["Night", "Morning", "Evening", "Noon"], answer: "Night", exp: "Night is the opposite of Day.", img: "sun" },
+                { type: "choice", q: "Find the antonym (opposite) of <b>Full</b>.", options: ["Empty", "Packed", "Filled", "Heavy"], answer: "Empty", exp: "Empty is the opposite of Full." },
+                { type: "choice", q: "Find the antonym (opposite) of <b>Clean</b>.", options: ["Dirty", "Fresh", "Shiny", "Neat"], answer: "Dirty", exp: "Dirty is the opposite of Clean." },
+                { type: "sentence", q: "My coffee is too <span class='highlight'>hot</span> to drink.", options: ["cold", "warm", "boiling", "sweet"], answer: "cold", exp: "Cold is the opposite of hot." },
+                { type: "sentence", q: "Please <span class='highlight'>open</span> the front door.", options: ["close", "lock", "kick", "paint"], answer: "close", exp: "Close is the opposite word for open." },
+                { type: "sentence", q: "The airplane went <span class='highlight'>up</span> into the clouds.", options: ["down", "high", "above", "sideways"], answer: "down", exp: "Down is the opposite direction of up." },
+                { type: "sentence", q: "The turtle is moving very <span class='highlight'>slow</span>.", options: ["fast", "quiet", "easy", "calm"], answer: "fast", exp: "Fast is the direct antonym of slow." },
+                { type: "sentence", q: "Her room is always neat and <span class='highlight'>clean</span>.", options: ["dirty", "tidy", "bright", "large"], answer: "dirty", exp: "Dirty is the opposite of clean." },
+                { type: "odd", q: "Which word is <b>NOT</b> an opposite of <b>Happy</b>?", options: ["Glad", "Sad", "Unhappy"], answer: "Glad", exp: "Glad means happy, so it is not an opposite!" },
+                { type: "odd", q: "Which word is <b>NOT</b> an opposite of <b>Big</b>?", options: ["Huge", "Small", "Little"], answer: "Huge", exp: "Huge means very large, not small!" },
+                { type: "odd", q: "Which word is <b>NOT</b> an opposite of <b>Fast</b>?", options: ["Quick", "Slow", "Sluggish"], answer: "Quick", exp: "Quick means fast, so it is not an opposite." },
+                { type: "odd", q: "Which word is <b>NOT</b> an opposite of <b>Day</b>?", options: ["Light", "Night", "Darkness"], answer: "Light", exp: "Light is a feature of daytime, not its opposite." },
+                { type: "odd", q: "Which word is <b>NOT</b> an opposite of <b>Clean</b>?", options: ["Fresh", "Dirty", "Messy"], answer: "Fresh", exp: "Fresh means clean, not the opposite." },
+                { type: "pair", q: "Which pair of words are <b>antonyms (opposites)</b>?", options: ["In / Out", "Big / Large", "Jump / Leap"], answer: "In / Out", exp: "In and Out are opposites." },
+                { type: "pair", q: "Which pair of words are <b>antonyms (opposites)</b>?", options: ["Come / Go", "Run / Sprint", "Happy / Glad"], answer: "Come / Go", exp: "Come and Go describe opposite movements." },
+                { type: "pair", q: "Which pair of words are <b>antonyms (opposites)</b>?", options: ["Start / Stop", "Quick / Fast", "Look / See"], answer: "Start / Stop", exp: "Start and Stop are direct opposites." },
+                { type: "pair", q: "Which pair of words are <b>antonyms (opposites)</b>?", options: ["Old / Young", "Small / Tiny", "Sad / Gloomy"], answer: "Old / Young", exp: "Old and Young are opposites." },
+                { type: "pair", q: "Which pair of words are <b>antonyms (opposites)</b>?", options: ["Soft / Hard", "Cry / Weep", "Glow / Shine"], answer: "Soft / Hard", exp: "Soft and Hard have opposite meanings." },
+                { type: "choice", q: "Opposite of <b>Old</b>?", options: ["Young", "Age", "Ancient", "Grey"], answer: "Young", exp: "Young is the opposite of old." },
+                { type: "choice", q: "Opposite of <b>In</b>?", options: ["Out", "Under", "Above", "Near"], answer: "Out", exp: "Out is the opposite of in." },
+                { type: "choice", q: "Opposite of <b>Come</b>?", options: ["Go", "Walk", "Stay", "Arrive"], answer: "Go", exp: "Go is the opposite of come." },
+                { type: "choice", q: "Opposite of <b>Start</b>?", options: ["Stop", "Begin", "Launch", "Open"], answer: "Stop", exp: "Stop is the opposite of start." },
+                { type: "choice", q: "Opposite of <b>Light</b>?", options: ["Dark", "Bright", "Sun", "White"], answer: "Dark", exp: "Dark is the opposite of light.", img: "moon" },
+                { type: "choice", q: "Opposite of <b>Boy</b>?", options: ["Girl", "Man", "Child", "Baby"], answer: "Girl", exp: "Girl is the opposite of boy." },
+                { type: "choice", q: "Opposite of <b>Yes</b>?", options: ["No", "Okay", "Sure", "Always"], answer: "No", exp: "No is the absolute opposite of yes." },
+                { type: "choice", q: "Opposite of <b>Cry</b>?", options: ["Laugh", "Weep", "Scream", "Shout"], answer: "Laugh", exp: "Laughing is the opposite of crying." },
+                { type: "choice", q: "Opposite of <b>Heavy</b>?", options: ["Light", "Fat", "Huge", "Hard"], answer: "Light", exp: "Light is the opposite of heavy." },
+                { type: "choice", q: "Opposite of <b>Soft</b>?", options: ["Hard", "Fluffy", "Smooth", "Gentle"], answer: "Hard", exp: "Hard is the opposite of soft." },
+                { type: "choice", q: "Opposite of <b>New</b>?", options: ["Old", "Fresh", "Young", "Modern"], answer: "Old", exp: "Old is the opposite of new." },
+                { type: "choice", q: "Opposite of <b>Sweet</b>?", options: ["Sour", "Sugary", "Tasty", "Yummy"], answer: "Sour", exp: "Sour is the opposite of sweet." },
+                { type: "choice", q: "Opposite of <b>Good</b>?", options: ["Bad", "Great", "Nice", "Fine"], answer: "Bad", exp: "Bad is the opposite of good." },
+                { type: "choice", q: "Opposite of <b>Dry</b>?", options: ["Wet", "Hot", "Sandy", "Warm"], answer: "Wet", exp: "Wet is the opposite of dry." },
+                { type: "choice", q: "Opposite of <b>Left</b>?", options: ["Right", "Wrong", "Top", "Front"], answer: "Right", exp: "Right is the opposite side of left." },
+                { type: "choice", q: "Opposite of <b>Front</b>?", options: ["Back", "Side", "Top", "First"], answer: "Back", exp: "Back is the opposite of front." },
+                { type: "choice", q: "Opposite of <b>Thin</b>?", options: ["Thick", "Skinny", "Short", "Small"], answer: "Thick", exp: "Thick is the opposite of thin." },
+                { type: "choice", q: "Opposite of <b>Quiet</b>?", options: ["Loud", "Silent", "Still", "Calm"], answer: "Loud", exp: "Loud is the opposite of quiet." },
+                { type: "choice", q: "Opposite of <b>Give</b>?", options: ["Take", "Share", "Send", "Offer"], answer: "Take", exp: "Taking is the opposite of giving." },
+                { type: "choice", q: "Opposite of <b>Buy</b>?", options: ["Sell", "Get", "Shop", "Keep"], answer: "Sell", exp: "Selling is the opposite of buying." },
+                { type: "choice", q: "Opposite of <b>Push</b>?", options: ["Pull", "Shove", "Move", "Kick"], answer: "Pull", exp: "Pull is the opposite of push." },
+                { type: "choice", q: "Opposite of <b>Near</b>?", options: ["Far", "Close", "Next", "Beside"], answer: "Far", exp: "Far is the opposite of near." },
+                { type: "choice", q: "Opposite of <b>Few</b>?", options: ["Many", "Some", "One", "None"], answer: "Many", exp: "Many is the opposite of few." },
+                { type: "choice", q: "Opposite of <b>On</b>?", options: ["Off", "Up", "Over", "Under"], answer: "Off", exp: "Off is the opposite of on." },
+                { type: "choice", q: "Opposite of <b>True</b>?", options: ["False", "Right", "Real", "Good"], answer: "False", exp: "False is the opposite of true." }
+            ],
+            medium: [
+                { type: "choice", q: "Find the antonym of <b>Brave</b>.", options: ["Cowardly", "Heroic", "Bold", "Strong"], answer: "Cowardly", exp: "Cowardly is the opposite of Brave." },
+                { type: "choice", q: "Find the antonym of <b>Early</b>.", options: ["Late", "Soon", "First", "Quick"], answer: "Late", exp: "Late is the opposite of Early." },
+                { type: "choice", q: "Find the antonym of <b>Heavy</b>.", options: ["Light", "Hard", "Massive", "Thick"], answer: "Light", exp: "Light is the opposite of Heavy." },
+                { type: "choice", q: "Find the antonym of <b>Soft</b>.", options: ["Hard", "Smooth", "Fluffy", "Gentle"], answer: "Hard", exp: "Hard is the opposite of Soft." },
+                { type: "choice", q: "Find the antonym of <b>Inside</b>.", options: ["Outside", "Inward", "Indoor", "Center"], answer: "Outside", exp: "Outside is the opposite of Inside." },
+                { type: "choice", q: "Find the antonym of <b>Near</b>.", options: ["Far", "Close", "Local", "Nearby"], answer: "Far", exp: "Far is the opposite of Near." },
+                { type: "choice", q: "Find the antonym of <b>Above</b>.", options: ["Below", "Over", "High", "Top"], answer: "Below", exp: "Below is the opposite of Above." },
+                { type: "choice", q: "Find the antonym of <b>Rich</b>.", options: ["Poor", "Wealthy", "Loaded", "Proud"], answer: "Poor", exp: "Poor is the opposite of Rich." },
+                { type: "choice", q: "Find the antonym of <b>Strong</b>.", options: ["Weak", "Powerful", "Tough", "Mighty"], answer: "Weak", exp: "Weak is the opposite of Strong." },
+                { type: "choice", q: "Find the antonym of <b>Easy</b>.", options: ["Difficult", "Simple", "Smooth", "Quick"], answer: "Difficult", exp: "Difficult is the opposite of Easy." },
+                { type: "sentence", q: "We had an <span class='highlight'>early</span> start today.", options: ["late", "fast", "soon", "morning"], answer: "late", exp: "Late is the opposite of early." },
+                { type: "sentence", q: "The box felt very <span class='highlight'>heavy</span> to carry.", options: ["light", "large", "hard", "empty"], answer: "light", exp: "Light is the opposite of heavy." },
+                { type: "sentence", q: "Please step <span class='highlight'>inside</span> the classroom.", options: ["outside", "indoor", "near", "away"], answer: "outside", exp: "Outside is the opposite of inside." },
+                { type: "sentence", q: "That quiz question was very <span class='highlight'>easy</span>.", options: ["difficult", "simple", "short", "funny"], answer: "difficult", exp: "Difficult is the opposite of easy." },
+                { type: "sentence", q: "I hope our team will <span class='highlight'>win</span> the trophy.", options: ["lose", "get", "keep", "find"], answer: "lose", exp: "Lose is the opposite of win." },
+                { type: "odd", q: "Which word is <b>NOT</b> an opposite of <b>Brave</b>?", options: ["Fearless", "Cowardly", "Fearful"], answer: "Fearless", exp: "Fearless means brave, so it is not an opposite!" },
+                { type: "odd", q: "Which word is <b>NOT</b> an opposite of <b>Early</b>?", options: ["Prompt", "Late", "Overdue"], answer: "Prompt", exp: "Prompt means on time or early." },
+                { type: "odd", q: "Which word is <b>NOT</b> an opposite of <b>Strong</b>?", options: ["Robust", "Weak", "Frail"], answer: "Robust", exp: "Robust means healthy and strong." },
+                { type: "odd", q: "Which word is <b>NOT</b> an opposite of <b>Rich</b>?", options: ["Wealthy", "Poor", "Needy"], answer: "Wealthy", exp: "Wealthy means rich, not the opposite." },
+                { type: "odd", q: "Which word is <b>NOT</b> an opposite of <b>Wet</b>?", options: ["Soggy", "Dry", "Arid"], answer: "Soggy", exp: "Soggy means very wet." },
+                { type: "pair", q: "Identify the opposite word pair:", options: ["Before / After", "Quick / Fast", "Large / Big"], answer: "Before / After", exp: "Before and After are opposites." },
+                { type: "pair", q: "Identify the opposite word pair:", options: ["Left / Right", "Smart / Clever", "Glad / Happy"], answer: "Left / Right", exp: "Left and Right are opposite directions." },
+                { type: "pair", q: "Identify the opposite word pair:", options: ["Dry / Wet", "Small / Tiny", "Shout / Yell"], answer: "Dry / Wet", exp: "Dry and Wet are opposites." },
+                { type: "pair", q: "Identify the opposite word pair:", options: ["Sharp / Dull", "Sad / Gloomy", "Chilly / Cold"], answer: "Sharp / Dull", exp: "Sharp and Dull are opposite states." },
+                { type: "pair", q: "Identify the opposite word pair:", options: ["Tight / Loose", "Tidy / Clean", "Begin / Start"], answer: "Tight / Loose", exp: "Tight and Loose are opposites." },
+                { type: "choice", q: "Opposite of <b>Win</b>?", options: ["Lose", "Victory", "Score", "Beat"], answer: "Lose", exp: "Lose is the opposite of win." },
+                { type: "choice", q: "Opposite of <b>Before</b>?", options: ["After", "First", "Prior", "Next"], answer: "After", exp: "After is the opposite of before." },
+                { type: "choice", q: "Opposite of <b>Smart</b>?", options: ["Foolish", "Clever", "Bright", "Wise"], answer: "Foolish", exp: "Foolish is the opposite of smart." },
+                { type: "choice", q: "Opposite of <b>Rough</b>?", options: ["Smooth", "Bumpy", "Hard", "Coarse"], answer: "Smooth", exp: "Smooth is the opposite of rough." },
+                { type: "choice", q: "Opposite of <b>Safe</b>?", options: ["Dangerous", "Secure", "Protected", "Good"], answer: "Dangerous", exp: "Dangerous is the opposite of safe." },
+                { type: "choice", q: "Opposite of <b>Beautiful</b>?", options: ["Ugly", "Pretty", "Lovely", "Fair"], answer: "Ugly", exp: "Ugly is the opposite of beautiful." },
+                { type: "choice", q: "Opposite of <b>Bright</b>?", options: ["Dull", "Shining", "Glowing", "Sunny"], answer: "Dull", exp: "Dull or dim is the opposite of bright." },
+                { type: "choice", q: "Opposite of <b>Sharp</b>?", options: ["Dull", "Pointy", "Keen", "Smart"], answer: "Dull", exp: "Dull is the opposite of sharp." },
+                { type: "choice", q: "Opposite of <b>Wild</b>?", options: ["Tame", "Fierce", "Free", "Crazy"], answer: "Tame", exp: "Tame is the opposite of wild." },
+                { type: "choice", q: "Opposite of <b>Deep</b>?", options: ["Shallow", "Low", "Bottomless", "Dark"], answer: "Shallow", exp: "Shallow is the opposite of deep." },
+                { type: "choice", q: "Opposite of <b>Thick</b>?", options: ["Thin", "Heavy", "Wide", "Fat"], answer: "Thin", exp: "Thin is the opposite of thick." },
+                { type: "choice", q: "Opposite of <b>Wide</b>?", options: ["Narrow", "Broad", "Large", "Long"], answer: "Narrow", exp: "Narrow is the opposite of wide." },
+                { type: "choice", q: "Opposite of <b>Sweet</b>?", options: ["Bitter", "Sugary", "Fresh", "Yummy"], answer: "Bitter", exp: "Bitter is an opposite of sweet." },
+                { type: "choice", q: "Opposite of <b>Tight</b>?", options: ["Loose", "Firm", "Stretched", "Close"], answer: "Loose", exp: "Loose is the opposite of tight." },
+                { type: "choice", q: "Opposite of <b>Clean</b>?", options: ["Dirty", "Pure", "Neat", "Fresh"], answer: "Dirty", exp: "Dirty is the opposite of clean." },
+                { type: "choice", q: "Opposite of <b>Heavens</b>?", options: ["Earth", "Sky", "Stars", "Clouds"], answer: "Earth", exp: "Earth is the opposite realm of the heavens." },
+                { type: "choice", q: "Opposite of <b>Asleep</b>?", options: ["Awake", "Sleeping", "Drowsy", "Tired"], answer: "Awake", exp: "Awake is the opposite of asleep." },
+                { type: "choice", q: "Opposite of <b>Polite</b>?", options: ["Rude", "Kind", "Nice", "Friendly"], answer: "Rude", exp: "Rude is the opposite of polite." },
+                { type: "choice", q: "Opposite of <b>Float</b>?", options: ["Sink", "Swim", "Sail", "Fly"], answer: "Sink", exp: "Sink is the opposite of float." },
+                { type: "choice", q: "Opposite of <b>Friendly</b>?", options: ["Hostile", "Kind", "Nice", "Cheerless"], answer: "Hostile", exp: "Hostile or unfriendly is the opposite of friendly." },
+                { type: "choice", q: "Opposite of <b>Cure</b>?", options: ["Harm", "Heal", "Fix", "Help"], answer: "Harm", exp: "Harm is the opposite action of curing." },
+                { type: "choice", q: "Opposite of <b>Gather</b>?", options: ["Scatter", "Collect", "Keep", "Join"], answer: "Scatter", exp: "Scatter is the opposite of gather." },
+                { type: "choice", q: "Opposite of <b>Loud</b>?", options: ["Quiet", "Noisy", "Rowdy", "Strong"], answer: "Quiet", exp: "Quiet is the opposite of loud." },
+                { type: "choice", q: "Opposite of <b>Heavy</b>?", options: ["Weightless", "Large", "Sturdy", "Huge"], answer: "Weightless", exp: "Weightless means having no weight, the opposite of heavy." },
+                { type: "choice", q: "Opposite of <b>Correct</b>?", options: ["Incorrect", "Right", "True", "Exact"], answer: "Incorrect", exp: "Incorrect is the opposite of correct." }
+            ],
+            hard: [
+                { type: "choice", q: "Find the antonym of <b>Ancient</b>.", options: ["Modern", "Old", "Aged", "Past"], answer: "Modern", exp: "Modern is the opposite of Ancient." },
+                { type: "choice", q: "Find the antonym of <b>Generous</b>.", options: ["Selfish", "Kind", "Giving", "Helpful"], answer: "Selfish", exp: "Selfish is the opposite of Generous." },
+                { type: "choice", q: "Find the antonym of <b>Polite</b>.", options: ["Rude", "Civil", "Nice", "Friendly"], answer: "Rude", exp: "Rude is the opposite of Polite." },
+                { type: "choice", q: "Find the antonym of <b>Protect</b>.", options: ["Harm", "Defend", "Guard", "Save"], answer: "Harm", exp: "Harm is the opposite of Protect." },
+                { type: "choice", q: "Find the antonym of <b>Expand</b>.", options: ["Reduce", "Grow", "Spread", "Stretch"], answer: "Reduce", exp: "Reduce or contract is the opposite of Expand." },
+                { type: "choice", q: "Find the antonym of <b>Accept</b>.", options: ["Reject", "Take", "Receive", "Agree"], answer: "Reject", exp: "Reject is the opposite of Accept." },
+                { type: "choice", q: "Find the antonym of <b>Arrive</b>.", options: ["Depart", "Enter", "Reach", "Land"], answer: "Depart", exp: "Depart means to leave, the opposite of arrive." },
+                { type: "choice", q: "Find the antonym of <b>Borrow</b>.", options: ["Lend", "Take", "Keep", "Steal"], answer: "Lend", exp: "Lend is the opposite of Borrow." },
+                { type: "choice", q: "Find the antonym of <b>Success</b>.", options: ["Failure", "Victory", "Win", "Goal"], answer: "Failure", exp: "Failure is the opposite of Success." },
+                { type: "choice", q: "Find the antonym of <b>Peaceful</b>.", options: ["Noisy", "Calm", "Quiet", "Serene"], answer: "Noisy", exp: "Noisy or chaotic is the opposite of Peaceful." },
+                { type: "sentence", q: "The history class visited an <span class='highlight'>ancient</span> castle.", options: ["modern", "old", "ruined", "stone"], answer: "modern", exp: "Modern is the opposite of ancient." },
+                { type: "sentence", q: "The ruler decided to <span class='highlight'>expand</span> the town borders.", options: ["reduce", "grow", "build", "protect"], answer: "reduce", exp: "Reduce is the opposite of expand." },
+                { type: "sentence", q: "The airplane is scheduled to <span class='highlight'>arrive</span> at noon.", options: ["depart", "land", "stay", "stop"], answer: "depart", exp: "Depart means to leave, the opposite of arrive." },
+                { type: "sentence", q: "His hard work led directly to <span class='highlight'>success</span>.", options: ["failure", "victory", "growth", "fame"], answer: "failure", exp: "Failure is the opposite of success." },
+                { type: "sentence", q: "The teacher asked us to be <span class='highlight'>careful</span> with the glassware.", options: ["careless", "watchful", "smart", "polite"], answer: "careless", exp: "Careless is the opposite of careful." },
+                { type: "odd", q: "Which word is <b>NOT</b> an opposite of <b>Generous</b>?", options: ["Charitable", "Selfish", "Stingy"], answer: "Charitable", exp: "Charitable means generous, so it's not an opposite!" },
+                { type: "odd", q: "Which word is <b>NOT</b> an opposite of <b>Polite</b>?", options: ["Courteous", "Rude", "Impolite"], answer: "Courteous", exp: "Courteous means polite, not the opposite." },
+                { type: "odd", q: "Which word is <b>NOT</b> an opposite of <b>Protect</b>?", options: ["Shield", "Harm", "Injure"], answer: "Shield", exp: "Shield means to protect, not the opposite." },
+                { type: "odd", q: "Which word is <b>NOT</b> an opposite of <b>Honest</b>?", options: ["Truthful", "Dishonest", "Deceitful"], answer: "Truthful", exp: "Truthful means honest, not the opposite." },
+                { type: "odd", q: "Which word is <b>NOT</b> an opposite of <b>Safe</b>?", options: ["Secure", "Dangerous", "Perilous"], answer: "Secure", exp: "Secure means safe, so it is not an opposite." },
+                { type: "pair", q: "Identify the antonym pair:", options: ["Comfortable / Uncomfortable", "Careful / Watchful", "Famous / Renowned"], answer: "Comfortable / Uncomfortable", exp: "These two words are direct opposites." },
+                { type: "pair", q: "Identify the antonym pair:", options: ["Positive / Negative", "Ancient / Old", "Brave / Heroic"], answer: "Positive / Negative", exp: "Positive and Negative are opposites." },
+                { type: "pair", q: "Identify the antonym pair:", options: ["True / False", "Smart / Intelligent", "Quick / Fast"], answer: "True / False", exp: "True and False are opposites." },
+                { type: "pair", q: "Identify the antonym pair:", options: ["Anxious / Calm", "Silent / Quiet", "Huge / Immense"], answer: "Anxious / Calm", exp: "Anxious and Calm are opposite emotional states." },
+                { type: "pair", q: "Identify the antonym pair:", options: ["Praise / Scold", "Help / Assist", "Stroll / Walk"], answer: "Praise / Scold", exp: "Praise and Scold are opposite actions." },
+                { type: "choice", q: "Opposite of <b>Honest</b>?", options: ["Dishonest", "Truthful", "Sincere", "Fair"], answer: "Dishonest", exp: "Dishonest is the opposite of honest." },
+                { type: "choice", q: "Opposite of <b>Comfortable</b>?", options: ["Uncomfortable", "Cozy", "Easy", "Pleasant"], answer: "Uncomfortable", exp: "Uncomfortable is the opposite of comfortable." },
+                { type: "choice", q: "Opposite of <b>Positive</b>?", options: ["Negative", "Good", "Sure", "Happy"], answer: "Negative", exp: "Negative is the opposite of positive." },
+                { type: "choice", q: "Opposite of <b>Abundant</b>?", options: ["Scarce", "Plentiful", "Ample", "Full"], answer: "Scarce", exp: "Scarce means rare or in short supply, opposite of abundant." },
+                { type: "choice", q: "Opposite of <b>Advance</b>?", options: ["Retreat", "Forward", "Move", "Proceed"], answer: "Retreat", exp: "Retreat means to go back, the opposite of advance." },
+                { type: "choice", q: "Opposite of <b>Amuse</b>?", options: ["Bore", "Entertain", "Please", "Cheer"], answer: "Bore", exp: "Bore is the opposite of amuse." },
+                { type: "choice", q: "Opposite of <b>Approve</b>?", options: ["Disapprove", "Accept", "Allow", "Like"], answer: "Disapprove", exp: "Disapprove is the opposite of approve." },
+                { type: "choice", q: "Opposite of <b>Bold</b>?", options: ["Timid", "Brave", "Heroic", "Loud"], answer: "Timid", exp: "Timid means shy or fearful, opposite of bold." },
+                { type: "choice", q: "Opposite of <b>Capture</b>?", options: ["Release", "Catch", "Hold", "Keep"], answer: "Release", exp: "Release is the opposite of capture." },
+                { type: "choice", q: "Opposite of <b>Combine</b>?", options: ["Separate", "Mix", "Join", "Unite"], answer: "Separate", exp: "Separate is the opposite of combine." },
+                { type: "choice", q: "Opposite of <b>Create</b>?", options: ["Destroy", "Make", "Build", "Design"], answer: "Destroy", exp: "Destroy is the opposite of create." },
+                { type: "choice", q: "Opposite of <b>Defend</b>?", options: ["Attack", "Protect", "Guard", "Shield"], answer: "Attack", exp: "Attack is the opposite of defend." },
+                { type: "choice", q: "Opposite of <b>Encourage</b>?", options: ["Discourage", "Support", "Help", "Cheer"], answer: "Discourage", exp: "Discourage is the opposite of encourage." },
+                { type: "choice", q: "Opposite of <b>Freeze</b>?", options: ["Melt", "Chill", "Ice", "Cool"], answer: "Melt", exp: "Melt is the opposite of freeze." },
+                { type: "choice", q: "Opposite of <b>Guilty</b>?", options: ["Innocent", "Blamed", "Wrong", "Faulty"], answer: "Innocent", exp: "Innocent is the opposite of guilty." },
+                { type: "choice", q: "Opposite of <b>Include</b>?", options: ["Exclude", "Add", "Contain", "Hold"], answer: "Exclude", exp: "Exclude is the opposite of include." },
+                { type: "choice", q: "Opposite of <b>Junior</b>?", options: ["Senior", "Young", "Child", "Minor"], answer: "Senior", exp: "Senior is the opposite rank or age status of junior." },
+                { type: "choice", q: "Opposite of <b>Knowledge</b>?", options: ["Ignorance", "Wisdom", "Learning", "Smartness"], answer: "Ignorance", exp: "Ignorance is the lack of knowledge." },
+                { type: "choice", q: "Opposite of <b>Maximum</b>?", options: ["Minimum", "Highest", "Most", "Top"], answer: "Minimum", exp: "Minimum is the opposite of maximum." },
+                { type: "choice", q: "Opposite of <b>Permanent</b>?", options: ["Temporary", "Lasting", "Fixed", "Stable"], answer: "Temporary", exp: "Temporary means lasting a short time, opposite of permanent." },
+                { type: "choice", q: "Opposite of <b>Plentiful</b>?", options: ["Scarce", "Abundant", "Many", "Full"], answer: "Scarce", exp: "Scarce means rare or hard to find, opposite of plentiful." },
+                { type: "choice", q: "Opposite of <b>Private</b>?", options: ["Public", "Secret", "Hidden", "Personal"], answer: "Public", exp: "Public is the opposite of private." },
+                { type: "choice", q: "Opposite of <b>Rare</b>?", options: ["Common", "Unusual", "Scarce", "Special"], answer: "Common", exp: "Common is the opposite of rare." },
+                { type: "choice", q: "Opposite of <b>Scatter</b>?", options: ["Collect", "Spread", "Throw", "Sow"], answer: "Collect", exp: "Collect is the opposite of scatter." },
+                { type: "choice", q: "Opposite of <b>Victory</b>?", options: ["Defeat", "Win", "Success", "Trophy"], answer: "Defeat", exp: "Defeat is the opposite of victory." }
+            ]
+        };
+
+        /* State management variables */
+        let currentLevel = 'easy';
+        let currentQuestions = [];
+        let currentIndex = 0;
+        let score = 0;
+        let userAnswers = []; 
+        let startTime = null;
+
+        // Audio synthesizer using Web Audio API exclusively
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(freq, type, duration) {
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = type;
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e) { console.log("Audio contextual block active until interaction."); }
+        }
+
+        function playClick() { playSound(600, 'sine', 0.1); }
+        function playCorrect() { playSound(880, 'triangle', 0.3); setTimeout(() => playSound(1200, 'triangle', 0.2), 100); }
+        function playWrong() { playSound(220, 'sawtooth', 0.4); }
+        function playWin() { 
+            playSound(523, 'sine', 0.2); 
+            setTimeout(() => playSound(659, 'sine', 0.2), 150);
+            setTimeout(() => playSound(784, 'sine', 0.2), 300);
+            setTimeout(() => playSound(1046, 'sine', 0.4), 450);
+        }
+
+        /* Shuffle utility function */
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        /* Core quiz initialization */
+        function startQuiz(level) {
+            playClick();
+            currentLevel = level;
+            // Create deep clone copy to safeguard structural persistence across restarts
+            let rawData = JSON.parse(JSON.stringify(questionsData[level]));
+            currentQuestions = shuffle(rawData).slice(0, 50); 
+            
+            currentIndex = 0;
+            score = 0;
+            userAnswers = new Array(50).fill(null);
+            startTime = new Date();
+
+            document.getElementById('start-screen').classList.remove('active');
+            document.getElementById('quiz-screen').classList.add('active');
+            
+            showQuestion();
+        }
+
+        function showQuestion() {
+            document.getElementById('counter-txt').innerText = `Question: ${currentIndex + 1}/50`;
+            document.getElementById('score-txt').innerText = `Score: ${score}`;
+            document.getElementById('progress-bar').style.width = `${((currentIndex + 1) / 50) * 100}%`;
+
+            const explanationBox = document.getElementById('explanation');
+            explanationBox.style.display = "none";
+            explanationBox.className = "explanation-box";
+            
+            const imgContainer = document.getElementById('image-container');
+            imgContainer.innerHTML = "";
+
+            const qItem = currentQuestions[currentIndex];
+            document.getElementById('question-text').innerHTML = qItem.q;
+
+            if(qItem.img && svgLibrary[qItem.img]) {
+                imgContainer.innerHTML = svgLibrary[qItem.img];
+            }
+
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = "";
+
+            if(!qItem.shuffledOptions) {
+                qItem.shuffledOptions = shuffle([...qItem.options]);
+            }
+
+            qItem.shuffledOptions.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "btn option-btn";
+                btn.innerHTML = opt;
+                btn.onclick = () => selectOption(btn, opt);
+                
+                if(userAnswers[currentIndex] !== null) {
+                    btn.disabled = true;
+                    if(opt === qItem.answer) btn.classList.add('correct');
+                    if(userAnswers[currentIndex] === opt && opt !== qItem.answer) btn.classList.add('wrong');
+                }
+
+                optionsContainer.appendChild(btn);
+            });
+
+            if(userAnswers[currentIndex] !== null) {
+                showExplanationBlock(userAnswers[currentIndex] === qItem.answer);
+            }
+
+            document.getElementById('prev-btn').disabled = (currentIndex === 0);
+        }
+
+        function selectOption(selectedBtn, chosenVal) {
+            const qItem = currentQuestions[currentIndex];
+            userAnswers[currentIndex] = chosenVal;
+
+            const buttons = document.querySelectorAll('#options-container .option-btn');
+            buttons.forEach(b => b.disabled = true);
+
+            const isCorrect = (chosenVal === qItem.answer);
+            if(isCorrect) {
+                selectedBtn.classList.add('correct');
+                score++;
+                document.getElementById('score-txt').innerText = `Score: ${score}`;
+                playCorrect();
+            } else {
+                selectedBtn.classList.add('wrong');
+                buttons.forEach(b => {
+                    if(b.innerHTML === qItem.answer) b.classList.add('correct');
+                });
+                playWrong();
+            }
+
+            showExplanationBlock(isCorrect);
+        }
+
+        function showExplanationBlock(isCorrect) {
+            const qItem = currentQuestions[currentIndex];
+            const explanationBox = document.getElementById('explanation');
+            explanationBox.style.display = "block";
+            
+            if(isCorrect) {
+                explanationBox.innerHTML = `✅ <b>Correct!</b> ${qItem.exp}`;
+                explanationBox.classList.add('correct-style');
+            } else {
+                explanationBox.innerHTML = `❌ <b>Not quite!</b> ${qItem.exp}`;
+                explanationBox.classList.add('wrong-style');
+            }
+        }
+
+        function nextQuestion() {
+            playClick();
+            if(currentIndex < 49) {
+                currentIndex++;
+                showQuestion();
+            } else {
+                finishQuiz();
+            }
+        }
+
+        function prevQuestion() {
+            playClick();
+            if(currentIndex > 0) {
+                currentIndex--;
+                showQuestion();
+            }
+        }
+
+        function goHome() {
+            playClick();
+            document.getElementById('quiz-screen').classList.remove('active');
+            document.getElementById('summary-screen').classList.remove('active');
+            document.getElementById('start-screen').classList.add('active');
+        }
+
+        function restartLevel() {
+            startQuiz(currentLevel);
+        }
+
+        function finishQuiz() {
+            playWin();
+            document.getElementById('quiz-screen').classList.remove('active');
+            document.getElementById('summary-screen').classList.add('active');
+
+            const pct = Math.round((score / 50) * 100);
+            const timeDiff = Math.round((new Date() - startTime) / 1000);
+            const minutes = Math.floor(timeDiff / 60);
+            const seconds = timeDiff % 60;
+            const timeStr = `${minutes}m ${seconds}s`;
+
+            let badge = "📚 Keep Practising";
+            if(pct >= 90) badge = "🏆 Antonym Master";
+            else if(pct >= 70) badge = "🌟 Vocabulary Explorer";
+            else if(pct >= 50) badge = "👍 Good Learner";
+
+            document.getElementById('badge-display').innerText = badge;
+            document.getElementById('sum-level').innerText = currentLevel.toUpperCase();
+            document.getElementById('sum-score').innerText = score;
+            document.getElementById('sum-percent').innerText = `${pct}%`;
+            document.getElementById('sum-time').innerText = timeStr;
+
+            localStorage.setItem(`antonyms_quiz_score_${currentLevel}`, score);
+
+            document.getElementById('cert-level-name').innerText = `ANTONYMS QUIZ - ${currentLevel.toUpperCase()} LEVEL`;
+            document.getElementById('cert-score').innerText = `${score} / 50 (${pct}%)`;
+            document.getElementById('cert-badge').innerText = `Awarded Achievement Badge: ${badge}`;
+
+            triggerConfetti();
+        }
+
+        function printCertificate() {
+            window.print();
+        }
+
+        function triggerConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.style.display = 'block';
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            let particles = [];
+            for(let i=0; i<100; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    r: Math.random() * 6 + 4,
+                    d: Math.random() * canvas.height,
+                    color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+                    tilt: Math.random() * 10 - 5
+                });
+            }
+
+            let animationTimer = 0;
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach((p, idx) => {
+                    ctx.beginPath();
+                    ctx.lineWidth = p.r;
+                    ctx.strokeStyle = p.color;
+                    ctx.moveTo(p.x + p.tilt + p.r/2, p.y);
+                    ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r/2);
+                    ctx.stroke();
+
+                    p.y += Math.cos(p.d) + 1 + p.r/2;
+                    p.x += Math.sin(0.01) * 2;
+                    
+                    if(p.y > canvas.height) {
+                        particles[idx] = {
+                            x: Math.random() * canvas.width,
+                            y: -20,
+                            r: p.r,
+                            d: p.d,
+                            color: p.color,
+                            tilt: Math.random() * 10 - 5
+                        };
+                    }
+                });
+
+                animationTimer++;
+                if(animationTimer < 250) {
+                    requestAnimationFrame(draw);
+                } else {
+                    canvas.style.display = 'none';
+                }
+            }
+            draw();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔊 Homophones Quiz</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #6c5ce7 0%, #a8a5ff 100%);
+            --easy-color: #00b894;
+            --medium-color: #fdcb6e;
+            --hard-color: #d63031;
+            --correct-color: #2ecc71;
+            --wrong-color: #e74c3c;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --text-color: #2d3436;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            color: var(--text-color);
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 750px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            text-align: center;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        /* Floating background decoration elements */
+        .floating-decor {
+            position: absolute;
+            font-size: 26px;
+            opacity: 0.2;
+            animation: floatAnim 5s ease-in-out infinite;
+            z-index: -1;
+        }
+        @keyframes floatAnim {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(15deg); }
+        }
+
+        h1 {
+            font-size: 2.6rem;
+            color: #ffffff;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            margin-bottom: 5px;
+        }
+
+        h2 {
+            font-size: 1.2rem;
+            color: #f1f5f9;
+            font-weight: 400;
+            margin-bottom: 25px;
+            letter-spacing: 0.5px;
+        }
+
+        .screen {
+            display: none;
+            animation: fadeIn 0.4s ease-in-out forwards;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Custom buttons styling */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 16px 24px;
+            margin: 14px 0;
+            border: none;
+            border-radius: 16px;
+            font-size: 1.25rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+            box-shadow: 0 5px 12px rgba(0,0,0,0.1);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-easy { background-color: var(--easy-color); color: white; }
+        .btn-easy:hover { background-color: #00a383; }
+        .btn-medium { background-color: var(--medium-color); color: #2d3436; }
+        .btn-medium:hover { background-color: #e1b12c; }
+        .btn-hard { background-color: var(--hard-color); color: white; }
+        .btn-hard:hover { background-color: #b82323; }
+        
+        .option-btn {
+            background-color: white;
+            color: var(--text-color);
+            text-align: left;
+            border: 2px solid #e2e8f0;
+        }
+        .option-btn:hover {
+            background-color: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        /* Feedback styling elements */
+        .option-btn.correct {
+            background-color: #dcfce7 !important;
+            border-color: var(--correct-color) !important;
+            color: #166534 !important;
+            font-weight: bold;
+        }
+        .option-btn.wrong {
+            background-color: #fee2e2 !important;
+            border-color: var(--wrong-color) !important;
+            color: #991b1b !important;
+        }
+
+        /* Progress Header bar structures */
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            color: white;
+            font-weight: bold;
+            font-size: 1.05rem;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 14px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 7px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: #00d2d3;
+            transition: width 0.3s ease;
+        }
+
+        /* Card and Question elements */
+        .card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+        }
+
+        .question-text {
+            font-size: 1.35rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .highlight {
+            background-color: #ffeaa7;
+            padding: 2px 8px;
+            border-radius: 6px;
+            border-bottom: 2px dashed #e1b12c;
+            font-weight: bold;
+        }
+
+        .quiz-image {
+            max-width: 110px;
+            height: auto;
+            margin: 0 auto 15px auto;
+            display: block;
+        }
+
+        /* Explanation section styling elements */
+        .explanation-box {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 14px;
+            font-weight: 500;
+            display: none;
+            text-align: left;
+            line-height: 1.4;
+            animation: fadeIn 0.3s ease;
+        }
+        .explanation-box.correct-style { background-color: #dcfce7; color: #166534; border-left: 6px solid var(--correct-color); }
+        .explanation-box.wrong-style { background-color: #fee2e2; color: #991b1b; border-left: 6px solid var(--wrong-color); }
+
+        /* Navigation system container */
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 25px;
+        }
+        .nav-btn {
+            flex: 1;
+            padding: 14px;
+            font-size: 1.05rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            background: white;
+            color: var(--text-color);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            transition: background 0.2s, transform 0.1s;
+        }
+        .nav-btn:active { transform: scale(0.97); }
+        .nav-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Summary configuration layouts */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin: 20px 0;
+        }
+        .summary-stat {
+            background: rgba(255,255,255,0.95);
+            padding: 12px;
+            border-radius: 14px;
+            font-weight: 600;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        }
+        .badge-display {
+            font-size: 1.6rem;
+            margin: 22px 0;
+            padding: 18px;
+            background: #fff;
+            border-radius: 18px;
+            border: 3px dashed #fdcb6e;
+            font-weight: bold;
+        }
+
+        /* Confetti Canvas Layout overlay */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
+        }
+
+        /* Certificate management configuration for print views */
+        @media print {
+            body * { visibility: hidden; }
+            #certificate-print, #certificate-print * { visibility: visible; }
+            #certificate-print { position: absolute; left: 0; top: 0; width: 100%; border: 12px double #6c5ce7; }
+        }
+
+        #certificate-print {
+            display: none;
+            background: white;
+            color: #2d3436;
+            padding: 40px 30px;
+            border: 10px double #6c5ce7;
+            border-radius: 16px;
+            margin-top: 25px;
+        }
+
+        @media(max-width: 500px) {
+            h1 { font-size: 1.9rem; }
+            .app-container { padding: 18px; }
+            .btn { padding: 14px 18px; font-size: 1.1rem; }
+            .question-text { font-size: 1.15rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <div class="app-container">
+        <div class="floating-decor" style="top:4%; left:6%;">⭐</div>
+        <div class="floating-decor" style="top:7%; right:9%;">📚</div>
+        <div class="floating-decor" style="bottom:5%; left:5%;">✏️</div>
+        <div class="floating-decor" style="bottom:9%; right:7%;">📖</div>
+
+        <h1>🔊 Homophones Quiz</h1>
+        <h2>Read • Think • Choose • Master Homophones</h2>
+
+        <div id="start-screen" class="screen active">
+            <div class="card" style="margin-bottom: 25px;">
+                <p style="font-size: 1.15rem; line-height: 1.6; font-weight: 500;">
+                    Welcome! Ready to practice words that <b>sound the same</b> but have <b>different meanings and spellings</b>? Choose a level below to start!
+                </p>
+            </div>
+            <button class="btn btn-easy" onclick="startQuiz('easy')">🟢 Easy Level (Classes 2-3)</button>
+            <button class="btn btn-medium" onclick="startQuiz('medium')">🟡 Medium Level (Classes 3-4)</button>
+            <button class="btn btn-hard" onclick="startQuiz('hard')">🔴 Hard Level (Classes 4-5)</button>
+        </div>
+
+        <div id="quiz-screen" class="screen">
+            <div class="quiz-header">
+                <span id="counter-txt">Question: 1/50</span>
+                <span id="score-txt">Score: 0</span>
+            </div>
+            <div class="progress-bar-container">
+                <div id="progress-bar" class="progress-bar"></div>
+            </div>
+
+            <div class="card">
+                <div id="image-container"></div>
+                <div id="question-text" class="question-text"></div>
+                <div id="options-container"></div>
+            </div>
+
+            <div id="explanation" class="explanation-box"></div>
+
+            <div class="nav-container">
+                <button id="prev-btn" class="nav-btn" onclick="prevQuestion()">⬅️ Previous</button>
+                <button id="home-btn" class="nav-btn" onclick="goHome()">🏠 Home</button>
+                <button id="next-btn" class="nav-btn" onclick="nextQuestion()">➡️ Next</button>
+            </div>
+        </div>
+
+        <div id="summary-screen" class="screen">
+            <div class="card">
+                <h3 style="font-size:1.7rem; margin-bottom:12px;">🎉 Level Completed!</h3>
+                <p>Outstanding job playing the Homophones Quiz!</p>
+                
+                <div class="badge-display" id="badge-display"></div>
+
+                <div class="summary-grid">
+                    <div class="summary-stat">Level: <span id="sum-level" style="color:var(--hard-color)"></span></div>
+                    <div class="summary-stat">Score: <span id="sum-score"></span>/50</div>
+                    <div class="summary-stat">Percentage: <span id="sum-percent"></span></div>
+                    <div class="summary-stat">Time Taken: <span id="sum-time"></span></div>
+                </div>
+            </div>
+
+            <button class="btn btn-easy" onclick="restartLevel()">🔄 Play Again</button>
+            <button class="btn btn-medium" onclick="goHome()">🏠 Choose Another Level</button>
+            <button class="btn btn-hard" onclick="printCertificate()">🖨️ Print Certificate</button>
+
+            <div id="certificate-print">
+                <h1 style="color:#6c5ce7; margin-bottom:12px; font-size:2.2rem;">📜 CERTIFICATE OF ACHIEVEMENT</h1>
+                <p style="font-size:1.25rem; margin:15px 0;">This proudly certifies completion of the</p>
+                <h2 style="color:#00b894; font-size:1.9rem; font-weight:bold; margin:12px 0;" id="cert-level-name">HOMOPHONES QUIZ</h2>
+                <p style="font-size:1.25rem; margin:15px 0;">With an excellent record performance score of</p>
+                <div style="font-size:2.2rem; font-weight:bold; color:#2d3436; margin:12px 0;" id="cert-score">50 / 50</div>
+                <p style="font-size:1.15rem; font-style:italic; margin-top:25px;" id="cert-badge">Awarded Status Badge: Master</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* SVGs generated dynamically for required visual assets to avoid loading empty elements */
+        const svgLibrary = {
+            sun: `<svg viewBox="0 0 100 100" class="quiz-image"><circle cx="50" cy="50" r="22" fill="#fdcb6e"/><path d="M50 8 V22 M50 78 V92 M8 50 H22 M78 50 H92 M20 20 L30 30 M70 70 L80 80 M20 80 L30 70 M70 20 L80 30" stroke="#fdcb6e" stroke-width="6" stroke-linecap="round"/></svg>`,
+            sea: `<svg viewBox="0 0 100 100" class="quiz-image"><path d="M10 50 Q30 40 50 50 T90 50 M10 65 Q30 55 50 65 T90 65" fill="none" stroke="#0984e3" stroke-width="6" stroke-linecap="round"/></svg>`,
+            bee: `<svg viewBox="0 0 100 100" class="quiz-image"><circle cx="50" cy="50" r="20" fill="#f1c40f"/><circle cx="42" cy="42" r="4" fill="#000"/><path d="M45 32 Q50 15 65 25 Z M55 35 Q65 15 75 30 Z" fill="#7ed6df"/><path d="M40 50 H60 M43 60 H57" stroke="#000" stroke-width="4"/></svg>`,
+            eye: `<svg viewBox="0 0 100 100" class="quiz-image"><path d="M10 50 Q50 15 90 50 Q50 85 10 50 Z" fill="none" stroke="#2d3436" stroke-width="5"/><circle cx="50" cy="50" r="16" fill="#0984e3"/><circle cx="50" cy="50" r="7" fill="#000"/></svg>`
+        };
+
+        /* Dataset containing exactly 50 completely unique items for each category level */
+        const quizDataset = {
+            easy: [
+                { type: "choice", q: "I can ___ a tiny bird singing outside.", options: ["see", "sea"], answer: "see", exp: "<b>See</b> means to look with your eyes. <b>Sea</b> is the big blue ocean.", img: "sea" },
+                { type: "choice", q: "The yellow ___ is bright and warm today.", options: ["sun", "son"], answer: "sun", exp: "<b>Sun</b> is the bright star in our sky. <b>Son</b> means a male child.", img: "sun" },
+                { type: "choice", q: "Look! A fuzzy yellow ___ landed on the flower.", options: ["bee", "be"], answer: "bee", exp: "<b>Bee</b> is a buzzing insect that makes honey. <b>Be</b> is an action word like 'be happy'.", img: "bee" },
+                { type: "choice", q: "She has one big brown ___ looking at me.", options: ["eye", "I"], answer: "eye", exp: "<b>Eye</b> is the part of your body used for seeing. <b>I</b> refers to yourself.", img: "eye" },
+                { type: "choice", q: "I have ___ little puppies playing in the yard.", options: ["two", "to", "too"], answer: "two", exp: "<b>Two</b> is the number 2. <b>To</b> shows direction. <b>Too</b> means also or extra." },
+                { type: "choice", q: "Our school football team ___ the final game!", options: ["won", "one"], answer: "won", exp: "<b>Won</b> means you finished first or got a prize. <b>One</b> is the number 1." },
+                { type: "choice", q: "No, I do not ___ the answer to this riddle.", options: ["know", "no"], answer: "know", exp: "<b>Know</b> means to have information in your mind. <b>No</b> is an opposite of yes." },
+                { type: "choice", q: "Please use your pencil to ___ your name.", options: ["write", "right"], answer: "write", exp: "<b>Write</b> means making letters or words on paper. <b>Right</b> means correct or a direction." },
+                { type: "choice", q: "We waved goodbye and said, '___! See you tomorrow!'", options: ["Bye", "By"], answer: "Bye", exp: "<b>Bye</b> is short for goodbye. <b>By</b> means next to or near something." },
+                { type: "choice", q: "Come over ___, so we can share the storybook.", options: ["here", "hear"], answer: "here", exp: "<b>Here</b> means in this place. <b>Hear</b> means listening with your ears." },
+                { type: "choice", q: "I am going ___ the public library to get a book.", options: ["to", "two", "too"], answer: "to", exp: "<b>To</b> is a word that shows direction or movement. <b>Two</b> is the number 2." },
+                { type: "choice", q: "My grandmother has a wonderful ___ who is my father.", options: ["son", "sun"], answer: "son", exp: "<b>Son</b> means a male child. <b>Sun</b> is the bright star in the sky." },
+                { type: "choice", q: "The big ship sailed across the stormy ___.", options: ["sea", "see"], answer: "sea", exp: "<b>Sea</b> is a large body of saltwater. <b>See</b> means to view with eyes." },
+                { type: "choice", q: "___ love eating sweet red strawberries.", options: ["I", "eye"], answer: "I", exp: "<b>I</b> is the word used when talking about yourself. <b>Eye</b> is used for seeing." },
+                { type: "choice", q: "Please sit down on the ___ side of the classroom.", options: ["right", "write"], answer: "right", exp: "<b>Right</b> means correct, or the side opposite of left. <b>Write</b> is to use a pen." },
+                { type: "choice", q: "I can ___ the loud music playing downstairs.", options: ["hear", "here"], answer: "hear", exp: "<b>Hear</b> means to receive sounds with your ears. <b>Here</b> means this location." },
+                { type: "choice", q: "The store is owned ___ a friendly old lady.", options: ["by", "bye"], answer: "by", exp: "<b>By</b> means near, next to, or done by someone. <b>Bye</b> is what you say when leaving." },
+                { type: "choice", q: "There is only ___ slice of chocolate cake left.", options: ["one", "won"], answer: "one", exp: "<b>One</b> is the number 1. <b>Won</b> means gained victory in a game." },
+                { type: "choice", q: "There are ___ many toys scattered on the floor.", options: ["too", "to", "two"], answer: "too", exp: "<b>Too</b> means an excess amount, or also. <b>To</b> is direction. <b>Two</b> is 2." },
+                { type: "choice", q: "Oh ___! I forgot my homework folder at home.", options: ["no", "know"], answer: "no", exp: "<b>No</b> is an exclamation of denial or refusal. <b>Know</b> means understanding." },
+                { type: "sentence", q: "Always try to ___ a good friend to everyone.", options: ["be", "bee"], answer: "be", exp: "<b>Be</b> is a verb meaning to exist or act. <b>Bee</b> is the stinging honey insect." },
+                { type: "sentence", q: "We walked down ___ the park together.", options: ["to", "too", "two"], answer: "to", exp: "<b>To</b> indicates moving toward a destination. <b>Two</b> is 2. <b>Too</b> means also." },
+                { type: "sentence", q: "Do you ___ how many stars are in the sky?", options: ["know", "no"], answer: "know", exp: "<b>Know</b> is to have knowledge of something. <b>No</b> means negative." },
+                { type: "sentence", q: "He finished ___ the puzzle all by himself.", options: ["one", "won"], answer: "one", exp: "<b>One</b> represents a single object. <b>Won</b> is winning a contest." },
+                { type: "sentence", q: "The teacher told us to use our ___ hand.", options: ["right", "write"], answer: "right", exp: "<b>Right</b> is a direction or means correct. <b>Write</b> means putting text down." },
+                { type: "sentence", q: "Put the box down ___ over there.", options: ["here", "hear"], answer: "here", exp: "<b>Here</b> means this specific spot. <b>Hear</b> is to listen to a sound." },
+                { type: "sentence", q: "The author is going to ___ a brand new story.", options: ["write", "right"], answer: "write", exp: "<b>Write</b> is to create words on paper. <b>Right</b> is correct or a direction." },
+                { type: "sentence", q: "My uncle has a young ___ named Leo.", options: ["son", "sun"], answer: "son", exp: "<b>Son</b> is a family relation (male child). <b>Sun</b> is the solar system star." },
+                { type: "sentence", q: "Can you ___ the whale jumping out of the water?", options: ["see", "sea"], answer: "see", exp: "<b>See</b> means using eyesight. <b>Sea</b> means the vast ocean habitat." },
+                { type: "sentence", q: "The book was written ___ my favorite author.", options: ["by", "bye"], answer: "by", exp: "<b>By</b> shows who created or performed the action. <b>Bye</b> is a farewell." },
+                { type: "blank", q: "The honey ___ flew straight back into its hive.", options: ["bee", "be"], answer: "bee", exp: "<b>Bee</b> is the honeybee insect. <b>Be</b> is to exist." },
+                { type: "blank", q: "I bought ___ apples from the grocery stand.", options: ["two", "to", "too"], answer: "two", exp: "<b>Two</b> is the numerical value 2. <b>To</b> is direction. <b>Too</b> means also." },
+                { type: "blank", q: "There is ___ chocolate left inside the tin box.", options: ["no", "know"], answer: "no", exp: "<b>No</b> means none or zero in this context. <b>Know</b> is mental understanding." },
+                { type: "blank", q: "Who ___ the gold medal at the sports day?", options: ["won", "one"], answer: "won", exp: "<b>Won</b> means earned victory. <b>One</b> is the number 1." },
+                { type: "blank", q: "Close your left ___ and count up to ten.", options: ["eye", "I"], answer: "eye", exp: "<b>Eye</b> is the organ of sight. <b>I</b> is the pronoun for oneself." },
+                { type: "blank", q: "Stand ___ next to the teacher's desk.", options: ["here", "hear"], answer: "here", exp: "<b>Here</b> signifies this immediate location. <b>Hear</b> relates to auditory sense." },
+                { type: "blank", q: "We watched the hot summer ___ sink below hills.", options: ["sun", "son"], answer: "sun", exp: "<b>Sun</b> is the daylight star. <b>Son</b> is a boy child." },
+                { type: "blank", q: "The pirate spent years out on the open ___.", options: ["sea", "see"], answer: "sea", exp: "<b>Sea</b> is the salt water ocean. <b>See</b> is to look." },
+                { type: "blank", q: "I ate an apple, and a banana ___.", options: ["too", "to", "two"], answer: "too", exp: "<b>Too</b> means 'as well' or 'also' in this sentence." },
+                { type: "blank", q: "Please don't forget to say ___ before you leave.", options: ["bye", "by"], answer: "bye", exp: "<b>Bye</b> is an expression used when parting. <b>By</b> is a preposition." },
+                { type: "find", q: "Find the correct word: 'I have ___ ears.'", options: ["two", "to", "too"], answer: "two", exp: "<b>Two</b> indicates the amount 2. Humans have two ears." },
+                { type: "find", q: "Find the correct word: 'Do you ___ the ABC song?'", options: ["know", "no"], answer: "know", exp: "<b>Know</b> means to understand or remember a fact." },
+                { type: "find", q: "Find the correct word: 'The pencil is ___ there on the floor.'", options: ["by", "bye"], answer: "by", exp: "<b>By</b> means near or beside something." },
+                { type: "find", q: "Find the correct word: 'Grandpa cannot ___ well without his aid.'", options: ["hear", "here"], answer: "hear", exp: "<b>Hear</b> is the ability to perceive sounds." },
+                { type: "find", q: "Find the correct word: 'The answer you gave is ___!'", options: ["right", "write"], answer: "right", exp: "<b>Right</b> means correct, accurate, or true." },
+                { type: "find", q: "Find the correct word: '___ am learning how to ride a bicycle.'", options: ["I", "eye"], answer: "I", exp: "<b>I</b> is used as the subject pronoun for yourself." },
+                { type: "find", q: "Find the correct word: 'We can ___ fishes swimming around.'", options: ["see", "sea"], answer: "see", exp: "<b>See</b> is the action of perceiving with eyes." },
+                { type: "find", q: "Find the correct word: 'The ___ rose early at five in the morning.'", options: ["sun", "son"], answer: "sun", exp: "<b>Sun</b> provides light during the day." },
+                { type: "find", q: "Find the correct word: 'The wizard had only ___ magical wand.'", options: ["one", "won"], answer: "one", exp: "<b>One</b> means a single count of something." },
+                { type: "find", q: "Find the correct word: 'It will ___ rainy later this afternoon.'", options: ["be", "bee"], answer: "be", exp: "<b>Be</b> is a linking verb expressing a state." }
+            ],
+            medium: [
+                { type: "choice", q: "We need to buy white ___ to bake a birthday cake.", options: ["flour", "flower"], answer: "flour", exp: "<b>Flour</b> is powder used for baking. <b>Flower</b> is a colorful plant blossom." },
+                { type: "choice", q: "The playful little puppy chased its own fluffy ___.", options: ["tail", "tale"], answer: "tail", exp: "<b>Tail</b> is the rear part of an animal body. <b>Tale</b> is an exciting story." },
+                { type: "choice", q: "I woke up feeling very tired and ___ from the flu.", options: ["weak", "week"], answer: "weak", exp: "<b>Weak</b> means having little strength. <b>Week</b> is a group of seven days." },
+                { type: "choice", q: "The cold wind ___ the yellow leaves off the branches.", options: ["blew", "blue"], answer: "blew", exp: "<b>Blew</b> is the past action of blowing wind. <b>Blue</b> is the color of the sky." },
+                { type: "choice", q: "The digger made a deep ___ in the garden mud.", options: ["hole", "whole"], answer: "hole", exp: "<b>Hole</b> is an empty opening in something. <b>Whole</b> means complete or all." },
+                { type: "choice", q: "The postman delivered a large package in the ___ today.", options: ["mail", "male"], answer: "mail", exp: "<b>Mail</b> means letters or packages sent. <b>Male</b> refers to men or boys." },
+                { type: "choice", q: "The grand boat has a massive white ___ to catch wind.", options: ["sail", "sale"], answer: "sail", exp: "<b>Sail</b> is fabric used to move a boat. <b>Sale</b> means selling things for money." },
+                { type: "choice", q: "We will ___ the new school principal tomorrow morning.", options: ["meet", "meat"], answer: "meet", exp: "<b>Meet</b> means coming together with someone. <b>Meat</b> is animal tissue eaten as food." },
+                { type: "choice", q: "Oh ___, thank you so much for this beautiful gift!", options: ["dear", "deer"], answer: "dear", exp: "<b>Dear</b> means loved, precious, or used in greetings. <b>Deer</b> is a forest animal." },
+                { type: "choice", q: "I ate a delicious, juicy ___ after my lunch.", options: ["pear", "pair"], answer: "pear", exp: "<b>Pear</b> is a sweet, edible green fruit. <b>Pair</b> means two things that match." },
+                { type: "choice", q: "The cars drove down the bumpy country ___.", options: ["road", "rode"], answer: "road", exp: "<b>Road</b> is a path built for vehicles. <b>Rode</b> is the past tense of riding." },
+                { type: "choice", q: "The brave ___ wore shiny armor and held a sword.", options: ["knight", "night"], answer: "knight", exp: "<b>Knight</b> is a historic warrior. <b>Night</b> is the dark period of the day." },
+                { type: "sentence", q: "She picked a pretty pink ___ from the bush.", options: ["flower", "flour"], answer: "flower", exp: "<b>Flower</b> is the bloom of a plant. <b>Flour</b> is used for making bread." },
+                { type: "sentence", q: "The storyteller told an ancient ___ about dragons.", options: ["tale", "tail"], answer: "tale", exp: "<b>Tale</b> is an imaginative story. <b>Tail</b> is what animals wag." },
+                { type: "sentence", q: "There are seven days in one single ___.", options: ["week", "weak"], answer: "week", exp: "<b>Week</b> is a duration of 7 days. <b>Weak</b> means lacking energy or force." },
+                { type: "sentence", q: "My favorite color is bright sky ___.", options: ["blue", "blew"], answer: "blue", exp: "<b>Blue</b> is a color. <b>Blew</b> is what the strong wind did." },
+                { type: "sentence", q: "He ate the ___ pizza without sharing a slice.", options: ["whole", "hole"], answer: "whole", exp: "<b>Whole</b> means complete, full, or entire. <b>Hole</b> is a hollow space." },
+                { type: "sentence", q: "The lion in the zoo is a ___ animal.", options: ["male", "mail"], answer: "male", exp: "<b>Male</b> indicates gender (boy/man). <b>Mail</b> is letters or post." },
+                { type: "sentence", q: "The local toy shop is having a holiday ___.", options: ["sale", "sail"], answer: "sale", exp: "<b>Sale</b> means items sold at cheaper prices. <b>Sail</b> is a canvas on a boat." },
+                { type: "sentence", q: "Vegetarians do not eat any kind of ___.", options: ["meat", "meet"], answer: "meat", exp: "<b>Meat</b> is animal flesh food. <b>Meet</b> means encountering a person." },
+                { type: "odd", q: "Which word fits an animal: 'The ___ leaped over the log.'", options: ["deer", "dear"], answer: "deer", exp: "<b>Deer</b> is an animal with antlers. <b>Dear</b> is a term of affection." },
+                { type: "odd", q: "Which word fits items: 'I bought a new ___ of shoes.'", options: ["pair", "pear"], answer: "pair", exp: "<b>Pair</b> means a matching set of two objects. <b>Pear</b> is a fruit." },
+                { type: "odd", q: "Which word fits travel: 'We ___ our bicycles to the park.'", options: ["rode", "road"], answer: "rode", exp: "<b>Rode</b> is the past tense of ride. <b>Road</b> is a paved street." },
+                { type: "odd", q: "Which word fits time: 'Stars shine brightest during the ___.'", options: ["night", "knight"], answer: "night", exp: "<b>Night</b> is when the sun goes down. <b>Knight</b> is a brave warrior." },
+                { type: "pair", q: "Select the word for the main hair on a lion's neck:", options: ["mane", "main"], answer: "mane", exp: "<b>Mane</b> is long hair around an animal's neck. <b>Main</b> means most important." },
+                { type: "pair", q: "Select the word for flat, level ground:", options: ["plain", "plane"], answer: "plain", exp: "<b>Plain</b> means flat land or simple. <b>Plane</b> is short for airplane." },
+                { type: "pair", q: "Select the word for steps leading upstairs:", options: ["stairs", "stares"], answer: "stairs", exp: "<b>Stairs</b> are structural steps. <b>Stares</b> means looking fixedly." },
+                { type: "pair", q: "Select the word for a window glass sheet:", options: ["pane", "pain"], answer: "pane", exp: "<b>Pane</b> is a sheet of glass. <b>Pain</b> is physical hurt or suffering." },
+                { type: "pair", q: "Select the word for a basic string or bundle:", options: ["cord", "chord"], answer: "cord", exp: "<b>Cord</b> is a thin rope or wire. <b>Chord</b> is a group of musical notes." },
+                { type: "choice", q: "The lion shook its thick golden ___ proudly.", options: ["mane", "main"], answer: "mane", exp: "<b>Mane</b> is the thick hair on a lion's neck. <b>Main</b> means chief or primary." },
+                { type: "choice", q: "We boarded a giant ___ to fly across the ocean.", options: ["plane", "plain"], answer: "plane", exp: "<b>Plane</b> is an airplane aircraft. <b>Plain</b> is a large flat field." },
+                { type: "choice", q: "She walked slowly up the wooden ___ to her bedroom.", options: ["stairs", "stares"], answer: "stairs", exp: "<b>Stairs</b> are steps for climbing. <b>Stares</b> means gazing for long times." },
+                { type: "choice", q: "I felt a sharp ___ when I stubbed my small toe.", options: ["pain", "pane"], answer: "pain", exp: "<b>Pain</b> is an unpleasant feeling of hurt. <b>Pane</b> is window glass." },
+                { type: "choice", q: "The chef chopped up a fresh ___ of garlic.", options: ["clove", "cleave"], answer: "clove", exp: "<b>Clove</b> is a single segment of a garlic bulb." },
+                { type: "choice", q: "The wooden floor boards were entirely ___ and bare.", options: ["bare", "bear"], answer: "bare", exp: "<b>Bare</b> means uncovered or empty. <b>Bear</b> is a large heavy wild mammal." },
+                { type: "choice", q: "The massive grizzly ___ caught a fish from the river.", options: ["bear", "bare"], answer: "bear", exp: "<b>Bear</b> is the mammal animal. <b>Bare</b> means naked or basic." },
+                { type: "choice", q: "The eagle flew high up into the ___ sky.", options: ["air", "heir"], answer: "air", exp: "<b>Air</b> is the invisible gas we breathe. <b>Heir</b> inherits property." },
+                { type: "choice", q: "He is the legal ___ to the royal throne.", options: ["heir", "air"], answer: "heir", exp: "<b>Heir</b> is someone who inherits titles or wealth. <b>Air</b> is the atmosphere." },
+                { type: "choice", q: "The simple drawing was drawn in a notebook ___.", options: ["book", "buuk"], answer: "book", exp: "<b>Book</b> is the correct English spelling for reading sheets." },
+                { type: "choice", q: "We must protect the environment and our ___ planet.", options: ["our", "hour"], answer: "our", exp: "<b>Our</b> belongs to us. <b>Hour</b> is a measure of sixty minutes." },
+                { type: "choice", q: "We waited for a full ___ inside the clinic.", options: ["hour", "our"], answer: "hour", exp: "<b>Hour</b> is a time period of 60 minutes. <b>Our</b> is possessive." },
+                { type: "choice", q: "The small boat was secured tightly to the ___.", options: ["pier", "peer"], answer: "pier", exp: "<b>Pier</b> is a structure built out into water. <b>Peer</b> means looking closely or an equal." },
+                { type: "choice", q: "The students were asked to ___ review each other's work.", options: ["peer", "pier"], answer: "peer", exp: "<b>Peer</b> means someone of the same age or status." },
+                { type: "choice", q: "She bought a beautiful decorative ___ for the table.", options: ["vase", "vays"], answer: "vase", exp: "<b>Vase</b> is a container used to hold cut flowers." },
+                { type: "choice", q: "My boots are covered in sticky ___ from the lane.", options: ["mud", "mudd"], answer: "mud", exp: "<b>Mud</b> is wet, soft earth or dirt." },
+                { type: "choice", q: "The direct ___ purpose of the rule is safety.", options: ["main", "mane"], answer: "main", exp: "<b>Main</b> means primary or most essential. <b>Mane</b> is neck hair." },
+                { type: "choice", q: "The field was just a wide, empty grassy ___.", options: ["plain", "plane"], answer: "plain", exp: "<b>Plain</b> is a broad area of flat land." },
+                { type: "choice", q: "He gave me an open, rude ___ that made me uncomfortable.", options: ["stare", "stair"], answer: "stare", exp: "<b>Stare</b> is looking directly for a long time." },
+                { type: "choice", q: "We need a replacement window ___ for the kitchen.", options: ["pane", "pain"], answer: "pane", exp: "<b>Pane</b> is the sheet of glass inside a window framework." },
+                { type: "choice", q: "The large tree had a very thick woody ___.", options: ["root", "route"], answer: "root", exp: "<b>Root</b> is the underground part of a plant. <b>Route</b> is a path taken." }
+            ],
+            hard: [
+                { type: "choice", q: "Please apply the emergency ___ before the car stops completely.", options: ["brake", "break"], answer: "brake", exp: "<b>Brake</b> stops a moving vehicle. <b>Break</b> means to smash or shatter." },
+                { type: "choice", q: "I would love a delicious ___ of strawberry cake.", options: ["piece", "peace"], answer: "piece", exp: "<b>Piece</b> is a part or slice of something. <b>Peace</b> means calm and quietness." },
+                { type: "choice", q: "The outdoor ___ is wonderful for a picnic today.", options: ["weather", "whether"], answer: "weather", exp: "<b>Weather</b> is the climate outside (rain, sun). <b>Whether</b> introduces a choice." },
+                { type: "choice", q: "The school ___ spoke to us during assembly.", options: ["principal", "principle"], answer: "principal", exp: "<b>Principal</b> is the head leader of a school. <b>Principle</b> is an important rule or truth." },
+                { type: "choice", q: "I bought pens and notebooks from the ___ shop.", options: ["stationery", "stationary"], answer: "stationery", exp: "<b>Stationery</b> means writing materials. <b>Stationary</b> means fixed in one place." },
+                { type: "choice", q: "The burglar tried to ___ valuable jewelry from the vault.", options: ["steal", "steel"], answer: "steal", exp: "<b>Steal</b> means taking things without permission. <b>Steel</b> is a very strong metal alloy." },
+                { type: "choice", q: "Students are not ___ to run down the corridors.", options: ["allowed", "aloud"], answer: "allowed", exp: "<b>Allowed</b> means permitted or given consent. <b>Aloud</b> means speaking audibly." },
+                { type: "choice", q: "He tied a colourful leather belt around his ___.", options: ["waist", "waste"], answer: "waist", exp: "<b>Waist</b> is the middle part of the human body. <b>Waste</b> means to use carelessly." },
+                { type: "choice", q: "The actor landed an exciting new ___ in the play.", options: ["role", "roll"], answer: "role", exp: "<b>Role</b> is a part played by an actor. <b>Roll</b> is turning over or a bread bun." },
+                { type: "choice", q: "I was extremely ___ because the movie was slow.", options: ["bored", "board"], answer: "bored", exp: "<b>Bored</b> means feeling tired or uninterested. <b>Board</b> is a flat plank of wood." },
+                { type: "sentence", q: "Be careful not to ___ the fragile glass vase.", options: ["break", "brake"], answer: "break", exp: "<b>Break</b> means to damage or shatter into pieces. <b>Brake</b> stops a vehicle." },
+                { type: "sentence", q: "The two countries signed a treaty to live in ___.", options: ["peace", "piece"], answer: "peace", exp: "<b>Peace</b> means freedom from war or disturbance. <b>Piece</b> is a fraction." },
+                { type: "sentence", q: "I don't know ___ it will rain or shine tomorrow.", options: ["whether", "weather"], answer: "whether", exp: "<b>Whether</b> expresses a doubt or choice between options. <b>Weather</b> is rain/sun." },
+                { type: "sentence", q: "Honesty is a core ___ that my family values.", options: ["principle", "principal"], answer: "principle", exp: "<b>Principle</b> is a fundamental moral rule. <b>Principal</b> is a school head." },
+                { type: "sentence", q: "The parked van remained completely ___ during the storm.", options: ["stationary", "stationery"], answer: "stationary", exp: "<b>Stationary</b> means completely motionless or still. <b>Stationery</b> is paper." },
+                { type: "sentence", q: "The skyscrapers are constructed out of reinforced ___.", options: ["steel", "steal"], answer: "steel", exp: "<b>Steel</b> is a durable construction metal. <b>Steal</b> means to thieve." },
+                { type: "sentence", q: "The teacher read the funny poem out ___ to the class.", options: ["aloud", "allowed"], answer: "aloud", exp: "<b>Aloud</b> means in a voice that can be heard clearly. <b>Allowed</b> means permitted." },
+                { type: "sentence", q: "Throwing plastic into the ocean is a horrible ___.", options: ["waste", "waist"], answer: "waste", exp: "<b>Waste</b> is bad management or garbage. <b>Waist</b> is a body area." },
+                { type: "sentence", q: "Please help me ___ up this large sleeping mat.", options: ["roll", "role"], answer: "roll", exp: "<b>Roll</b> means to turn or fold into a cylinder shape. <b>Role</b> is an actor's part." },
+                { type: "sentence", q: "We need to nail a long wooden ___ onto the fence.", options: ["board", "bored"], answer: "board", exp: "<b>Board</b> is a long piece of timber. <b>Bored</b> means lacking interest." },
+                { type: "blank", q: "The sweet rose flower had a wonderful, fresh ___.", options: ["scent", "cent", "sent"], answer: "scent", exp: "<b>Scent</b> is a fragrance or pleasant smell. <b>Cent</b> is coin money. <b>Sent</b> is past of send." },
+                { type: "blank", q: "I gave the cashier a dollar and received one ___ back.", options: ["cent", "scent", "sent"], answer: "cent", exp: "<b>Cent</b> is a small unit of money. <b>Scent</b> is smell. <b>Sent</b> is past of send." },
+                { type: "blank", q: "Mother ___ an email invitation to my birthday party.", options: ["sent", "scent", "cent"], answer: "sent", exp: "<b>Sent</b> is the past form of send. <b>Cent</b> is money. <b>Scent</b> is a fragrance." },
+                { type: "blank", q: "I enjoy eating a crunchy bowl of ___ for breakfast.", options: ["cereal", "serial"], answer: "cereal", exp: "<b>Cereal</b> is a grain breakfast food. <b>Serial</b> means arranged in a series." },
+                { type: "blank", q: "The detective investigated a ___ number on the engine block.", options: ["serial", "cereal"], answer: "serial", exp: "<b>Serial</b> means a sequential identifying number track." },
+                { type: "blank", q: "The powerful water ___ swept the logs down the river.", options: ["current", "currant"], answer: "current", exp: "<b>Current</b> is a flow of water/electricity. <b>Currant</b> is a small dried fruit." },
+                { type: "blank", q: "She baked a delicious scone filled with dried ___.", options: ["currant", "current"], answer: "currant", exp: "<b>Currant</b> is a tiny dried grape berry item. <b>Current</b> is flow." },
+                { type: "blank", q: "We had to ___ our travel plans due to heavy rain storms.", options: ["alter", "altar"], answer: "alter", exp: "<b>Alter</b> means to change or modify. <b>Altar</b> is a raised religious table." },
+                { type: "blank", q: "The priest walked up to the sacred stone ___.", options: ["altar", "alter"], answer: "altar", exp: "<b>Altar</b> is a ceremonial table structure. <b>Alter</b> means to change." },
+                { type: "blank", q: "The vehicle features a ___ exhaust system for power.", options: ["dual", "duel"], answer: "dual", exp: "<b>Dual</b> means having two parts or double. <b>Duel</b> is a contest between two people." },
+                { type: "context", q: "The historic knights fought a fierce sword ___.", options: ["duel", "dual"], answer: "duel", exp: "<b>Duel</b> is a formal combat match between two competitors." },
+                { type: "context", q: "The cheese grater is used to ___ cheddar blocks.", options: ["grate", "great"], answer: "grate", exp: "<b>Grate</b> means shredding food. <b>Great</b> means large or wonderful." },
+                { type: "context", q: "Alexander the ___ was a famous historical king.", options: ["Great", "Grate"], answer: "Great", exp: "<b>Great</b> means powerful, noble, or immense size." },
+                { type: "context", q: "The majestic deer walked gracefully across the ___.", options: ["moor", "more"], answer: "moor", exp: "<b>Moor</b> is an open area of wild hills. <b>More</b> means a larger amount." },
+                { type: "context", q: "I would love some ___ chocolate syrup on my ice cream.", options: ["more", "moor"], answer: "more", exp: "<b>More</b> signifies an additional quantity." },
+                { type: "context", q: "The old church tower had a loud copper ___.", options: ["bell", "belle"], answer: "bell", exp: "<b>Bell</b> is a hollow metal object that rings." },
+                { type: "context", q: "She was considered the beautiful ___ of the grand ball.", options: ["belle", "bell"], answer: "belle", exp: "<b>Belle</b> means a popular, highly attractive charming girl." },
+                { type: "context", q: "The coarse fabric felt very ___ against my skin.", options: ["coarse", "course"], answer: "coarse", exp: "<b>Coarse</b> means rough or harsh texture. <b>Course</b> is a learning class track." },
+                { type: "context", q: "We are completing an advanced science ___ this year.", options: ["course", "coarse"], answer: "course", exp: "<b>Course</b> is a series of lessons or lectures." },
+                { type: "context", q: "The high mountain ___ was covered in white snow.", options: ["peak", "pique"], answer: "peak", exp: "<b>Peak</b> is the highest top point of a mountain summit." },
+                { type: "context", q: "The mysterious puzzle served to ___ my deep curiosity.", options: ["pique", "peak"], answer: "pique", exp: "<b>Pique</b> means to excite, arouse, or stimulate interest." },
+                { type: "context", q: "The noble king had a long, peaceful imperial ___.", options: ["reign", "rain"], answer: "reign", exp: "<b>Reign</b> is the period of a monarch's rule. <b>Rain</b> is water from clouds." },
+                { type: "context", q: "We watched the dark grey clouds pour heavy ___.", options: ["rain", "reign"], answer: "rain", exp: "<b>Rain</b> is atmospheric water droplet precipitation." },
+                { type: "context", q: "The leather strap of the horse's ___ broke off.", options: ["rein", "rain"], answer: "rein", exp: "<b>Rein</b> is a strap used to guide and control a horse." },
+                { type: "context", q: "The master builder select an optimal construction ___.", options: ["site", "sight"], answer: "site", exp: "<b>Site</b> is a location ground or place. <b>Sight</b> is the power of seeing." },
+                { type: "context", q: "The sunset over the beach was a gorgeous ___.", options: ["sight", "site"], answer: "sight", exp: "<b>Sight</b> is something that is seen or viewed." },
+                { type: "context", q: "Please do not ___ any precious drinking water.", options: ["waste", "waist"], answer: "waste", exp: "<b>Waste</b> means utilizing a resource carelessly or throwing it away." },
+                { type: "context", q: "The heavy iron anchor is made of solid ___.", options: ["steel", "steal"], answer: "steel", exp: "<b>Steel</b> is a strong industrial iron metal alloy material." },
+                { type: "context", q: "The internal ___ rules of the game must be respected.", options: ["principal", "principle"], answer: "principle", exp: "<b>Principle</b> means a fundamental standard or guide rule." },
+                { type: "context", q: "I felt completely ___ out by the long boring lecture.", options: ["bored", "board"], answer: "bored", exp: "<b>Bored</b> means experiencing dullness or lack of interest." }
+            ]
+        };
+
+        /* Application state variable initializations */
+        let activeLevel = 'easy';
+        let activeQuestions = [];
+        let activeIndex = 0;
+        let runningScore = 0;
+        let selectedAnswers = []; 
+        let clockStart = null;
+
+        // Audio Engine Synthesis setup using standardized Web Audio API primitives
+        const soundContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        function emitSound(frequency, shape, lifespan) {
+            try {
+                const oscillator = soundContext.createOscillator();
+                const gainVolume = soundContext.createGain();
+                oscillator.connect(gainVolume);
+                gainVolume.connect(soundContext.destination);
+                oscillator.type = shape;
+                oscillator.frequency.value = frequency;
+                gainVolume.gain.setValueAtTime(0.12, soundContext.currentTime);
+                gainVolume.gain.exponentialRampToValueAtTime(0.005, soundContext.currentTime + lifespan);
+                oscillator.start();
+                oscillator.stop(soundContext.currentTime + lifespan);
+            } catch(error) { console.log("Audio contexts wait for user events."); }
+        }
+
+        function clickAudio() { emitSound(580, 'sine', 0.08); }
+        function correctAudio() { emitSound(840, 'triangle', 0.25); setTimeout(() => emitSound(1150, 'triangle', 0.18), 90); }
+        function wrongAudio() { emitSound(210, 'sawtooth', 0.38); }
+        function triumphAudio() { 
+            emitSound(520, 'sine', 0.15); 
+            setTimeout(() => emitSound(660, 'sine', 0.15), 140);
+            setTimeout(() => emitSound(790, 'sine', 0.15), 280);
+            setTimeout(() => emitSound(1050, 'sine', 0.35), 420);
+        }
+
+        /* Pure fisher-yates shuffle utility formula */
+        function randomizeArray(target) {
+            for (let index = target.length - 1; index > 0; index--) {
+                const pivot = Math.floor(Math.random() * (index + 1));
+                [target[index], target[pivot]] = [target[pivot], target[index]];
+            }
+            return target;
+        }
+
+        /* State routing operations */
+        function startQuiz(difficulty) {
+            clickAudio();
+            activeLevel = difficulty;
+            // Safe Deep clone to isolate operational runtime arrays from master data tracks
+            let extractedData = JSON.parse(JSON.stringify(quizDataset[difficulty]));
+            activeQuestions = randomizeArray(extractedData).slice(0, 50); 
+            
+            activeIndex = 0;
+            runningScore = 0;
+            selectedAnswers = new Array(50).fill(null);
+            clockStart = new Date();
+
+            document.getElementById('start-screen').classList.remove('active');
+            document.getElementById('quiz-screen').classList.add('active');
+            
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            document.getElementById('counter-txt').innerText = `Question: ${activeIndex + 1}/50`;
+            document.getElementById('score-txt').innerText = `Score: ${runningScore}`;
+            document.getElementById('progress-bar').style.width = `${((activeIndex + 1) / 50) * 100}%`;
+
+            const panelExpl = document.getElementById('explanation');
+            panelExpl.style.display = "none";
+            panelExpl.className = "explanation-box";
+            
+            const areaImg = document.getElementById('image-container');
+            areaImg.innerHTML = "";
+
+            const questionItem = activeQuestions[activeIndex];
+            document.getElementById('question-text').innerHTML = questionItem.q;
+
+            // Render illustration layout if defined in library map elements
+            if(questionItem.img && svgLibrary[questionItem.img]) {
+                areaImg.innerHTML = svgLibrary[questionItem.img];
+            }
+
+            const areaOptions = document.getElementById('options-container');
+            areaOptions.innerHTML = "";
+
+            if(!questionItem.scrambledOptions) {
+                questionItem.scrambledOptions = randomizeArray([...questionItem.options]);
+            }
+
+            questionItem.scrambledOptions.forEach(optionStr => {
+                const optionElement = document.createElement('button');
+                optionElement.className = "btn option-btn";
+                optionElement.innerHTML = optionStr;
+                optionElement.onclick = () => verifyChoice(optionElement, optionStr);
+                
+                // Keep selected layout persistent on re-navigation actions
+                if(selectedAnswers[activeIndex] !== null) {
+                    optionElement.disabled = true;
+                    if(optionStr === questionItem.answer) optionElement.classList.add('correct');
+                    if(selectedAnswers[activeIndex] === optionStr && optionStr !== questionItem.answer) optionElement.classList.add('wrong');
+                }
+
+                areaOptions.appendChild(optionElement);
+            });
+
+            if(selectedAnswers[activeIndex] !== null) {
+                displayExplanationContent(selectedAnswers[activeIndex] === questionItem.answer);
+            }
+
+            document.getElementById('prev-btn').disabled = (activeIndex === 0);
+        }
+
+        function verifyChoice(chosenButton, answerString) {
+            const currentItem = activeQuestions[activeIndex];
+            selectedAnswers[activeIndex] = answerString;
+
+            const allOptions = document.querySelectorAll('#options-container .option-btn');
+            allOptions.forEach(opt => opt.disabled = true);
+
+            const correctnessValue = (answerString === currentItem.answer);
+            if(correctnessValue) {
+                chosenButton.classList.add('correct');
+                runningScore++;
+                document.getElementById('score-txt').innerText = `Score: ${runningScore}`;
+                correctAudio();
+            } else {
+                chosenButton.classList.add('wrong');
+                allOptions.forEach(opt => {
+                    if(opt.innerHTML === currentItem.answer) opt.classList.add('correct');
+                });
+                wrongAudio();
+            }
+
+            displayExplanationContent(correctnessValue);
+        }
+
+        function displayExplanationContent(isCorrect) {
+            const activeItem = activeQuestions[activeIndex];
+            const explanationBoxElement = document.getElementById('explanation');
+            explanationBoxElement.style.display = "block";
+            
+            if(isCorrect) {
+                explanationBoxElement.innerHTML = `✅ <b>Correct!</b> ${activeItem.exp}`;
+                explanationBoxElement.classList.add('correct-style');
+            } else {
+                explanationBoxElement.innerHTML = `❌ <b>Not quite!</b> ${activeItem.exp}`;
+                explanationBoxElement.classList.add('wrong-style');
+            }
+        }
+
+        function nextQuestion() {
+            clickAudio();
+            if(activeIndex < 49) {
+                activeIndex++;
+                renderQuestion();
+            } else {
+                processEvaluation();
+            }
+        }
+
+        function prevQuestion() {
+            clickAudio();
+            if(activeIndex > 0) {
+                activeIndex--;
+                renderQuestion();
+            }
+        }
+
+        function goHome() {
+            clickAudio();
+            document.getElementById('quiz-screen').classList.remove('active');
+            document.getElementById('summary-screen').classList.remove('active');
+            document.getElementById('start-screen').classList.add('active');
+        }
+
+        function restartLevel() {
+            startQuiz(activeLevel);
+        }
+
+        function processEvaluation() {
+            triumphAudio();
+            document.getElementById('quiz-screen').classList.remove('active');
+            document.getElementById('summary-screen').classList.add('active');
+
+            const scorePercentage = Math.round((runningScore / 50) * 100);
+            const secondsElapsed = Math.round((new Date() - clockStart) / 1000);
+            const displayMin = Math.floor(secondsElapsed / 60);
+            const displaySec = secondsElapsed % 60;
+            const absoluteTimeString = `${displayMin}m ${displaySec}s`;
+
+            let awardedBadge = "📚 Keep Practising";
+            if(scorePercentage >= 90) awardedBadge = "🏆 Homophone Master";
+            else if(scorePercentage >= 70) awardedBadge = "🌟 Word Explorer";
+            else if(scorePercentage >= 50) awardedBadge = "👍 Good Learner";
+
+            document.getElementById('badge-display').innerText = awardedBadge;
+            document.getElementById('sum-level').innerText = activeLevel.toUpperCase();
+            document.getElementById('sum-score').innerText = runningScore;
+            document.getElementById('sum-percent').innerText = `${scorePercentage}%`;
+            document.getElementById('sum-time').innerText = absoluteTimeString;
+
+            // Save historical score configurations locally
+            localStorage.setItem(`homophones_highscore_${activeLevel}`, runningScore);
+
+            document.getElementById('cert-level-name').innerText = `HOMOPHONES QUIZ - ${activeLevel.toUpperCase()} LEVEL`;
+            document.getElementById('cert-score').innerText = `${runningScore} / 50 (${scorePercentage}%)`;
+            document.getElementById('cert-badge').innerText = `Awarded Achievement Status Badge: ${awardedBadge}`;
+
+            launchConfettiFX();
+        }
+
+        function printCertificate() {
+            window.print();
+        }
+
+        function launchConfettiFX() {
+            const canvasObj = document.getElementById('confetti-canvas');
+            const renderingContext = canvasObj.getContext('2d');
+            canvasObj.style.display = 'block';
+            canvasObj.width = window.innerWidth;
+            canvasObj.height = window.innerHeight;
+
+            let cluster = [];
+            for(let particleCount=0; particleCount<100; particleCount++) {
+                cluster.push({
+                    x: Math.random() * canvasObj.width,
+                    y: Math.random() * canvasObj.height - canvasObj.height,
+                    r: Math.random() * 6 + 5,
+                    d: Math.random() * canvasObj.height,
+                    color: `hsl(${Math.random() * 360}, 95%, 60%)`,
+                    tilt: Math.random() * 12 - 6
+                });
+            }
+
+            let loopCount = 0;
+            function animateConfettiLoop() {
+                renderingContext.clearRect(0, 0, canvasObj.width, canvasObj.height);
+                cluster.forEach((part, indexVal) => {
+                    renderingContext.beginPath();
+                    renderingContext.lineWidth = part.r;
+                    renderingContext.strokeStyle = part.color;
+                    renderingContext.moveTo(part.x + part.tilt + part.r/2, part.y);
+                    renderingContext.lineTo(part.x + part.tilt, part.y + part.tilt + part.r/2);
+                    renderingContext.stroke();
+
+                    part.y += Math.cos(part.d) + 1 + part.r/2;
+                    part.x += Math.sin(0.02) * 2;
+                    
+                    if(part.y > canvasObj.height) {
+                        cluster[indexVal] = {
+                            x: Math.random() * canvasObj.width,
+                            y: -25,
+                            r: part.r,
+                            d: part.d,
+                            color: part.color,
+                            tilt: Math.random() * 12 - 6
+                        };
+                    }
+                });
+
+                loopCount++;
+                if(loopCount < 260) {
+                    requestAnimationFrame(animateConfettiLoop);
+                } else {
+                    canvasObj.style.display = 'none';
+                }
+            }
+            animateConfettiLoop();
+        }
+    </script>
+</body>
+</html>

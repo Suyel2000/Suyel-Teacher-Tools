@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>👨👩 Gender Quiz</title>
+    <style>
+        :root {
+            --primary-bg: linear-gradient(135deg, #ffdee9 0%, #b5fffc 100%);
+            --card-bg: rgba(255, 255, 255, 0.88);
+            --card-border: rgba(255, 255, 255, 0.7);
+            --text-main: #1e293b;
+            --text-muted: #475569;
+            --easy-color: #10b981;
+            --medium-color: #f59e0b;
+            --hard-color: #ef4444;
+            --correct-bg: #e2fbf0;
+            --correct-border: #10b981;
+            --wrong-bg: #fee2e2;
+            --wrong-border: #ef4444;
+            --accent-blue: #3b82f6;
+            --shadow: 0 10px 30px -5px rgba(51, 65, 85, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Comic Sans MS', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--primary-bg);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-main);
+            padding: 16px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Background Decorations */
+        .bg-deco {
+            position: absolute;
+            font-size: 3.5rem;
+            opacity: 0.18;
+            pointer-events: none;
+            animation: float 8s ease-in-out infinite;
+            z-index: 0;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 780px;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 3px solid var(--card-border);
+            border-radius: 32px;
+            padding: 35px;
+            box-shadow: var(--shadow);
+            z-index: 10;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+            animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            font-size: 2.6rem;
+            text-align: center;
+            color: #1e3a8a;
+            margin-bottom: 10px;
+            font-weight: 800;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            margin-bottom: 35px;
+            font-weight: 600;
+        }
+
+        .btn-grid {
+            display: grid;
+            gap: 20px;
+            grid-template-columns: 1fr;
+            margin-top: 25px;
+        }
+
+        .lvl-btn {
+            padding: 20px 24px;
+            border: none;
+            border-radius: 20px;
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            box-shadow: 0 6px 12px -2px rgba(0,0,0,0.15);
+        }
+
+        .lvl-btn:active {
+            transform: scale(0.97);
+        }
+
+        .lvl-easy { background: var(--easy-color); }
+        .lvl-medium { background: var(--medium-color); }
+        .lvl-hard { background: var(--hard-color); }
+
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 22px;
+            font-weight: 700;
+            font-size: 1.05rem;
+            background: rgba(255,255,255,0.6);
+            padding: 12px 20px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 14px;
+            background: #e2e8f0;
+            border-radius: 7px;
+            margin-bottom: 30px;
+            overflow: hidden;
+            border: 1px solid #cbd5e1;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #10b981, #3b82f6);
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .question-box {
+            background: white;
+            padding: 26px;
+            border-radius: 20px;
+            border: 2px solid #e2e8f0;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            text-align: center;
+        }
+
+        .question-text {
+            font-size: 1.45rem;
+            font-weight: 700;
+            line-height: 1.5;
+            color: #0f172a;
+        }
+
+        .question-art-container {
+            display: flex;
+            justify-content: center;
+            margin: 16px 0;
+        }
+
+        .question-art {
+            width: 120px;
+            height: 120px;
+            background: #f8fafc;
+            border-radius: 24px;
+            border: 3px dashed #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.8rem;
+            animation: pulse 2s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.05); }
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 520px) {
+            .options-grid { grid-template-columns: 1fr; }
+        }
+
+        .option-btn {
+            background: white;
+            border: 2px solid #cbd5e1;
+            padding: 18px 22px;
+            border-radius: 18px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        .option-btn:hover {
+            border-color: var(--accent-blue);
+            background: #eff6ff;
+            transform: translateY(-2px);
+        }
+
+        .option-btn.correct {
+            background: var(--correct-bg) !important;
+            border-color: var(--correct-border) !important;
+            color: #065f46 !important;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.4);
+        }
+
+        .option-btn.wrong {
+            background: var(--wrong-bg) !important;
+            border-color: var(--wrong-border) !important;
+            color: #991b1b !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.4);
+        }
+
+        .option-btn:disabled {
+            pointer-events: none;
+        }
+
+        .explanation-box {
+            display: none;
+            padding: 18px;
+            border-radius: 18px;
+            margin-bottom: 25px;
+            font-size: 1.15rem;
+            font-weight: 600;
+            line-height: 1.5;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .explanation-box.correct-style {
+            display: block;
+            background: var(--correct-bg);
+            border-left: 6px solid var(--correct-border);
+            color: #065f46;
+        }
+
+        .explanation-box.wrong-style {
+            display: block;
+            background: var(--wrong-bg);
+            border-left: 6px solid var(--wrong-border);
+            color: #991b1b;
+        }
+
+        /* Fixed Navigation Order Setup */
+        .nav-controls {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            gap: 14px;
+            margin-top: 15px;
+            border-top: 3px solid #e2e8f0;
+            padding-top: 22px;
+        }
+
+        .nav-btn {
+            padding: 15px 22px;
+            border: none;
+            border-radius: 16px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+            background: #e2e8f0;
+            color: var(--text-main);
+            min-height: 52px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            background: #cbd5e1;
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .nav-btn.primary-nav {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        .nav-btn.primary-nav:hover:not(:disabled) {
+            background: #2563eb;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 16px;
+            border-radius: 16px;
+            border: 2px solid #e2e8f0;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .badge-container {
+            text-align: center;
+            margin: 25px 0;
+            padding: 22px;
+            background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%);
+            border-radius: 20px;
+            border: 3px dashed #fbbf24;
+        }
+
+        .badge-icon {
+            font-size: 4.5rem;
+            margin-bottom: 12px;
+            animation: bounce 1.4s infinite alternate;
+        }
+
+        @keyframes bounce {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-10px); }
+        }
+
+        .badge-title {
+            font-size: 1.55rem;
+            font-weight: 800;
+            color: #92400e;
+        }
+
+        .high-scores {
+            margin-top: 30px;
+            background: rgba(255,255,255,0.6);
+            padding: 18px;
+            border-radius: 18px;
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+        .high-scores h3 {
+            margin-bottom: 12px;
+            color: #1e3a8a;
+            font-size: 1.15rem;
+            text-align: center;
+        }
+        .score-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px dashed rgba(0,0,0,0.1);
+            font-size: 1.05rem;
+        }
+        .score-row:last-child { border: none; }
+
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 100;
+            display: none;
+        }
+
+        /* Print Media Styles */
+        #certificate-print-area {
+            display: none;
+            background: white;
+            border: 16px double #1e3a8a;
+            padding: 45px;
+            text-align: center;
+            font-family: 'Georgia', serif;
+            color: #1e293b;
+        }
+        .cert-title { font-size: 2.8rem; color: #1e3a8a; font-weight: bold; margin-bottom: 25px; }
+        .cert-name { font-size: 2rem; font-style: italic; margin: 25px 0; border-bottom: 3px solid #cbd5e1; display: inline-block; padding: 0 40px; }
+        .cert-meta { font-size: 1.2rem; color: #475569; margin-top: 35px; line-height: 1.8; }
+
+        @media print {
+            body * { display: none !important; }
+            #certificate-print-area, #certificate-print-area * { display: block !important; }
+            #certificate-print-area { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-deco" style="top: 8%; left: 6%;">📖</div>
+    <div class="bg-deco" style="top: 14%; right: 8%; animation-delay: 1.5s;">⭐</div>
+    <div class="bg-deco" style="bottom: 10%; left: 10%; animation-delay: 3s;">✏️</div>
+    <div class="bg-deco" style="bottom: 14%; right: 6%; animation-delay: 4.5s;">👑</div>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <div class="container">
+        
+        <div id="start-screen" class="screen active">
+            <h1>👨👩 Gender Quiz</h1>
+            <p class="subtitle">Identify • Match • Learn • Master Gender</p>
+            
+            <div class="btn-grid">
+                <button class="lvl-btn lvl-easy" onclick="startQuiz('easy')">
+                    <span>🟢 Easy Level</span>
+                    <span style="font-size: 0.9rem; font-weight: 600; opacity: 0.95;">Classes 1–2 (Boy & Girl / Male & Female Animals)</span>
+                </button>
+                <button class="lvl-btn lvl-medium" onclick="startQuiz('medium')">
+                    <span>🟡 Medium Level</span>
+                    <span style="font-size: 0.9rem; font-weight: 600; opacity: 0.95;">Classes 3–4 (Masculine, Feminine, Common, Neuter)</span>
+                </button>
+                <button class="lvl-btn lvl-hard" onclick="startQuiz('hard')">
+                    <span>🔴 Hard Level</span>
+                    <span style="font-size: 0.9rem; font-weight: 600; opacity: 0.95;">Classes 4–5 (Sentences, Irregular Pairs, Harder Nouns)</span>
+                </button>
+            </div>
+
+            <div class="high-scores">
+                <h3>🏆 Personal High Scores</h3>
+                <div id="high-scores-body"></div>
+            </div>
+        </div>
+
+        <div id="quiz-screen" class="screen">
+            <div class="quiz-header">
+                <div id="level-indicator">Level: Easy</div>
+                <div id="score-counter">Score: 0</div>
+                <div id="question-counter">Question: 1/50</div>
+            </div>
+
+            <div class="progress-container">
+                <div id="quiz-progress-bar" class="progress-bar"></div>
+            </div>
+
+            <div class="question-box">
+                <div id="art-wrapper" class="question-art-container"></div>
+                <div id="question-text" class="question-text">Loading question...</div>
+            </div>
+
+            <div id="options-container" class="options-grid"></div>
+            <div id="explanation-container" class="explanation-box"></div>
+
+            <div class="nav-controls">
+                <button id="prev-btn" class="nav-btn" onclick="handlePrevious()">⬅️ Previous</button>
+                <button id="home-btn" class="nav-btn" onclick="handleHome()">🏠 Home</button>
+                <button id="next-btn" class="nav-btn primary-nav" onclick="handleNext()">➡️ Next</button>
+            </div>
+        </div>
+
+        <div id="summary-screen" class="screen">
+            <h1>🎉 Level Complete!</h1>
+            <p class="subtitle" id="summary-level-name">Performance Analysis</p>
+
+            <div class="badge-container">
+                <div id="summary-badge-icon" class="badge-icon">🏆</div>
+                <div id="summary-badge-title" class="badge-title">Gender Master</div>
+            </div>
+
+            <div class="summary-stats">
+                <div class="stat-card">
+                    <div class="stat-label">Final Score</div>
+                    <div class="stat-value" id="stat-score">0 / 50</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Percentage</div>
+                    <div class="stat-value" id="stat-percent">0%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Time Taken</div>
+                    <div class="stat-value" id="stat-time">0s</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Accuracy Breakdown</div>
+                    <div class="stat-value" id="stat-accuracy" style="font-size: 1.15rem; padding-top: 4px;">0C / 0W</div>
+                </div>
+            </div>
+
+            <div class="btn-grid" style="grid-template-columns: 1fr 1fr; gap: 12px;">
+                <button class="lvl-btn lvl-easy" style="font-size: 1.1rem; padding: 14px;" onclick="restartCurrentLevel()">🔄 Play Again</button>
+                <button class="lvl-btn lvl-medium" style="font-size: 1.1rem; padding: 14px; color: #1e293b;" onclick="handleHome()">📋 Menu Panel</button>
+            </div>
+            <button class="lvl-btn lvl-hard" style="font-size: 1.1rem; padding: 14px; margin-top: 14px; width: 100%; background: #4f46e5;" onclick="window.print()">🖨️ Print Certificate</button>
+        </div>
+
+    </div>
+
+    <div id="certificate-print-area">
+        <div class="cert-title">Certificate of Achievement</div>
+        <p style="font-size: 1.4rem; margin-bottom: 12px;">This certifies that an excellent primary grammar student has completed</p>
+        <div class="cert-name">The Interactive English Grammar Gender Masterclass</div>
+        <p class="cert-meta">
+            <strong>Target Stream Metric:</strong> <span id="cert-level">-</span><br>
+            <strong>Total Correct Score:</strong> <span id="cert-score">-</span><br>
+            <strong>Achievement Badge Unlocked:</strong> <span id="cert-badge">-</span><br>
+            <strong>System Date Checked:</strong> <span id="cert-date">-</span>
+        </p>
+        <div style="margin-top: 60px; display: flex; justify-content: space-around; font-size: 1.1rem;">
+            <div>🏫 Primary Literacy Academy<br><small>Verified App Signature</small></div>
+            <div>🌟 Star Student Award Desk<br><small>Grammar Application Suite</small></div>
+        </div>
+    </div>
+
+    <script>
+        // --- 150 DIVERSIFIED ENGLISH GENDER GRAMMAR QUESTIONS ---
+        const EASY_QUESTIONS = [
+            { q: "Choose the feminine gender of Boy.", a: ["Girl", "Brother", "Uncle", "Son"], c: "Girl", art: "👦", e: "Girl is the feminine gender of Boy." },
+            { q: "Choose the masculine gender of Hen.", a: ["Cock", "Duck", "Goose", "Cow"], c: "Cock", art: "🐓", e: "Cock is the masculine gender of Hen." },
+            { q: "Choose the feminine gender of King.", a: ["Queen", "Princess", "Lady", "Woman"], c: "Queen", art: "👑", e: "Queen is the feminine gender of King." },
+            { q: "Choose the masculine gender of Mother.", a: ["Father", "Brother", "Uncle", "Son"], c: "Father", art: "👩", e: "Father is the masculine gender of Mother." },
+            { q: "Choose the feminine gender of Brother.", a: ["Sister", "Aunt", "Mother", "Daughter"], c: "Sister", e: "Sister is the feminine gender of Brother." },
+            { q: "Choose the masculine gender of Woman.", a: ["Man", "Boy", "Husband", "Uncle"], c: "Man", art: "👩‍🦰", e: "Man is the masculine gender of Woman." },
+            { q: "Choose the feminine gender of Prince.", a: ["Princess", "Queen", "Lady", "Aunt"], c: "Princess", art: "🤴", e: "Princess is the feminine gender of Prince." },
+            { q: "Choose the masculine gender of Aunt.", a: ["Uncle", "Father", "Brother", "Nephew"], c: "Uncle", e: "Uncle is the masculine gender of Aunt." },
+            { q: "Choose the feminine gender of Husband.", a: ["Wife", "Sister", "Daughter", "Girl"], c: "Wife", art: "💍", e: "Wife is the feminine gender of Husband." },
+            { q: "Choose the masculine gender of Daughter.", a: ["Son", "Boy", "Brother", "Father"], c: "Son", e: "Son is the masculine gender of Daughter." },
+            { q: "Choose the feminine gender of Bull.", a: ["Cow", "Hen", "Mare", "Ewe"], c: "Cow", art: "🐂", e: "Cow is the feminine gender of Bull." },
+            { q: "Choose the feminine gender of Lion.", a: ["Lioness", "Tigress", "Vixen", "Mare"], c: "Lioness", art: "🦁", e: "Lioness is the feminine gender of Lion." },
+            { q: "Choose the masculine gender of Tigress.", a: ["Tiger", "Lion", "Bull", "Dog"], c: "Tiger", art: "🐅", e: "Tiger is the masculine gender of Tigress." },
+            { q: "Choose the feminine gender of Horse.", a: ["Mare", "Cow", "Ewe", "Hen"], c: "Mare", art: "🐴", e: "Mare is the feminine gender of Horse." },
+            { q: "Choose the masculine gender of Peahen.", a: ["Peacock", "Cock", "Drake", "Gander"], c: "Peacock", art: "🦚", e: "Peacock is the masculine gender of Peahen." },
+            { q: "Choose the feminine gender of Dog.", a: ["Bitch", "Vixen", "Cow", "Mare"], c: "Bitch", art: "🐶", e: "Bitch is the feminine gender of Dog." },
+            { q: "Choose the masculine gender of Ewe.", a: ["Ram", "Bull", "Horse", "Dog"], c: "Ram", art: "🐑", e: "Ram is the masculine gender of Ewe (female sheep)." },
+            { q: "Choose the masculine gender of Vixen.", a: ["Fox", "Wolf", "Lion", "Dog"], c: "Fox", art: "🦊", e: "Fox is the masculine gender of Vixen." },
+            { q: "Complete the pair: Father and ________", a: ["Mother", "Sister", "Aunt", "Daughter"], c: "Mother", e: "Mother makes a natural gender pair with Father." },
+            { q: "Complete the pair: Brother and ________", a: ["Sister", "Girl", "Wife", "Mother"], c: "Sister", e: "Sister matches perfectly with Brother." },
+            { q: "Complete the pair: King and ________", a: ["Queen", "Princess", "Lady", "Empress"], c: "Queen", art: "👑", e: "Queen pairs naturally with King." },
+            { q: "Complete the pair: Cock and ________", a: ["Hen", "Duck", "Cow", "Mare"], c: "Hen", art: "🐓", e: "Hen is the female partner to a Cock." },
+            { q: "Complete the pair: Bull and ________", a: ["Cow", "Mare", "Hen", "Bitch"], c: "Cow", art: "🐄", e: "Cow is the female counterpart to a Bull." },
+            { q: "Complete the pair: Husband and ________", a: ["Wife", "Woman", "Girl", "Sister"], c: "Wife", e: "Wife is the feminine partner for Husband." },
+            { q: "Complete the pair: Uncle and ________", a: ["Aunt", "Mother", "Sister", "Niece"], c: "Aunt", e: "Aunt matches up directly with Uncle." },
+            { q: "Complete the pair: Boy and ________", a: ["Girl", "Woman", "Sister", "Aunt"], c: "Girl", art: "👧", e: "Girl is the female counterpart to Boy." },
+            { q: "Complete the pair: Man and ________", a: ["Woman", "Girl", "Wife", "Queen"], c: "Woman", art: "👨", e: "Woman is the feminine form matching Man." },
+            { q: "Complete the pair: Prince and ________", a: ["Princess", "Queen", "Lady", "Girl"], c: "Princess", e: "Princess is the matching feminine word for Prince." },
+            { q: "Complete the pair: Lion and ________", a: ["Lioness", "Tigress", "Vixen", "Cow"], c: "Lioness", art: "🦁", e: "Lioness matches directly with Lion." },
+            { q: "Complete the pair: Tiger and ________", a: ["Tigress", "Lioness", "Mare", "Hen"], c: "Tigress", art: "🐅", e: "Tigress is the matching feminine form for Tiger." },
+            { q: "Which of these is a male animal?", a: ["Bull", "Cow", "Hen", "Mare"], c: "Bull", art: "🐂", e: "Bull is masculine (male), while the others are feminine." },
+            { q: "Which of these is a female animal?", a: ["Hen", "Cock", "Tiger", "Fox"], c: "Hen", art: "🐓", e: "Hen is a female bird (feminine gender)." },
+            { q: "Which word belongs to the masculine gender?", a: ["Son", "Daughter", "Girl", "Sister"], c: "Son", e: "Son is a male child, so it is masculine gender." },
+            { q: "Which word belongs to the feminine gender?", a: ["Aunt", "Uncle", "Father", "Brother"], c: "Aunt", e: "Aunt refers to a woman, making it feminine gender." },
+            { q: "The word 'Grandfather' is which gender?", a: ["Masculine", "Feminine", "Common", "Neuter"], c: "Masculine", art: "👴", e: "Grandfather refers to a male person, so it is Masculine." },
+            { q: "The word 'Grandmother' is which gender?", a: ["Feminine", "Masculine", "Common", "Neuter"], c: "Feminine", art: "👵", e: "Grandmother refers to a female person, so it is Feminine." },
+            { q: "Choose the feminine word for 'Grandson'.", a: ["Granddaughter", "Daughter", "Sister", "Niece"], c: "Granddaughter", e: "Granddaughter is the feminine counterpart to Grandson." },
+            { q: "Choose the masculine word for 'Granddaughter'.", a: ["Grandson", "Son", "Brother", "Nephew"], c: "Grandson", e: "Grandson is the masculine counterpart to Granddaughter." },
+            { q: "What is the female of a Fox called?", a: ["Vixen", "Bitch", "Mare", "Ewe"], c: "Vixen", art: "🦊", e: "A female fox is called a Vixen." },
+            { q: "What is the male of a Hen called?", a: ["Cock", "Drake", "Bull", "Ram"], c: "Cock", art: "🐓", e: "A male chicken is called a Cock or Rooster." },
+            { q: "What is the female of a Horse called?", a: ["Mare", "Cow", "Ewe", "Bitch"], c: "Mare", art: "🐴", e: "A female horse is called a Mare." },
+            { q: "What is the male of a Cow called?", a: ["Bull", "Horse", "Lion", "Tiger"], c: "Bull", art: "🐂", e: "A male cow animal is called a Bull." },
+            { q: "What is the male of a Sheep (Ewe) called?", a: ["Ram", "Bull", "Dog", "Cock"], c: "Ram", art: "🐑", e: "A male sheep is called a Ram." },
+            { q: "What is the female of a Lion called?", a: ["Lioness", "Tigress", "Vixen", "Mare"], c: "Lioness", art: "🦁", e: "A female lion is called a Lioness." },
+            { q: "What is the female of a Tiger called?", a: ["Tigress", "Lioness", "Vixen", "Cow"], c: "Tigress", art: "🐅", e: "A female tiger is called a Tigress." },
+            { q: "What is the male of a Peahen called?", a: ["Peacock", "Cock", "Gander", "Drake"], c: "Peacock", art: "🦚", e: "A male peahen is called a Peacock." },
+            { q: "What is the female of a Dog called?", a: ["Bitch", "Vixen", "Mare", "Cow"], c: "Bitch", art: "🐶", e: "A female dog is grammatically called a Bitch." },
+            { q: "What is the masculine word for Sister?", a: ["Brother", "Father", "Son", "Uncle"], c: "Brother", e: "Brother is the masculine form for Sister." },
+            { q: "What is the feminine word for Boy?", a: ["Girl", "Woman", "Wife", "Aunt"], c: "Girl", art: "👧", e: "Girl is the feminine form for Boy." },
+            { q: "What is the masculine word for Queen?", a: ["King", "Prince", "Lord", "Emperor"], c: "King", art: "👑", e: "King is the masculine gender word for Queen." }
+        ];
+
+        const MEDIUM_QUESTIONS = [
+            { q: "Which is a common gender noun?", a: ["Teacher", "King", "Queen", "Bull"], c: "Teacher", art: "🧑‍🏫", e: "Teacher is a common gender noun because it can be a man or a woman." },
+            { q: "Which is a neuter gender noun?", a: ["Chair", "Boy", "Girl", "Mother"], c: "Chair", art: "🪑", e: "Chair is a neuter gender noun because it is a non-living thing." },
+            { q: "Choose the feminine gender of Hero.", a: ["Heroine", "Actress", "Queen", "Princess"], c: "Heroine", e: "Heroine is the feminine gender form of Hero." },
+            { q: "Choose the masculine gender of Empress.", a: ["Emperor", "King", "Prince", "Lord"], c: "Emperor", art: "👑", e: "Emperor is the masculine gender form of Empress." },
+            { q: "Which of the following is a common gender noun?", a: ["Doctor", "Man", "Woman", "Table"], c: "Doctor", art: "🩺", e: "Doctor can refer to either a male or a female medical professional." },
+            { q: "Which of the following is a neuter gender noun?", a: ["Book", "Baby", "Friend", "Sister"], c: "Book", art: "📖", e: "Book is non-living, making it a neuter gender noun." },
+            { q: "Choose the feminine gender of Actor.", a: ["Actress", "Heroine", "Hostess", "Waitress"], c: "Actress", art: "🎬", e: "Actress is the feminine form of Actor." },
+            { q: "Choose the masculine gender of Waitress.", a: ["Waiter", "Host", "Actor", "Hero"], c: "Waiter", e: "Waiter is the masculine form of Waitress." },
+            { q: "Choose the feminine gender of Host.", a: ["Hostess", "Actress", "Waitress", "Empress"], c: "Hostess", e: "Hostess is the feminine form of Host." },
+            { q: "The word 'Student' belongs to which gender?", a: ["Common Gender", "Masculine Gender", "Feminine Gender", "Neuter Gender"], c: "Common Gender", art: "🎒", e: "Student is a common gender noun because it means any boy or girl who learns." },
+            { q: "The word 'Computer' belongs to which gender?", a: ["Neuter Gender", "Common Gender", "Masculine Gender", "Feminine Gender"], c: "Neuter Gender", art: "💻", e: "Computer is an inanimate, non-living object, which makes it neuter." },
+            { q: "The word 'Friend' belongs to which gender?", a: ["Common Gender", "Masculine Gender", "Feminine Gender", "Neuter Gender"], c: "Common Gender", art: "🤝", e: "Friend can be a male or a female, so it is a common gender noun." },
+            { q: "The word 'Table' belongs to which gender?", a: ["Neuter Gender", "Common Gender", "Masculine Gender", "Feminine Gender"], c: "Neuter Gender", art: "🪵", e: "Table is a non-living thing, which means it has a neuter gender." },
+            { q: "The word 'Baby' belongs to which gender?", a: ["Common Gender", "Neuter Gender", "Masculine Gender", "Feminine Gender"], c: "Common Gender", art: "👶", e: "Baby can refer to a male or female infant, making it common gender." },
+            { q: "The word 'Parent' belongs to which gender?", a: ["Common Gender", "Masculine Gender", "Feminine Gender", "Neuter Gender"], c: "Common Gender", e: "Parent can mean either a father or a mother, so it is a common gender noun." },
+            { q: "The word 'Child' belongs to which gender?", a: ["Common Gender", "Neuter Gender", "Masculine Gender", "Feminine Gender"], c: "Common Gender", art: "🧒", e: "Child can mean a boy or a girl, so it is a common gender noun." },
+            { q: "The word 'Person' belongs to which gender?", a: ["Common Gender", "Neuter Gender", "Masculine Gender", "Feminine Gender"], c: "Common Gender", e: "Person means any human being (male or female), so it is a common gender noun." },
+            { q: "The word 'School' belongs to which gender?", a: ["Neuter Gender", "Common Gender", "Masculine Gender", "Feminine Gender"], c: "Neuter Gender", art: "🏫", e: "School is a place and a non-living thing, making it neuter gender." },
+            { q: "The word 'Ball' belongs to which gender?", a: ["Neuter Gender", "Common Gender", "Masculine Gender", "Feminine Gender"], c: "Neuter Gender", art: "⚽", e: "Ball is a non-living object, which means it is a neuter gender noun." },
+            { q: "The word 'River' belongs to which gender?", a: ["Neuter Gender", "Common Gender", "Masculine Gender", "Feminine Gender"], c: "Neuter Gender", art: "🏞️", e: "River is a non-living natural feature, making it a neuter gender noun." },
+            { q: "The word 'Mountain' belongs to which gender?", a: ["Neuter Gender", "Common Gender", "Masculine Gender", "Feminine Gender"], c: "Neuter Gender", art: "⛰️", e: "Mountain is an object without life, so it belongs to the neuter gender." },
+            { q: "The word 'Sun' is grammatically treated as which gender?", a: ["Neuter Gender", "Common Gender", "Masculine Gender", "Feminine Gender"], c: "Neuter Gender", art: "☀️", e: "The Sun is a non-living natural object, so its standard grammar gender is Neuter." },
+            { q: "The word 'Moon' is grammatically treated as which gender?", a: ["Neuter Gender", "Common Gender", "Masculine Gender", "Feminine Gender"], c: "Neuter Gender", art: "🌙", e: "The Moon is a non-living celestial body, making it neuter gender." },
+            { q: "Choose the masculine noun from this list:", a: ["Emperor", "Empress", "Teacher", "Desk"], c: "Emperor", art: "👑", e: "Emperor is masculine. Empress is feminine, Teacher is common, and Desk is neuter." },
+            { q: "Choose the feminine noun from this list:", a: ["Actress", "Actor", "Student", "Pencil"], c: "Actress", art: "🎬", e: "Actress is feminine. Actor is masculine, Student is common, and Pencil is neuter." },
+            { q: "Choose the common gender noun from this list:", a: ["Cousin", "Brother", "Sister", "Chair"], c: "Cousin", e: "Cousin can be a boy or a girl, which makes it a common gender noun." },
+            { q: "Choose the neuter gender noun from this list:", a: ["Window", "Uncle", "Aunt", "Pilot"], c: "Window", e: "Window is a non-living item, so it is neuter gender." },
+            { q: "What gender is a person who flies an airplane ('Pilot')?", a: ["Common Gender", "Masculine Gender", "Feminine Gender", "Neuter Gender"], c: "Common Gender", art: "✈️", e: "A pilot can be male or female, making it a common gender noun." },
+            { q: "What gender is a person who sings songs ('Singer')?", a: ["Common Gender", "Masculine Gender", "Feminine Gender", "Neuter Gender"], c: "Common Gender", art: "🎤", e: "Singer can refer to a man or a woman, so it is common gender." },
+            { q: "What gender is the word 'Bird'?", a: ["Common Gender", "Masculine Gender", "Feminine Gender", "Neuter Gender"], c: "Common Gender", art: "🐦", e: "Bird can mean a male bird or a female bird, so it is a common gender noun." },
+            { q: "What gender is the word 'Animal'?", a: ["Common Gender", "Masculine Gender", "Feminine Gender", "Neuter Gender"], c: "Common Gender", e: "Animal can mean a male or female creature, making it common gender." },
+            { q: "What gender is the word 'Tree'?", a: ["Neuter Gender", "Common Gender", "Masculine Gender", "Feminine Gender"], c: "Neuter Gender", art: "🌳", e: "Tree is a plant and is grammatically categorized as neuter gender." },
+            { q: "What gender is the word 'House'?", a: ["Neuter Gender", "Common Gender", "Masculine Gender", "Feminine Gender"], c: "Neuter Gender", art: "🏠", e: "House is a non-living building object, making it neuter gender." },
+            { q: "What gender is the word 'President'?", a: ["Common Gender", "Masculine Gender", "Feminine Gender", "Neuter Gender"], c: "Common Gender", e: "A president can be a man or a woman, so it is common gender." },
+            { q: "What gender is the word 'Officer'?", a: ["Common Gender", "Masculine Gender", "Feminine Gender", "Neuter Gender"], c: "Common Gender", e: "Officer is a common gender noun because it applies to both males and females." },
+            { q: "Choose the masculine counterpart of 'Hostess'.", a: ["Host", "Actor", "Waiter", "Hero"], c: "Host", e: "Host is the masculine form of Hostess." },
+            { q: "Choose the feminine counterpart of 'Waiter'.", a: ["Waitress", "Hostess", "Actress", "Heroine"], c: "Waitress", e: "Waitress is the feminine form of Waiter." },
+            { q: "Choose the masculine counterpart of 'Actress'.", a: ["Actor", "Host", "Waiter", "King"], c: "Actor", art: "🎬", e: "Actor is the masculine form of Actress." },
+            { q: "Choose the feminine counterpart of 'Emperor'.", a: ["Empress", "Queen", "Princess", "Lady"], c: "Empress", art: "👑", e: "Empress is the feminine form of Emperor." },
+            { q: "Identify the neuter noun in: 'The child broke the clock.'", a: ["clock", "child", "broke", "the"], c: "clock", e: "Clock is a non-living object, so it is a neuter gender noun." },
+            { q: "Identify the common noun in: 'The doctor arrived quickly.'", a: ["doctor", "arrived", "quickly", "the"], c: "doctor", art: "🩺", e: "Doctor is the common noun because it can refer to a male or female." },
+            { q: "Identify the masculine noun in: 'The boy climbed the hill.'", a: ["boy", "hill", "climbed", "the"], c: "boy", art: "👦", e: "Boy refers to a male person, which makes it masculine." },
+            { q: "Identify the feminine noun in: 'The queen wore a shiny crown.'", a: ["queen", "crown", "shiny", "wore"], c: "queen", art: "👑", e: "Queen is a female ruler, so it is a feminine noun." },
+            { q: "Which word does NOT belong to the neuter gender?", a: ["Baby", "Chair", "Table", "Laptop"], c: "Baby", art: "👶", e: "Baby is common gender (living), while the others are non-living (neuter)." },
+            { q: "Which word does NOT belong to the common gender?", a: ["King", "Doctor", "Teacher", "Student"], c: "King", art: "👑", e: "King is strictly masculine, while the others can be either male or female." },
+            { q: "Which word does NOT belong to the masculine gender?", a: ["Princess", "Prince", "King", "Emperor"], c: "Princess", e: "Princess is feminine gender, while the others are masculine." },
+            { q: "Which word does NOT belong to the feminine gender?", a: ["Waiter", "Waitress", "Queen", "Empress"], c: "Waiter", e: "Waiter is masculine, while the others are feminine." },
+            { q: "A non-living object like a 'Pencil' is which gender?", a: ["Neuter Gender", "Common Gender", "Masculine Gender", "Feminine Gender"], c: "Neuter Gender", art: "✏️", e: "Non-living things have a neuter gender." },
+            { q: "A person who cuts hair is a 'Hairdresser'. What gender is this?", a: ["Common Gender", "Masculine Gender", "Feminine Gender", "Neuter Gender"], c: "Common Gender", e: "A hairdresser can be male or female, making it common gender." },
+            { q: "A person who designs structures is an 'Architect'. What gender is this?", a: ["Common Gender", "Masculine Gender", "Feminine Gender", "Neuter Gender"], c: "Common Gender", e: "An architect can be a man or a woman, so it is a common gender noun." }
+        ];
+
+        const HARD_QUESTIONS = [
+            { q: "Identify the gender of the underlined word:<br>'The <u>doctor</u> examined the patient.'", a: ["Common Gender", "Masculine Gender", "Feminine Gender", "Neuter Gender"], c: "Common Gender", art: "🩺", e: "Doctor is a common gender noun because it can be a man or a woman." },
+            { q: "Choose the feminine gender of Wizard.", a: ["Witch", "Fairy", "Queen", "Princess"], c: "Witch", art: "🧙", e: "Witch is the feminine gender of Wizard." },
+            { q: "Choose the masculine gender of Niece.", a: ["Nephew", "Brother", "Son", "Uncle"], c: "Nephew", e: "Nephew is the masculine gender of Niece." },
+            { q: "Which word is neuter gender?", a: ["Computer", "Queen", "King", "Teacher"], c: "Computer", art: "💻", e: "Computer is a neuter gender noun because it is a non-living thing." },
+            { q: "Identify the gender of the word in capitals:<br>'The LIONESS is resting.'", a: ["Feminine Gender", "Masculine Gender", "Common Gender", "Neuter Gender"], c: "Feminine Gender", art: "🦁", e: "Lioness is the feminine gender of Lion." },
+            { q: "Choose the feminine gender of Bridegroom.", a: ["Bride", "Wife", "Spinster", "Nun"], c: "Bride", art: "👰", e: "Bride is the feminine gender counterpart of Bridegroom." },
+            { q: "Choose the masculine gender of Nun.", a: ["Monk", "Priest", "Wizard", "Gentleman"], c: "Monk", e: "Monk is the masculine gender counterpart of Nun." },
+            { q: "Choose the masculine gender of Landlady.", a: ["Landlord", "Lord", "Gentleman", "Master"], c: "Landlord", e: "Landlord is the masculine gender form of Landlady." },
+            { q: "Choose the feminine gender of Gentleman.", a: ["Lady", "Woman", "Girl", "Spinster"], c: "Lady", e: "Lady is the feminine gender form of Gentleman." },
+            { q: "Choose the masculine gender of Spinster.", a: ["Bachelor", "Monk", "Wizard", "Groom"], c: "Bachelor", e: "Bachelor is the masculine form for an unmarried man; Spinster is the feminine form." },
+            { q: "Identify the gender of the bolded word:<br>'The <b>pilot</b> flew the plane safely.'", a: ["Common Gender", "Masculine Gender", "Feminine Gender", "Neuter Gender"], c: "Common Gender", art: "✈️", e: "Pilot is a common gender noun because pilots can be male or female." },
+            { q: "Identify the gender of the bolded word:<br>'We sat down at the wooden <b>table</b>.'", a: ["Neuter Gender", "Common Gender", "Masculine Gender", "Feminine Gender"], c: "Neuter Gender", art: "🪵", e: "Table is a non-living thing, making it a neuter gender noun." },
+            { q: "Identify the gender of the bolded word:<br>'The noble <b>emperor</b> ruled the land.'", a: ["Masculine Gender", "Feminine Gender", "Common Gender", "Neuter Gender"], c: "Masculine Gender", art: "👑", e: "Emperor means a male ruler, which is masculine gender." },
+            { q: "Identify the gender of the bolded word:<br>'The skilled <b>actress</b> won an award.'", a: ["Feminine Gender", "Masculine Gender", "Common Gender", "Neuter Gender"], c: "Feminine Gender", art: "🎬", e: "Actress is a female performer, so it is feminine gender." },
+            { q: "Which of these words is a common gender noun?", a: ["Engineer", "Laptop", "Hero", "Witch"], c: "Engineer", art: "👷", e: "Engineer can refer to a man or a woman, making it common gender." },
+            { q: "Which of these words is a neuter gender noun?", a: ["Pencil", "Friend", "Host", "Hostess"], c: "Pencil", art: "✏️", e: "Pencil is an object with no life, so it is a neuter noun." },
+            { q: "Find the common gender noun in this sentence:<br>'My friend loves reading books.'", a: ["friend", "books", "reading", "loves"], c: "friend", e: "Friend can be a boy or girl (common). Books is neuter gender." },
+            { q: "Find the neuter gender noun in this sentence:<br>'The teacher wrote on the whiteboard.'", a: ["whiteboard", "teacher", "wrote", "on"], c: "whiteboard", e: "Whiteboard is a non-living object, making it neuter gender." },
+            { q: "Find the masculine gender noun in this sentence:<br>'The old monk lived a quiet life.'", a: ["monk", "life", "quiet", "lived"], c: "monk", e: "Monk is a male religious person, which is masculine gender." },
+            { q: "Find the feminine gender noun in this sentence:<br>'The bride walked down the aisle.'", a: ["bride", "aisle", "walked", "down"], c: "bride", art: "👰", e: "Bride is a woman getting married, which is feminine gender." },
+            { q: "Complete the sentence:<br>'The wizard cast a spell, and his sister the ________ helped him.'", a: ["witch", "fairy", "lady", "princess"], c: "witch", art: "🧙", e: "Witch is the correct feminine counterpart to go along with wizard." },
+            { q: "Complete the sentence:<br>'The landlord painted the house, and the ________ collected rent.'", a: ["landlady", "lady", "queen", "hostess"], c: "landlady", e: "Landlady is the direct feminine form of Landlord." },
+            { q: "Complete the sentence:<br>'My nephew is a tall boy, and my ________ is a little girl.'", a: ["niece", "sister", "daughter", "aunt"], c: "niece", e: "Niece is the matching feminine gender word for Nephew." },
+            { q: "Complete the sentence:<br>'The handsome bridegroom smiled as he stood next to his beautiful ________.'", a: ["bride", "wife", "woman", "spinster"], c: "bride", art: "🤵", e: "Bride matches with bridegroom in a wedding context." },
+            { q: "Complete the sentence:<br>'The gentleman opened the door for the graceful ________.'", a: ["lady", "woman", "queen", "actress"], c: "lady", e: "Lady matches directly as the feminine form of Gentleman." },
+            { q: "Which of the following is a common gender noun?", a: ["Cousin", "Host", "Hostess", "Train"], c: "Cousin", e: "Cousin can be either male or female, making it a common gender noun." },
+            { q: "Which of the following is a neuter gender noun?", a: ["Bus", "Pilot", "Niece", "Nephew"], c: "Bus", art: "🚌", e: "Bus is a non-living vehicle, so it has a neuter gender." },
+            { q: "Which of the following is a feminine gender noun?", a: ["Heroine", "Hero", "Student", "Laptop"], c: "Heroine", e: "Heroine is a female main character, so it is feminine." },
+            { q: "Which of the following is a masculine gender noun?", a: ["Bachelor", "Spinster", "Friend", "Pencil"], c: "Bachelor", e: "Bachelor is an unmarried man, which is a masculine noun." },
+            { q: "What gender is the bolded word?<br>'The train arrived at the <b>station</b>.'", a: ["Neuter Gender", "Common Gender", "Masculine Gender", "Feminine Gender"], c: "Neuter Gender", art: "🚉", e: "Station is a non-living location place, so it is neuter gender." },
+            { q: "What gender is the bolded word?<br>'Our school <b>principal</b> gave a great speech.'", a: ["Common Gender", "Neuter Gender", "Masculine Gender", "Feminine Gender"], c: "Common Gender", e: "Principal is common gender because a principal can be male or female." },
+            { q: "What gender is the bolded word?<br>'The wild <b>vixen</b> ran through the green forest.'", a: ["Feminine Gender", "Masculine Gender", "Common Gender", "Neuter Gender"], c: "Feminine Gender", art: "🦊", e: "Vixen is a female fox, which is feminine gender." },
+            { q: "What gender is the bolded word?<br>'The strong <b>ram</b> climbed up the steep mountain.'", a: ["Masculine Gender", "Feminine Gender", "Common Gender", "Neuter Gender"], c: "Masculine Gender", art: "🐑", e: "Ram is a male sheep, which means it has a masculine gender." },
+            { q: "Identify the gender of the word 'Laptop'.", a: ["Neuter Gender", "Common Gender", "Masculine Gender", "Feminine Gender"], c: "Neuter Gender", art: "💻", e: "Laptop is a non-living machine, making it a neuter gender noun." },
+            { q: "Identify the gender of the word 'Scientist'.", a: ["Common Gender", "Neuter Gender", "Masculine Gender", "Feminine Gender"], c: "Common Gender", art: "🔬", e: "Scientist can be a man or a woman, so it is a common gender noun." },
+            { q: "Identify the gender of the word 'Gander'.", a: ["Masculine Gender", "Feminine Gender", "Common Gender", "Neuter Gender"], c: "Masculine Gender", e: "Gander is a male goose, making it masculine gender." },
+            { q: "Identify the gender of the word 'Goose'.", a: ["Feminine Gender", "Masculine Gender", "Common Gender", "Neuter Gender"], c: "Feminine Gender", art: "🦆", e: "Goose represents the female form (or general common name, but explicitly feminine compared to gander)." },
+            { q: "Choose the correct sentence choice:", a: ["The wizard used his wand.", "The witch used his wand.", "The wizard used her wand.", "The wizard used its wand."], c: "The wizard used his wand.", art: "🧙", e: "Wizard is masculine, so we use the male pronoun helper 'his'." },
+            { q: "Choose the correct sentence choice:", a: ["The actress practiced her lines.", "The actress practiced his lines.", "The actor practiced her lines.", "The actress practiced its lines."], c: "The actress practiced her lines.", art: "🎬", e: "Actress is feminine, so we use the female pronoun helper 'her'." },
+            { q: "Identify all common gender nouns in:<br>'The <u>teacher</u> spoke to the <u>student</u>.'", a: ["both teacher and student", "teacher only", "student only", "neither noun"], c: "both teacher and student", e: "Both 'teacher' and 'student' can refer to either a male or a female person." },
+            { q: "Identify the neuter noun in:<br>'The laptop sat on the desk.'", a: ["both laptop and desk", "laptop only", "desk only", "neither noun"], c: "both laptop and desk", art: "💻", e: "Both 'laptop' and 'desk' are non-living things, so both are neuter gender." },
+            { q: "Choose the masculine counterpart of 'Nun'.", a: ["Monk", "Priest", "King", "Gentleman"], c: "Monk", e: "Monk is the male counterpart to a female Nun." },
+            { q: "Choose the feminine counterpart of 'Bachelor'.", a: ["Spinster", "Bride", "Nun", "Lady"], c: "Spinster", e: "Spinster is grammatically the historical feminine counterpart of Bachelor." },
+            { q: "Choose the masculine counterpart of 'Niece'.", a: ["Nephew", "Uncle", "Brother", "Son"], c: "Nephew", e: "Nephew is the male equivalent of a female Niece." },
+            { q: "Choose the feminine counterpart of 'Wizard'.", a: ["Witch", "Fairy", "Queen", "Goddess"], c: "Witch", art: "🧙", e: "Witch is the correct feminine form of Wizard." },
+            { q: "In the sentence, 'The baby is crying,' what gender is 'baby'?", a: ["Common Gender", "Neuter Gender", "Masculine Gender", "Feminine Gender"], c: "Common Gender", art: "👶", e: "Baby can be a boy or a girl, which makes it a common gender noun." },
+            { q: "In the sentence, 'The train went over the mountain,' what gender is 'mountain'?", a: ["Neuter Gender", "Common Gender", "Masculine Gender", "Feminine Gender"], c: "Neuter Gender", art: "⛰️", e: "Mountain is an inanimate natural object, making it neuter gender." },
+            { q: "Which option contains ONLY common gender nouns?", a: ["Friend, Doctor, Teacher", "Boy, Girl, Man", "Chair, Table, Pencil", "King, Queen, Prince"], c: "Friend, Doctor, Teacher", e: "Friend, Doctor, and Teacher can all be either male or female human beings." },
+            { q: "Which option contains ONLY neuter gender nouns?", a: ["Book, Pen, Ruler", "Mother, Father, Sister", "Doctor, Nurse, Patient", "Bull, Cow, Hen"], c: "Book, Pen, Ruler", art: "✏️", e: "Book, Pen, and Ruler are all inanimate non-living items, making them neuter." },
+            { q: "Identify the gender of the word 'Stallion'.", a: ["Masculine Gender", "Feminine Gender", "Common Gender", "Neuter Gender"], c: "Masculine Gender", art: "🐴", e: "Stallion is an adult male horse, which makes it a masculine noun." }
+        ];
+
+        // --- STATE MANAGEMENT ENGINE ---
+        let currentLevelName = '';
+        let currentQuestions = [];
+        let currentIdx = 0;
+        let score = 0;
+        let answeredState = []; // Elements track: { chosen: string, correct: boolean }
+        let startTime = null;
+        let audioCtx = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderHighScores();
+        });
+
+        // --- WEB AUDIO API ARCHITECTURE MODULE ---
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            try {
+                initAudio();
+                if (!audioCtx) return;
+                
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                let now = audioCtx.currentTime;
+
+                if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'correct') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.06); // E5
+                    osc.frequency.setValueAtTime(783.99, now + 0.12); // G5
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.linearRampToValueAtTime(120, now + 0.25);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'complete') {
+                    // Major scale chord progression blast
+                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                        let o = audioCtx.createOscillator();
+                        let g = audioCtx.createGain();
+                        o.connect(g); g.connect(audioCtx.destination);
+                        o.type = 'sine';
+                        o.frequency.setValueAtTime(freq, now + (idx * 0.07));
+                        g.gain.setValueAtTime(0.12, now + (idx * 0.07));
+                        g.gain.exponentialRampToValueAtTime(0.01, now + (idx * 0.07) + 0.28);
+                        o.start(now + (idx * 0.07));
+                        o.stop(now + (idx * 0.07) + 0.28);
+                    });
+                }
+            } catch (err) {
+                console.log("Audio API Engine locked or non-supported:", err);
+            }
+        }
+
+        // --- MATH RANDOM ELEMENT INTERPOLATOR ---
+        function shuffle(array) {
+            let m = array.length, t, i;
+            while (m) {
+                i = Math.floor(Math.random() * m--);
+                t = array[m];
+                array[m] = array[i];
+                array[i] = t;
+            }
+            return array;
+        }
+
+        // --- NAVIGATION ARCHITECTURE MANAGEMENT ---
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function startQuiz(level) {
+            playSound('click');
+            currentLevelName = level;
+            let sourceArr = [];
+            
+            if (level === 'easy') {
+                sourceArr = [...EASY_QUESTIONS];
+                document.getElementById('level-indicator').innerText = "Level: Easy (🟢 Classes 1-2)";
+            } else if (level === 'medium') {
+                sourceArr = [...MEDIUM_QUESTIONS];
+                document.getElementById('level-indicator').innerText = "Level: Medium (🟡 Classes 3-4)";
+            } else {
+                sourceArr = [...HARD_QUESTIONS];
+                document.getElementById('level-indicator').innerText = "Level: Hard (🔴 Classes 4-5)";
+            }
+
+            // Slice out exactly 50 localized unique objects
+            currentQuestions = shuffle(sourceArr).slice(0, 50);
+            
+            // Randomize multiple alternatives matrix lists inside the chosen slice array
+            currentQuestions.forEach(item => {
+                item.a = shuffle([...item.a]);
+            });
+
+            currentIdx = 0;
+            score = 0;
+            answeredState = new Array(50).fill(null);
+            startTime = new Date();
+
+            updateScoreUI();
+            showScreen('quiz-screen');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const item = currentQuestions[currentIdx];
+            
+            document.getElementById('question-counter').innerText = `Question: ${currentIdx + 1} / 50`;
+            const progressPct = ((currentIdx + 1) / 50) * 100;
+            document.getElementById('quiz-progress-bar').style.width = `${progressPct}%`;
+
+            document.getElementById('question-text').innerHTML = item.q;
+            
+            // Render custom CSS illustration element if object key contains art emoji
+            const artWrapper = document.getElementById('art-wrapper');
+            artWrapper.innerHTML = '';
+            if (item.art) {
+                artWrapper.innerHTML = `<div class="question-art">${item.art}</div>`;
+            }
+
+            const optContainer = document.getElementById('options-container');
+            optContainer.innerHTML = '';
+            
+            const priorAnswer = answeredState[currentIdx];
+
+            item.a.forEach(option => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = option;
+                btn.onclick = () => handleOptionSelection(btn, option);
+                
+                // Keep states persistent over historical timeline updates back and forth
+                if (priorAnswer) {
+                    btn.disabled = true;
+                    if (option === item.c) {
+                        btn.classList.add('correct');
+                    }
+                    if (priorAnswer.chosen === option && !priorAnswer.correct) {
+                        btn.classList.add('wrong');
+                    }
+                }
+                optContainer.appendChild(btn);
+            });
+
+            const expContainer = document.getElementById('explanation-container');
+            if (priorAnswer) {
+                expContainer.innerHTML = `<strong>${priorAnswer.correct ? '✅ Correct!' : '❌ Incorrect.'}</strong> ${item.e}`;
+                expContainer.className = `explanation-box ${priorAnswer.correct ? 'correct-style' : 'wrong-style'}`;
+            } else {
+                expContainer.className = 'explanation-box';
+                expContainer.innerHTML = '';
+            }
+
+            document.getElementById('prev-btn').disabled = (currentIdx === 0);
+            
+            const nextBtn = document.getElementById('next-btn');
+            if (currentIdx === 49) {
+                nextBtn.innerText = "🏁 Finish";
+            } else {
+                nextBtn.innerText = "➡️ Next";
+            }
+        }
+
+        function handleOptionSelection(selectedBtn, chosenValue) {
+            const item = currentQuestions[currentIdx];
+            const isCorrect = (chosenValue === item.c);
+            
+            if (isCorrect) {
+                score++;
+                playSound('correct');
+                selectedBtn.classList.add('correct');
+            } else {
+                playSound('wrong');
+                selectedBtn.classList.add('wrong');
+                document.querySelectorAll('.option-btn').forEach(b => {
+                    if (b.innerText === item.c) b.classList.add('correct');
+                });
+            }
+
+            answeredState[currentIdx] = { chosen: chosenValue, correct: isCorrect };
+            updateScoreUI();
+
+            const expContainer = document.getElementById('explanation-container');
+            expContainer.innerHTML = `<strong>${isCorrect ? '✅ Correct!' : '❌ Incorrect.'}</strong> ${item.e}`;
+            expContainer.className = `explanation-box ${isCorrect ? 'correct-style' : 'wrong-style'}`;
+
+            document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+        }
+
+        function updateScoreUI() {
+            document.getElementById('score-counter').innerText = `Score: ${score}`;
+        }
+
+        // --- NAVIGATION CONTROL IMPLEMENTATIONS ---
+        function handlePrevious() {
+            playSound('click');
+            if (currentIdx > 0) {
+                currentIdx--;
+                loadQuestion();
+            }
+        }
+
+        function handleNext() {
+            playSound('click');
+            if (currentIdx < 49) {
+                currentIdx++;
+                loadQuestion();
+            } else {
+                completeQuizAndEvaluate();
+            }
+        }
+
+        function handleHome() {
+            playSound('click');
+            showScreen('start-screen');
+            renderHighScores();
+        }
+
+        function restartCurrentLevel() {
+            startQuiz(currentLevelName);
+        }
+
+        // --- LOCAL STORAGE DATA PERSISTENCE LAYER ---
+        function completeQuizAndEvaluate() {
+            playSound('complete');
+            const totalTimeSec = Math.floor((new Date() - startTime) / 1000);
+            const percentage = Math.round((score / 50) * 100);
+            
+            let badgeTitle = '';
+            let badgeIcon = '';
+            if (percentage >= 90) {
+                badgeTitle = "🏆 Gender Master";
+                badgeIcon = "👑";
+                triggerConfettiEffect();
+            } else if (percentage >= 70) {
+                badgeTitle = "🌟 Grammar Explorer";
+                badgeIcon = "⭐";
+                triggerConfettiEffect();
+            } else if (percentage >= 50) {
+                badgeTitle = "👍 Good Learner";
+                badgeIcon = "✨";
+            } else {
+                badgeTitle = "📚 Keep Practising";
+                badgeIcon = "📖";
+            }
+
+            const recordKey = `gender_quiz_high_${currentLevelName}`;
+            const pastHigh = localStorage.getItem(recordKey) || 0;
+            if (score > parseInt(pastHigh)) {
+                localStorage.setItem(recordKey, score);
+            }
+
+            document.getElementById('summary-level-name').innerText = `Completed Stream: ${currentLevelName.toUpperCase()}`;
+            document.getElementById('summary-badge-icon').innerText = badgeIcon;
+            document.getElementById('summary-badge-title').innerText = badgeTitle;
+            
+            document.getElementById('stat-score').innerText = `${score} / 50`;
+            document.getElementById('stat-percent').innerText = `${percentage}%`;
+            document.getElementById('stat-time').innerText = `${totalTimeSec}s`;
+            document.getElementById('stat-accuracy').innerText = `${score}C / ${50 - score}W`;
+
+            // Prepare native document print variables
+            document.getElementById('cert-level').innerText = currentLevelName.toUpperCase();
+            document.getElementById('cert-score').innerText = `${score} / 50 (${percentage}%)`;
+            document.getElementById('cert-badge').innerText = badgeTitle;
+            document.getElementById('cert-date').innerText = new Date().toLocaleDateString();
+
+            showScreen('summary-screen');
+        }
+
+        function renderHighScores() {
+            const levels = ['easy', 'medium', 'hard'];
+            const container = document.getElementById('high-scores-body');
+            container.innerHTML = '';
+            levels.forEach(lvl => {
+                const val = localStorage.getItem(`gender_quiz_high_${lvl}`) || 0;
+                container.innerHTML += `<div class="score-row"><strong>${lvl.toUpperCase()} Stream:</strong> <span>${val} / 50 Correct</span></div>`;
+            });
+        }
+
+        // --- LIGHTWEIGHT HTML5 CANVAS ANIMATED CONFETTI ENGINE ---
+        function triggerConfettiEffect() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.style.display = 'block';
+            
+            let width = canvas.width = window.innerWidth;
+            let height = canvas.height = window.innerHeight;
+            
+            window.addEventListener('resize', () => {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+            });
+
+            const colors = ['#ff007f', '#ffea00', '#00e5ff', '#7000ff', '#00ff66'];
+            const particles = [];
+
+            for (let i = 0; i < 100; i++) {
+                particles.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height - height,
+                    r: Math.random() * 6 + 4,
+                    d: Math.random() * height,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    tilt: Math.random() * 10 - 5,
+                    tiltAngleIncremental: Math.random() * 0.07 + 0.02,
+                    tiltAngle: 0
+                });
+            }
+
+            let animationFrameId;
+            let animationStart = Date.now();
+
+            function draw() {
+                ctx.clearRect(0, 0, width, height);
+                
+                particles.forEach((p, idx) => {
+                    p.tiltAngle += p.tiltAngleIncremental;
+                    p.y += (Math.cos(p.d) + 3 + p.r / 2) / 2;
+                    p.x += Math.sin(p.tiltAngle);
+                    p.tilt = Math.sin(p.tiltAngle - idx / 3) * 12;
+
+                    ctx.beginPath();
+                    ctx.lineWidth = p.r;
+                    ctx.strokeStyle = p.color;
+                    ctx.moveTo(p.x + p.tilt + p.r / 2, p.y);
+                    ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 2);
+                    ctx.stroke();
+
+                    if (p.y > height) {
+                        p.x = Math.random() * width;
+                        p.y = -20;
+                    }
+                });
+
+                if (Date.now() - animationStart < 4000) {
+                    animationFrameId = requestAnimationFrame(draw);
+                } else {
+                    ctx.clearRect(0, 0, width, height);
+                    canvas.style.display = 'none';
+                    cancelAnimationFrame(animationFrameId);
+                }
+            }
+            draw();
+        }
+    </script>
+</body>
+</html>

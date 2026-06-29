@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>👥 Pronouns Quiz</title>
+    <style>
+        :root {
+            --primary-bg: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #a1c4fd 100%);
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --text-dark: #2d3748;
+            --text-light: #718096;
+            --color-easy: #4ade80;
+            --color-medium: #facc15;
+            --color-hard: #f87171;
+            --color-correct: #22c55e;
+            --color-wrong: #ef4444;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --shadow-sm: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
+            --font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background: var(--primary-bg);
+            background-size: 400% 400%;
+            animation: gradientBG 20s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            overflow-x: hidden;
+            color: var(--text-dark);
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Floating Background Shapes */
+        .decorations {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .floating-shape {
+            position: absolute;
+            opacity: 0.15;
+            animation: floatAround 12s ease-in-out infinite alternate;
+        }
+
+        @keyframes floatAround {
+            0% { transform: translateY(0) rotate(0deg); }
+            100% { transform: translateY(-40px) rotate(20deg); }
+        }
+
+        /* Container & Card Styles */
+        .quiz-container {
+            width: 100%;
+            max-width: 720px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .screen {
+            display: none;
+            animation: fadeIn 0.4s ease forwards;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Typography */
+        h1.title {
+            font-size: clamp(2rem, 5vw, 2.75rem);
+            text-align: center;
+            font-weight: 800;
+            background: linear-gradient(45deg, #4f46e5, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-light);
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            margin-bottom: 32px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Buttons & Interactions */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px 28px;
+            border-radius: var(--radius-md);
+            border: none;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn-level {
+            width: 100%;
+            margin-bottom: 16px;
+            color: white;
+            font-size: 1.25rem;
+            justify-content: flex-start;
+            padding: 20px 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-level::after {
+            content: '➔';
+            position: absolute;
+            right: 24px;
+            transition: transform 0.2s ease;
+        }
+
+        .btn-level:hover::after {
+            transform: translateX(6px);
+        }
+
+        .btn-easy { background: linear-gradient(135deg, #22c55e, #16a34a); }
+        .btn-medium { background: linear-gradient(135deg, #eab308, #ca8a04); color: #423805; }
+        .btn-medium::after { color: #423805; }
+        .btn-hard { background: linear-gradient(135deg, #ef4444, #dc2626); }
+
+        /* Quiz UI Elements */
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-weight: 700;
+            font-size: 1.05rem;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 12px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 20px;
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #3b82f6, #ec4899);
+            border-radius: 20px;
+            transition: width 0.3s ease;
+        }
+
+        .question-box {
+            font-size: clamp(1.15rem, 3.5vw, 1.4rem);
+            font-weight: 700;
+            margin-bottom: 24px;
+            line-height: 1.4;
+        }
+
+        .illustration-panel {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: var(--radius-md);
+            padding: 16px;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 500px) {
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .option-card {
+            background: white;
+            border: 2px solid rgba(0, 0, 0, 0.05);
+            border-radius: var(--radius-md);
+            padding: 18px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .option-card:hover {
+            transform: translateY(-2px);
+            border-color: #a1c4fd;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.05);
+        }
+
+        .option-card.correct {
+            background-color: #d1fae5;
+            border-color: var(--color-correct);
+            color: #065f46;
+        }
+
+        .option-card.wrong {
+            background-color: #fee2e2;
+            border-color: var(--color-wrong);
+            color: #991b1b;
+        }
+
+        .option-card.disabled {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        /* Explanation Box */
+        .explanation-box {
+            background: #eff6ff;
+            border-left: 6px solid #3b82f6;
+            padding: 16px;
+            border-radius: 0 var(--radius-md) var(--radius-md) 0;
+            margin-bottom: 24px;
+            display: none;
+            animation: slideDown 0.3s ease forwards;
+        }
+
+        .explanation-title {
+            font-weight: 700;
+            color: #1e40af;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Navigation Buttons Row Constraint Checklist */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .nav-buttons .btn {
+            flex: 1;
+            padding: 14px;
+            font-size: 1rem;
+            background: white;
+            color: var(--text-dark);
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .nav-buttons .btn:hover {
+            background: #f8fafc;
+        }
+
+        .nav-buttons .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .nav-buttons #btn-home {
+            background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+            font-weight: 700;
+        }
+
+        /* Summary & Badge Elements */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.5);
+            padding: 16px;
+            border-radius: var(--radius-md);
+            text-align: center;
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+
+        .stat-val {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #4f46e5;
+        }
+
+        .badge-showcase {
+            text-align: center;
+            margin: 24px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #ffffff, #f8fafc);
+            border-radius: var(--radius-lg);
+            border: 2px dashed #cbd5e1;
+        }
+
+        .badge-icon {
+            font-size: 4rem;
+            margin-bottom: 8px;
+            animation: bounce 2s infinite alternate;
+        }
+
+        @keyframes bounce {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-10px); }
+        }
+
+        .badge-title {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: #1e293b;
+        }
+
+        /* Confetti Overlay Canvas */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            pointer-events: none;
+            display: none;
+        }
+
+        /* Dashboard Progress Indicators */
+        .dashboard-status {
+            margin-top: 24px;
+            background: rgba(255,255,255,0.4);
+            padding: 16px;
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        /* Print Area Formatting */
+        #certificate-print-area {
+            display: none;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #certificate-print-area, #certificate-print-area * {
+                visibility: visible;
+            }
+            #certificate-print-area {
+                display: block;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                padding: 40px;
+                box-sizing: border-box;
+                border: 10px double #4f46e5;
+                text-align: center;
+                background: white;
+                font-family: 'Georgia', serif;
+                color: #2d3748;
+            }
+            .cert-title { font-size: 3rem; font-weight: bold; color: #4f46e5; margin-bottom: 20px; }
+            .cert-subtitle { font-size: 1.5rem; italic: true; margin-bottom: 40px; }
+            .cert-name { font-size: 2.5rem; font-weight: bold; border-bottom: 2px solid #2d3748; display: inline-block; padding: 0 30px; margin-bottom: 30px; }
+            .cert-text { font-size: 1.25rem; margin-bottom: 40px; line-height: 1.6; }
+            .cert-meta { display: flex; justify-content: space-between; margin-top: 60px; font-size: 1.1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="decorations">
+        <svg class="floating-shape" style="top:10%; left:8%; width:40px;" viewBox="0 0 24 24" fill="#facc15"><path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.4 8.168L12 18.896l-7.334 3.857 1.4-8.168L.133 9.21l8.2-1.192z"/></svg>
+        <svg class="floating-shape" style="top:75%; left:12%; width:50px; animation-delay: 2s;" viewBox="0 0 24 24" fill="#60a5fa"><path d="M21 5c-1.11-.11-2.26-.14-3.5-.07C15.34 5.06 13.1 5.62 12 6.5c-1.1-.88-3.34-1.44-5.5-1.57C5.26 4.86 4.11 4.89 3 5v14c1.1-.1 2.26-.12 3.5-.05 2.13.12 4.09.64 5.5 1.55 1.41-.91 3.37-1.43 5.5-1.55 1.24-.07 2.4-.05 3.5.05V5zm-9 12.5c-1.03-.76-2.85-1.28-4.5-1.41V6.66c1.37.11 2.84.51 3.5 1.05v9.79z"/></svg>
+        <svg class="floating-shape" style="top:20%; right:10%; width:45px; animation-delay: 1s;" viewBox="0 0 24 24" fill="#f472b6"><path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
+        <svg class="floating-shape" style="top:65%; right:15%; width:42px; animation-delay: 3s;" viewBox="0 0 24 24" fill="#4ade80"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+    </div>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <div class="quiz-container">
+        <h1 class="title">👥 Pronouns Quiz</h1>
+        <div class="subtitle">Replace • Identify • Learn • Master Pronouns</div>
+
+        <div id="screen-start" class="screen active">
+            <div style="text-align: center; margin-bottom: 28px; font-weight: 600; font-size: 1.15rem; color: var(--text-dark);">
+                👋 Welcome! Choose your grammar adventure level to begin exactly 50 fun pronoun challenges!
+            </div>
+            
+            <button class="btn btn-level btn-easy" onclick="startQuiz('easy')">🟢 Easy Level <span style="font-size:0.85rem; font-weight:normal; display:block;">Classes 1–2 (I, He, She, It, They...)</span></button>
+            <button class="btn btn-level btn-medium" onclick="startQuiz('medium')">🟡 Medium Level <span style="font-size:0.85rem; font-weight:normal; display:block;">Classes 3–4 (Object & Possessive Pronouns)</span></button>
+            <button class="btn btn-level btn-hard" onclick="startQuiz('hard')">🔴 Hard Level <span style="font-size:0.85rem; font-weight:normal; display:block;">Classes 4–5 (Relative, Reflexive, Interrogative)</span></button>
+
+            <div class="dashboard-status">
+                <div style="font-weight: 800; margin-bottom: 8px; border-bottom: 1px solid rgba(0,0,0,0.08); padding-bottom: 4px;">🏆 Your Local High Scores:</div>
+                <div class="status-item"><span>🟢 Easy Level:</span><span id="score-easy">Not played yet</span></div>
+                <div class="status-item"><span>🟡 Medium Level:</span><span id="score-medium">Not played yet</span></div>
+                <div class="status-item"><span>🔴 Hard Level:</span><span id="score-hard">Not played yet</span></div>
+            </div>
+        </div>
+
+        <div id="screen-quiz" class="screen">
+            <div class="quiz-header">
+                <div>Level: <span id="display-level" style="text-transform: capitalize;">-</span></div>
+                <div>Score: <span id="display-score" style="color: var(--color-correct);">0</span> / <span id="display-total-count">50</span></div>
+            </div>
+
+            <div class="progress-bar-container">
+                <div id="quiz-progress" class="progress-bar"></div>
+            </div>
+
+            <div id="current-question-count" style="font-weight: 700; color: var(--text-light); margin-bottom: 8px; font-size: 0.95rem;">QUESTION 1 OF 50</div>
+            
+            <div id="illustration-container" class="illustration-panel" style="display: none;"></div>
+
+            <div id="question-text" class="question-box">Loading question template context text...</div>
+
+            <div id="options-box" class="options-grid">
+                </div>
+
+            <div id="feedback-explanation" class="explanation-box">
+                <div class="explanation-title" id="feedback-title"></div>
+                <div id="explanation-text-content" style="font-size: 0.95rem; font-weight: 600; line-height: 1.4;"></div>
+            </div>
+
+            <div class="nav-buttons">
+                <button id="btn-prev" class="btn" onclick="handleNavigation('prev')">⬅️ Previous</button>
+                <button id="btn-home" class="btn" onclick="handleNavigation('home')">🏠 Home</button>
+                <button id="btn-next" class="btn" onclick="handleNavigation('next')">➡️ Next</button>
+            </div>
+        </div>
+
+        <div id="screen-summary" class="screen">
+            <h2 style="text-align: center; font-weight: 800; font-size: 1.8rem; margin-bottom: 12px;">📊 Quiz Completed!</h2>
+            
+            <div class="badge-showcase">
+                <div id="summary-badge-icon" class="badge-icon">🏆</div>
+                <div id="summary-badge-title" class="badge-title">Pronoun Master</div>
+                <p id="summary-badge-desc" style="font-size:0.9rem; color: var(--text-light); margin-top:4px; font-weight:600;"></p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-val" id="summary-final-score">0/50</div>
+                    <div style="font-size:0.85rem; font-weight:600; color:var(--text-light);">Final Score</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-val" id="summary-percentage">0%</div>
+                    <div style="font-size:0.85rem; font-weight:600; color:var(--text-light);">Percentage</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-val" id="summary-time" style="color: #0284c7;">0s</div>
+                    <div style="font-size:0.85rem; font-weight:600; color:var(--text-light);">Time Taken</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-val" id="summary-accuracy" style="color: #16a34a;">0</div>
+                    <div style="font-size:0.85rem; font-weight:600; color:var(--text-light);">Correct Answers</div>
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 16px;">
+                <button class="btn" style="background: linear-gradient(135deg, #4f46e5, #4338ca); color: white;" onclick="restartCurrentLevel()">🔄 Play Again</button>
+                <button class="btn" style="background: linear-gradient(135deg, #10b981, #059669); color: white;" onclick="triggerCertificatePrint()">🖨️ Print Certificate</button>
+                <button class="btn" style="background: #cbd5e1; color: var(--text-dark);" onclick="showScreen('start')">Choose Another Level</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="certificate-print-area">
+        <div class="cert-title">Certificate of Achievement</div>
+        <div class="cert-subtitle">Awarded for Outstanding Grammar Mastery</div>
+        <p class="cert-text">This is proudly presented to</p>
+        <div class="cert-name" id="cert-user-name">Excellent Student</div>
+        <p class="cert-text" style="margin-top: 20px;">
+            for successfully completing the <strong>👥 Pronouns Quiz</strong> at <span id="cert-quiz-level" style="text-transform: capitalize;"></span> level.<br>
+            Achieved a remarkable score of <strong id="cert-quiz-score"></strong> (<span id="cert-quiz-percent"></span> Accuracy) earning the distinction badge of:
+        </p>
+        <div id="cert-badge-title" style="font-size: 1.75rem; font-weight: 800; color: #4f46e5; margin: 20px 0;">Pronoun Master</div>
+        <div class="cert-meta">
+            <div>Date Issued: <br><strong id="cert-date"></strong></div>
+            <div>Authorized Instructor: <br><strong>👥 Pronouns Learning App</strong></div>
+        </div>
+    </div>
+
+    <script>
+        /* ==========================================
+           COMPREHENSIVE QUESTION DATA BANKS (150 UNIQUE ITEMS)
+           ========================================== */
+        const quizData = {
+            easy: [
+                {id:1, text:"Riya is playing. ___ is happy.", options:["She","He","It","They"], answer:"She", exp:"'She' is used for one girl or woman."},
+                {id:2, text:"Rahul is reading. ___ is reading a book.", options:["He","She","We","It"], answer:"He", exp:"'He' is used for one boy or man."},
+                {id:3, text:"The cat is sleeping. ___ is sleeping.", options:["It","They","We","He"], answer:"It", exp:"'It' is used for an animal or thing.", image:"cat"},
+                {id:4, text:"Aman and Ravi are friends. ___ are playing.", options:["They","He","She","It"], answer:"They", exp:"'They' is used for more than one person, animal, or thing."},
+                {id:5, text:"I am a student. Which word is the pronoun?", options:["I","am","student","a"], answer:"I", exp:"'I' is a pronoun used to talk about yourself."},
+                {id:6, text:"The dog is barking. ___ is loud.", options:["It","They","She","He"], answer:"It", exp:"'It' refers to one animal.", image:"dog"},
+                {id:7, text:"My mom is cooking. ___ makes yummy food.", options:["She","He","It","We"], answer:"She", exp:"'She' refers to one female person.", image:"girl"},
+                {id:8, text:"My dad is tall. ___ plays basketball.", options:["He","She","It","They"], answer:"He", exp:"'He' refers to one male person.", image:"boy"},
+                {id:9, text:"Tom and I are playing. ___ are happy.", options:["We","They","You","He"], answer:"We", exp:"'We' includes yourself and someone else."},
+                {id:10, text:"You and Lily are nice. ___ are my friends.", options:["You","He","It","She"], answer:"You", exp:"'You' can be used for more than one person being spoken to."},
+                {id:11, text:"The ball is red. ___ rolls fast.", options:["It","They","He","She"], answer:"It", exp:"'It' refers to a non-living item like a ball."},
+                {id:12, text:"Look at Sam. ___ is running.", options:["He","She","It","They"], answer:"He", exp:"'He' is the correct match for a boy."},
+                {id:13, text:"Look at Tina. ___ is singing.", options:["She","He","It","We"], answer:"She", exp:"'She' is the correct match for a girl."},
+                {id:14, text:"The birds are flying. ___ are high in the sky.", options:["They","It","We","He"], answer:"They", exp:"'They' is used for multiple birds."},
+                {id:15, text:"Max is a good pup. ___ wags its tail.", options:["It","They","We","She"], answer:"It", exp:"'It' is common for a single pet."},
+                {id:16, text:"Mary and Anna are sisters. ___ share toys.", options:["They","We","She","You"], answer:"They", exp:"'They' refers to more than one person."},
+                {id:17, text:"This is my book. ___ like to read.", options:["I","He","She","They"], answer:"I", exp:"Use 'I' to represent yourself talking.", image:"book"},
+                {id:18, text:"Are ___ coming to my party, Tim?", options:["you","he","it","they"], answer:"you", exp:"'You' is used when talking directly to someone."},
+                {id:19, text:"The sun is hot. ___ shines bright.", options:["It","He","She","They"], answer:"It", exp:"'It' matches the sun (thing)."},
+                {id:20, text:"Ben and I go to school. ___ walk together.", options:["We","They","You","He"], answer:"We", exp:"'Ben and I' becomes 'We'."},
+                {id:21, text:"The car is blue. ___ is new.", options:["It","They","He","She"], answer:"It", exp:"'It' is used for objects like a car."},
+                {id:22, text:"My sister loves dolls. ___ has five dolls.", options:["She","He","It","They"], answer:"She", exp:"'She' matches a sister."},
+                {id:23, text:"My brother likes cars. ___ has a toy truck.", options:["He","She","It","We"], answer:"He", exp:"'He' matches a brother."},
+                {id:24, text:"The apples are red. ___ look sweet.", options:["They","It","She","He"], answer:"They", exp:"'They' is plural for items."},
+                {id:25, text:"You and I are learning. ___ can do this!", options:["We","They","You","He"], answer:"We", exp:"'You and I' equals 'We'."},
+                {id:26, text:"The frog jumps. ___ is green.", options:["It","He","She","They"], answer:"It", exp:"'It' represents an animal."},
+                {id:27, text:"This is Amy. ___ is my best friend.", options:["She","He","It","They"], answer:"She", exp:"'She' for a female friend."},
+                {id:28, text:"This is Leo. ___ is a funny boy.", options:["He","She","It","We"], answer:"He", exp:"'He' for a male friend."},
+                {id:29, text:"The books are heavy. ___ are in the bag.", options:["They","It","We","She"], answer:"They", exp:"Plural objects use 'They'.", image:"book"},
+                {id:30, text:"'I like cake,' said Ben. Who is 'I'?", options:["Ben","Cake","The Reader","Nobody"], answer:"Ben", exp:"'I' refers to the speaker, Ben."},
+                {id:31, text:"The fish can swim. ___ lives in water.", options:["It","They","He","She"], answer:"It", exp:"Singular animal uses 'It'."},
+                {id:32, text:"The children are laughing. ___ are happy.", options:["They","We","You","It"], answer:"They", exp:"Plural group uses 'They'."},
+                {id:33, text:"My teacher is kind. ___ helps us.", options:["She","He","It","They"], answer:"She", exp:"'She' is commonly used for a singular lady teacher."},
+                {id:34, text:"Dad bought a bike. ___ is red.", options:["It","He","She","They"], answer:"It", exp:"'It' represents the bike."},
+                {id:35, text:"Tim and Lily are drawing. ___ love art.", options:["They","We","You","It"], answer:"They", exp:"Two separate people use 'They'."},
+                {id:36, text:"The table is old. ___ is brown.", options:["It","They","He","She"], answer:"It", exp:"'It' works for furniture items."},
+                {id:37, text:"Where are you going? Which is the pronoun?", options:["you","Where","are","going"], answer:"you", exp:"'you' is the person pronoun here."},
+                {id:38, text:"We love ice cream. Which is the pronoun?", options:["We","love","ice","cream"], answer:"We", exp:"'We' is a plural subject pronoun."},
+                {id:39, text:"He is a doctor. Which is the pronoun?", options:["He","doctor","is","a"], answer:"He", exp:"'He' replaces the name of a male person."},
+                {id:40, text:"She plays the piano. Which is the pronoun?", options:["She","plays","piano","the"], answer:"She", exp:"'She' replaces the name of a female person."},
+                {id:41, text:"It is raining today. Which is the pronoun?", options:["It","raining","today","is"], answer:"It", exp:"'It' is a pronoun used for weather context."},
+                {id:42, text:"They are singing a song. Which is the pronoun?", options:["They","singing","song","are"], answer:"They", exp:"'They' is a pronoun for a group of singers."},
+                {id:43, text:"Hello! Are you happy? Which is the pronoun?", options:["you","Hello","Are","happy"], answer:"you", exp:"'you' is the pronoun directed at the listener."},
+                {id:44, text:"The tree is big. ___ has green leaves.", options:["It","They","He","She"], answer:"It", exp:"'It' is for singular plants/trees."},
+                {id:45, text:"The boys are fast. ___ won the race.", options:["They","He","We","It"], answer:"They", exp:"Plural boys use 'They'."},
+                {id:46, text:"My aunt lives in London. ___ is visiting us.", options:["She","He","It","They"], answer:"She", exp:"Aunt is female, so we use 'She'."},
+                {id:47, text:"My uncle is a chef. ___ bakes delicious cakes.", options:["He","She","It","They"], answer:"He", exp:"Uncle is male, so we use 'He'."},
+                {id:48, text:"The pencil is sharp. ___ is on the desk.", options:["It","They","He","She"], answer:"It", exp:"'It' matches a single pencil."},
+                {id:49, text:"My friend and I are reading. ___ like stories.", options:["We","They","You","He"], answer:"We", exp:"'My friend and I' includes yourself, making it 'We'."},
+                {id:50, text:"The stars are bright. ___ shine at night.", options:["They","It","We","She"], answer:"They", exp:"Plural objects use 'They'."}
+            ],
+            medium: [
+                {id:51, text:"Rita has a book. Rita is reading it. Replace the underlined word.", options:["She","He","They","We"], answer:"She", exp:"'She' replaces the subject noun Rita."},
+                {id:52, text:"The boys are playing. I can see ____.", options:["them","they","him","she"], answer:"them", exp:"'them' is the object pronoun for plural boys."},
+                {id:53, text:"Which of the following is a possessive pronoun?", options:["Mine","Me","Him","Us"], answer:"Mine", exp:"'Mine' shows ownership (possessive pronoun)."},
+                {id:54, text:"Choose the correct sentence.", options:["This bag is mine.","This bag is me.","This bag is him.","This bag is us."], answer:"This bag is mine.", exp:"'mine' is correct to show that the bag belongs to me."},
+                {id:55, text:"John called Sarah. John gave ___ a gift.", options:["her","him","them","me"], answer:"her", exp:"'her' is the object pronoun for Sarah."},
+                {id:56, text:"Please help ___, I cannot lift this heavy box.", options:["me","I","mine","my"], answer:"me", exp:"'me' is the object pronoun for the speaker."},
+                {id:57, text:"We are going to the park. Come with ___.", options:["us","we","ours","me"], answer:"us", exp:"'us' is the object pronoun for 'we'."},
+                {id:58, text:"Look at that dog! Give ___ a bone.", options:["it","its","them","him"], answer:"it", exp:"'it' is the object pronoun for a single dog."},
+                {id:59, text:"This ball belongs to Tom. It is ___.", options:["his","him","he","mine"], answer:"his", exp:"'his' is a possessive pronoun meaning belonging to him."},
+                {id:60, text:"This dress belongs to Mary. It is ___.", options:["hers","her","she","yours"], answer:"hers", exp:"'hers' is a possessive pronoun meaning belonging to her."},
+                {id:61, text:"This house belongs to us. It is ___.", options:["ours","our","us","we"], answer:"ours", exp:"'ours' shows that it belongs to our group."},
+                {id:62, text:"This classroom belongs to the students. It is ___.", options:["theirs","them","their","they"], answer:"theirs", exp:"'theirs' shows ownership by a plural group."},
+                {id:63, text:"Is this jacket ___? You left it on the chair.", options:["yours","your","you","mine"], answer:"yours", exp:"'yours' asks if ownership belongs to the person spoken to."},
+                {id:64, text:"Show the letters to ___. I want to read them.", options:["me","I","my","mine"], answer:"me", exp:"'me' acts as the object after a preposition."},
+                {id:65, text:"The teacher told ___ to sit down quietly.", options:["us","we","ours","ourselves"], answer:"us", exp:"'us' is the receiving object pronoun here."},
+                {id:66, text:"Where is Peter? I need to talk to ___.", options:["him","he","his","them"], answer:"him", exp:"'him' is the object form of 'he'."},
+                {id:67, text:"The girls are lost. Let's guide ___.", options:["them","they","their","her"], answer:"them", exp:"'them' works as the object pronoun for multiple girls."},
+                {id:68, text:"This pen belongs to me. It is ___.", options:["mine","my","me","myself"], answer:"mine", exp:"'mine' is used alone without following a noun."},
+                {id:69, text:"Can you pass the salt to ___?", options:["me","I","my","yours"], answer:"me", exp:"'me' is the correct object pronoun."},
+                {id:70, text:"We made a cake. The cake is ___.", options:["ours","our","us","we"], answer:"ours", exp:"'ours' means it belongs to us."},
+                {id:71, text:"They bought a new car. The car is ___.", options:["theirs","their","them","they"], answer:"theirs", exp:"'theirs' means it belongs to them."},
+                {id:72, text:"He forgot his hat. This hat is ___.", options:["his","him","he","its"], answer:"his", exp:"'his' can function as a possessive pronoun directly."},
+                {id:73, text:"She drew a picture. The picture is ___.", options:["hers","her","she","yours"], answer:"hers", exp:"'hers' is the possessive pronoun for her."},
+                {id:74, text:"The puppy belongs to you. It is ___.", options:["yours","your","you","yourselves"], answer:"yours", exp:"'yours' indicates belonging to you."},
+                {id:75, text:"Give the toy to the baby boy. Give it to ___.", options:["him","he","his","it"], answer:"him", exp:"'him' is the object pronoun for a baby boy."},
+                {id:76, text:"I saw Kelly at school. I waved to ___.", options:["her","she","hers","it"], answer:"her", exp:"'her' is the object pronoun for a girl."},
+                {id:77, text:"Mr. Smith taught ___ English last year.", options:["us","we","ours","our"], answer:"us", exp:"'us' is the recipient object of the action."},
+                {id:78, text:"Invite Anna and Elsa. Invite ___ to the party.", options:["them","they","their","her"], answer:"them", exp:"'them' is the object pronoun for both girls."},
+                {id:79, text:"Replace the noun phrase: *The books* are on the shelf.", options:["They","It","Them","Their"], answer:"They", exp:"'They' is the subject pronoun for plural items."},
+                {id:80, text:"Replace the noun phrase: *The cat* drank the milk.", options:["It","They","He","Its"], answer:"It", exp:"'It' is the subject pronoun for a single animal."},
+                {id:81, text:"Replace the noun phrase: *My father* works in an office.", options:["He","Him","His","She"], answer:"He", exp:"'He' is the subject pronoun for a man."},
+                {id:82, text:"Replace the noun phrase: *My mother* loves gardening.", options:["She","Her","Hers","It"], answer:"She", exp:"'She' is the subject pronoun for a woman."},
+                {id:83, text:"Replace the noun phrase: *Jack and I* went fishing.", options:["We","They","Us","You"], answer:"We", exp:"'We' is the subject pronoun when 'I' is included."},
+                {id:84, text:"Replace the noun phrase: I ate *the cookies*.", options:["them","they","it","their"], answer:"them", exp:"'them' is the object pronoun for plural objects."},
+                {id:85, text:"Replace the noun phrase: I called *Sam* on the phone.", options:["him","he","his","them"], answer:"him", exp:"'him' is the object pronoun for a male name."},
+                {id:86, text:"Replace the noun phrase: The teacher praised *Lily*.", options:["her","she","hers","it"], answer:"her", exp:"'her' is the object pronoun for a female name."},
+                {id:87, text:"Identify the object pronoun: 'The teacher helped us.'", options:["us","teacher","helped","The"], answer:"us", exp:"'us' is the object pronoun because it receives the action."},
+                {id:88, text:"Identify the object pronoun: 'Mom kissed him goodnight.'", options:["him","Mom","kissed","goodnight"], answer:"him", exp:"'him' is the object pronoun receiving the action."},
+                {id:89, text:"Identify the object pronoun: 'Please tell them the truth.'", options:["them","tell","truth","Please"], answer:"them", exp:"'them' is an object pronoun here."},
+                {id:90, text:"Identify the possessive pronoun: 'That blue bicycle is hers.'", options:["hers","That","blue","bicycle"], answer:"hers", exp:"'hers' is the possessive pronoun showing ownership."},
+                {id:91, text:"Identify the possessive pronoun: 'The victory was ours!'", options:["ours","victory","was","The"], answer:"ours", exp:"'ours' shows that the victory belonged to us."},
+                {id:92, text:"Identify the possessive pronoun: 'Is this book yours?'", options:["yours","this","book","Is"], answer:"yours", exp:"'yours' is the possessive pronoun."},
+                {id:93, text:"Choose the correct word: The cat licked ___ paws.", options:["its","it's","their","his"], answer:"its", exp:"'its' (no apostrophe) is the possessive adjective modifier context here."},
+                {id:94, text:"Choose the correct word: We love ___ country.", options:["our","ours","us","we"], answer:"our", exp:"'our' is the possessive form placed before a noun."},
+                {id:95, text:"They built this house themselves. It is ___.", options:["theirs","their","them","themselves"], answer:"theirs", exp:"'theirs' is the stand-alone possessive pronoun."},
+                {id:96, text:"That notebook belongs to me. It is ___.", options:["mine","my","me","myself"], answer:"mine", exp:"'mine' represents ownership directly without adding 'notebook' again."},
+                {id:97, text:"Can you show ___ your new toy?", options:["us","ours","we","our"], answer:"us", exp:"'us' is the proper object pronoun target."},
+                {id:98, text:"Listen to ___, I am telling the truth!", options:["me","I","mine","my"], answer:"me", exp:"'me' follows prepositions safely."},
+                {id:99, text:"The presentation was great. Everyone cheered for ___.", options:["them","they","theirs","their"], answer:"them", exp:"'them' is used as the object pronoun."},
+                {id:100, text:"This is my seat, and that one is ___.", options:["yours","your","you","yourselves"], answer:"yours", exp:"'yours' is the possessive pronoun option."}
+            ],
+            hard: [
+                {id:101, text:"Choose the demonstrative pronoun: _____ is my bag.", options:["This","He","Him","They"], answer:"This", exp:"'This' points out a nearby singular object."},
+                {id:102, text:"Choose the interrogative pronoun: _____ is your best friend?", options:["Who","This","It","They"], answer:"Who", exp:"'Who' is used as a pronoun to ask about people."},
+                {id:103, text:"Choose the relative pronoun: The boy _____ won the race is my friend.", options:["who","this","it","they"], answer:"who", exp:"'who' connects the relative clause describing the boy."},
+                {id:104, text:"Identify the pronoun in this sentence: 'She is reading a story.'", options:["She","reading","story","is"], answer:"She", exp:"'She' is a personal pronoun acting as the subject."},
+                {id:105, text:"Choose the possessive pronoun: This pencil is _____.", options:["mine","me","I","him"], answer:"mine", exp:"'mine' is a possessive pronoun that stands alone."},
+                {id:106, text:"Look at _____ stars way up in the sky.", options:["those","this","these","that"], answer:"those", exp:"'those' points to plural items far away."},
+                {id:107, text:"_____ of these books do you want to read?", options:["Which","Who","Whom","Whose"], answer:"Which", exp:"'Which' asks to choose from a limited set of options."},
+                {id:108, text:"The house _____ roof is red belongs to my uncle.", options:["whose","which","who","that"], answer:"whose", exp:"'whose' is a relative pronoun showing possession."},
+                {id:109, text:"I hurt _____ while playing football yesterday.", options:["myself","himself","herself","yourself"], answer:"myself", exp:"'myself' matches the subject pronoun 'I'."},
+                {id:110, text:"He did the entire homework project by _____.", options:["himself","themselves","myself","itself"], answer:"himself", exp:"'himself' is the reflexive form that matches 'He'."},
+                {id:111, text:"She painted the bedroom all by _____.", options:["herself","himself","myself","themselves"], answer:"herself", exp:"'herself' matches 'She'."},
+                {id:112, text:"We cleaned the whole classroom all by _____.", options:["ourselves","themselves","yourselves","myself"], answer:"ourselves", exp:"'ourselves' is the plural reflexive pronoun for 'We'."},
+                {id:113, text:"The children cooked dinner by _____.", options:["themselves","himself","ourselves","yourselves"], answer:"themselves", exp:"'themselves' matches the plural noun 'children'."},
+                {id:114, text:"You must take care of _____ during winter, Tim.", options:["yourself","yourselves","himself","myself"], answer:"yourself", exp:"Singular person addressed uses 'yourself'."},
+                {id:115, text:"_____ are the shoes I bought yesterday right here.", options:["These","This","That","Those"], answer:"These", exp:"'These' points out plural items close to the speaker."},
+                {id:116, text:"_____ is a very beautiful dress you are wearing over there.", options:["That","This","These","Those"], answer:"That", exp:"'That' points to a singular item at a distance."},
+                {id:117, text:"_____ did you say to the teacher?", options:["What","Who","Which","Whose"], answer:"What", exp:"'What' is an interrogative pronoun asking for information."},
+                {id:118, text:"To _____ did you give the keys?", options:["whom","who","whose","which"], answer:"whom", exp:"'whom' is used correctly as the object of a preposition."},
+                {id:119, text:"The cake _____ my mom baked was delicious.", options:["which","who","whom","whose"], answer:"which", exp:"'which' acts as a relative pronoun for non-living items like cake."},
+                {id:120, text:"Identify the relative pronoun: 'The dog that barked is gone.'", options:["that","dog","barked","gone"], answer:"that", exp:"'that' connects the description clause to the dog."},
+                {id:121, text:"Identify the demonstrative pronoun: 'These are delicious apples.'", options:["These","are","delicious","apples"], answer:"These", exp:"'These' is the demonstrative subject pronoun."},
+                {id:122, text:"Identify the interrogative pronoun: 'Whose is this jacket?'", options:["Whose","is","this","jacket"], answer:"Whose", exp:"'Whose' is an interrogative pronoun asking about possession."},
+                {id:123, text:"Identify the reflexive pronoun: 'I will do it myself.'", options:["myself","I","will","it"], answer:"myself", exp:"'myself' is the reflexive pronoun ending in -self."},
+                {id:124, text:"What is the pronoun type of 'Those'? 'Those are my old toys.'", options:["Demonstrative","Relative","Personal","Interrogative"], answer:"Demonstrative", exp:"'Those' points to specific objects, making it demonstrative."},
+                {id:125, text:"What is the pronoun type of 'Who'? 'Who is knocking?'", options:["Interrogative","Relative","Reflexive","Possessive"], answer:"Interrogative", exp:"'Who' is used to form a question, so it is interrogative."},
+                {id:126, text:"What is the pronoun type of 'Whom'? 'Whom did you see?'", options:["Interrogative","Demonstrative","Relative","Reflexive"], answer:"Interrogative", exp:"It forms a question inquiring about an object person."},
+                {id:127, text:"Choose the correct reflexive pronoun: The robot turned ___ off.", options:["itself","himself","herself","themselves"], answer:"itself", exp:"An object/machine like a robot uses 'itself'."},
+                {id:128, text:"Choose the correct relative pronoun: The lady ___ lives next door is nice.", options:["who","which","what","whose"], answer:"who", exp:"'who' describes person subjects like 'the lady'."},
+                {id:129, text:"Choose the correct relative pronoun: The store ___ sells toys is closed.", options:["that","who","whom","whose"], answer:"that", exp:"'that' is appropriate for non-person targets like a store."},
+                {id:130, text:"Choose the correct demonstrative pronoun: Look here, ___ is my new watch.", options:["this","that","these","those"], answer:"this", exp:"'this' indicates a singular object nearby."},
+                {id:131, text:"Identify the pronoun: 'Everyone enjoyed the party.'", options:["Everyone","enjoyed","party","the"], answer:"Everyone", exp:"'Everyone' is an indefinite pronoun."},
+                {id:132, text:"Identify the pronoun: 'Someone is at the gate.'", options:["Someone","is","at","gate"], answer:"Someone", exp:"'Someone' is an indefinite pronoun."},
+                {id:133, text:"Identify the pronoun: 'Nobody wanted to leave early.'", options:["Nobody","wanted","leave","early"], answer:"Nobody", exp:"'Nobody' is a negative indefinite pronoun."},
+                {id:134, text:"Choose the correct pronoun: Neither of the boys brought ___ bag.", options:["his","their","them","they"], answer:"his", exp:"'Neither' is singular and formally takes a singular pronoun like 'his'."},
+                {id:135, text:"Identify the relative pronoun: 'The book which you gave me is lost.'", options:["which","me","you","book"], answer:"which", exp:"'which' relates the clause back to the book."},
+                {id:136, text:"Choose the correct pronoun: Each of us did ___ best.", options:["our","their","us","my"], answer:"our", exp:"'Each of us' focuses on the group's actions, matching 'our'."},
+                {id:137, text:"Identify the interrogative pronoun: 'Which is your favourite colour?'", options:["Which","your","favourite","colour"], answer:"Which", exp:"'Which' is the question-asking pronoun here."},
+                {id:138, text:"Identify the pronoun: 'Both are responsible for this.'", options:["Both","responsible","for","this"], answer:"Both", exp:"'Both' is an indefinite pronoun referring to two units."},
+                {id:139, text:"Choose the correct pronoun: The boys enjoyed ___ at the theme park.", options:["themselves","himself","yourselves","ourselves"], answer:"themselves", exp:"'themselves' matches the plural subject 'the boys'."},
+                {id:140, text:"Choose the correct pronoun: You and your brother must finish this ___.", options:["yourselves","yourself","themselves","ourselves"], answer:"yourselves", exp:"Plural 'you' (you and someone else) uses 'yourselves'."},
+                {id:141, text:"Identify the demonstrative pronoun: 'That looks like an interesting movie.'", options:["That","looks","interesting","movie"], answer:"That", exp:"'That' stands alone as a demonstrative subject pronoun."},
+                {id:142, text:"Identify the relative pronoun: 'The singer whose song went viral is here.'", options:["whose","singer","song","here"], answer:"whose", exp:"'whose' introduces the relative description showing possession."},
+                {id:143, text:"Choose the correct pronoun: _____ is your name?", options:["What","Who","Which","Whose"], answer:"What", exp:"'What' is an interrogative pronoun asking for a name identifier."},
+                {id:144, text:"Choose the correct pronoun: _____ is this notebook? Oh, it's Tom's.", options:["Whose","Who","What","Which"], answer:"Whose", exp:"'Whose' asks about ownership."},
+                {id:145, text:"Identify the reflexive pronoun: 'The kitten washed itself.'", options:["itself","kitten","washed","The"], answer:"itself", exp:"'itself' is a reflexive pronoun matching a singular animal."},
+                {id:146, text:"Choose the correct pronoun: The car, _____ was speeding, hit the wall.", options:["which","who","whom","whose"], answer:"which", exp:"'which' is used for non-human subjects like cars in non-restrictive clauses."},
+                {id:147, text:"Choose the correct pronoun: Is there _____ at the door?", options:["anyone","someone","no-one","they"], answer:"anyone", exp:"'anyone' is typically used for questions regarding indefinite people."},
+                {id:148, text:"Identify the interrogative pronoun: 'What made you say that?'", options:["What","you","that","say"], answer:"What", exp:"'What' is the question pronoun acting as the subject of the action."},
+                {id:149, text:"Identify the pronoun: 'Many attended the presentation.'", options:["Many","attended","presentation","the"], answer:"Many", exp:"'Many' serves as an indefinite pronoun representing multiple individuals."},
+                {id:150, text:"Choose the correct pronoun: We should always look after _____.", options:["ourselves","themselves","myself","himself"], answer:"ourselves", exp:"'ourselves' is the correct reflexive form that matches the subject pronoun 'We'."}
+            ]
+        };
+
+        /* ==========================================
+           WEB AUDIO API - CLEAN RENDERING SYSTEM
+           ========================================== */
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            try {
+                initAudio();
+                if (!audioCtx) return;
+
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'click') {
+                    osc.frequency.setValueAtTime(450, now);
+                    gainNode.gain.setValueAtTime(0.1, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'correct') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+                    osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+                    gainNode.gain.setValueAtTime(0.12, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.linearRampToValueAtTime(110, now + 0.25);
+                    gainNode.gain.setValueAtTime(0.15, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'complete') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(587.33, now); // D5
+                    osc.frequency.setValueAtTime(880.00, now + 0.15); // A5
+                    osc.frequency.setValueAtTime(1174.66, now + 0.3); // D6
+                    gainNode.gain.setValueAtTime(0.15, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+                    osc.start(now);
+                    osc.stop(now + 0.6);
+                }
+            } catch (e) {
+                console.log("Audio playback error handled:", e);
+            }
+        }
+
+        /* ==========================================
+           SVG PICTURE CUSTOM RENDERING FACTORY ENGINE
+           ========================================== */
+        function getInlineSVG(key) {
+            const svgStyles = "width:100px; height:100px;";
+            switch(key) {
+                case 'cat':
+                    return `<svg style="${svgStyles}" viewBox="0 0 24 24" fill="#f97316"><path d="M12 2c-5.52 0-10 4.48-10 10s4.48 10 10 10 10-4.48 10-10-4.48-10-10-10zm0 15c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm-3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/></svg>`;
+                case 'dog':
+                    return `<svg style="${svgStyles}" viewBox="0 0 24 24" fill="#b45309"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/></svg>`;
+                case 'girl':
+                    return `<svg style="${svgStyles}" viewBox="0 0 24 24" fill="#f472b6"><path d="M12 2c-2.21 0-4 1.79-4 4 0 1.31.63 2.46 1.61 3.2C7.14 10.45 5 12.97 5 16v2h14v-2c0-3.03-2.14-5.55-4.61-6.8a3.98 3.98 0 0 0 1.61-3.2c0-2.21-1.79-4-4-4z"/></svg>`;
+                case 'boy':
+                    return `<svg style="${svgStyles}" viewBox="0 0 24 24" fill="#60a5fa"><path d="M12 2c-2.21 0-4 1.79-4 4 0 1.31.63 2.46 1.61 3.2C7.14 10.45 5 12.97 5 16v2h14v-2c0-3.03-2.14-5.55-4.61-6.8A3.98 3.98 0 0 0 16 6c0-2.21-1.79-4-4-4z"/></svg>`;
+                case 'book':
+                    return `<svg style="${svgStyles}" viewBox="0 0 24 24" fill="#a855f7"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg> `;
+                default:
+                    return '';
+            }
+        }
+
+        /* ==========================================
+           QUIZ STATE VARIABLES
+           ========================================== */
+        let activeLevel = '';
+        let questionsList = [];
+        let currentIndex = 0;
+        let scoreCounter = 0;
+        let userChoicesHistory = {}; // Maps index -> chosen text
+        let quizStartTime = null;
+
+        /* ==========================================
+           APP CORE FLOW ROUTINES
+           ========================================== */
+        window.addEventListener('DOMContentLoaded', () => {
+            refreshDashboardScores();
+        });
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(`screen-${screenId}`).classList.add('active');
+            if(screenId !== 'summary') {
+                stopConfetti();
+            }
+        }
+
+        function refreshDashboardScores() {
+            ['easy', 'medium', 'hard'].forEach(lvl => {
+                const saved = localStorage.getItem(`pronoun_quiz_score_${lvl}`);
+                if (saved) {
+                    document.getElementById(`score-${lvl}`).innerText = `${saved}% Highest Score`;
+                }
+            });
+        }
+
+        function startQuiz(level) {
+            playSound('click');
+            activeLevel = level;
+            
+            // Shallow clone data array to safely shuffle without mutating source references
+            let sourceQuestions = [...quizData[level]];
+            questionsList = shuffleArray(sourceQuestions).slice(0, 50);
+
+            // Sanity configuration initialization 
+            currentIndex = 0;
+            scoreCounter = 0;
+            userChoicesHistory = {};
+            quizStartTime = new Date();
+
+            document.getElementById('display-level').innerText = level + " Level";
+            document.getElementById('display-total-count').innerText = questionsList.length;
+
+            loadQuestion(currentIndex);
+            showScreen('quiz');
+        }
+
+        function loadQuestion(idx) {
+            const q = questionsList[idx];
+            
+            // Top headers setup status
+            document.getElementById('current-question-count').innerText = `QUESTION ${idx + 1} OF ${questionsList.length}`;
+            document.getElementById('display-score').innerText = scoreCounter;
+
+            // Render Progress Bar
+            const percentProgress = ((idx) / questionsList.length) * 100;
+            document.getElementById('quiz-progress').style.width = `${percentProgress}%`;
+
+            // Illustration Graphic check logic
+            const illustBox = document.getElementById('illustration-container');
+            if (q.image) {
+                illustBox.innerHTML = getInlineSVG(q.image);
+                illustBox.style.display = 'flex';
+            } else {
+                illustBox.style.display = 'none';
+                illustBox.innerHTML = '';
+            }
+
+            // Question title layout
+            document.getElementById('question-text').innerText = q.text;
+
+            // Options container composition
+            const optionsBox = document.getElementById('options-box');
+            optionsBox.innerHTML = '';
+
+            // Shuffle choice options representation array on first visit context lock mapping
+            if (!q._shuffledOptions) {
+                q._shuffledOptions = shuffleArray([...q.options]);
+            }
+
+            const feedbackArea = document.getElementById('feedback-explanation');
+            feedbackArea.style.display = 'none';
+
+            // Re-render choices cards
+            q._shuffledOptions.forEach(opt => {
+                const card = document.createElement('div');
+                card.className = 'option-card';
+                card.innerText = opt;
+                card.onclick = () => selectOption(opt, card);
+                optionsBox.appendChild(card);
+            });
+
+            // Adjust navigation control disabled locks states safely
+            document.getElementById('btn-prev').disabled = (idx === 0);
+            
+            // Check if user already locked an answer priorly for this item index instance frame
+            if (userChoicesHistory.hasOwnProperty(idx)) {
+                restoreAnswerState(idx);
+            } else {
+                document.getElementById('btn-next').disabled = true; // Block advancement until selection explicitly actioned
+            }
+        }
+
+        function selectOption(selectedText, cardElement) {
+            const q = questionsList[currentIndex];
+            userChoicesHistory[currentIndex] = selectedText;
+
+            // Lock choosing capability instantly
+            const siblings = document.getElementById('options-box').children;
+            for (let child of siblings) {
+                child.classList.add('disabled');
+                if (child.innerText === q.answer) {
+                    child.classList.add('correct');
+                }
+            }
+
+            if (selectedText === q.answer) {
+                cardElement.classList.add('correct');
+                scoreCounter++;
+                document.getElementById('display-score').innerText = scoreCounter;
+                playSound('correct');
+                showExplanationBlock(true, q.exp);
+            } else {
+                cardElement.classList.add('wrong');
+                playSound('wrong');
+                showExplanationBlock(false, q.exp);
+            }
+
+            document.getElementById('btn-next').disabled = false;
+        }
+
+        function restoreAnswerState(idx) {
+            const q = questionsList[idx];
+            const chosen = userChoicesHistory[idx];
+            const siblings = document.getElementById('options-box').children;
+
+            for (let child of siblings) {
+                child.classList.add('disabled');
+                if (child.innerText === q.answer) {
+                    child.classList.add('correct');
+                }
+                if (child.innerText === chosen && chosen !== q.answer) {
+                    child.classList.add('wrong');
+                }
+            }
+
+            showExplanationBlock(chosen === q.answer, q.exp);
+            document.getElementById('btn-next').disabled = false;
+        }
+
+        function showExplanationBlock(isCorrect, explanationText) {
+            const container = document.getElementById('feedback-explanation');
+            const title = document.getElementById('feedback-title');
+            const bodyText = document.getElementById('explanation-text-content');
+
+            if (isCorrect) {
+                title.innerHTML = "✅ Correct!";
+                container.style.borderColor = "var(--color-correct)";
+                container.style.background = "#f0fdf4";
+                title.style.color = "#166534";
+            } else {
+                title.innerHTML = "❌ Not Quite Right";
+                container.style.borderColor = "var(--color-wrong)";
+                container.style.background = "#fef2f2";
+                title.style.color = "#991b1b";
+            }
+
+            bodyText.innerText = explanationText;
+            container.style.display = 'block';
+        }
+
+        /* ==========================================
+           MANDATORY DISCIPLINE ORDER NAVIGATION MANAGEMENT
+           ========================================== */
+        function handleNavigation(action) {
+            playSound('click');
+            if (action === 'home') {
+                if (confirm("Are you sure you want to quit this level and return to the main home screen? Your current level progress will be lost.")) {
+                    showScreen('start');
+                }
+            } else if (action === 'prev') {
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    loadQuestion(currentIndex);
+                }
+            } else if (action === 'next') {
+                if (currentIndex < questionsList.length - 1) {
+                    currentIndex++;
+                    loadQuestion(currentIndex);
+                } else {
+                    processQuizCompletion();
+                }
+            }
+        }
+
+        function restartCurrentLevel() {
+            startQuiz(activeLevel);
+        }
+
+        /* ==========================================
+           COMPLETION AND EVALUATION PARSING LAYER
+           ========================================== */
+        function processQuizCompletion() {
+            playSound('complete');
+            const totalQuestions = questionsList.length;
+            const finalPercentage = Math.round((scoreCounter / totalQuestions) * 100);
+            
+            // Process duration time
+            const endTime = new Date();
+            const elapsedSeconds = Math.floor((endTime - quizStartTime) / 1000);
+            const minutesFormatted = Math.floor(elapsedSeconds / 60);
+            const remainderSeconds = elapsedSeconds % 60;
+            const timeString = minutesFormatted > 0 ? `${minutesFormatted}m ${remainderSeconds}s` : `${remainderSeconds}s`;
+
+            // Evaluate Achievement Badges Rules
+            let badgeTitle = "";
+            let badgeIcon = "";
+            let badgeDesc = "";
+
+            if (finalPercentage >= 90) {
+                badgeTitle = "🏆 Pronoun Master";
+                badgeIcon = "🏆";
+                badgeDesc = "Amazing work! You fully understand pronouns perfectly!";
+                startConfetti();
+            } else if (finalPercentage >= 70) {
+                badgeTitle = "🌟 Grammar Explorer";
+                badgeIcon = "🌟";
+                badgeDesc = "Great job! You have fantastic grammar skills!";
+                startConfetti();
+            } else if (finalPercentage >= 50) {
+                badgeTitle = "👍 Good Learner";
+                badgeIcon = "👍";
+                badgeDesc = "Nice effort! Practice a bit more to achieve perfect score!";
+            } else {
+                badgeTitle = "📚 Keep Practising";
+                badgeIcon = "📚";
+                badgeDesc = "Don't give up! Review the grammar cards and try again!";
+            }
+
+            // Save Highscores to Storage safely
+            const previouslySaved = localStorage.getItem(`pronoun_quiz_score_${activeLevel}`);
+            if (!previouslySaved || finalPercentage > parseInt(previouslySaved)) {
+                localStorage.setItem(`pronoun_quiz_score_${activeLevel}`, finalPercentage);
+            }
+            refreshDashboardScores();
+
+            // Populate Results Interface View
+            document.getElementById('summary-final-score').innerText = `${scoreCounter} / ${totalQuestions}`;
+            document.getElementById('summary-percentage').innerText = `${finalPercentage}%`;
+            document.getElementById('summary-time').innerText = timeString;
+            document.getElementById('summary-accuracy').innerText = scoreCounter;
+            document.getElementById('summary-badge-icon').innerText = badgeIcon;
+            document.getElementById('summary-badge-title').innerText = badgeTitle;
+            document.getElementById('summary-badge-desc').innerText = badgeDesc;
+
+            // Pre-compile values hidden inside ready printable invoice certificate
+            document.getElementById('cert-quiz-level').innerText = activeLevel;
+            document.getElementById('cert-quiz-score').innerText = `${scoreCounter} / ${totalQuestions}`;
+            document.getElementById('cert-quiz-percent').innerText = `${finalPercentage}%`;
+            document.getElementById('cert-badge-title').innerText = badgeTitle;
+            document.getElementById('cert-date').innerText = new Date().toLocaleDateString();
+
+            showScreen('summary');
+        }
+
+        function triggerCertificatePrint() {
+            const inputName = prompt("Please enter the student's name for the certificate:", "Excellent Student");
+            if(inputName !== null && inputName.trim() !== "") {
+                document.getElementById('cert-user-name').innerText = inputName;
+                window.print();
+            }
+        }
+
+        /* ==========================================
+           UTILITY MATHEMATICAL ALGORITHMS (SHUFFLE)
+           ========================================== */
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        /* ==========================================
+           PURE CANVAS-BASED CONFETTI ENGINE
+           ========================================== */
+        let confettiInterval = null;
+        let confettiPieces = [];
+        const canvas = document.getElementById('confetti-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function startConfetti() {
+            canvas.style.display = 'block';
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            confettiPieces = [];
+            
+            for(let i=0; i<100; i++) {
+                confettiPieces.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    r: Math.random() * 6 + 4,
+                    d: Math.random() * canvas.height,
+                    color: `hsl(${Math.random() * 360}, 90%, 65%)`,
+                    tilt: Math.random() * 10 - 5,
+                    tiltAngleIncremental: Math.random() * 0.07 + 0.02,
+                    tiltAngle: 0
+                });
+            }
+            if(!confettiInterval) {
+                confettiInterval = requestAnimationFrame(updateConfettiFrame);
+            }
+        }
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        function updateConfettiFrame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let activeAnimation = false;
+
+            confettiPieces.forEach((p) => {
+                p.tiltAngle += p.tiltAngleIncremental;
+                p.y += (Math.cos(p.d) + 3 + p.r / 2) / 2;
+                p.x += Math.sin(p.tiltAngle);
+                p.tilt = Math.sin(p.tiltAngle - p.r/2) * 15;
+
+                if(p.y <= canvas.height) {
+                    activeAnimation = true;
+                }
+
+                ctx.beginPath();
+                ctx.lineWidth = p.r;
+                ctx.strokeStyle = p.color;
+                ctx.moveTo(p.x + p.tilt + p.r/2, p.y);
+                ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r/2);
+                ctx.stroke();
+
+                // Recycle out of bound items
+                if (p.y > canvas.height) {
+                    p.x = Math.random() * canvas.width;
+                    p.y = -20;
+                    p.tilt = Math.random() * 10 - 5;
+                }
+            });
+
+            if(activeAnimation && document.getElementById('screen-summary').classList.contains('active')) {
+                confettiInterval = requestAnimationFrame(updateConfettiFrame);
+            } else {
+                stopConfetti();
+            }
+        }
+
+        function stopConfetti() {
+            canvas.style.display = 'none';
+            cancelAnimationFrame(confettiInterval);
+            confettiInterval = null;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+    </script>
+</body>
+</html>

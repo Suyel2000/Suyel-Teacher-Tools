@@ -274,13 +274,15 @@
             color: white;
             font-size: 11px;
             font-weight: bold;
-            padding: 1px 4px;
+            padding: 2px 5px;
             border-radius: 4px;
             z-index: 5;
             pointer-events: none;
             opacity: 0;
             transform: translate(-50%, -50%);
             transition: opacity 0.2s;
+            line-height: 1;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
         }
 
         body.show-peri-labels .peri-label {
@@ -366,7 +368,6 @@
 
             <div class="grid-wrapper" id="fullscreen-target">
                 <div class="grid" id="grid-element"></div>
-                <div id="perimeter-labels-layer" style="position: absolute; top: 0; left: 0; pointer-events: none;"></div>
             </div>
         </div>
     </div>
@@ -375,7 +376,6 @@
         const GRID_SIZE = 20;
         const CELL_SIZE = 40;
         const gridElement = document.getElementById('grid-element');
-        const periLabelsLayer = document.getElementById('perimeter-labels-layer');
         
         let activeTiles = new Set(); 
         let drawMode = 'add'; 
@@ -426,7 +426,6 @@
             document.getElementById('mode-erase').style.borderColor = mode === 'erase' ? '#fca5a5' : '';
         }
 
-        // Mathematical bounding-box tracking coordinates engine
         function attachPointerEvents() {
             function handlePointerAction(e) {
                 const rect = gridElement.getBoundingClientRect();
@@ -452,7 +451,6 @@
                 const r = Math.floor(y / CELL_SIZE);
                 const key = `${r},${c}`;
 
-                // Intuitive tap interaction: if a user clicks an existing tile in draw mode, erase it
                 if (drawMode === 'add' && activeTiles.has(key)) {
                     currentStrokeMode = 'erase';
                 } else {
@@ -496,7 +494,9 @@
             cells.forEach(cell => {
                 cell.classList.remove('p-top', 'p-bottom', 'p-left', 'p-right');
             });
-            periLabelsLayer.innerHTML = '';
+            
+            // Clean out old perimeter element tags relative to the grid instance
+            document.querySelectorAll('.peri-label').forEach(el => el.remove());
 
             let area = activeTiles.size;
             let perimeter = 0;
@@ -529,14 +529,17 @@
             let topOffset = r * CELL_SIZE;
             let leftOffset = c * CELL_SIZE;
 
-            if (edge === 'top') { topOffset += 0; leftOffset += 20; }
-            if (edge === 'bottom') { topOffset += 40; leftOffset += 20; }
-            if (edge === 'left') { topOffset += 20; leftOffset += 0; }
-            if (edge === 'right') { topOffset += 20; leftOffset += 40; }
+            // Mathematical calculation mapping labels exactly to gridline intersections
+            if (edge === 'top') { leftOffset += CELL_SIZE / 2; }
+            if (edge === 'bottom') { topOffset += CELL_SIZE; leftOffset += CELL_SIZE / 2; }
+            if (edge === 'left') { topOffset += CELL_SIZE / 2; }
+            if (edge === 'right') { topOffset += CELL_SIZE / 2; leftOffset += CELL_SIZE; }
 
             label.style.top = `${topOffset}px`;
             label.style.left = `${leftOffset}px`;
-            periLabelsLayer.appendChild(label);
+            
+            // Append directly to the relative container structure to anchor layout coordinates
+            gridElement.appendChild(label);
         }
 
         function pushHistory() {
@@ -686,6 +689,21 @@
                 if (!activeTiles.has(`${r},${c-1}`)) { ctx.beginPath(); ctx.moveTo(c*CELL_SIZE, r*CELL_SIZE); ctx.lineTo(c*CELL_SIZE, (r+1)*CELL_SIZE); ctx.stroke(); }
                 if (!activeTiles.has(`${r},${c+1}`)) { ctx.beginPath(); ctx.moveTo((c+1)*CELL_SIZE, r*CELL_SIZE); ctx.lineTo((c+1)*CELL_SIZE, (r+1)*CELL_SIZE); ctx.stroke(); }
             });
+
+            if (document.body.classList.contains('show-peri-labels')) {
+                ctx.fillStyle = '#EF4444';
+                ctx.font = 'bold 10px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                activeTiles.forEach(key => {
+                    const [r, c] = key.split(',').map(Number);
+                    if (!activeTiles.has(`${r-1},${c}`)) { ctx.fillText("1", c * CELL_SIZE + 20, r * CELL_SIZE); }
+                    if (!activeTiles.has(`${r+1},${c}`)) { ctx.fillText("1", c * CELL_SIZE + 20, (r + 1) * CELL_SIZE); }
+                    if (!activeTiles.has(`${r},${c-1}`)) { ctx.fillText("1", c * CELL_SIZE, r * CELL_SIZE + 20); }
+                    if (!activeTiles.has(`${r},${c+1}`)) { ctx.fillText("1", (c + 1) * CELL_SIZE, r * CELL_SIZE + 20); }
+                });
+            }
 
             const link = document.createElement('a');
             link.download = 'area-perimeter-tiles.png';

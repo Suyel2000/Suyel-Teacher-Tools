@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Interactive Measuring Tape</title>
+    <style>
+        :root {
+            --primary: #4A90E2;
+            --primary-hover: #357ABD;
+            --success: #2ECC71;
+            --bg-color: #F8FAFC;
+            --card-bg: #FFFFFF;
+            --text-main: #2C3E50;
+            --tape-bg: #FFEB3B;
+            --tape-text: #222222;
+            --pointer-color: #E74C3C;
+            --zoom: 1;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Bar & Displays */
+        header {
+            background: var(--card-bg);
+            padding: 15px 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            z-index: 10;
+        }
+
+        .brand h1 {
+            font-size: 1.5rem;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .displays {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .display-box {
+            background: #EDF2F7;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            min-width: 180px;
+            text-align: center;
+            border: 2px solid #E2E8F0;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .display-box.target {
+            background: #E8F8F5;
+            border-color: var(--success);
+            color: #117A65;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            background: #EDF2F7;
+            padding: 12px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            z-index: 10;
+            border-bottom: 2px solid #E2E8F0;
+        }
+
+        button {
+            background: var(--card-bg);
+            border: 2px solid #CBD5E1;
+            color: var(--text-main);
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        button.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        @media (max-width: 600px) {
+            button {
+                padding: 10px 14px;
+                font-size: 0.9rem;
+            }
+        }
+
+        /* Workspace & Tape Window */
+        .workspace {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .tape-container {
+            position: relative;
+            width: 100%;
+            height: 240px;
+            background: var(--card-bg);
+            border-top: 4px solid #E2E8F0;
+            border-bottom: 4px solid #E2E8F0;
+            overflow: hidden;
+            cursor: grab;
+        }
+
+        .tape-container:active {
+            cursor: grabbing;
+        }
+
+        .tape-track {
+            position: absolute;
+            height: 100%;
+            left: 50%; /* Center origin */
+            will-change: transform;
+            transform-origin: left top;
+        }
+
+        /* The Physical Tape Design */
+        .tape-body {
+            position: absolute;
+            top: 30px;
+            height: 140px;
+            background: var(--tape-bg);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+            border-radius: 4px;
+            transition: height 0.3s ease;
+        }
+
+        /* Tick Marks */
+        .tick {
+            position: absolute;
+            bottom: 0;
+            width: 2px;
+            background: var(--tape-text);
+            transform: translateX(-50%);
+        }
+        .tick.cm { height: 40px; width: 3px; }
+        .tick.half { height: 28px; width: 2px; }
+        .tick.mm { height: 16px; width: 1px; }
+
+        .tick-inch {
+            position: absolute;
+            top: 0;
+            width: 2px;
+            background: #2980B9;
+            transform: translateX(-50%);
+        }
+        .tick-inch.major { height: 40px; width: 3px; }
+        .tick-inch.half { height: 28px; width: 2px; }
+        .tick-inch.quarter { height: 20px; width: 1.5px; }
+        .tick-inch.eighth { height: 12px; width: 1px; }
+
+        /* Labels */
+        .label {
+            position: absolute;
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--tape-text);
+            transform: translateX(-50%);
+            bottom: 45px;
+        }
+
+        .label-inch {
+            position: absolute;
+            font-weight: 700;
+            font-size: 16px;
+            color: #2980B9;
+            transform: translateX(-50%);
+            top: 45px;
+        }
+
+        /* Interactive Elements */
+        .center-pointer {
+            position: absolute;
+            left: 50%;
+            top: 10px;
+            bottom: 10px;
+            width: 4px;
+            background: var(--pointer-color);
+            z-index: 5;
+            pointer-events: none;
+            box-shadow: 0 0 8px rgba(231, 76, 60, 0.5);
+        }
+
+        .center-pointer::before {
+            content: '▼';
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--pointer-color);
+            font-size: 16px;
+        }
+
+        /* Object Measuring Overlay Guide */
+        .object-guide {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            pointer-events: none;
+            z-index: 3;
+            display: none;
+        }
+
+        .guide-marker {
+            position: absolute;
+            top: 20px;
+            bottom: 20px;
+            width: 4px;
+            background: rgba(46, 204, 113, 0.7);
+            border-left: 2px dashed #27AE60;
+        }
+
+        .guide-marker.start {
+            left: 0;
+        }
+
+        .guide-marker.end {
+            cursor: ew-resize;
+            pointer-events: auto;
+            width: 30px; /* Wider hit box for fingers */
+            margin-left: -15px;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .guide-marker.end::after {
+            content: '';
+            width: 4px;
+            height: 100%;
+            background: #2ECC71;
+            box-shadow: 0 0 10px rgba(46, 204, 113, 0.8);
+        }
+
+        .guide-handle {
+            width: 40px;
+            height: 40px;
+            background: var(--success);
+            border-radius: 50%;
+            position: absolute;
+            top: calc(50% - 20px);
+            left: -5px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        .hidden-element {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">
+            <h1>📏 Interactive Tape</h1>
+        </div>
+        <div class="displays">
+            <div id="targetDisplay" class="display-box target hidden-element">Target: --</div>
+            <div id="measureDisplay" class="display-box">Length: 0.0 cm</div>
+        </div>
+    </header>
+
+    <div class="toolbar">
+        <button onclick="zoom(0.2)">➕ Zoom In</button>
+        <button onclick="zoom(-0.2)">➖ Zoom Out</button>
+        <button onclick="resetToZero()">📏 Reset to 0</button>
+        <button id="unitBtn" onclick="toggleUnits()">🔄 Unit: CM</button>
+        <button id="mmToggle" class="active" onclick="toggleMm()">🎨 Hide/Show mm</button>
+        <button id="numToggle" class="active" onclick="toggleNumbers()">🔢 Hide/Show Numbers</button>
+        <button id="guideToggle" onclick="toggleObjectMode()">📦 Object Mode</button>
+        <button id="targetToggle" onclick="toggleTargetMode()">🎯 Target Game</button>
+        <button onclick="toggleFullscreen()">⛶ Fullscreen</button>
+    </div>
+
+    <div class="workspace">
+        <div class="tape-container" id="tapeContainer">
+            <div class="center-pointer"></div>
+
+            <div class="tape-track" id="tapeTrack">
+                <div class="tape-body" id="tapeBody">
+                    </div>
+            </div>
+
+            <div class="object-guide" id="objectGuide">
+                <div class="guide-marker start"></div>
+                <div class="guide-marker end" id="endMarker">
+                    <div class="guide-handle">↔</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State Configuration
+        let state = {
+            currentX: 0, 
+            isDraggingTape: false,
+            isDraggingGuide: false,
+            startX: 0,
+            zoom: 1.2,
+            isCm: true,
+            showMm: true,
+            showNumbers: true,
+            objectMode: false,
+            targetMode: false,
+            targetValue: 0,
+            guideCm: 15, // End guide relative offset in cm
+            pxPerCm: 40,  // Standard Scale: 40 pixels = 1 cm
+        };
+
+        const MAX_CM = 220;
+        const INCH_TO_CM = 2.54;
+
+        // Elements
+        const track = document.getElementById('tapeTrack');
+        const tapeBody = document.getElementById('tapeBody');
+        const container = document.getElementById('tapeContainer');
+        const measureDisplay = document.getElementById('measureDisplay');
+        const targetDisplay = document.getElementById('targetDisplay');
+        const endMarker = document.getElementById('endMarker');
+        const objectGuide = document.getElementById('objectGuide');
+
+        // Init Setup
+        function init() {
+            renderTape();
+            updateTapePosition();
+            setupEvents();
+        }
+
+        // Render Scale Markings dynamically
+        function renderTape() {
+            tapeBody.innerHTML = '';
+            const totalWidth = MAX_CM * state.pxPerCm;
+            tapeBody.style.width = `${totalWidth}px`;
+
+            // Draw Centimetre and Millimetre marks
+            for (let mm = 0; mm <= MAX_CM * 10; mm++) {
+                const cmValue = mm / 10;
+                const pos = cmValue * state.pxPerCm;
+
+                if (mm % 10 === 0) {
+                    // Whole Centimetre
+                    const tick = document.createElement('div');
+                    tick.className = 'tick cm';
+                    tick.style.left = `${pos}px`;
+                    tapeBody.appendChild(tick);
+
+                    if (state.showNumbers) {
+                        const label = document.createElement('div');
+                        label.className = 'label';
+                        label.style.left = `${pos}px`;
+                        label.innerText = cmValue;
+                        tapeBody.appendChild(label);
+                    }
+                } else if (mm % 5 === 0 && state.showMm) {
+                    // Half Centimetre
+                    const tick = document.createElement('div');
+                    tick.className = 'tick half';
+                    tick.style.left = `${pos}px`;
+                    tapeBody.appendChild(tick);
+                } else if (state.showMm) {
+                    // Millimetre
+                    const tick = document.createElement('div');
+                    tick.className = 'tick mm';
+                    tick.style.left = `${pos}px`;
+                    tapeBody.appendChild(tick);
+                }
+            }
+
+            // Draw Inches marks
+            const maxInches = Math.floor(MAX_CM / INCH_TO_CM);
+            for (let i = 0; i <= maxInches * 8; i++) {
+                const inchValue = i / 8;
+                const cmEquivalent = inchValue * INCH_TO_CM;
+                const pos = cmEquivalent * state.pxPerCm;
+
+                if (pos > totalWidth) break;
+
+                let className = 'tick-inch ';
+                if (i % 8 === 0) className += 'major';
+                else if (i % 4 === 0) className += 'half';
+                else if (i % 2 === 0) className += 'quarter';
+                else className += 'eighth';
+
+                const tick = document.createElement('div');
+                tick.className = className;
+                tick.style.left = `${pos}px`;
+                tapeBody.appendChild(tick);
+
+                if (i % 8 === 0 && state.showNumbers) {
+                    const label = document.createElement('div');
+                    label.className = 'label-inch';
+                    label.style.left = `${pos}px`;
+                    label.innerText = `${inchValue}"`;
+                    tapeBody.appendChild(label);
+                }
+            }
+        }
+
+        // Core Updates & Calculations
+        function updateTapePosition() {
+            // Apply scale styling natively via CSS matrix scaling
+            track.style.transform = `translateX(${state.currentX}px) scale(${state.zoom})`;
+            calculateMeasurement();
+        }
+
+        function calculateMeasurement() {
+            // Measurements are anchored cleanly from the absolute active workspace center
+            const centerOffsetPixels = -state.currentX / state.zoom;
+            let currentCm = centerOffsetPixels / state.pxPerCm;
+            
+            if (currentCm < 0) currentCm = 0;
+            if (currentCm > MAX_CM) currentCm = MAX_CM;
+
+            // Handle Snapping logic safely if close to a whole cm
+            const nearestCm = Math.round(currentCm);
+            if (Math.abs(currentCm - nearestCm) < 0.08) {
+                currentCm = nearestCm;
+            }
+
+            // Update UI
+            if (state.isCm) {
+                measureDisplay.innerText = `Length: ${currentCm.toFixed(1)} cm`;
+            } else {
+                const inches = currentCm / INCH_TO_CM;
+                measureDisplay.innerText = `Length: ${inches.toFixed(1)} inches`;
+            }
+
+            // Object Mode layout alignment
+            if (state.objectMode) {
+                const guidePos = state.guideCm * state.pxPerCm * state.zoom;
+                endMarker.style.transform = `translateX(${guidePos}px)`;
+            }
+
+            // Gamification Target Check
+            if (state.targetMode) {
+                const margin = state.isCm ? 0.15 : 0.1;
+                const evaluatedValue = state.isCm ? currentCm : (currentCm / INCH_TO_CM);
+                if (Math.abs(evaluatedValue - state.targetValue) <= margin) {
+                    targetDisplay.style.background = "#2ECC71";
+                    targetDisplay.style.color = "white";
+                    targetDisplay.innerText = "🎯 Perfect! Match!";
+                } else {
+                    targetDisplay.style.background = "#E8F8F5";
+                    targetDisplay.style.color = "#117A65";
+                    targetDisplay.innerText = `Target: ${state.targetValue} ${state.isCm ? 'cm' : 'in'}`;
+                }
+            }
+        }
+
+        // Toolbar Methods
+        function zoom(amount) {
+            state.zoom = Math.max(0.6, Math.min(2.5, state.zoom + amount));
+            updateTapePosition();
+        }
+
+        function resetToZero() {
+            state.currentX = 0;
+            updateTapePosition();
+        }
+
+        function toggleUnits() {
+            state.isCm = !state.isCm;
+            document.getElementById('unitBtn').innerText = state.isCm ? "🔄 Unit: CM" : "🔄 Unit: INCHES";
+            if (state.targetMode) generateTarget();
+            calculateMeasurement();
+        }
+
+        function toggleMm() {
+            state.showMm = !state.showMm;
+            document.getElementById('mmToggle').classList.toggle('active', state.showMm);
+            renderTape();
+        }
+
+        function toggleNumbers() {
+            state.showNumbers = !state.showNumbers;
+            document.getElementById('numToggle').classList.toggle('active', state.showNumbers);
+            renderTape();
+        }
+
+        function toggleObjectMode() {
+            state.objectMode = !state.objectMode;
+            document.getElementById('guideToggle').classList.toggle('active', state.objectMode);
+            objectGuide.style.display = state.objectMode ? 'block' : 'none';
+            if (state.objectMode) {
+                state.currentX = 0; // Lock to start layout for presentation focus
+            }
+            updateTapePosition();
+        }
+
+        function toggleTargetMode() {
+            state.targetMode = !state.targetMode;
+            document.getElementById('targetToggle').classList.toggle('active', state.targetMode);
+            targetDisplay.classList.toggle('hidden-element', !state.targetMode);
+            if (state.targetMode) generateTarget();
+        }
+
+        function generateTarget() {
+            state.targetValue = state.isCm ? Math.floor(Math.random() * 45) + 5 : Math.floor(Math.random() * 18) + 2;
+            targetDisplay.innerText = `Target: ${state.targetValue} ${state.isCm ? 'cm' : 'in'}`;
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Event Listeners Handling Pointer / Smartboards natively
+        function setupEvents() {
+            // Track Interactions
+            container.addEventListener('mousedown', (e) => startDrag(e.clientX, false));
+            container.addEventListener('touchstart', (e) => startDrag(e.touches[0].clientX, false), {passive: true});
+
+            endMarker.addEventListener('mousedown', (e) => { e.stopPropagation(); startDrag(e.clientX, true); });
+            endMarker.addEventListener('touchstart', (e) => { e.stopPropagation(); startDrag(e.touches[0].clientX, true); }, {passive: true});
+
+            window.addEventListener('mousemove', (e) => handleDrag(e.clientX));
+            window.addEventListener('touchmove', (e) => handleDrag(e.touches[0].clientX), {passive: false});
+
+            window.addEventListener('mouseup', endDrag);
+            window.addEventListener('touchend', endDrag);
+        }
+
+        function startDrag(clientX, isGuide) {
+            if (isGuide) {
+                state.isDraggingGuide = true;
+                state.startX = clientX - (state.guideCm * state.pxPerCm * state.zoom);
+            } else {
+                state.isDraggingTape = true;
+                state.startX = clientX - state.currentX;
+            }
+        }
+
+        function handleDrag(clientX) {
+            if (state.isDraggingTape) {
+                state.currentX = clientX - state.startX;
+                // Boundaries bounds checking
+                if (state.currentX > 0) state.currentX = 0;
+                const minX = -(MAX_CM * state.pxPerCm * state.zoom);
+                if (state.currentX < minX) state.currentX = minX;
+                
+                updateTapePosition();
+            } else if (state.isDraggingGuide) {
+                const targetPixels = (clientX - state.startX) / state.zoom;
+                state.guideCm = Math.max(0, Math.min(MAX_CM, targetPixels / state.pxPerCm));
+                
+                // Adjust entire track position to anchor endpoint visually seamlessly matching up
+                state.currentX = - (state.guideCm * state.pxPerCm * state.zoom);
+                updateTapePosition();
+            }
+        }
+
+        function endDrag() {
+            state.isDraggingTape = false;
+            state.isDraggingGuide = false;
+        }
+
+        // Trigger Startup initialization loop
+        window.onload = init;
+    </script>
+</body>
+</html>

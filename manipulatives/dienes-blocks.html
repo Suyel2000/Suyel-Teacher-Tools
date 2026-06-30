@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dienes Blocks (Base Ten Blocks)</title>
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --workspace-bg: #ffffff;
+            --unit-color: #ffda6a;
+            --unit-border: #ccab43;
+            --ten-color: #a3e635;
+            --ten-border: #71a11f;
+            --hundred-color: #60a5fa;
+            --hundred-border: #3b76c4;
+            --thousand-color: #fb923c;
+            --thousand-border: #c6661a;
+            --text-dark: #1f2937;
+            --text-light: #4b5563;
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+        }
+
+        #app {
+            display: flex;
+            flex-direction: column;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* --- TOOLBAR --- */
+        .toolbar {
+            background: white;
+            padding: 12px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            z-index: 10;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            font-size: 16px;
+            font-weight: 600;
+            padding: 12px 18px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .btn-unit { background-color: var(--unit-color); color: #51400a; }
+        .btn-ten { background-color: var(--ten-color); color: #2a3f07; }
+        .btn-hundred { background-color: var(--hundred-color); color: #0f315f; }
+        .btn-thousand { background-color: var(--thousand-color); color: #5c2b05; }
+        
+        .btn-action { background-color: #e5e7eb; color: var(--text-dark); }
+        .btn-action:hover { background-color: #d1d5db; }
+        .btn-active { background-color: #3b82f6; color: white; }
+        .btn-active:hover { background-color: #2563eb; }
+        .btn-danger { background-color: #fecaca; color: #991b1b; }
+        .btn-danger:hover { background-color: #fca5a5; }
+
+        /* --- DASHBOARD / SIDEBAR PANELS --- */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 15px;
+            padding: 15px 20px;
+            background: #f1f5f9;
+            border-bottom: 2px solid #e2e8f0;
+            z-index: 9;
+        }
+
+        .panel {
+            background: white;
+            padding: 14px 18px;
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+        }
+
+        .panel-title {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-light);
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        /* Live Counter Grid */
+        .counter-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .counter-item { padding: 4px; border-radius: 8px; font-size: 15px;}
+        .c-th { background: #ffedd5; color: #c2410c; }
+        .c-h { background: #dbeafe; color: #1d4ed8; }
+        .c-t { background: #f0fdf4; color: #15803d; }
+        .c-o { background: #fef9c3; color: #a16207; }
+        .total-display {
+            margin-top: 8px;
+            font-size: 18px;
+            text-align: center;
+            font-weight: 800;
+            border-top: 1px solid #f1f5f9;
+            padding-top: 6px;
+        }
+
+        /* Number Builder Input */
+        .builder-box {
+            display: flex;
+            gap: 8px;
+        }
+        .builder-box input {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #cbd5e1;
+            border-radius: 10px;
+            outline: none;
+            font-weight: bold;
+            text-align: center;
+        }
+        .builder-box input:focus { border-color: var(--hundred-color); }
+
+        /* Expanded Form Text */
+        .expanded-text {
+            font-size: 18px;
+            font-weight: 700;
+            color: #334155;
+            min-height: 38px;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Table Design */
+        .pv-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center;
+        }
+        .pv-table th {
+            font-size: 11px;
+            padding: 4px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            color: var(--text-light);
+        }
+        .pv-table td {
+            font-size: 18px;
+            font-weight: 700;
+            padding: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* --- WORKSPACE --- */
+        .workspace-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background-color: var(--workspace-bg);
+            cursor: grab;
+        }
+        .workspace-container.drawing-mode { cursor: crosshair; }
+        .workspace-container:active:not(.drawing-mode) { cursor: grabbing; }
+
+        .workspace {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5000px;
+            height: 5000px;
+            transform-origin: 0 0;
+        }
+
+        .grid-overlay {
+            background-image: linear-gradient(to right, #e2e8f0 1px, transparent 1px),
+                              linear-gradient(to bottom, #e2e8f0 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        #drawing-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5000px;
+            height: 5000px;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* --- DIENES BLOCKS GENERATION --- */
+        .block {
+            position: absolute;
+            cursor: move;
+            touch-action: none;
+            display: grid;
+            gap: 1px;
+            padding: 1px;
+            border-radius: 4px;
+            box-shadow: var(--shadow);
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+            transform-origin: center;
+            will-change: left, top, transform;
+        }
+
+        .block:hover {
+            box-shadow: var(--shadow-lg);
+            filter: brightness(1.03);
+        }
+
+        .block.selected {
+            outline: 3px solid #ef4444;
+            outline-offset: 4px;
+            z-index: 9999 !important;
+        }
+
+        /* Internal Matrix Units */
+        .u-cell {
+            border: 1px solid rgba(0,0,0,0.12);
+            border-radius: 2px;
+            box-shadow: inset 1px 1px 1px rgba(255,255,255,0.4), inset -1px -1px 1px rgba(0,0,0,0.1);
+        }
+
+        /* 1 Unit Cube: 24x24 px */
+        .block-unit {
+            width: 24px;
+            height: 24px;
+            background-color: var(--unit-border);
+            grid-template-columns: 1fr;
+        }
+        .block-unit .u-cell { background-color: var(--unit-color); }
+
+        /* 10 Rod */
+        .block-ten {
+            width: 24px;
+            height: 204px;
+            background-color: var(--ten-border);
+            grid-template-rows: repeat(10, 1fr);
+        }
+        .block-ten .u-cell { background-color: var(--ten-color); }
+
+        /* 100 Flat */
+        .block-hundred {
+            width: 204px;
+            height: 204px;
+            background-color: var(--hundred-border);
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(10, 1fr);
+        }
+        .block-hundred .u-cell { background-color: var(--hundred-color); }
+
+        /* Improved 1000 Cube Isometric 3D Layer Styling */
+        .block-thousand {
+            width: 204px;
+            height: 204px;
+            background-color: var(--thousand-border);
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(10, 1fr);
+            position: absolute;
+            transform: translate3d(0, 0, 0);
+        }
+        
+        /* Top isometric layer mimicking depth layers */
+        .block-thousand::before {
+            content: '';
+            position: absolute;
+            top: -36px;
+            left: 18px;
+            width: 204px;
+            height: 36px;
+            background: #fdba74;
+            transform: skewX(-45deg);
+            border: 1px solid var(--thousand-border);
+            background-image: linear-gradient(to right, rgba(0,0,0,0.1) 1px, transparent 1px);
+            background-size: 20.4px 100%;
+        }
+
+        /* Right isometric side panel layer mimicking depth layers */
+        .block-thousand::after {
+            content: '';
+            position: absolute;
+            top: -18px;
+            right: -36px;
+            width: 36px;
+            height: 204px;
+            background: #ea580c;
+            transform: skewY(-45deg);
+            border: 1px solid var(--thousand-border);
+            background-image: linear-gradient(to bottom, rgba(0,0,0,0.1) 1px, transparent 1px);
+            background-size: 100% 20.4px;
+        }
+        .block-thousand .u-cell { background-color: var(--thousand-color); }
+
+        /* Animation class */
+        .pop-in {
+            animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.6); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Controls Panel Bottom Right */
+        .canvas-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 8;
+        }
+        .btn-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            padding: 0;
+            justify-content: center;
+            font-size: 22px;
+            background: white;
+            color: var(--text-dark);
+        }
+
+        /* --- RESPONSIVE WORK --- */
+        @media (max-width: 768px) {
+            .dashboard { grid-template-columns: 1fr 1fr; }
+            .toolbar { padding: 8px; gap: 6px; }
+            button { padding: 8px 12px; font-size: 14px; }
+        }
+        @media (max-width: 480px) {
+            .dashboard { grid-template-columns: 1fr; }
+            button { padding: 6px 10px; font-size: 13px; }
+        }
+
+        @media print {
+            .toolbar, .dashboard, .canvas-controls { display: none !important; }
+            body, html, .workspace-container { background: white; overflow: visible; width: 100%; height: auto; }
+            .workspace { transform: scale(1) !important; top:0 !important; left:0 !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div class="toolbar">
+        <div class="button-group">
+            <button class="btn-unit" onclick="spawnBlock('unit')">➕ Unit (1)</button>
+            <button class="btn-ten" onclick="spawnBlock('ten')">➕ Ten (10)</button>
+            <button class="btn-hundred" onclick="spawnBlock('hundred')">➕ Hundred (100)</button>
+            <button class="btn-thousand" onclick="spawnBlock('thousand')">➕ Thousand (1000)</button>
+        </div>
+        <div class="button-group">
+            <button id="btn-pencil" class="btn-action" onclick="activatePencil()" title="Draw Tool">✏️ Pencil</button>
+        </div>
+        <div class="button-group">
+            <button class="btn-action" onclick="undo()" title="Undo">↩️ Undo</button>
+            <button class="btn-action" onclick="redo()" title="Redo">↪️ Redo</button>
+            <button class="btn-danger" onclick="deleteSelected()" title="Delete Selected">🗑️ Delete</button>
+            <button class="btn-danger" onclick="clearWorkspace()">🧹 Clear All</button>
+        </div>
+        <div class="button-group" style="margin-left: auto;">
+            <button class="btn-action" onclick="toggleFullscreen()">📺 Fullscreen</button>
+        </div>
+    </div>
+
+    <div class="dashboard">
+        <div class="panel">
+            <div class="panel-title">Live Place Value Counter</div>
+            <div class="counter-grid">
+                <div class="counter-item c-th">Th: <span id="count-thousand">0</span></div>
+                <div class="counter-item c-h">H: <span id="count-hundred">0</span></div>
+                <div class="counter-item c-t">T: <span id="count-ten">0</span></div>
+                <div class="counter-item c-o">O: <span id="count-unit">0</span></div>
+            </div>
+            <div class="total-display">Total Number: <span id="count-total" style="color:#0284c7;">0</span></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">Number Builder</div>
+            <div class="builder-box">
+                <input type="number" id="build-input" min="1" max="9999" placeholder="e.g. 2345" onkeydown="if(event.key==='Enter') buildNumber()">
+                <button class="btn-hundred" style="box-shadow:none;" onclick="buildNumber()">Build</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">Expanded Form</div>
+            <div class="expanded-text" id="expanded-display">0</div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">Place Value Table</div>
+            <table class="pv-table">
+                <thead>
+                    <tr>
+                        <th style="color:#c2410c">Thousands</th>
+                        <th style="color:#1d4ed8">Hundreds</th>
+                        <th style="color:#15803d">Tens</th>
+                        <th style="color:#a16207">Ones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td id="table-thousand" style="background:#fff7ed">0</td>
+                        <td id="table-hundred" style="background:#eff6ff">0</td>
+                        <td id="table-ten" style="background:#f0fdf4">0</td>
+                        <td id="table-unit" style="background:#fefce8">0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="workspace-container" id="ws-container" onmousedown="handleWorkspaceMouseDown(event)" ontouchstart="handleWorkspaceTouchStart(event)">
+        <div class="workspace grid-overlay" id="workspace">
+            <canvas id="drawing-canvas" width="5000" height="5000"></canvas>
+            </div>
+
+        <div class="canvas-controls">
+            <button class="btn-circle btn-action" onclick="zoom(0.1)">➕</button>
+            <button class="btn-circle btn-action" onclick="zoom(-0.1)">➖</button>
+            <button class="btn-circle btn-action" onclick="resetZoom()" style="font-size:14px; font-weight:bold;">100%</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // State Tracking
+    let blocks = [];
+    let selectedBlockId = null;
+    let scale = 1.0;
+    let panX = 40;
+    let panY = 40;
+    let currentMode = 'select'; // 'select', 'pencil'
+    let isPanning = false;
+    let isDrawing = false;
+    let startX, startY;
+    let blockIdCounter = 0;
+
+    // Undo/Redo Stacks
+    let undoStack = [];
+    let redoStack = [];
+
+    const workspace = document.getElementById('workspace');
+    const wsContainer = document.getElementById('ws-container');
+    const canvas = document.getElementById('drawing-canvas');
+    const ctx = canvas.getContext('2d');
+
+    // App Initialization
+    function init() {
+        updateWorkspaceTransform();
+        setupCanvasStyles();
+        saveState();
+        
+        // Global Keyboard listeners
+        window.addEventListener('keydown', (e) => {
+            if (document.activeElement.tagName === 'INPUT') return; 
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                deleteSelected();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+                e.preventDefault();
+                undo();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+                e.preventDefault();
+                redo();
+            }
+        });
+
+        // Global mouse and touch event registration with passive options for smooth tracking
+        window.addEventListener('mousemove', handleGlobalMouseMove);
+        window.addEventListener('mouseup', handleGlobalMouseUp);
+        window.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
+        window.addEventListener('touchend', handleGlobalTouchEnd);
+    }
+
+    function setupCanvasStyles() {
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+    }
+
+    // Mode Toggles
+    function activatePencil() {
+        deselectAll();
+        if (currentMode === 'pencil') {
+            currentMode = 'select';
+            document.getElementById('btn-pencil').classList.remove('btn-active');
+            wsContainer.classList.remove('drawing-mode');
+        } else {
+            currentMode = 'pencil';
+            document.getElementById('btn-pencil').classList.add('btn-active');
+            wsContainer.classList.add('drawing-mode');
+        }
+    }
+
+    function resetModes() {
+        currentMode = 'select';
+        document.getElementById('btn-pencil').classList.remove('btn-active');
+        wsContainer.classList.remove('drawing-mode');
+    }
+
+    // --- CORE BLOCK SPAWNING ---
+    function spawnBlock(type, x = null, y = null, triggerSave = true) {
+        blockIdCounter++;
+        const id = 'block_' + blockIdCounter;
+        
+        if (x === null || y === null) {
+            const rect = wsContainer.getBoundingClientRect();
+            x = (-panX + (rect.width / 2) - 100) / scale;
+            y = (-panY + (rect.height / 2) - 100) / scale;
+            x += (Math.random() * 40 - 20);
+            y += (Math.random() * 40 - 20);
+        }
+
+        const blockData = { id, type, x, y, zIndex: blocks.length + 1 };
+        blocks.push(blockData);
+
+        renderBlockElement(blockData);
+        updateCalculations();
+
+        if (triggerSave) saveState();
+    }
+
+    function renderBlockElement(data) {
+        const el = document.createElement('div');
+        el.id = data.id;
+        el.className = `block block-${data.type} pop-in`;
+        el.style.left = `${data.x}px`;
+        el.style.top = `${data.y}px`;
+        el.style.zIndex = data.zIndex;
+
+        let count = 1;
+        if (data.type === 'ten') count = 10;
+        if (data.type === 'hundred' || data.type === 'thousand') count = 100;
+
+        for (let i = 0; i < count; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'u-cell';
+            el.appendChild(cell);
+        }
+
+        el.addEventListener('mousedown', (e) => startDrag(e, data.id));
+        el.addEventListener('touchstart', (e) => startDrag(e, data.id), { passive: false });
+        el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            selectBlock(data.id);
+        });
+
+        workspace.appendChild(el);
+    }
+
+    // --- INTERACTION HANDLING (PAN, DRAW, DRAG) ---
+    let activeDragId = null;
+    let dragStartX, dragStartY;
+
+    function handleWorkspaceMouseDown(e) {
+        const target = e.target;
+        // Blocks can now move freely even if you drag on the workspace container background
+        if (currentMode === 'pencil') {
+            if (target !== wsContainer && target !== workspace && target !== canvas) return;
+            const rect = workspace.getBoundingClientRect();
+            const mouseX = (e.clientX - rect.left) / scale;
+            const mouseY = (e.clientY - rect.top) / scale;
+            isDrawing = true;
+            ctx.beginPath();
+            ctx.moveTo(mouseX, mouseY);
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 4;
+        } else {
+            if (target !== wsContainer && target !== workspace && target !== canvas) return;
+            isPanning = true;
+            startX = e.clientX - panX;
+            startY = e.clientY - panY;
+            deselectAll();
+        }
+    }
+
+    function handleWorkspaceTouchStart(e) {
+        const target = e.target;
+        if (currentMode === 'pencil') {
+            if (target !== wsContainer && target !== workspace && target !== canvas) return;
+            e.preventDefault();
+            const rect = workspace.getBoundingClientRect();
+            const touchX = (e.touches[0].clientX - rect.left) / scale;
+            const touchY = (e.touches[0].clientY - rect.top) / scale;
+            isDrawing = true;
+            ctx.beginPath();
+            ctx.moveTo(touchX, touchY);
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 4;
+        } else {
+            if (target !== wsContainer && target !== workspace && target !== canvas) return;
+            isPanning = true;
+            startX = e.touches[0].clientX - panX;
+            startY = e.touches[0].clientY - panY;
+            deselectAll();
+        }
+    }
+
+    function handleGlobalMouseMove(e) {
+        if (isPanning) {
+            panX = e.clientX - startX;
+            panY = e.clientY - startY;
+            updateWorkspaceTransform();
+        } else if (isDrawing && currentMode === 'pencil') {
+            const rect = workspace.getBoundingClientRect();
+            const mouseX = (e.clientX - rect.left) / scale;
+            const mouseY = (e.clientY - rect.top) / scale;
+            ctx.lineTo(mouseX, mouseY);
+            ctx.stroke();
+        }
+    }
+
+    function handleGlobalTouchMove(e) {
+        if (isPanning) {
+            panX = e.touches[0].clientX - startX;
+            panY = e.touches[0].clientY - startY;
+            updateWorkspaceTransform();
+        } else if (isDrawing && currentMode === 'pencil') {
+            e.preventDefault();
+            const rect = workspace.getBoundingClientRect();
+            const touchX = (e.touches[0].clientX - rect.left) / scale;
+            const touchY = (e.touches[0].clientY - rect.top) / scale;
+            ctx.lineTo(touchX, touchY);
+            ctx.stroke();
+        }
+    }
+
+    function handleGlobalMouseUp() {
+        if (isPanning) isPanning = false;
+        if (isDrawing) {
+            isDrawing = false;
+            saveState();
+        }
+    }
+
+    function handleGlobalTouchEnd() {
+        if (isPanning) isPanning = false;
+        if (isDrawing) {
+            isDrawing = false;
+            saveState();
+        }
+    }
+
+    function startDrag(e, id) {
+        e.stopPropagation();
+        selectBlock(id);
+        activeDragId = id;
+
+        const blockEl = document.getElementById(id);
+        const blockData = blocks.find(b => b.id === id);
+
+        const maxZ = blocks.reduce((max, b) => Math.max(max, b.zIndex), 0);
+        blockData.zIndex = maxZ + 1;
+        blockEl.style.zIndex = blockData.zIndex;
+
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        dragStartX = clientX - blockData.x * scale;
+        dragStartY = clientY - blockData.y * scale;
+
+        const moveHandler = (evt) => {
+            if (activeDragId !== id) return;
+            evt.preventDefault(); // Stop native scrolling behaviors entirely on Smart Boards
+            const cX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+            const cY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+
+            // Free layout movement allowed (unbounded dragging)
+            blockData.x = (cX - dragStartX) / scale;
+            blockData.y = (cY - dragStartY) / scale;
+
+            blockEl.style.left = `${blockData.x}px`;
+            blockEl.style.top = `${blockData.y}px`;
+        };
+
+        const stopHandler = () => {
+            window.removeEventListener('mousemove', moveHandler);
+            window.removeEventListener('mouseup', stopHandler);
+            window.removeEventListener('touchmove', moveHandler);
+            window.removeEventListener('touchend', stopHandler);
+            if (activeDragId) {
+                activeDragId = null;
+                saveState();
+            }
+        };
+
+        window.addEventListener('mousemove', moveHandler);
+        window.addEventListener('mouseup', stopHandler);
+        window.addEventListener('touchmove', moveHandler, { passive: false });
+        window.addEventListener('touchend', stopHandler);
+    }
+
+    // --- CANVAS TRANSFORMS ---
+    function zoom(amount) {
+        scale = Math.min(Math.max(0.3, scale + amount), 3.0);
+        updateWorkspaceTransform();
+    }
+
+    function resetZoom() {
+        scale = 1.0;
+        panX = 40;
+        panY = 40;
+        updateWorkspaceTransform();
+    }
+
+    // requestAnimationFrame pattern optimization for ultra-smooth rendering on Smart Board displays
+    function updateWorkspaceTransform() {
+        window.requestAnimationFrame(() => {
+            workspace.style.transform = `translate3d(${panX}px, ${panY}px, 0) scale(${scale})`;
+        });
+    }
+
+    // --- MANIPULATIVE SELECTION UTILITIES ---
+    function selectBlock(id) {
+        deselectAll();
+        selectedBlockId = id;
+        const el = document.getElementById(id);
+        if (el) el.classList.add('selected');
+    }
+
+    function deselectAll() {
+        selectedBlockId = null;
+        document.querySelectorAll('.block').forEach(el => el.classList.remove('selected'));
+    }
+
+    function deleteSelected() {
+        if (!selectedBlockId) return;
+        blocks = blocks.filter(b => b.id !== selectedBlockId);
+        const el = document.getElementById(selectedBlockId);
+        if (el) {
+            el.classList.add('pop-out');
+            setTimeout(() => el.remove(), 150);
+        }
+        selectedBlockId = null;
+        updateCalculations();
+        saveState();
+    }
+
+    function clearWorkspace() {
+        document.querySelectorAll('.block').forEach(el => el.remove());
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        blocks = [];
+        selectedBlockId = null;
+        updateCalculations();
+        saveState();
+    }
+
+    // --- CALCULATIONS ENGINE & REFLECTIONS ---
+    function updateCalculations() {
+        const tallies = { thousand: 0, hundred: 0, ten: 0, unit: 0 };
+        blocks.forEach(b => { if(tallies[b.type] !== undefined) tallies[b.type]++; });
+
+        const total = (tallies.thousand * 1000) + (tallies.hundred * 100) + (tallies.ten * 10) + tallies.unit;
+
+        document.getElementById('count-thousand').innerText = tallies.thousand;
+        document.getElementById('count-hundred').innerText = tallies.hundred;
+        document.getElementById('count-ten').innerText = tallies.ten;
+        document.getElementById('count-unit').innerText = tallies.unit;
+        document.getElementById('count-total').innerText = total;
+
+        document.getElementById('table-thousand').innerText = tallies.thousand;
+        document.getElementById('table-hundred').innerText = tallies.hundred;
+        document.getElementById('table-ten').innerText = tallies.ten;
+        document.getElementById('table-unit').innerText = tallies.unit;
+
+        let parts = [];
+        if (tallies.thousand > 0) parts.push(`${tallies.thousand * 1000}`);
+        if (tallies.hundred > 0) parts.push(`${tallies.hundred * 100}`);
+        if (tallies.ten > 0) parts.push(`${tallies.ten * 10}`);
+        if (tallies.unit > 0) parts.push(`${tallies.unit}`);
+        
+        const expandedStr = parts.length > 0 ? `${total} = ` + parts.join(' + ') : '0';
+        document.getElementById('expanded-display').innerText = expandedStr;
+    }
+
+    // --- AUTOMATED OPERATIONS ---
+    function buildNumber() {
+        const input = document.getElementById('build-input');
+        let val = parseInt(input.value);
+        if (isNaN(val) || val < 1 || val > 9999) {
+            alert('Please enter a valid number between 1 and 9999');
+            return;
+        }
+
+        clearWorkspace();
+
+        const th = Math.floor(val / 1000); val %= 1000;
+        const h = Math.floor(val / 100); val %= 100;
+        const t = Math.floor(val / 10);
+        const u = val % 10;
+
+        let startX = 60;
+        let startY = 80;
+
+        for(let i=0; i<th; i++) { spawnBlock('thousand', startX + (i*260), startY, false); }
+        if (th > 0) startY += 290;
+        for(let i=0; i<h; i++) { spawnBlock('hundred', startX + (i*220), startY, false); }
+        if (h > 0) startY += 230;
+        for(let i=0; i<t; i++) { spawnBlock('ten', startX + (i*40), startY, false); }
+        if (t > 0) startY += 230;
+        for(let i=0; i<u; i++) { spawnBlock('unit', startX + (i*40), startY, false); }
+
+        updateCalculations();
+        saveState();
+        input.value = '';
+    }
+
+    // --- UNDO / REDO STATE MACHINE MANAGEMENT ---
+    function saveState() {
+        if (undoStack.length > 40) undoStack.shift(); 
+        
+        const stateSnapshot = {
+            blocks: blocks.map(b => ({...b})),
+            canvasDraw: canvas.toDataURL()
+        };
+        undoStack.push(JSON.stringify(stateSnapshot));
+        redoStack = []; 
+    }
+
+    function undo() {
+        if (undoStack.length <= 1) return; 
+        
+        const currentState = undoStack.pop();
+        redoStack.push(currentState);
+
+        const targetState = JSON.parse(undoStack[undoStack.length - 1]);
+        applyState(targetState);
+    }
+
+    function redo() {
+        if (redoStack.length === 0) return;
+        
+        const targetSnapshot = redoStack.pop();
+        undoStack.push(targetSnapshot);
+        
+        applyState(JSON.parse(targetSnapshot));
+    }
+
+    function applyState(stateObj) {
+        document.querySelectorAll('.block').forEach(el => el.remove());
+        blocks = stateObj.blocks.map(b => ({...b}));
+        blocks.forEach(b => renderBlockElement(b));
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (stateObj.canvasDraw) {
+            const img = new Image();
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0);
+            };
+            img.src = stateObj.canvasDraw;
+        }
+        
+        deselectAll();
+        updateCalculations();
+    }
+
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                alert(`Error attempting to enable fullscreen mode: ${err.message}`);
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>

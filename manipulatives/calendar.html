@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Classroom Calendar</title>
+    <style>
+        :root {
+            --primary: #4A90E2;
+            --primary-light: #EBF3FC;
+            --success: #2ECC71;
+            --warning: #F1C40F;
+            --danger: #E74C3C;
+            --purple: #9B59B6;
+            --neutral-dark: #2C3E50;
+            --neutral-light: #F8F9FA;
+            --border-radius: 16px;
+            --transition: all 0.25s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #FFFFFF;
+            color: var(--neutral-dark);
+            height: 100vh;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow: hidden; /* Lock the screen from scrolling globally */
+        }
+
+        /* Toolbar Styling */
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            align-items: center;
+            background: var(--neutral-light);
+            padding: 12px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            width: 100%;
+            flex-shrink: 0; /* Protect toolbar size */
+        }
+
+        button, select {
+            background: white;
+            border: 2px solid #E2E8F0;
+            padding: 10px 20px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--neutral-dark);
+        }
+
+        button:hover {
+            background: var(--primary-light);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        select {
+            padding-right: 35px;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232C3E50' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+        }
+
+        /* Main Layout - Scales into the remaining space without expanding */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 15px;
+            width: 100%;
+            flex: 1;
+            min-height: 0; /* Layout container internal flex behavior fix */
+        }
+
+        @media (max-width: 1024px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+                overflow-y: auto; /* Fallback support only for smaller tablet/mobile portraits */
+            }
+        }
+
+        /* Calendar Container - Fixed proportions scaled dynamically */
+        .calendar-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: white;
+            border: 3px solid var(--neutral-light);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            min-width: 0;
+            height: 100%;
+        }
+
+        .calendar-header {
+            text-align: center;
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--primary);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .weekdays-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .weekday {
+            padding: 8px 5px;
+            background: var(--neutral-light);
+            border-radius: 8px;
+            color: #7F8C8D;
+        }
+
+        .weekday.school-emphasis {
+            background: #E8F4FD;
+            color: var(--primary);
+        }
+
+        /* Auto-sizing Grid preventing scrolling leaks */
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            grid-template-rows: repeat(6, 1fr); /* Enforces rows to scale down to remaining space */
+            gap: 8px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        /* Scaled Date Box UI Target components */
+        .date-box {
+            background: var(--neutral-light);
+            border: 2px solid transparent;
+            border-radius: var(--border-radius);
+            padding: 6px 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            cursor: pointer;
+            transition: var(--transition);
+            animation: popIn 0.3s ease-out;
+            min-height: 0; /* Crucial for internal flex scaling inside grid cells */
+        }
+
+        .date-box:hover {
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+
+        .date-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .date-box.empty {
+            background: transparent;
+            cursor: default;
+            pointer-events: none;
+        }
+
+        /* Interactive Highlights */
+        .date-box.today {
+            border: 3px solid var(--primary);
+            background: var(--primary-light);
+        }
+
+        .date-box.selected-focus {
+            box-shadow: 0 0 0 4px var(--neutral-dark) !important;
+        }
+
+        .date-box.hl-yellow { background-color: #FFF9C4 !important; border-color: #FBC02D; }
+        .date-box.hl-green  { background-color: #C8E6C9 !important; border-color: #388E3C; }
+        .date-box.hl-blue   { background-color: #BBDEFB !important; border-color: #1976D2; }
+        .date-box.hl-red    { background-color: #FFCDD2 !important; border-color: #D32F2F; }
+
+        .weekend-highlight {
+            background-color: #FFF3E0;
+            border-color: #FFE0B2;
+        }
+
+        /* Event and Note display elements */
+        .event-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--neutral-dark);
+            position: absolute;
+            top: 8px;
+            right: 8px;
+        }
+
+        .cell-note {
+            font-size: 0.8rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            background: rgba(255,255,255,0.85);
+            padding: 2px 4px;
+            border-radius: 4px;
+            margin-top: auto;
+            text-align: center;
+            border: 1px solid rgba(0,0,0,0.05);
+            width: 100%;
+        }
+
+        /* Sidebar Panels Layout with standalone container scrolling fallback */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-width: 0;
+            height: 100%;
+            overflow-y: auto; /* Keeps settings container scrolling accessible while keeping calendar completely rigid */
+            padding-right: 4px;
+        }
+
+        .panel {
+            background: var(--neutral-light);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            flex-shrink: 0;
+        }
+
+        .panel h3 {
+            font-size: 1.15rem;
+            margin-bottom: 8px;
+            color: var(--neutral-dark);
+            border-bottom: 2px solid #E2E8F0;
+            padding-bottom: 4px;
+        }
+
+        .info-display {
+            font-size: 1.1rem;
+            font-weight: 600;
+            line-height: 1.5;
+        }
+
+        .info-display span {
+            color: var(--primary);
+            font-weight: 800;
+        }
+
+        .timeline-item {
+            margin-bottom: 6px;
+            padding: 6px 10px;
+            background: white;
+            border-radius: 8px;
+            border-left: 5px solid var(--primary);
+        }
+        .timeline-item strong { display: block; font-size: 0.8rem; color: #7F8C8D; }
+        .timeline-item div { font-size: 1rem; font-weight: 700; }
+
+        .editor-box {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .color-pickers {
+            display: flex;
+            gap: 10px;
+            margin: 2px 0;
+        }
+
+        .color-dot {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #E2E8F0;
+            transition: var(--transition);
+        }
+        .color-dot:hover { transform: scale(1.1); }
+        .color-dot.active { border-color: var(--neutral-dark); transform: scale(1.15); }
+
+        .note-input {
+            width: 100%;
+            padding: 10px;
+            font-size: 0.95rem;
+            border: 2px solid #E2E8F0;
+            border-radius: 8px;
+            outline: none;
+        }
+        .note-input:focus { border-color: var(--primary); }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes popIn {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        @media print {
+            .toolbar, .sidebar, .editor-panel { display: none !important; }
+            body { padding: 0; overflow: visible; }
+            .main-layout { grid-template-columns: 1fr; }
+            .date-box { border: 2px solid #BDC3C7 !important; aspect-ratio: 1.1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <button onclick="changeMonth(-1)">◀ Previous</button>
+        <button onclick="jumpToToday()">📅 Today</button>
+        <button onclick="changeMonth(1)">Next ▶</button>
+        
+        <select id="jumpMonth" onchange="executeJump()"></select>
+        <select id="jumpYear" onchange="executeJump()"></select>
+
+        <button onclick="toggleFullscreen()">⛶ Fullscreen</button>
+        <button onclick="window.print()">🖨 Print</button>
+    </div>
+
+    <div class="main-layout">
+        
+        <div class="calendar-container">
+            <div class="calendar-header" id="monthYearDisplay"></div>
+            <div class="weekdays-grid" id="weekdaysRow">
+                <div class="weekday">Sun</div>
+                <div class="weekday">Mon</div>
+                <div class="weekday">Tue</div>
+                <div class="weekday">Wed</div>
+                <div class="weekday">Thu</div>
+                <div class="weekday">Fri</div>
+                <div class="weekday">Sat</div>
+            </div>
+            <div class="days-grid" id="daysGrid"></div>
+        </div>
+
+        <div class="sidebar">
+            
+            <div class="panel">
+                <h3>Today's Information</h3>
+                <div class="info-display" id="liveTimePanel"></div>
+            </div>
+
+            <div class="panel" id="editorPanel">
+                <h3>Edit Selected Date</h3>
+                <div id="editorFallback" style="color: #7F8C8D;">Tap any date box to edit details or highlights.</div>
+                <div class="editor-box" id="editorContent" style="display: none;">
+                    <p style="font-weight: bold; margin-bottom: 5px; font-size:0.95rem;">Date: <span id="targetDateDisplay"></span></p>
+                    <label style="font-size: 0.85rem; font-weight: bold;">Highlight Color:</label>
+                    <div class="color-pickers">
+                        <div class="color-dot" id="dot-hl-yellow" style="background: #FFF9C4;" onclick="applyHighlight('hl-yellow')"></div>
+                        <div class="color-dot" id="dot-hl-green" style="background: #C8E6C9;" onclick="applyHighlight('hl-green')"></div>
+                        <div class="color-dot" id="dot-hl-blue" style="background: #BBDEFB;" onclick="applyHighlight('hl-blue')"></div>
+                        <div class="color-dot" id="dot-hl-red" style="background: #FFCDD2;" onclick="applyHighlight('hl-red')"></div>
+                    </div>
+                    <input type="text" id="noteInput" class="note-input" placeholder="Enter note..." maxlength="25">
+                    <div style="display: flex; gap: 8px; margin-top: 2px;">
+                        <button onclick="saveCellData()" style="background: var(--primary); color: white; border: none; padding: 8px 12px; flex: 1; font-size: 0.95rem;">Save</button>
+                        <button onclick="clearCellData()" style="background: #E2E8F0; border: none; padding: 8px 12px; font-size: 0.95rem;">Clear</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>Learning Context</h3>
+                <div class="timeline-item"><strong>Yesterday</strong><div id="learnYesterday">-</div></div>
+                <div class="timeline-item"><strong>Today / Selected</strong><div id="learnToday">-</div></div>
+                <div class="timeline-item"><strong>Tomorrow</strong><div id="learnTomorrow">-</div></div>
+            </div>
+
+            <div class="panel">
+                <h3>Classroom Activities</h3>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <button onclick="triggerRandomDate()" style="width: 100%; justify-content: center; padding: 8px;">🎲 Random Date</button>
+                    <button onclick="toggleSchoolWeekEmphasis()" id="btnSchoolWeek" style="width: 100%; justify-content: center; padding: 8px;">🏫 School Week Mode</button>
+                    <button onclick="toggleWeekendHighlight()" id="btnWeekends" style="width: 100%; justify-content: center; padding: 8px;">☀️ Highlight Weekends</button>
+                    <button onclick="clearAllData()" style="width: 100%; justify-content: center; background: #FFF0F0; border-color: #FFAAAA; color: var(--danger); padding: 8px;">🗑️ Clear Board Notes</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const todayDate = new Date();
+        let currentYear = todayDate.getFullYear();
+        let currentMonth = todayDate.getMonth();
+        let activeSelectedDate = null; 
+
+        let calendarData = JSON.parse(localStorage.getItem('classroom_cal_data')) || {};
+        let configFlags = { schoolWeek: false, weekendHighlight: false };
+
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+        window.onload = function() {
+            populateDropdowns();
+            renderCalendar();
+            renderLiveTimePanel();
+            updateLearningPanel(todayDate);
+        };
+
+        function populateDropdowns() {
+            const mSelect = document.getElementById('jumpMonth');
+            const ySelect = document.getElementById('jumpYear');
+            
+            monthNames.forEach((m, idx) => {
+                mSelect.options[idx] = new Option(m, idx);
+            });
+
+            for(let y = currentYear - 5; y <= currentYear + 5; y++) {
+                ySelect.options[ySelect.options.length] = new Option(y, y);
+            }
+        }
+
+        function renderCalendar() {
+            const grid = document.getElementById('daysGrid');
+            const display = document.getElementById('monthYearDisplay');
+            grid.innerHTML = '';
+
+            document.getElementById('jumpMonth').value = currentMonth;
+            document.getElementById('jumpYear').value = currentYear;
+            display.innerText = `${monthNames[currentMonth]} ${currentYear}`;
+
+            const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay();
+            const totalDays = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+            for (let i = 0; i < firstDayIndex; i++) {
+                let emptyDiv = document.createElement('div');
+                emptyDiv.className = 'date-box empty';
+                grid.appendChild(emptyDiv);
+            }
+
+            for (let day = 1; day <= totalDays; day++) {
+                const dateKey = `${currentYear}-${currentMonth}-${day}`;
+                const currentIterationDate = new Date(currentYear, currentMonth, day);
+                const dayOfWeekIndex = currentIterationDate.getDay();
+
+                let dateCell = document.createElement('div');
+                dateCell.className = 'date-box';
+                dateCell.setAttribute('data-key', dateKey);
+                dateCell.onclick = () => selectDateBox(day, dateCell);
+
+                let numDisplay = document.createElement('div');
+                numDisplay.className = 'date-number';
+                numDisplay.innerText = day;
+                dateCell.appendChild(numDisplay);
+
+                if (day === todayDate.getDate() && currentMonth === todayDate.getMonth() && currentYear === todayDate.getFullYear()) {
+                    dateCell.classList.add('today');
+                }
+
+                if (configFlags.weekendHighlight && (dayOfWeekIndex === 0 || dayOfWeekIndex === 6)) {
+                    dateCell.classList.add('weekend-highlight');
+                }
+
+                if (calendarData[dateKey]) {
+                    const saved = calendarData[dateKey];
+                    if (saved.highlight) dateCell.classList.add(saved.highlight);
+                    if (saved.note) {
+                        let dot = document.createElement('div');
+                        dot.className = 'event-indicator';
+                        dateCell.appendChild(dot);
+
+                        let textSpan = document.createElement('div');
+                        textSpan.className = 'cell-note';
+                        textSpan.innerText = saved.note;
+                        dateCell.appendChild(textSpan);
+                    }
+                }
+
+                grid.appendChild(dateCell);
+            }
+        }
+
+        function selectDateBox(day, element) {
+            document.querySelectorAll('.date-box').forEach(el => el.classList.remove('selected-focus'));
+            element.classList.add('selected-focus');
+
+            activeSelectedDate = { year: currentYear, month: currentMonth, day: day, key: `${currentYear}-${currentMonth}-${day}` };
+
+            document.getElementById('editorFallback').style.display = 'none';
+            document.getElementById('editorContent').style.display = 'block';
+            document.getElementById('targetDateDisplay').innerText = `${monthNames[currentMonth]} ${day}, ${currentYear}`;
+            
+            const existingData = calendarData[activeSelectedDate.key] || {};
+            document.getElementById('noteInput').value = existingData.note || '';
+            
+            document.querySelectorAll('.color-dot').forEach(dot => dot.classList.remove('active'));
+            if(existingData.highlight) {
+                const activeDot = document.getElementById(`dot-${existingData.highlight}`);
+                if(activeDot) activeDot.classList.add('active');
+            }
+
+            const chosenDateObj = new Date(currentYear, currentMonth, day);
+            updateLearningPanel(chosenDateObj);
+        }
+
+        function applyHighlight(className) {
+            document.querySelectorAll('.color-dot').forEach(dot => dot.classList.remove('active'));
+            if (!activeSelectedDate) return;
+            
+            if(!calendarData[activeSelectedDate.key]) calendarData[activeSelectedDate.key] = {};
+            
+            if(calendarData[activeSelectedDate.key].highlight === className) {
+                calendarData[activeSelectedDate.key].highlight = '';
+            } else {
+                calendarData[activeSelectedDate.key].highlight = className;
+                const activeDot = document.getElementById(`dot-${className}`);
+                if(activeDot) activeDot.classList.add('active');
+            }
+        }
+
+        function saveCellData() {
+            if (!activeSelectedDate) return;
+            if(!calendarData[activeSelectedDate.key]) calendarData[activeSelectedDate.key] = {};
+            
+            calendarData[activeSelectedDate.key].note = document.getElementById('noteInput').value.trim();
+            localStorage.setItem('classroom_cal_data', JSON.stringify(calendarData));
+            renderCalendar();
+        }
+
+        function clearCellData() {
+            if (!activeSelectedDate) return;
+            delete calendarData[activeSelectedDate.key];
+            localStorage.setItem('classroom_cal_data', JSON.stringify(calendarData));
+            document.getElementById('noteInput').value = '';
+            document.querySelectorAll('.color-dot').forEach(dot => dot.classList.remove('active'));
+            renderCalendar();
+        }
+
+        function changeMonth(direction) {
+            currentMonth += direction;
+            if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+            if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+            renderCalendar();
+        }
+
+        function jumpToToday() {
+            currentYear = todayDate.getFullYear();
+            currentMonth = todayDate.getMonth();
+            renderCalendar();
+            updateLearningPanel(todayDate);
+        }
+
+        function executeJump() {
+            currentMonth = parseInt(document.getElementById('jumpMonth').value);
+            currentYear = parseInt(document.getElementById('jumpYear').value);
+            renderCalendar();
+        }
+
+        function triggerRandomDate() {
+            const totalDays = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const randomDay = Math.floor(Math.random() * totalDays) + 1;
+            const targets = document.getElementById('daysGrid').children;
+            
+            for(let element of targets) {
+                if(!element.classList.contains('empty') && element.querySelector('.date-number').innerText == randomDay) {
+                    element.click();
+                    break;
+                }
+            }
+        }
+
+        function toggleSchoolWeekEmphasis() {
+            configFlags.schoolWeek = !configFlags.schoolWeek;
+            const kids = document.getElementById('weekdaysRow').children;
+            for(let i=0; i<kids.length; i++) {
+                if(i > 0 && i < 6 && configFlags.schoolWeek) {
+                    kids[i].classList.add('school-emphasis');
+                } else {
+                    kids[i].classList.remove('school-emphasis');
+                }
+            }
+            document.getElementById('btnSchoolWeek').style.background = configFlags.schoolWeek ? 'var(--primary-light)' : 'white';
+        }
+
+        function toggleWeekendHighlight() {
+            configFlags.weekendHighlight = !configFlags.weekendHighlight;
+            document.getElementById('btnWeekends').style.background = configFlags.weekendHighlight ? 'var(--primary-light)' : 'white';
+            renderCalendar();
+        }
+
+        function clearAllData() {
+            if(confirm("Are you sure you want to clean all dynamic highlights & text notes across the current board?")) {
+                calendarData = {};
+                localStorage.removeItem('classroom_cal_data');
+                renderCalendar();
+            }
+        }
+
+        function renderLiveTimePanel() {
+            document.getElementById('liveTimePanel').innerHTML = `
+                <span>${daysOfWeek[todayDate.getDay()]}</span><br>
+                ${monthNames[todayDate.getMonth()]} ${todayDate.getDate()}, ${todayDate.getFullYear()}
+            `;
+        }
+
+        function updateLearningPanel(centerDate) {
+            let yest = new Date(centerDate); yest.setDate(centerDate.getDate() - 1);
+            let tom = new Date(centerDate); tom.setDate(centerDate.getDate() + 1);
+
+            document.getElementById('learnYesterday').innerText = `${daysOfWeek[yest.getDay()]}, ${monthNames[yest.getMonth()]} ${yest.getDate()}`;
+            document.getElementById('learnToday').innerText = `${daysOfWeek[centerDate.getDay()]}, ${monthNames[centerDate.getMonth()]} ${centerDate.getDate()}`;
+            document.getElementById('learnTomorrow').innerText = `${daysOfWeek[tom.getDay()]}, ${monthNames[tom.getMonth()]} ${tom.getDate()}`;
+        }
+
+        // Fullscreen Handling
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => alert("Fullscreen error: " + err.message));
+            } else {
+                document.exitFullscreen();
+            }
+        }
+    </script>
+</body>
+</html>

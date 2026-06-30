@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Interactive Graph Paper</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --danger: #dc2626;
+            --danger-hover: #b91c1c;
+            --bg-panel: rgba(255, 255, 255, 0.95);
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --border-radius: 16px;
+            --font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: var(--font);
+            background-color: #ffffff;
+        }
+
+        #canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        /* UI Containers */
+        .ui-panel {
+            position: absolute;
+            background: var(--bg-panel);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: var(--shadow);
+            border-radius: var(--border-radius);
+            z-index: 10;
+            transition: all 0.2s ease;
+        }
+
+        /* Top Toolbar */
+        .toolbar {
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            padding: 8px;
+            align-items: center;
+        }
+
+        /* Shapes Submenu */
+        .shapes-menu {
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 6px;
+            padding: 6px;
+            scale: 0.95;
+            opacity: 0;
+            pointer-events: none;
+            transform-origin: top center;
+        }
+
+        .shapes-menu.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(-50%) translateY(0);
+            scale: 1;
+        }
+
+        /* Bottom Controls */
+        .controls-panel {
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 12px 20px;
+            justify-content: center;
+            align-items: center;
+            max-width: 90vw;
+        }
+
+        /* Buttons Styling */
+        button {
+            border: none;
+            outline: none;
+            background: #f3f4f6;
+            color: #1f2937;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            white-space: nowrap;
+        }
+
+        button:hover {
+            background: #e5e7eb;
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        button.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        button.btn-danger {
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        button.btn-danger:hover {
+            background: var(--danger);
+            color: white;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+        }
+
+        /* Toggle switches */
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #4b5563;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 8px;
+        }
+
+        .toggle-group:hover {
+            background: rgba(0,0,0,0.04);
+        }
+
+        .toggle-group input {
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+            accent-color: var(--primary);
+        }
+
+        /* Zoom indicator & Help hint */
+        .status-tip {
+            position: absolute;
+            bottom: 95px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.75);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 5;
+            text-align: center;
+        }
+
+        .status-tip.visible {
+            opacity: 1;
+        }
+
+        /* Responsive scaling for mobile devices */
+        @media (max-width: 768px) {
+            .toolbar {
+                width: 95vw;
+                overflow-x: auto;
+                justify-content: flex-start;
+                padding: 6px;
+                top: 10px;
+            }
+            .shapes-menu {
+                top: 75px;
+                width: 90vw;
+                overflow-x: auto;
+            }
+            button {
+                padding: 10px 14px;
+                font-size: 14px;
+            }
+            .controls-panel {
+                bottom: 10px;
+                padding: 8px;
+                gap: 6px;
+            }
+            .toggle-group {
+                font-size: 12px;
+                padding: 4px;
+            }
+        }
+
+        @media print {
+            .ui-panel, .status-tip { display: none !important; }
+            body, html { background: white; }
+            #canvas { width: 100% !important; height: 100% !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="canvas"></canvas>
+
+    <div id="statusTip" class="status-tip">Click to place vertices</div>
+
+    <div class="ui-panel toolbar">
+        <button id="tool-pan" class="active">🖐️ Pan</button>
+        <button id="tool-plot">📍 Plot Point</button>
+        <button id="tool-shape">📐 Shapes</button>
+        <button id="tool-draw">✏️ Draw</button>
+        <button id="tool-erase">🗑️ Erase</button>
+        <button id="btn-clear" class="btn-danger">🧹 Clear</button>
+        <button id="btn-fullscreen">⛶ Fullscreen</button>
+    </div>
+
+    <div id="shapesMenu" class="ui-panel shapes-menu">
+        <button id="shape-segment" class="active">📏 Segment</button>
+        <button id="shape-triangle">🔺 Triangle</button>
+        <button id="shape-rectangle">🟩 Rectangle</button>
+        <button id="shape-polygon">⬡ Polygon</button>
+        <button id="btn-complete-poly" style="display:none; background: #10b981; color: white;">✅ Done</button>
+    </div>
+
+    <div class="ui-panel controls-panel">
+        <label class="toggle-group">
+            <input type="checkbox" id="chk-lines" checked> Grid Lines
+        </label>
+        <label class="toggle-group">
+            <input type="checkbox" id="chk-numbers" checked> Axis Numbers
+        </label>
+        <label class="toggle-group">
+            <input type="checkbox" id="chk-labels" checked> Coordinates
+        </label>
+        <label class="toggle-group">
+            <input type="checkbox" id="chk-snap" checked> Snap to Grid
+        </label>
+        <button id="btn-reset" style="padding: 6px 12px; font-size: 14px;">🔄 Reset View</button>
+        <button id="btn-export" style="padding: 6px 12px; font-size: 14px; background: #e0f2fe; color: #0369a1;">💾 Export PNG</button>
+        <button id="btn-print" style="padding: 6px 12px; font-size: 14px; background: #f3e8ff; color: #6b21a8;">🖨️ Print</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // State Machine Configurations
+        let state = {
+            scale: 40,             // Pixels per single grid unit
+            offsetX: 0,            // Dynamic center X offset
+            offsetY: 0,            // Dynamic center Y offset
+            currentTool: 'pan',    // pan, plot, shape, draw, erase
+            shapeType: 'segment',  // segment, triangle, rectangle, polygon
+            points: [],            // Custom user-plotted geometric nodes
+            shapes: [],            // Geometric composite paths
+            freehandStrokes: [],   // Multi-point sketching paths
+            currentStroke: null,   // Active freehand pathway stroke
+            shapeVertices: [],     // Temporary point buffer for shape assembly phase
+            activeDragPoint: null, // Track point object under user drag modification
+            isPanning: false,
+            panStart: { x: 0, y: 0 },
+            options: {
+                showLines: true,
+                showNumbers: true,
+                showLabels: true,
+                snapToGrid: true
+            }
+        };
+
+        // Pointer Tracking State for Multi-touch (Pinch Zoom Support)
+        let ongoingTouches = [];
+
+        // Automatic alphabetic coordinate labels sequence generation (A, B... Z, A1, B1...)
+        function getPointLabel(index) {
+            const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            if (index < 26) return alphabet[index];
+            return alphabet[index % 26] + Math.floor(index / 26);
+        }
+
+        // Initialize Canvas Positioning Dimensions safely across platforms
+        function resizeCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            ctx.scale(dpr, dpr);
+            if (state.offsetX === 0 && state.offsetY === 0) {
+                resetView();
+            } else {
+                draw();
+            }
+        }
+
+        function resetView() {
+            state.scale = 40;
+            state.offsetX = window.innerWidth / 2;
+            state.offsetY = window.innerHeight / 2;
+            draw();
+        }
+
+        // Convert raw viewport pixels into Grid Space structures
+        function screenToGrid(screenX, screenY) {
+            const gx = (screenX - state.offsetX) / state.scale;
+            const gy = -(screenY - state.offsetY) / state.scale;
+            return { x: gx, y: gy };
+        }
+
+        // Convert mathematical Grid Space coordinates back to raw pixels
+        function gridToScreen(gridX, gridY) {
+            const sx = gridX * state.scale + state.offsetX;
+            const sy = state.offsetY - gridY * state.scale;
+            return { x: sx, y: sy };
+        }
+
+        // UI Feedback Notification alerts
+        function showTip(text, duration = 3000) {
+            const tip = document.getElementById('statusTip');
+            tip.textContent = text;
+            tip.classList.add('visible');
+            clearTimeout(tip.timeout);
+            tip.timeout = setTimeout(() => tip.classList.remove('visible'), duration);
+        }
+
+        // Primary Structural High-Performance Rendering Loop Engine
+        function draw() {
+            ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+            
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            // 1. GRID SYSTEM RENDERING
+            if (state.options.showLines) {
+                const minGridX = Math.floor((-state.offsetX) / state.scale);
+                const maxGridX = Math.ceil((width - state.offsetX) / state.scale);
+                const minGridY = Math.floor((state.offsetY - height) / state.scale);
+                const maxGridY = Math.ceil(state.offsetY / state.scale);
+
+                // Render Minor & Major parallel Line Segments
+                for (let x = minGridX; x <= maxGridX; x++) {
+                    ctx.beginPath();
+                    ctx.lineWidth = (x === 0) ? 2.5 : (x % 5 === 0 ? 1.2 : 0.5);
+                    ctx.strokeStyle = (x === 0) ? '#000000' : (x % 5 === 0 ? '#9ca3af' : '#e5e7eb');
+                    const screenPos = gridToScreen(x, 0);
+                    ctx.moveTo(screenPos.x, 0);
+                    ctx.lineTo(screenPos.x, height);
+                    ctx.stroke();
+
+                    // Numeric tick scaling labels along modern horizontal plane
+                    if (state.options.showNumbers && x !== 0 && x % (state.scale < 25 ? 5 : 1) === 0) {
+                        ctx.fillStyle = '#4b5563';
+                        ctx.font = '11px system-ui';
+                        ctx.textAlign = 'center';
+                        let labelY = state.offsetY + 18;
+                        if (labelY < 20) labelY = 20;
+                        if (labelY > height - 10) labelY = height - 10;
+                        ctx.fillText(x, screenPos.x, labelY);
+                    }
+                }
+
+                for (let y = minGridY; y <= maxGridY; y++) {
+                    ctx.beginPath();
+                    ctx.lineWidth = (y === 0) ? 2.5 : (y % 5 === 0 ? 1.2 : 0.5);
+                    ctx.strokeStyle = (y === 0) ? '#000000' : (y % 5 === 0 ? '#9ca3af' : '#e5e7eb');
+                    const screenPos = gridToScreen(0, y);
+                    ctx.moveTo(0, screenPos.y);
+                    ctx.lineTo(width, screenPos.y);
+                    ctx.stroke();
+
+                    // Numeric tick scaling labels along vertical axis plane
+                    if (state.options.showNumbers && y !== 0 && y % (state.scale < 25 ? 5 : 1) === 0) {
+                        ctx.fillStyle = '#4b5563';
+                        ctx.font = '11px system-ui';
+                        ctx.textAlign = 'right';
+                        let labelX = state.offsetX - 8;
+                        if (labelX < 5) { ctx.textAlign = 'left'; labelX = 5; }
+                        if (labelX > width - 15) labelX = width - 15;
+                        ctx.fillText(y, labelX, screenPos.y + 4);
+                    }
+                }
+
+                // Smoothly draw baseline origin index point identifier label
+                if (state.options.showNumbers) {
+                    ctx.fillStyle = '#000000';
+                    ctx.font = 'bold 11px system-ui';
+                    ctx.textAlign = 'right';
+                    ctx.fillText('0', state.offsetX - 6, state.offsetY + 14);
+                }
+            }
+
+            // 2. RENDER SHAPES DRAWN BY USER
+            state.shapes.forEach(shape => {
+                ctx.beginPath();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = varColorForShape(shape.type);
+                ctx.fillStyle = varFillColorForShape(shape.type);
+                
+                shape.points.forEach((pt, idx) => {
+                    const sPos = gridToScreen(pt.x, pt.y);
+                    if (idx === 0) ctx.moveTo(sPos.x, sPos.y);
+                    else ctx.lineTo(sPos.x, sPos.y);
+                });
+
+                if (shape.type !== 'segment') ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            });
+
+            // Handle Preview Assembly Lines for Interactive Polygons
+            if (state.shapeVertices.length > 0) {
+                ctx.beginPath();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#10b981';
+                ctx.setLineDash([4, 4]);
+                state.shapeVertices.forEach((v, idx) => {
+                    const sPos = gridToScreen(v.x, v.y);
+                    if (idx === 0) ctx.moveTo(sPos.x, sPos.y);
+                    else ctx.lineTo(sPos.x, sPos.y);
+                });
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // 3. RENDER FREEHAND SKETCH LINES
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = '#4b5563';
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            const renderStroke = (stroke) => {
+                if (stroke.length < 2) return;
+                ctx.beginPath();
+                const start = gridToScreen(stroke[0].x, stroke[0].y);
+                ctx.moveTo(start.x, start.y);
+                for (let i = 1; i < stroke.length; i++) {
+                    const p = gridToScreen(stroke[i].x, stroke[i].y);
+                    ctx.lineTo(p.x, p.y);
+                }
+                ctx.stroke();
+            };
+
+            state.freehandStrokes.forEach(renderStroke);
+            if (state.currentStroke) renderStroke(state.currentStroke);
+
+            // 4. RENDER POINTS AND LABELS
+            state.points.forEach(pt => {
+                const sPos = gridToScreen(pt.x, pt.y);
+                
+                // Outer clean highlight glow shell ring
+                ctx.beginPath();
+                ctx.arc(sPos.x, sPos.y, 8, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(37, 99, 235, 0.2)';
+                ctx.fill();
+
+                // Core solid geometric layout node point
+                ctx.beginPath();
+                ctx.arc(sPos.x, sPos.y, 5, 0, Math.PI * 2);
+                ctx.fillStyle = varColorForShape(pt.parentShapeType || 'point');
+                ctx.fill();
+                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = '#ffffff';
+                ctx.stroke();
+
+                // Coordinate context label layout engines
+                if (state.options.showLabels) {
+                    ctx.fillStyle = '#1f2937';
+                    ctx.font = 'bold 13px system-ui';
+                    ctx.textAlign = 'left';
+                    const labelStr = `${pt.label} (${pt.x.toFixed(0)}, ${pt.y.toFixed(0)})`;
+                    ctx.fillText(labelStr, sPos.x + 10, sPos.y - 8);
+                }
+            });
+        }
+
+        // Color Management helpers for consistent UI
+        function varColorForShape(type) {
+            switch(type) {
+                case 'segment': return '#2563eb';
+                case 'triangle': return '#dc2626';
+                case 'rectangle': return '#7c3aed';
+                case 'polygon': return '#10b981';
+                default: return '#2563eb';
+            }
+        }
+        function varFillColorForShape(type) {
+            switch(type) {
+                case 'triangle': return 'rgba(220, 38, 38, 0.08)';
+                case 'rectangle': return 'rgba(124, 58, 237, 0.08)';
+                case 'polygon': return 'rgba(16, 185, 129, 0.08)';
+                default: return 'transparent';
+            }
+        }
+
+        // Native Euclidean proximity mapping for interactive targeting mechanics
+        function findNearestPoint(screenX, screenY, maxDistancePixels = 20) {
+            let target = null;
+            let minDist = maxDistancePixels;
+            state.points.forEach(pt => {
+                const sPos = gridToScreen(pt.x, pt.y);
+                const d = Math.hypot(sPos.x - screenX, sPos.y - screenY);
+                if (d < minDist) {
+                    minDist = d;
+                    target = pt;
+                }
+            });
+            return target;
+        }
+
+        // Intersection algorithm for structural object deletion actions
+        function eraseAtLocation(screenX, screenY) {
+            const targetPt = findNearestPoint(screenX, screenY, 25);
+            if (targetPt) {
+                // If a node structural vertex is deleted, extract parental geometric structures
+                state.shapes = state.shapes.filter(s => !s.points.includes(targetPt));
+                state.points = state.points.filter(p => p !== targetPt);
+                // Regenerate valid labels safely
+                state.points.forEach((pt, i) => { if (!pt.isVertex) pt.label = getPointLabel(i); });
+                draw();
+                return;
+            }
+
+            // Freehand path structural eraser detection logic loop
+            const gridLoc = screenToGrid(screenX, screenY);
+            const originalStrokeCount = state.freehandStrokes.length;
+            state.freehandStrokes = state.freehandStrokes.filter(stroke => {
+                for (let pt of stroke) {
+                    if (Math.hypot(pt.x - gridLoc.x, pt.y - gridLoc.y) * state.scale < 20) {
+                        return false; 
+                    }
+                }
+                return true;
+            });
+
+            if (state.freehandStrokes.length !== originalStrokeCount) {
+                draw();
+            }
+        }
+
+        // Primary Structural Shape Placement Processing Engine Pipeline
+        function handleShapeVertexPlacement(gridX, gridY) {
+            const vertex = { x: gridX, y: gridY, label: '', isVertex: true, parentShapeType: state.shapeType };
+            state.shapeVertices.push(vertex);
+            state.points.push(vertex);
+
+            const targetLength = { 'segment': 2, 'triangle': 3, 'rectangle': 2 };
+
+            if (state.shapeType === 'rectangle' && state.shapeVertices.length === 2) {
+                // Synthesize valid corners for programmatic orientation calculation from 2 vertices
+                const p1 = state.shapeVertices[0];
+                const p2 = state.shapeVertices[1];
+                
+                // Swap dynamic reference links instantly
+                state.points.pop(); state.points.pop(); 
+
+                const c1 = { x: p1.x, y: p1.y, isVertex: true, parentShapeType: 'rectangle' };
+                const c2 = { x: p2.x, y: p1.y, isVertex: true, parentShapeType: 'rectangle' };
+                const c3 = { x: p2.x, y: p2.y, isVertex: true, parentShapeType: 'rectangle' };
+                const c4 = { x: p1.x, y: p2.y, isVertex: true, parentShapeType: 'rectangle' };
+
+                state.points.push(c1, c2, c3, c4);
+                state.shapes.push({ type: 'rectangle', points: [c1, c2, c3, c4] });
+                state.shapeVertices = [];
+                showTip("Rectangle initialized!");
+            } else if (targetLength[state.shapeType] && state.shapeVertices.length === targetLength[state.shapeType]) {
+                state.shapes.push({ type: state.shapeType, points: [...state.shapeVertices] });
+                state.shapeVertices = [];
+                showTip(`${state.shapeType.charAt(0).toUpperCase() + state.shapeType.slice(1)} generated!`);
+            } else if (state.shapeType === 'polygon') {
+                document.getElementById('btn-complete-poly').style.display = 'inline-flex';
+            }
+            draw();
+        }
+
+        function finalizePolygon() {
+            if (state.shapeVertices.length > 2) {
+                state.shapes.push({ type: 'polygon', points: [...state.shapeVertices] });
+                showTip("Custom polygon generated successfully!");
+            } else {
+                // Cleanup mismatched incomplete structures automatically
+                state.points = state.points.filter(p => !state.shapeVertices.includes(p));
+                showTip("Polygon requires minimum 3 points.", 4000);
+            }
+            state.shapeVertices = [];
+            document.getElementById('btn-complete-poly').style.display = 'none';
+            draw();
+        }
+
+        // CORE USER POINTER EVENT UTILITY CONTROLLERS
+        function handlePointerDown(e) {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const screenX = e.clientX - rect.left;
+            const screenY = e.clientY - rect.top;
+            
+            let gridPos = screenToGrid(screenX, screenY);
+            if (state.options.snapToGrid && state.currentTool !== 'draw' && state.currentTool !== 'erase') {
+                gridPos.x = Math.round(gridPos.x);
+                gridPos.y = Math.round(gridPos.y);
+            }
+
+            // High-priority interactive asset drag detection
+            const clickedPt = findNearestPoint(screenX, screenY, 20);
+            if (clickedPt && (state.currentTool === 'pan' || state.currentTool === 'plot')) {
+                state.activeDragPoint = clickedPt;
+                canvas.style.cursor = 'grabbing';
+                return;
+            }
+
+            if (state.currentTool === 'erase') {
+                eraseAtLocation(screenX, screenY);
+                state.isPanning = false;
+            } else if (state.currentTool === 'plot') {
+                const newPt = {
+                    x: gridPos.x,
+                    y: gridPos.y,
+                    label: getPointLabel(state.points.filter(p=>!p.isVertex).length),
+                    isVertex: false
+                };
+                state.points.push(newPt);
+                showTip(`Plotted Point ${newPt.label}`);
+                draw();
+            } else if (state.currentTool === 'shape') {
+                handleShapeVertexPlacement(gridPos.x, gridPos.y);
+            } else if (state.currentTool === 'draw') {
+                state.currentStroke = [{ x: gridPos.x, y: gridPos.y }];
+            } else if (state.currentTool === 'pan') {
+                state.isPanning = true;
+                state.panStart = { x: screenX - state.offsetX, y: screenY - state.offsetY };
+                canvas.style.cursor = 'grabbing';
+            }
+        }
+
+        function handlePointerMove(e) {
+            const rect = canvas.getBoundingClientRect();
+            const screenX = e.clientX - rect.left;
+            const screenY = e.clientY - rect.top;
+
+            if (state.activeDragPoint) {
+                let targetGrid = screenToGrid(screenX, screenY);
+                if (state.options.snapToGrid) {
+                    targetGrid.x = Math.round(targetGrid.x);
+                    targetGrid.y = Math.round(targetGrid.y);
+                }
+                
+                // Interactive dynamic Rectangle/Square real-time vector matrix transformation tracking
+                if (state.activeDragPoint.parentShapeType === 'rectangle') {
+                    const associatedShape = state.shapes.find(s => s.points.includes(state.activeDragPoint));
+                    if (associatedShape) {
+                        const idx = associatedShape.points.indexOf(state.activeDragPoint);
+                        const diagonalIdx = (idx + 2) % 4;
+                        const diagonalPt = associatedShape.points[diagonalIdx];
+                        
+                        // Recalculate dynamic boundary box mapping constraints
+                        const currentTargetX = targetGrid.x;
+                        const currentTargetY = targetGrid.y;
+                        
+                        state.activeDragPoint.x = currentTargetX;
+                        state.activeDragPoint.y = currentTargetY;
+
+                        associatedShape.points[(idx + 1) % 4].x = currentTargetX;
+                        associatedShape.points[(idx + 1) % 4].y = diagonalPt.y;
+                        associatedShape.points[(idx + 3) % 4].x = diagonalPt.x;
+                        associatedShape.points[(idx + 3) % 4].y = currentTargetY;
+                    }
+                } else {
+                    state.activeDragPoint.x = targetGrid.x;
+                    state.activeDragPoint.y = targetGrid.y;
+                }
+                draw();
+                return;
+            }
+
+            if (state.isPanning && state.currentTool === 'pan') {
+                state.offsetX = screenX - state.panStart.x;
+                state.offsetY = screenY - state.panStart.y;
+                draw();
+            } else if (state.currentTool === 'draw' && state.currentStroke) {
+                const p = screenToGrid(screenX, screenY);
+                state.currentStroke.push(p);
+                draw();
+            } else if (state.currentTool === 'erase' && e.buttons === 1) {
+                eraseAtLocation(screenX, screenY);
+            }
+        }
+
+        function handlePointerUp() {
+            if (state.currentStroke) {
+                state.freehandStrokes.push(state.currentStroke);
+                state.currentStroke = null;
+            }
+            state.isPanning = false;
+            state.activeDragPoint = null;
+            canvas.style.cursor = state.currentTool === 'pan' ? 'grab' : 'crosshair';
+            draw();
+        }
+
+        // SMART BOARD MULTI-TOUCH COGNITIVE HANDLERS
+        function touchStartHandler(e) {
+            if (e.targetTouches.length === 2) {
+                // Capture scaling baseline telemetry signatures dynamically
+                ongoingTouches = [e.targetTouches[0], e.targetTouches[1]];
+                state.isPanning = false;
+            }
+        }
+
+        function touchMoveHandler(e) {
+            if (e.targetTouches.length === 2 && ongoingTouches.length === 2) {
+                // Implement responsive pinch-to-zoom mapping transformations
+                const p1Start = ongoingTouches[0];
+                const p2Start = ongoingTouches[1];
+                const p1Current = e.targetTouches[0];
+                const p2Current = e.targetTouches[1];
+
+                const distStart = Math.hypot(p1Start.clientX - p2Start.clientX, p1Start.clientY - p2Start.clientY);
+                const distCurrent = Math.hypot(p1Current.clientX - p2Current.clientX, p1Current.clientY - p2Current.clientY);
+
+                const midX = (p1Current.clientX + p2Current.clientX) / 2;
+                const midY = (p1Current.clientY + p2Current.clientY) / 2;
+
+                const factor = distCurrent / distStart;
+                let newScale = state.scale * factor;
+                
+                // Bound zoom protections
+                if (newScale > 15 && newScale < 350) {
+                    const gridLoc = screenToGrid(midX, midY);
+                    state.scale = newScale;
+                    state.offsetX = midX - gridLoc.x * state.scale;
+                    state.offsetY = midY + gridLoc.y * state.scale;
+                }
+
+                ongoingTouches = [p1Current, p2Current];
+                draw();
+            }
+        }
+
+        // DESKTOP COMPUTER SCROLL WHEEL ZOOM CONTROLLERS
+        function handleWheel(e) {
+            e.preventDefault();
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+            const gridLoc = screenToGrid(mouseX, mouseY);
+
+            const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+            const newScale = state.scale * zoomFactor;
+
+            if (newScale > 10 && newScale < 400) {
+                state.scale = newScale;
+                state.offsetX = mouseX - gridLoc.x * state.scale;
+                state.offsetY = mouseY + gridLoc.y * state.scale;
+                draw();
+            }
+        }
+
+        // NAVIGATION COMPONENT SYSTEM HOOK MANAGERS
+        function setupToolbar() {
+            const tools = ['pan', 'plot', 'shape', 'draw', 'erase'];
+            tools.forEach(t => {
+                document.getElementById(`tool-${t}`).addEventListener('click', (e) => {
+                    tools.forEach(x => document.getElementById(`tool-${x}`).classList.remove('active'));
+                    e.target.classList.add('active');
+                    state.currentTool = t;
+                    
+                    // Toggle contextual submenus dynamically
+                    if (t === 'shape') {
+                        document.getElementById('shapesMenu').classList.add('active');
+                        showTip("Select shape template below and click graph layout");
+                    } else {
+                        document.getElementById('shapesMenu').classList.remove('active');
+                        state.shapeVertices = [];
+                        document.getElementById('btn-complete-poly').style.display = 'none';
+                    }
+                    
+                    canvas.style.cursor = t === 'pan' ? 'grab' : 'crosshair';
+                    draw();
+                });
+            });
+
+            // Shape sub-selection system loops
+            const shapes = ['segment', 'triangle', 'rectangle', 'polygon'];
+            shapes.forEach(s => {
+                document.getElementById(`shape-${s}`).addEventListener('click', (e) => {
+                    shapes.forEach(x => document.getElementById(`shape-${x}`).classList.remove('active'));
+                    e.target.classList.add('active');
+                    state.shapeType = s;
+                    // Reset working vertex stack trace instantly
+                    state.shapeVertices = []; 
+                    document.getElementById('btn-complete-poly').style.display = 'none';
+                    draw();
+                });
+            });
+
+            document.getElementById('btn-complete-poly').addEventListener('click', finalizePolygon);
+
+            // Functional utility dashboard operations handler callbacks
+            document.getElementById('btn-clear').addEventListener('click', () => {
+                if(confirm("Clear workspace canvas layers entirely?")) {
+                    state.points = []; state.shapes = []; state.freehandStrokes = []; state.shapeVertices = [];
+                    document.getElementById('btn-complete-poly').style.display = 'none';
+                    showTip("Graph cleared cleanly");
+                    draw();
+                }
+            });
+
+            document.getElementById('btn-fullscreen').addEventListener('click', () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {});
+                } else {
+                    document.exitFullscreen();
+                }
+            });
+
+            // Live programmatic configuration toggles bind
+            const optionsMap = [
+                { id: 'chk-lines', key: 'showLines' },
+                { id: 'chk-numbers', key: 'showNumbers' },
+                { id: 'chk-labels', key: 'showLabels' },
+                { id: 'chk-snap', key: 'snapToGrid' }
+            ];
+            optionsMap.forEach(opt => {
+                const el = document.getElementById(opt.id);
+                el.addEventListener('change', (e) => {
+                    state.options[opt.key] = e.target.checked;
+                    draw();
+                });
+            });
+
+            document.getElementById('btn-reset').addEventListener('click', resetView);
+            
+            document.getElementById('btn-export').addEventListener('click', () => {
+                const dataURL = canvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.download = 'graph-paper-export.png';
+                link.href = dataURL;
+                link.click();
+                showTip("PNG file exported successfully!");
+            });
+
+            document.getElementById('btn-print').addEventListener('click', () => {
+                window.print();
+            });
+        }
+
+        // GLOBAL RESOURCE INITIALIZATION PIPELINE LISTENERS
+        window.addEventListener('resize', resizeCanvas);
+        canvas.addEventListener('pointerdown', handlePointerDown);
+        canvas.addEventListener('pointermove', handlePointerMove);
+        canvas.addEventListener('pointerup', handlePointerUp);
+        canvas.addEventListener('pointercancel', handlePointerUp);
+        canvas.addEventListener('wheel', handleWheel, { passive: false });
+        canvas.addEventListener('touchstart', touchStartHandler, { passive: true });
+        canvas.addEventListener('touchmove', touchMoveHandler, { passive: true });
+
+        // Bootstrap Launcher application execution
+        setupToolbar();
+        resizeCanvas();
+    </script>
+</body>
+</html>

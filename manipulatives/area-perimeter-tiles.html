@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Area & Perimeter Tiles</title>
+    <style>
+        :root {
+            --bg-main: #F8FAFC;
+            --bg-card: #FFFFFF;
+            --grid-line: #E2E8F0;
+            --tile-color: #93C5FD;
+            --tile-border: #3B82F6;
+            --perimeter-color: #EF4444;
+            --text-main: #1E293B;
+            --text-muted: #64748B;
+            --primary: #4F46E5;
+            --primary-hover: #4338CA;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background-color: var(--bg-card);
+            padding: 16px 24px;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: row;
+            padding: 24px;
+            gap: 24px;
+            overflow: hidden;
+            height: calc(100vh - 80px);
+        }
+
+        @media (max-width: 1024px) {
+            .main-container {
+                flex-direction: column;
+                overflow-y: auto;
+                height: auto;
+            }
+        }
+
+        .sidebar {
+            width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 100%;
+            }
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid #F1F5F9;
+        }
+
+        .stats-display {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .stat-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            background: var(--bg-main);
+            transition: all 0.2s;
+        }
+
+        .stat-box.active-area { border-left: 6px solid var(--tile-border); }
+        .stat-box.active-peri { border-left: 6px solid var(--perimeter-color); }
+
+        .stat-label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .stat-value {
+            font-size: 1.6rem;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .challenge-box h3 {
+            font-size: 1rem;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .challenge-text {
+            font-size: 1.15rem;
+            font-weight: 600;
+            min-height: 54px;
+            margin-bottom: 12px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: var(--radius-md);
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #E2E8F0;
+            color: var(--text-main);
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover { background: var(--primary-hover); }
+
+        .btn-action {
+            background: #FFFFFF;
+            border: 1px solid #CBD5E1;
+        }
+        .btn-action:hover { background: #F1F5F9; }
+
+        .btn-toggle-active {
+            background: #E0E7FF;
+            color: var(--primary);
+            border-color: #A5B4FC;
+        }
+
+        .workspace-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            height: 100%;
+            min-height: 450px;
+        }
+
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            background: var(--bg-card);
+            padding: 12px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+        }
+
+        .grid-wrapper {
+            flex: 1;
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            overflow: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(20, 40px);
+            grid-template-rows: repeat(20, 40px);
+            background: var(--bg-card);
+            border: 2px solid #CBD5E1;
+            position: relative;
+        }
+
+        .grid.hide-lines .cell {
+            border-color: transparent !important;
+        }
+
+        .cell {
+            width: 40px;
+            height: 40px;
+            border-right: 1px solid var(--grid-line);
+            border-bottom: 1px solid var(--grid-line);
+            position: relative;
+            box-sizing: border-box;
+            transition: background-color 0.15s ease, transform 0.1s ease;
+        }
+
+        .cell.active {
+            background-color: var(--tile-color);
+            animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .cell-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #1E40AF;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        body.show-area-labels .cell.active .cell-label {
+            opacity: 1;
+        }
+
+        .cell.p-top::after { content: ''; position: absolute; top: -2px; left: -2px; right: -2px; height: 4px; background: var(--perimeter-color); z-index: 2; pointer-events: none; }
+        .cell.p-bottom::after { content: ''; position: absolute; bottom: -2px; left: -2px; right: -2px; height: 4px; background: var(--perimeter-color); z-index: 2; pointer-events: none; }
+        .cell.p-left::before { content: ''; position: absolute; top: -2px; bottom: -2px; left: -2px; width: 4px; background: var(--perimeter-color); z-index: 2; pointer-events: none; }
+        .cell.p-right::before { content: ''; position: absolute; top: -2px; bottom: -2px; right: -2px; width: 4px; background: var(--perimeter-color); z-index: 2; pointer-events: none; }
+
+        .peri-label {
+            position: absolute;
+            background: var(--perimeter-color);
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 1px 4px;
+            border-radius: 4px;
+            z-index: 5;
+            pointer-events: none;
+            opacity: 0;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.2s;
+        }
+
+        body.show-peri-labels .peri-label {
+            opacity: 1;
+        }
+
+        .teacher-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .teacher-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.8); }
+            100% { transform: scale(1); }
+        }
+
+        :fullscreen .grid-wrapper { padding: 40px; background: var(--bg-main); }
+
+        @media print {
+            body { background: white; color: black; }
+            header, .sidebar, .toolbar { display: none !important; }
+            .main-container { padding: 0; margin: 0; height: auto; }
+            .grid-wrapper { box-shadow: none; padding: 0; }
+            .grid { border: 2px solid black; }
+        }
+    </style>
+</head>
+<body class="show-area-labels show-peri-labels">
+
+    <header>
+        <h1>🟦 Area & Perimeter Tiles</h1>
+    </header>
+
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="card stats-display">
+                <div class="stat-box active-area">
+                    <span class="stat-label">Area</span>
+                    <span class="stat-value" id="area-val">0</span>
+                </div>
+                <div class="stat-box active-peri">
+                    <span class="stat-label">Perimeter</span>
+                    <span class="stat-value" id="perimeter-val">0</span>
+                </div>
+            </div>
+
+            <div class="card challenge-box">
+                <h3>Classroom Challenge</h3>
+                <div class="challenge-text" id="challenge-txt">Click "New Challenge" to begin exploration!</div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="generateChallenge()">🎲 New Challenge</button>
+            </div>
+
+            <div class="card teacher-panel">
+                <h3 style="font-size: 1rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Teacher Controls</h3>
+                <div class="teacher-grid">
+                    <button class="btn btn-action btn-toggle-active" id="toggle-grid" onclick="toggleGridLines()">Grid Lines</button>
+                    <button class="btn btn-action btn-toggle-active" id="toggle-area" onclick="toggleLabels('area')">Area Tags</button>
+                    <button class="btn btn-action btn-toggle-active" id="toggle-peri" onclick="toggleLabels('peri')">Peri Tags</button>
+                    <button class="btn btn-action" onclick="printWorkspace()">🖨️ Print</button>
+                </div>
+                <button class="btn btn-action" style="width: 100%;" onclick="exportPNG()">📸 Export Snapshot (PNG)</button>
+            </div>
+        </div>
+
+        <div class="workspace-container">
+            <div class="toolbar">
+                <button class="btn btn-action" id="mode-add" onclick="setMode('add')" style="background-color: #E0F2FE; border-color: #bae6fd;">🟦 Draw</button>
+                <button class="btn btn-action" id="mode-erase" onclick="setMode('erase')">🧹 Erase</button>
+                <div style="width: 1px; background: #CBD5E1; margin: 4px 6px;"></div>
+                <button class="btn btn-action" onclick="undo()">↩ Undo</button>
+                <button class="btn btn-action" onclick="redo()">↪ Redo</button>
+                <button class="btn btn-action" onclick="clearGrid()">Reset</button>
+                <button class="btn btn-action" onclick="generateRandomShape()">🎲 Scatter Shape</button>
+                <button class="btn btn-action" style="margin-left: auto;" onclick="toggleFullscreen()">⛶ Fullscreen</button>
+            </div>
+
+            <div class="grid-wrapper" id="fullscreen-target">
+                <div class="grid" id="grid-element"></div>
+                <div id="perimeter-labels-layer" style="position: absolute; top: 0; left: 0; pointer-events: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const GRID_SIZE = 20;
+        const CELL_SIZE = 40;
+        const gridElement = document.getElementById('grid-element');
+        const periLabelsLayer = document.getElementById('perimeter-labels-layer');
+        
+        let activeTiles = new Set(); 
+        let drawMode = 'add'; 
+        let currentStrokeMode = 'add';
+        let isPointerDown = false;
+        
+        let historyStack = [new Set()];
+        let historyIndex = 0;
+
+        const challenges = [
+            { type: 'area', target: 12, text: "Build a single shape with an area of 12 square units." },
+            { type: 'area', target: 16, text: "Build a shape with an area of 16 square units." },
+            { type: 'perimeter', target: 16, text: "Build a shape with a perimeter of 16 units." },
+            { type: 'perimeter', target: 20, text: "Build a shape with a perimeter of 20 units." },
+            { type: 'combo', text: "Build two different shapes that have an identical area of 8." },
+            { type: 'combo', text: "Create an irregular shape with an Area of 10 and Perimeter of 16." }
+        ];
+
+        function initGrid() {
+            gridElement.innerHTML = '';
+            gridElement.style.gridTemplateColumns = `repeat(${GRID_SIZE}, ${CELL_SIZE}px)`;
+            gridElement.style.gridTemplateRows = `repeat(${GRID_SIZE}, ${CELL_SIZE}px)`;
+
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.dataset.r = r;
+                    cell.dataset.c = c;
+                    
+                    const label = document.createElement('span');
+                    label.classList.add('cell-label');
+                    label.innerText = "1";
+                    cell.appendChild(label);
+                    
+                    gridElement.appendChild(cell);
+                }
+            }
+            attachPointerEvents();
+            calculateMetrics();
+        }
+
+        function setMode(mode) {
+            drawMode = mode;
+            document.getElementById('mode-add').style.backgroundColor = mode === 'add' ? '#E0F2FE' : '';
+            document.getElementById('mode-add').style.borderColor = mode === 'add' ? '#bae6fd' : '';
+            document.getElementById('mode-erase').style.backgroundColor = mode === 'erase' ? '#FEE2E2' : '';
+            document.getElementById('mode-erase').style.borderColor = mode === 'erase' ? '#fca5a5' : '';
+        }
+
+        // Mathematical bounding-box tracking coordinates engine
+        function attachPointerEvents() {
+            function handlePointerAction(e) {
+                const rect = gridElement.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const c = Math.floor(x / CELL_SIZE);
+                const r = Math.floor(y / CELL_SIZE);
+                
+                if (r >= 0 && r < GRID_SIZE && c >= 0 && c < GRID_SIZE) {
+                    executeTileAction(r, c);
+                }
+            }
+
+            gridElement.addEventListener('pointerdown', (e) => {
+                isPointerDown = true;
+                gridElement.setPointerCapture(e.pointerId);
+                
+                const rect = gridElement.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const c = Math.floor(x / CELL_SIZE);
+                const r = Math.floor(y / CELL_SIZE);
+                const key = `${r},${c}`;
+
+                // Intuitive tap interaction: if a user clicks an existing tile in draw mode, erase it
+                if (drawMode === 'add' && activeTiles.has(key)) {
+                    currentStrokeMode = 'erase';
+                } else {
+                    currentStrokeMode = drawMode;
+                }
+
+                handlePointerAction(e);
+            });
+
+            gridElement.addEventListener('pointermove', (e) => {
+                if (!isPointerDown) return;
+                handlePointerAction(e);
+            });
+
+            gridElement.addEventListener('pointerup', (e) => {
+                if (!isPointerDown) return;
+                isPointerDown = false;
+                gridElement.releasePointerCapture(e.pointerId);
+                pushHistory();
+            });
+        }
+
+        function executeTileAction(r, c) {
+            const key = `${r},${c}`;
+            const cell = gridElement.querySelector(`[data-r="${r}"][data-c="${c}"]`);
+            if (!cell) return;
+            
+            if (currentStrokeMode === 'add' && !activeTiles.has(key)) {
+                activeTiles.add(key);
+                cell.classList.add('active');
+                calculateMetrics();
+            } else if (currentStrokeMode === 'erase' && activeTiles.has(key)) {
+                activeTiles.delete(key);
+                cell.classList.remove('active');
+                calculateMetrics();
+            }
+        }
+
+        function calculateMetrics() {
+            const cells = gridElement.querySelectorAll('.cell');
+            cells.forEach(cell => {
+                cell.classList.remove('p-top', 'p-bottom', 'p-left', 'p-right');
+            });
+            periLabelsLayer.innerHTML = '';
+
+            let area = activeTiles.size;
+            let perimeter = 0;
+
+            activeTiles.forEach(key => {
+                const [r, c] = key.split(',').map(Number);
+                const cell = gridElement.querySelector(`[data-r="${r}"][data-c="${c}"]`);
+                if (!cell) return;
+                
+                const hasTop = activeTiles.has(`${r-1},${c}`);
+                const hasBottom = activeTiles.has(`${r+1},${c}`);
+                const hasLeft = activeTiles.has(`${r},${c-1}`);
+                const hasRight = activeTiles.has(`${r},${c+1}`);
+
+                if (!hasTop) { cell.classList.add('p-top'); perimeter++; createPeriLabel(r, c, 'top'); }
+                if (!hasBottom) { cell.classList.add('p-bottom'); perimeter++; createPeriLabel(r, c, 'bottom'); }
+                if (!hasLeft) { cell.classList.add('p-left'); perimeter++; createPeriLabel(r, c, 'left'); }
+                if (!hasRight) { cell.classList.add('p-right'); perimeter++; createPeriLabel(r, c, 'right'); }
+            });
+
+            document.getElementById('area-val').innerText = area;
+            document.getElementById('perimeter-val').innerText = perimeter;
+        }
+
+        function createPeriLabel(r, c, edge) {
+            const label = document.createElement('div');
+            label.classList.add('peri-label');
+            label.innerText = "1";
+            
+            let topOffset = r * CELL_SIZE;
+            let leftOffset = c * CELL_SIZE;
+
+            if (edge === 'top') { topOffset += 0; leftOffset += 20; }
+            if (edge === 'bottom') { topOffset += 40; leftOffset += 20; }
+            if (edge === 'left') { topOffset += 20; leftOffset += 0; }
+            if (edge === 'right') { topOffset += 20; leftOffset += 40; }
+
+            label.style.top = `${topOffset}px`;
+            label.style.left = `${leftOffset}px`;
+            periLabelsLayer.appendChild(label);
+        }
+
+        function pushHistory() {
+            if (historyIndex < historyStack.length - 1) {
+                historyStack = historyStack.slice(0, historyIndex + 1);
+            }
+            historyStack.push(new Set(activeTiles));
+            historyIndex++;
+        }
+
+        function undo() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                restoreState(historyStack[historyIndex]);
+            }
+        }
+
+        function redo() {
+            if (historyIndex < historyStack.length - 1) {
+                historyIndex++;
+                restoreState(historyStack[historyIndex]);
+            }
+        }
+
+        function restoreState(stateSet) {
+            activeTiles = new Set(stateSet);
+            const cells = gridElement.querySelectorAll('.cell');
+            cells.forEach(cell => {
+                const r = cell.dataset.r;
+                const c = cell.dataset.c;
+                if (activeTiles.has(`${r},${c}`)) {
+                    cell.classList.add('active');
+                } else {
+                    cell.classList.remove('active');
+                }
+            });
+            calculateMetrics();
+        }
+
+        function clearGrid() {
+            activeTiles.clear();
+            const cells = gridElement.querySelectorAll('.cell');
+            cells.forEach(cell => cell.classList.remove('active'));
+            calculateMetrics();
+            pushHistory();
+        }
+
+        function generateRandomShape() {
+            clearGrid();
+            const startR = Math.floor(GRID_SIZE / 2) - 1;
+            const startC = Math.floor(GRID_SIZE / 2) - 1;
+            
+            const blocks = [
+                [0,0], [0,1], [0,2],
+                [1,0], [1,1], [1,2],
+                [2,1]
+            ];
+
+            blocks.forEach(([dr, dc]) => {
+                const r = startR + dr;
+                const c = startC + dc;
+                activeTiles.add(`${r},${c}`);
+                const cell = gridElement.querySelector(`[data-r="${r}"][data-c="${c}"]`);
+                if (cell) cell.classList.add('active');
+            });
+
+            calculateMetrics();
+            pushHistory();
+        }
+
+        function generateChallenge() {
+            const idx = Math.floor(Math.random() * challenges.length);
+            document.getElementById('challenge-txt').innerText = challenges[idx].text;
+            
+            const box = document.querySelector('.challenge-box');
+            box.style.transform = 'scale(1.02)';
+            setTimeout(() => box.style.transform = 'none', 200);
+        }
+
+        function toggleGridLines() {
+            gridElement.classList.toggle('hide-lines');
+            document.getElementById('toggle-grid').classList.toggle('btn-toggle-active');
+        }
+
+        function toggleLabels(type) {
+            if (type === 'area') {
+                document.body.classList.toggle('show-area-labels');
+                document.getElementById('toggle-area').classList.toggle('btn-toggle-active');
+            } else {
+                document.body.classList.toggle('show-peri-labels');
+                document.getElementById('toggle-peri').classList.toggle('btn-toggle-active');
+            }
+        }
+
+        function toggleFullscreen() {
+            const target = document.getElementById('fullscreen-target');
+            if (!document.fullscreenElement) {
+                target.requestFullscreen().catch(err => alert('Fullscreen not supported on this browser'));
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        function printWorkspace() {
+            window.print();
+        }
+
+        function exportPNG() {
+            const canvas = document.createElement('canvas');
+            canvas.width = GRID_SIZE * CELL_SIZE;
+            canvas.height = GRID_SIZE * CELL_SIZE;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (!gridElement.classList.contains('hide-lines')) {
+                ctx.strokeStyle = '#E2E8F0';
+                ctx.lineWidth = 1;
+                for (let i = 0; i <= GRID_SIZE; i++) {
+                    ctx.beginPath(); ctx.moveTo(i * CELL_SIZE, 0); ctx.lineTo(i * CELL_SIZE, canvas.height); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(0, i * CELL_SIZE); ctx.lineTo(canvas.width, i * CELL_SIZE); ctx.stroke();
+                }
+            }
+
+            activeTiles.forEach(key => {
+                const [r, c] = key.split(',').map(Number);
+                ctx.fillStyle = '#93C5FD';
+                ctx.fillRect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+
+                if (document.body.classList.contains('show-area-labels')) {
+                    ctx.fillStyle = '#1E40AF';
+                    ctx.font = 'bold 12px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText("1", c * CELL_SIZE + 20, r * CELL_SIZE + 20);
+                }
+            });
+
+            activeTiles.forEach(key => {
+                const [r, c] = key.split(',').map(Number);
+                ctx.strokeStyle = '#EF4444';
+                ctx.lineWidth = 4;
+
+                if (!activeTiles.has(`${r-1},${c}`)) { ctx.beginPath(); ctx.moveTo(c*CELL_SIZE, r*CELL_SIZE); ctx.lineTo((c+1)*CELL_SIZE, r*CELL_SIZE); ctx.stroke(); }
+                if (!activeTiles.has(`${r+1},${c}`)) { ctx.beginPath(); ctx.moveTo(c*CELL_SIZE, (r+1)*CELL_SIZE); ctx.lineTo((c+1)*CELL_SIZE, (r+1)*CELL_SIZE); ctx.stroke(); }
+                if (!activeTiles.has(`${r},${c-1}`)) { ctx.beginPath(); ctx.moveTo(c*CELL_SIZE, r*CELL_SIZE); ctx.lineTo(c*CELL_SIZE, (r+1)*CELL_SIZE); ctx.stroke(); }
+                if (!activeTiles.has(`${r},${c+1}`)) { ctx.beginPath(); ctx.moveTo((c+1)*CELL_SIZE, r*CELL_SIZE); ctx.lineTo((c+1)*CELL_SIZE, (r+1)*CELL_SIZE); ctx.stroke(); }
+            });
+
+            const link = document.createElement('a');
+            link.download = 'area-perimeter-tiles.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        initGrid();
+    </script>
+</body>
+</html>

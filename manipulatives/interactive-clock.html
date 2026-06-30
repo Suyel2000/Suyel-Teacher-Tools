@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Simple Touch Clock – Learn to Tell Time</title>
+<style>
+  /* ===== Basic theme ===== */
+  :root{
+    --bg1:#2b6e58;
+    --bg2:#194a3a;
+    --wood:#c2873f;
+    --wood-dark:#7a4f22;
+    --face:#fffdf6;
+    --ink:#2c2620;
+    --hour-color:#ff6b5e;
+    --minute-color:#2c6f9e;
+    --accent:#ffc94a;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; height:100%;
+    font-family:'Trebuchet MS','Segoe UI',sans-serif;
+    background:linear-gradient(160deg,var(--bg1),var(--bg2));
+    color:var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    overflow-x:hidden;
+  }
+  .app{
+    width:100%; max-width:480px;
+    padding:20px 16px 40px;
+    text-align:center;
+  }
+  h1{
+    color:#fff; font-size:clamp(1.3rem,5vw,1.9rem);
+    margin:0 0 18px; text-shadow:0 2px 0 rgba(0,0,0,.25);
+  }
+
+  /* ===== Clock frame (touch target is the whole face) ===== */
+  .clock-frame{
+    position:relative;
+    width:min(86vw,380px);
+    aspect-ratio:1/1;
+    margin:0 auto;
+    border-radius:50%;
+    background:radial-gradient(circle at 32% 28%, #e7b272, var(--wood) 55%, var(--wood-dark) 100%);
+    box-shadow:
+      inset 0 0 0 8px rgba(255,255,255,.15),
+      inset 0 0 18px 6px rgba(0,0,0,.35),
+      0 14px 26px rgba(0,0,0,.4);
+    padding:14px;
+    touch-action:none;     /* we handle the gesture ourselves */
+    -webkit-user-select:none;
+    user-select:none;
+  }
+  .clock-face{
+    position:relative; width:100%; height:100%;
+    border-radius:50%;
+    background:radial-gradient(circle at 50% 45%, #fffdf6, var(--face) 70%, #f1ead7 100%);
+    box-shadow:inset 0 0 0 3px var(--wood-dark), inset 0 4px 10px rgba(0,0,0,.08);
+  }
+
+  /* ----- Minute lines (60 ticks; every 5th is a bold hour tick) ----- */
+  .tick{
+    position:absolute; left:50%; top:6px; bottom:50%;
+    width:2px; margin-left:-1px;
+    transform-origin:50% 100%;
+    pointer-events:none;
+    background:linear-gradient(to bottom, #cfc4a4 8px, transparent 8px);
+  }
+  .tick.hour-tick{ 
+    width:4px; margin-left:-2px;
+    background:linear-gradient(to bottom, var(--wood-dark) 14px, transparent 14px);
+  }
+
+  .num{
+    position:absolute; left:50%; top:50%;
+    width:34px; height:34px; margin:-17px 0 0 -17px;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800;
+    font-size:clamp(1.1rem,5.5vw,1.6rem);
+    color:var(--wood-dark);
+    transform-origin:50% 50%;
+    pointer-events:none;
+  }
+  .center-pin{
+    position:absolute; left:50%; top:50%; width:20px; height:20px;
+    background:radial-gradient(circle at 35% 30%, #ffe69b, var(--hour-color) 70%);
+    border-radius:50%; transform:translate(-50%,-50%);
+    z-index:10; box-shadow:0 2px 4px rgba(0,0,0,.3);
+  }
+
+  /* hands: visible + a fatter invisible "hit zone" stacked over each */
+  .hand{
+    position:absolute; left:50%; top:50%;
+    transform-origin:50% 100%;
+    border-radius:6px;
+    pointer-events:none; /* visuals only; hit-zone handles touch */
+  }
+  .hour-hand{ width:11px; height:26%; background:linear-gradient(var(--hour-color), #c43c30); z-index:6; }
+  .minute-hand{ width:8px; height:38%; background:linear-gradient(var(--minute-color), #2c6f9e); z-index:7; }
+
+  .hit{
+    position:absolute; left:50%; top:50%;
+    transform-origin:50% 100%;
+    width:46px; margin-left:-23px;
+    cursor:grab; touch-action:none;
+  }
+  .hit:active{ cursor:grabbing; }
+  .hit-hour{ height:26%; z-index:9; }
+  .hit-minute{ height:38%; z-index:8; }
+  /* little grab dot at the tip so kids see where to touch */
+  .grab-dot{
+    position:absolute; top:-4px; left:50%; transform:translateX(-50%);
+    width:30px; height:30px; border-radius:50%;
+    background:rgba(255,255,255,.0);
+  }
+
+  /* ===== Readouts ===== */
+  .readout-wrap{
+    margin-top:22px;
+    transition:opacity .25s ease;
+  }
+  .readout-wrap.hidden-readout{
+    opacity:0;
+    pointer-events:none;
+    height:0;
+    overflow:hidden;
+    margin-top:0;
+  }
+  .digital{
+    font-size:clamp(2.2rem,9vw,3rem);
+    font-weight:800;
+    background:var(--ink); color:#7CFC9A;
+    display:inline-block; padding:8px 22px; border-radius:16px;
+    letter-spacing:1px; box-shadow:inset 0 2px 6px rgba(0,0,0,.5);
+  }
+  .ampm{
+    display:inline-block; margin-left:10px;
+    background:#9b7bd6; color:#fff; font-weight:700;
+    padding:8px 14px; border-radius:999px; font-size:1.1rem;
+    vertical-align:middle;
+  }
+  .words{
+    margin:16px auto 0; max-width:420px;
+    background:#fff7e0; border:3px dashed var(--accent);
+    border-radius:16px; padding:14px 16px;
+    font-size:clamp(1.15rem,4.5vw,1.5rem); font-weight:700;
+    color:#19402f; min-height:1.4em;
+  }
+
+  /* placeholder shown while the readout is hidden, so the layout
+     doesn't jump and kids know there's something to reveal */
+  .peek-placeholder{
+    margin-top:22px;
+    border:3px dashed rgba(255,255,255,.5);
+    border-radius:16px;
+    padding:18px;
+    color:#cfe9df;
+    font-weight:700;
+    font-size:1.05rem;
+  }
+  .peek-placeholder.is-hidden{ display:none; }
+
+  /* ===== Buttons ===== */
+  .row{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:18px; }
+  button{
+    font-family:inherit; font-weight:700; font-size:1rem;
+    border:none; border-radius:12px; padding:13px 18px;
+    color:#fff; cursor:pointer;
+    box-shadow:0 4px 0 rgba(0,0,0,.2);
+    min-height:48px;
+  }
+  button:active{ transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,.2); }
+  .btn-blue{ background:#2c6f9e; }
+  .btn-coral{ background:#d6473c; }
+  .btn-purple{ background:#6e51ab; }
+  .btn-grey{ background:#707a70; }
+  .btn-yellow{ background:#d99e1d; }
+  button:focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
+
+  p.hint{ color:#cfe9df; font-size:.9rem; margin-top:16px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <h1>🕰️ Touch &amp; Turn the Clock</h1>
+
+  <div class="clock-frame" id="clockFrame">
+    <div class="clock-face" id="clockFace">
+      <div class="hand hour-hand" id="hourHand"></div>
+      <div class="hand minute-hand" id="minuteHand"></div>
+      <div class="hit hit-hour" id="hitHour"><div class="grab-dot"></div></div>
+      <div class="hit hit-minute" id="hitMinute"><div class="grab-dot"></div></div>
+      <div class="center-pin"></div>
+    </div>
+  </div>
+
+  <div class="peek-placeholder" id="peekPlaceholder">
+    🙈 Time is hidden — read the clock, then tap "Show Time" to check!
+  </div>
+
+  <div class="readout-wrap hidden-readout" id="readoutWrap">
+    <div>
+      <span class="digital" id="digital">12:00</span>
+      <span class="ampm" id="ampm">AM</span>
+    </div>
+    <div class="words" id="words">It is twelve o'clock.</div>
+  </div>
+
+  <div class="row">
+    <button class="btn-yellow" id="btnToggleReadout">👁️ Show Time</button>
+  </div>
+
+  <div class="row">
+    <button class="btn-blue" id="btnNow">⏱️ Now</button>
+    <button class="btn-blue" id="btnRandom">🎲 Random</button>
+    <button class="btn-purple" id="btnSpeak">🔊 Speak</button>
+    <button class="btn-grey" id="btnReset">↺ Reset</button>
+  </div>
+
+  <p class="hint">Touch and drag either hand to turn the clock 👆</p>
+</div>
+
+<script>
+/* ============================================================
+   SIMPLE TOUCH CLOCK
+   - Drag the hour or minute hand directly with finger or mouse.
+   - Hands snap to the nearest minute.
+   - Minute lines (60 ticks) ring the face; every 5th is bold.
+   - Digital time + time-in-words can be shown or hidden, so kids
+     can practise reading the clock before checking the answer.
+   ============================================================ */
+
+let hour = 12, minute = 0; // friendly 1-12 hour + separate am/pm flag
+let isPM = false;
+let readoutVisible = false; // starts hidden so kids read the clock first
+
+const face            = document.getElementById('clockFace');
+const hourHand        = document.getElementById('hourHand');
+const minuteHand      = document.getElementById('minuteHand');
+const hitHour         = document.getElementById('hitHour');
+const hitMinute       = document.getElementById('hitMinute');
+const readoutWrap     = document.getElementById('readoutWrap');
+const peekPlaceholder = document.getElementById('peekPlaceholder');
+const toggleBtn       = document.getElementById('btnToggleReadout');
+
+/* ---------- Build the 60 minute lines (every 5th = bold hour tick) ---------- */
+for(let i=0;i<60;i++){
+  const tick = document.createElement('div');
+  const isHourTick = i % 5 === 0;
+  tick.className = 'tick' + (isHourTick ? ' hour-tick' : '');
+  tick.style.transform = `rotate(${i*6}deg)`;
+  face.insertBefore(tick, hourHand);
+}
+
+/* ---------- Build the 12 hour numbers ---------- */
+const numEls = [];
+for(let h=1; h<=12; h++){
+  const num = document.createElement('div');
+  num.className = 'num';
+  num.textContent = h;
+  num.dataset.angle = h*30;
+  face.insertBefore(num, hourHand);
+  numEls.push(num);
+}
+
+// Position numbers on a circle whose radius is a fraction of the face's
+// actual rendered size (so it stays correct at any screen size).
+function layoutNumbers(){
+  const radius = face.clientWidth * 0.36; // 36% of face width from center
+  numEls.forEach(num => {
+    const angle = num.dataset.angle;
+    num.style.transform = `rotate(${angle}deg) translate(0,-${radius}px) rotate(-${angle}deg)`;
+  });
+}
+layoutNumbers();
+window.addEventListener('resize', layoutNumbers);
+
+/* ---------- Render hands + readouts from current hour/minute ---------- */
+function render(){
+  const hourDeg = (hour % 12) * 30 + minute * 0.5;
+  const minuteDeg = minute * 6;
+  hourHand.style.transform   = `translate(-50%,-100%) rotate(${hourDeg}deg)`;
+  minuteHand.style.transform = `translate(-50%,-100%) rotate(${minuteDeg}deg)`;
+  hitHour.style.transform    = `translate(-50%,-100%) rotate(${hourDeg}deg)`;
+  hitMinute.style.transform  = `translate(-50%,-100%) rotate(${minuteDeg}deg)`;
+
+  let h12 = hour % 12; if(h12===0) h12 = 12;
+  document.getElementById('digital').textContent = `${h12}:${String(minute).padStart(2,'0')}`;
+  document.getElementById('ampm').textContent = isPM ? 'PM' : 'AM';
+  document.getElementById('words').textContent = `It is ${timeToWords(h12, minute)}.`;
+}
+
+/* ---------- Time-in-words (handles all 60 minutes) ---------- */
+const HOUR_WORD = ['twelve','one','two','three','four','five','six','seven','eight','nine','ten','eleven'];
+const ONES = ['','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve',
+              'thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
+const TENS = ['','','twenty','thirty','forty','fifty'];
+
+function numWord(n){
+  if(n<20) return ONES[n];
+  const t=Math.floor(n/10), o=n%10;
+  return o===0 ? TENS[t] : `${TENS[t]}-${ONES[o]}`;
+}
+function minutePhrase(m){
+  if(m===15) return 'quarter';
+  if(m===30) return 'half';
+  if(m%5===0) return numWord(m);
+  return `${numWord(m)} minute${m===1?'':'s'}`;
+}
+function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+
+function timeToWords(h12, m){
+  if(m===0) return `${cap(HOUR_WORD[h12%12])} o'clock`;
+  if(m<=30){
+    return `${cap(minutePhrase(m))} past ${HOUR_WORD[h12%12]}`;
+  } else {
+    const nextH = (h12%12)+1;
+    return `${cap(minutePhrase(60-m))} to ${HOUR_WORD[nextH%12]}`;
+  }
+}
+
+/* ============================================================
+   TOUCH / MOUSE DRAG — rotate hands directly
+   ============================================================ */
+function angleFromCenter(x, y){
+  const r = face.getBoundingClientRect();
+  const cx = r.left + r.width/2, cy = r.top + r.height/2;
+  let a = Math.atan2(x-cx, -(y-cy)) * (180/Math.PI);
+  if(a<0) a += 360;
+  return a;
+}
+
+function makeDraggable(el, kind){
+  let dragging = false;
+
+  function onMove(x, y){
+    const angle = angleFromCenter(x, y);
+    if(kind === 'minute'){
+      minute = Math.round(angle/6) % 60;
+    } else {
+      let h12 = Math.round(angle/30) % 12; // 0 means 12
+      hour = (h12===0 ? 0 : h12) + (isPM ? 12 : 0);
+    }
+    render();
+  }
+
+  function start(e){ dragging = true; e.preventDefault(); }
+  function move(e){
+    if(!dragging) return;
+    const p = e.touches ? e.touches[0] : e;
+    onMove(p.clientX, p.clientY);
+  }
+  function end(){ dragging = false; }
+
+  el.addEventListener('mousedown', start);
+  el.addEventListener('touchstart', start, {passive:false});
+  window.addEventListener('mousemove', move);
+  window.addEventListener('touchmove', move, {passive:false});
+  window.addEventListener('mouseup', end);
+  window.addEventListener('touchend', end);
+}
+makeDraggable(hitHour, 'hour');
+makeDraggable(hitMinute, 'minute');
+
+/* ============================================================
+   SHOW / HIDE TIME TOGGLE
+   ============================================================ */
+function setReadoutVisible(visible){
+  readoutVisible = visible;
+  if(visible){
+    readoutWrap.classList.remove('hidden-readout');
+    peekPlaceholder.classList.add('is-hidden');
+    toggleBtn.textContent = '🙈 Hide Time';
+  } else {
+    readoutWrap.classList.add('hidden-readout');
+    peekPlaceholder.classList.remove('is-hidden');
+    toggleBtn.textContent = '👁️ Show Time';
+  }
+}
+toggleBtn.addEventListener('click', () => setReadoutVisible(!readoutVisible));
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+document.getElementById('btnNow').addEventListener('click', () => {
+  const now = new Date();
+  const h = now.getHours();
+  isPM = h >= 12;
+  hour = h % 12; if(hour===0) hour = 12;
+  minute = now.getMinutes();
+  render();
+});
+document.getElementById('btnRandom').addEventListener('click', () => {
+  hour = Math.floor(Math.random()*12)+1;
+  minute = Math.floor(Math.random()*60);
+  isPM = Math.random() < 0.5;
+  render();
+});
+document.getElementById('btnReset').addEventListener('click', () => {
+  hour = 12; minute = 0; isPM = false;
+  render();
+});
+document.getElementById('btnSpeak').addEventListener('click', () => {
+  if(!('speechSynthesis' in window)){ alert('Speech not supported on this browser.'); return; }
+  let h12 = hour % 12; if(h12===0) h12 = 12;
+  const utter = new SpeechSynthesisUtterance(`It is ${timeToWords(h12, minute)}.`);
+  utter.rate = 0.85;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utter);
+});
+
+/* ---------- init ---------- */
+render();
+setReadoutVisible(false); // start hidden so learners read the clock first
+</script>
+</body>
+</html>

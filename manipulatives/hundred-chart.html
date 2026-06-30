@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centered 100 Chart Manipulative</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --container-bg: #ffffff;
+            --text-color: #1e293b;
+            --border-color: #cbd5e1;
+            --grid-border: #e2e8f0;
+            --btn-bg: #e2e8f0;
+            --btn-text: #334155;
+            --btn-hover: #cbd5e1;
+            --primary: #3b82f6;
+            --primary-text: #ffffff;
+            
+            /* Highlight Colors */
+            --hl-yellow: #fef08a;
+            --hl-green: #bbf7d0;
+            --hl-blue: #bfdbfe;
+            --hl-pink: #fbcfe8;
+            --hl-orange: #fed7aa;
+            --hl-purple: #e9d5ff;
+            --hl-red: #fecaca;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #0f172a;
+            --container-bg: #1e293b;
+            --text-color: #f8fafc;
+            --border-color: #475569;
+            --grid-border: #334155;
+            --btn-bg: #334155;
+            --btn-text: #e2e8f0;
+            --btn-hover: #445569;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+            transition: background-color 0.3s;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .container {
+            max-width: 800px; /* Constrained width to keep the layout tight and centered */
+            width: 100%;
+            background: var(--container-bg);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            border-bottom: 2px solid var(--grid-border);
+            padding-bottom: 15px;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .sys-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        button, select {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            background-color: var(--btn-bg);
+            color: var(--btn-text);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: var(--btn-hover);
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: var(--primary-text);
+        }
+        .btn-primary:hover {
+            opacity: 0.9;
+            background-color: var(--primary);
+        }
+
+        .palette-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            background: var(--bg-color);
+            padding: 10px 16px;
+            border-radius: 8px;
+            width: 100%;
+        }
+
+        .color-swatch {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .color-swatch:hover { transform: scale(1.1); }
+        .color-swatch.active { border-color: var(--text-color); }
+        
+        .swatch-yellow { background-color: var(--hl-yellow); }
+        .swatch-green { background-color: var(--hl-green); }
+        .swatch-blue { background-color: var(--hl-blue); }
+        .swatch-pink { background-color: var(--hl-pink); }
+        .swatch-orange { background-color: var(--hl-orange); }
+        .swatch-purple { background-color: var(--hl-purple); }
+        .swatch-red { background-color: var(--hl-red); }
+        .swatch-eraser { 
+            background: #ffffff; 
+            border: 2px dashed #94a3b8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        [data-theme="dark"] .swatch-eraser { background: #334155; }
+
+        .chart-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 650px; /* Perfectly scales grid on desktop smartboards */
+            align-items: center;
+        }
+
+        .grid-100 {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            background-color: #ffffff;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .cell {
+            background-color: #ffffff;
+            color: #000000; 
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: calc(1.5vw + 1.2vh);
+            border: 0.5px solid var(--border-color);
+            cursor: pointer;
+            transition: background-color 0.15s, color 0.15s;
+        }
+
+        @media (min-width: 768px) {
+            .cell { font-size: 1.6rem; }
+        }
+
+        .cell.hidden-numbers {
+            color: transparent !important;
+        }
+        .cell.hidden-numbers:hover {
+            color: rgba(0,0,0,0.2) !important;
+        }
+
+        .cell.hl-yellow { background-color: var(--hl-yellow); }
+        .cell.hl-green { background-color: var(--hl-green); }
+        .cell.hl-blue { background-color: var(--hl-blue); }
+        .cell.hl-pink { background-color: var(--hl-pink); }
+        .cell.hl-orange { background-color: var(--hl-orange); }
+        .cell.hl-purple { background-color: var(--hl-purple); }
+        .cell.hl-red { background-color: var(--hl-red); }
+
+        .global-controls {
+            width: 100%;
+            justify-content: center;
+        }
+
+        /* Bottom Dashboard Layout */
+        .dashboard-panels {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        @media (min-width: 640px) {
+            .dashboard-panels {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--bg-color);
+            padding: 18px;
+            border-radius: 8px;
+            border: 1px solid var(--grid-border);
+        }
+
+        .panel h2 {
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            font-weight: 700;
+            border-bottom: 1px solid var(--grid-border);
+            padding-bottom: 5px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .control-group label {
+            width: 100%;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 6px;
+            color: var(--btn-text);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .info-card {
+            background: var(--container-bg);
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            border: 1px solid var(--grid-border);
+        }
+        .info-card span {
+            display: block;
+            font-size: 0.75rem;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+        .info-card strong {
+            font-size: 1.05rem;
+        }
+
+        @media print {
+            body { background: white; color: black; padding: 0; }
+            .container { shadow: none; max-width: 100%; }
+            .dashboard-panels, .palette-container, header, .global-controls, .sys-btns { display: none !important; }
+            .grid-100 { width: 100vw; height: 100vw; max-width: 100%; max-height: 100%; border: 2px solid #000; }
+            .cell { border: 1px solid #000 !important; color: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div>
+            <h1>Interactive 100 Chart</h1>
+        </div>
+        <div class="sys-btns">
+            <button id="btn-undo" disabled title="Undo">↶ Undo</button>
+            <button id="btn-redo" disabled title="Redo">↷ Redo</button>
+            <button id="btn-theme" title="Toggle Theme">◐ Mode</button>
+            <button id="btn-fullscreen" title="Full Screen">⛶ Fullscreen</button>
+        </div>
+    </header>
+
+    <main class="chart-wrapper">
+        <div class="palette-container">
+            <span style="font-size:0.85rem; font-weight:700; margin-right:4px;">Paint Color:</span>
+            <div class="color-swatch swatch-yellow active" data-color="hl-yellow"></div>
+            <div class="color-swatch swatch-green" data-color="hl-green"></div>
+            <div class="color-swatch swatch-blue" data-color="hl-blue"></div>
+            <div class="color-swatch swatch-pink" data-color="hl-pink"></div>
+            <div class="color-swatch swatch-orange" data-color="hl-orange"></div>
+            <div class="color-swatch swatch-purple" data-color="hl-purple"></div>
+            <div class="color-swatch swatch-red" data-color="hl-red"></div>
+            <div class="color-swatch swatch-eraser" data-color="erase" title="Eraser">⌫</div>
+        </div>
+
+        <div class="grid-100" id="chart-grid"></div>
+        
+        <div class="global-controls control-group">
+            <button id="btn-clear" class="btn-primary">Clear Color</button>
+            <button id="btn-reset">Reset All</button>
+            <button id="btn-random">🎲 Random No.</button>
+            <button id="btn-hide-toggle">👁 Hide/Show No.</button>
+            <button id="btn-export">💾 Export PNG</button>
+            <button id="btn-print" onclick="window.print()">🖨 Print</button>
+        </div>
+    </main>
+
+    <div class="dashboard-panels">
+        <div class="panel">
+            <h2>Number Info</h2>
+            <div id="analyzer-prompt" style="font-size:0.9rem; color:#64748b;">Click any number on the chart to see its info.</div>
+            <div id="analyzer-content" style="display: none;">
+                <div class="info-grid">
+                    <div class="info-card"><span>Selected</span><strong id="an-num">-</strong></div>
+                    <div class="info-card"><span>Even or Odd</span><strong id="an-parity">-</strong></div>
+                    <div class="info-card"><span>Type</span><strong id="an-prime">-</strong></div>
+                    <div class="info-card"><span>Place Value</span><strong id="an-place">-</strong></div>
+                </div>
+                <div style="font-size:0.8rem; font-weight:700; margin: 5px 0 2px 0;">Factors:</div>
+                <div class="info-card" id="an-factors" style="font-size:0.85rem;">-</div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>Patterns & Counting</h2>
+            <div class="control-group">
+                <button id="btn-pat-even">Evens</button>
+                <button id="btn-pat-odd">Odds</button>
+                <button id="btn-pat-prime">Primes</button>
+                <button id="btn-pat-squares">Squares</button>
+                
+                <label for="select-multiples">Highlight Multiples of:</label>
+                <select id="select-multiples">
+                    <option value="">Select...</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10</option>
+                    <option value="11">11</option>
+                    <option value="12">12</option>
+                </select>
+
+                <label for="select-skip">Skip Counting Patterns:</label>
+                <select id="select-skip">
+                    <option value="">Select...</option>
+                    <option value="2">2s</option>
+                    <option value="3">3s</option>
+                    <option value="5">5s</option>
+                    <option value="10">10s</option>
+                    <option value="25">25s</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const state = {
+        grid: Array(101).fill(null),
+        selectedColor: 'hl-yellow',
+        numbersHidden: false,
+        selectedNumber: null,
+        history: [],
+        historyIndex: -1
+    };
+
+    const gridEl = document.getElementById('chart-grid');
+    
+    function init() {
+        createGrid();
+        setupEventListeners();
+        loadLocalStorage();
+        updateUI();
+    }
+
+    function createGrid() {
+        gridEl.innerHTML = '';
+        for (let i = 1; i <= 100; i++) {
+            const cell = document.createElement('div');
+            cell.classList.add('cell');
+            cell.dataset.number = i;
+            cell.textContent = i;
+            gridEl.appendChild(cell);
+        }
+    }
+
+    const isPrime = n => {
+        if (n <= 1) return false;
+        for (let i = 2; i <= Math.sqrt(n); i++) if (n % i === 0) return false;
+        return true;
+    };
+
+    const getFactors = n => {
+        const factors = [];
+        for (let i = 1; i <= n; i++) if (n % i === 0) factors.push(i);
+        return factors.join(', ');
+    };
+
+    function recordState() {
+        if (state.historyIndex < state.history.length - 1) {
+            state.history = state.history.slice(0, state.historyIndex + 1);
+        }
+        state.history.push(JSON.stringify(state.grid));
+        state.historyIndex++;
+        
+        if (state.history.length > 50) {
+            state.history.shift();
+            state.historyIndex--;
+        }
+        updateUndoRedoButtons();
+        saveLocalStorage();
+    }
+
+    function updateUndoRedoButtons() {
+        document.getElementById('btn-undo').disabled = state.historyIndex <= 0;
+        document.getElementById('btn-redo').disabled = state.historyIndex >= state.history.length - 1;
+    }
+
+    function saveLocalStorage() {
+        localStorage.setItem('math_100_chart_state_centered', JSON.stringify({
+            grid: state.grid,
+            numbersHidden: state.numbersHidden,
+            selectedNumber: state.selectedNumber
+        }));
+    }
+
+    function loadLocalStorage() {
+        const saved = localStorage.getItem('math_100_chart_state_centered');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                state.grid = parsed.grid || Array(101).fill(null);
+                state.numbersHidden = !!parsed.numbersHidden;
+                if (parsed.selectedNumber) selectNumber(parsed.selectedNumber);
+            } catch (e) { console.error(e); }
+        }
+        state.history = [JSON.stringify(state.grid)];
+        state.historyIndex = 0;
+    }
+
+    function updateUI() {
+        const cells = gridEl.querySelectorAll('.cell');
+        cells.forEach(cell => {
+            const n = parseInt(cell.dataset.number);
+            cell.className = 'cell';
+            if (state.grid[n]) cell.classList.add(state.grid[n]);
+            if (state.numbersHidden) cell.classList.add('hidden-numbers');
+        });
+        updateUndoRedoButtons();
+    }
+
+    function applyColorToCell(num, color) {
+        const targetColor = color === 'erase' ? null : color;
+        if (state.grid[num] !== targetColor) {
+            state.grid[num] = targetColor;
+            return true;
+        }
+        return false;
+    }
+
+    let isDragging = false;
+
+    function setupEventListeners() {
+        document.querySelectorAll('.color-swatch').forEach(swatch => {
+            swatch.addEventListener('click', () => {
+                document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+                swatch.classList.add('active');
+                state.selectedColor = swatch.dataset.color;
+            });
+        });
+
+        gridEl.addEventListener('pointerdown', (e) => {
+            const cell = e.target.closest('.cell');
+            if (!cell) return;
+            isDragging = true;
+            gridEl.setPointerCapture(e.pointerId);
+            
+            const num = parseInt(cell.dataset.number);
+            selectNumber(num);
+            
+            const activeColor = state.selectedColor;
+            if (activeColor === 'erase') {
+                applyColorToCell(num, 'erase');
+            } else {
+                if (state.grid[num] === activeColor) {
+                    applyColorToCell(num, 'erase');
+                } else {
+                    applyColorToCell(num, activeColor);
+                }
+            }
+            updateUI();
+        });
+
+        gridEl.addEventListener('pointermove', (e) => {
+            if (!isDragging) return;
+            const target = document.elementFromPoint(e.clientX, e.clientY);
+            const cell = target ? target.closest('.cell') : null;
+            if (cell) {
+                const num = parseInt(cell.dataset.number);
+                if (applyColorToCell(num, state.selectedColor)) {
+                    updateUI();
+                }
+            }
+        });
+
+        const stopDrag = () => {
+            if (isDragging) {
+                isDragging = false;
+                recordState();
+            }
+        };
+        gridEl.addEventListener('pointerup', stopDrag);
+        gridEl.addEventListener('pointercancel', stopDrag);
+
+        document.getElementById('btn-pat-even').addEventListener('click', () => applyPattern(n => n % 2 === 0));
+        document.getElementById('btn-pat-odd').addEventListener('click', () => applyPattern(n => n % 2 !== 0));
+        document.getElementById('btn-pat-prime').addEventListener('click', () => applyPattern(isPrime));
+        document.getElementById('btn-pat-squares').addEventListener('click', () => applyPattern(n => Math.sqrt(n) % 1 === 0));
+        
+        document.getElementById('select-multiples').addEventListener('change', (e) => {
+            const val = parseInt(e.target.value);
+            if (val) applyPattern(n => n % val === 0);
+            e.target.value = "";
+        });
+
+        document.getElementById('select-skip').addEventListener('change', (e) => {
+            const val = parseInt(e.target.value);
+            if (val) applyPattern(n => n % val === 0);
+            e.target.value = "";
+        });
+
+        document.getElementById('btn-clear').addEventListener('click', () => {
+            for (let i = 1; i <= 100; i++) state.grid[i] = null;
+            updateUI();
+            recordState();
+        });
+
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            state.grid.fill(null);
+            state.numbersHidden = false;
+            state.selectedNumber = null;
+            document.getElementById('analyzer-content').style.display = "none";
+            document.getElementById('analyzer-prompt').style.display = "block";
+            updateUI();
+            recordState();
+        });
+
+        document.getElementById('btn-random').addEventListener('click', () => {
+            const rand = Math.floor(Math.random() * 100) + 1;
+            selectNumber(rand);
+            applyColorToCell(rand, state.selectedColor === 'erase' ? 'hl-yellow' : state.selectedColor);
+            updateUI();
+            recordState();
+        });
+
+        document.getElementById('btn-hide-toggle').addEventListener('click', () => {
+            state.numbersHidden = !state.numbersHidden;
+            updateUI();
+            saveLocalStorage();
+        });
+
+        document.getElementById('btn-undo').addEventListener('click', () => {
+            if (state.historyIndex > 0) {
+                state.historyIndex--;
+                state.grid = JSON.parse(state.history[state.historyIndex]);
+                updateUI();
+                saveLocalStorage();
+            }
+        });
+
+        document.getElementById('btn-redo').addEventListener('click', () => {
+            if (state.historyIndex < state.history.length - 1) {
+                state.historyIndex++;
+                state.grid = JSON.parse(state.history[state.historyIndex]);
+                updateUI();
+                saveLocalStorage();
+            }
+        });
+
+        document.getElementById('btn-theme').addEventListener('click', () => {
+            const current = document.documentElement.getAttribute('data-theme');
+            document.documentElement.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+        });
+
+        document.getElementById('btn-fullscreen').addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                document.exitFullscreen();
+            }
+        });
+
+        document.getElementById('btn-export').addEventListener('click', exportAsPNG);
+    }
+
+    function applyPattern(predicate) {
+        let activeColor = state.selectedColor;
+        if (activeColor === 'erase') activeColor = 'hl-yellow';
+        for (let i = 1; i <= 100; i++) {
+            if (predicate(i)) state.grid[i] = activeColor;
+        }
+        updateUI();
+        recordState();
+    }
+
+    function selectNumber(num) {
+        state.selectedNumber = num;
+        document.getElementById('analyzer-prompt').style.display = "none";
+        document.getElementById('analyzer-content').style.display = "block";
+
+        document.getElementById('an-num').textContent = num;
+        document.getElementById('an-parity').textContent = (num % 2 === 0) ? 'Even' : 'Odd';
+        document.getElementById('an-prime').textContent = isPrime(num) ? 'Prime' : (num === 1 ? 'Unit' : 'Composite');
+        
+        const tens = Math.floor(num / 10);
+        const ones = num % 10;
+        document.getElementById('an-place').textContent = `${tens} Tens, ${ones} Ones`;
+        document.getElementById('an-factors').textContent = getFactors(num);
+    }
+
+    function exportAsPNG() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 800;
+        canvas.height = 800;
+        const ctx = canvas.getContext('2d');
+        const style = getComputedStyle(document.documentElement);
+        const getColorHex = (varName, fallback) => style.getPropertyValue(varName).trim() || fallback;
+
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, 800, 800);
+
+        const cellSize = 80;
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = "#cbd5e1";
+        ctx.font = "bold 26px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        for (let row = 0; row < 10; row++) {
+            for (let col = 0; col < 10; col++) {
+                const n = row * 10 + col + 1;
+                const x = col * cellSize;
+                const y = row * cellSize;
+
+                const cellColorClass = state.grid[n];
+                if (cellColorClass) {
+                    ctx.fillStyle = getColorHex(`--${cellColorClass}`, "#fef08a");
+                    ctx.fillRect(x, y, cellSize, cellSize);
+                }
+
+                ctx.strokeRect(x, y, cellSize, cellSize);
+
+                if (!state.numbersHidden) {
+                    ctx.fillStyle = "#000000";
+                    ctx.fillText(n.toString(), x + cellSize / 2, y + cellSize / 2);
+                }
+            }
+        }
+
+        const link = document.createElement('a');
+        link.download = 'centered-100-chart.png';
+        link.href = canvas.toDataURL();
+        link.click();
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+</script>
+
+</body>
+</html>

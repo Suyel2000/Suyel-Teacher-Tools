@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Abacus Manipulative</title>
+    <style>
+        :root {
+            --wood-frame: #8B5A2B;
+            --wood-inner: #D2B48C;
+            --rod-color: #b5b5b5;
+            --bg-canvas: #f0f7f4;
+            --text-dark: #2c3e50;
+            --ui-blue: #3498db;
+            --ui-green: #2ecc71;
+            --ui-red: #e74c3c;
+            --ui-purple: #9b59b6;
+            --ui-orange: #e67e22;
+            
+            /* Rod specific bead colors for visual clarity */
+            --color-rod-9: #ff4757; /* Hundred Crores / Billions */
+            --color-rod-8: #ff6b81; /* Ten Crores */
+            --color-rod-7: #ffa502; /* Crores */
+            --color-rod-6: #ff7f50; /* Ten Lakhs */
+            --color-rod-5: #2ed573; /* Lakhs */
+            --color-rod-4: #1e90ff; /* Ten Thousands */
+            --color-rod-3: #3742fa; /* Thousands */
+            --color-rod-2: #9b59b6; /* Hundreds */
+            --color-rod-1: #f53b57; /* Tens */
+            --color-rod-0: #05c46b; /* Ones */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-canvas);
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            overflow-x: hidden;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 10px;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            color: var(--wood-frame);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            margin-bottom: 5px;
+        }
+
+        /* Value Display Panel */
+        .display-container {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            width: 100%;
+            max-width: 1000px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.06);
+            margin-bottom: 15px;
+            text-align: center;
+            border: 3px solid #e2e8f0;
+        }
+
+        .number-view {
+            font-size: 2.8rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: var(--text-dark);
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: filter 0.3s ease;
+        }
+
+        .number-view.hidden-value {
+            filter: blur(8px);
+            background: #f1f2f6;
+            border-radius: 10px;
+            display: inline-block;
+            padding: 0 40px;
+        }
+
+        .number-view-placeholder {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #7f8c8d;
+            margin-top: -50px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .number-view-placeholder.active {
+            display: block;
+        }
+
+        .expanded-view {
+            font-size: 1.1rem;
+            color: #7f8c8d;
+            margin-top: 8px;
+            word-wrap: break-word;
+            line-height: 1.4;
+        }
+
+        /* The Abacus Board Structure */
+        .abacus-frame {
+            background: var(--wood-frame);
+            border: 14px solid var(--wood-frame);
+            border-radius: 20px;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.25), inset 0 0 20px rgba(0,0,0,0.4);
+            width: 100%;
+            max-width: 1000px;
+            height: 480px;
+            position: relative;
+            display: flex;
+            flex-direction: row; /* Arranged left-to-right structurally */
+            justify-content: space-between;
+            padding: 0 10px;
+            margin-bottom: 15px;
+        }
+
+        .abacus-inner-canvas {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(to bottom, #fcf5eb, #f3e3ce);
+            border-radius: 6px;
+            z-index: 1;
+        }
+
+        /* Individual Rod Column */
+        .abacus-rod-container {
+            position: relative;
+            height: 100%;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 2;
+            cursor: pointer;
+        }
+
+        /* Focus rings for accessibility */
+        .abacus-rod-container:focus-visible {
+            outline: 3px solid var(--ui-blue);
+            background-color: rgba(52, 152, 219, 0.1);
+            border-radius: 8px;
+        }
+
+        /* The physical metallic wire */
+        .rod-wire {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            background: linear-gradient(to right, #999, #e6e6e6, #888);
+            box-shadow: 1px 0 3px rgba(0,0,0,0.2);
+            z-index: 2;
+        }
+
+        /* Beads */
+        .bead {
+            position: absolute;
+            width: 90%;
+            max-width: 75px;
+            height: 32px;
+            border-radius: 16px / 16px; /* Ellipse shape */
+            box-shadow: inset 0 4px 4px rgba(255,255,255,0.4), 
+                        inset 0 -4px 4px rgba(0,0,0,0.3), 
+                        0 3px 6px rgba(0,0,0,0.2);
+            z-index: 3;
+            transition: top 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+            touch-action: none;
+        }
+
+        /* Decorative Center Line on Beads */
+        .bead::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 0; right: 0;
+            height: 1px;
+            background: rgba(255,255,255,0.25);
+        }
+
+        /* Place Value Labels Grid underneath the Abacus */
+        .labels-container {
+            display: flex;
+            width: 100%;
+            max-width: 1000px;
+            justify-content: space-between;
+            padding: 0 24px;
+            margin-bottom: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.04);
+            border: 2px solid #e2e8f0;
+        }
+
+        .rod-label-box {
+            flex: 1;
+            text-align: center;
+            padding: 8px 2px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            color: var(--text-dark);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .rod-label-box .counter-pill {
+            background: #f1f2f6;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+            border: 1px solid #dcdde1;
+        }
+
+        .rod-label-box .title-text {
+            font-size: 0.75rem;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Responsive Label text adjustments */
+        @media(max-width: 768px) {
+            .rod-label-box .title-text {
+                font-size: 0.6rem;
+            }
+            h1 { font-size: 1.6rem; }
+            .number-view { font-size: 2rem; min-height: 45px;}
+        }
+
+        /* Master Controls System */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            width: 100%;
+            max-width: 1000px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            border: none;
+            padding: 14px 18px;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 12px;
+            cursor: pointer;
+            color: white;
+            transition: all 0.15s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 3px rgba(0,0,0,0.1);
+        }
+
+        .btn-reset { background-color: var(--ui-red); }
+        .btn-random { background-color: var(--ui-purple); }
+        .btn-toggle { background-color: var(--ui-blue); }
+        .btn-inc { background-color: var(--ui-green); }
+        .btn-dec { background-color: var(--ui-orange); }
+
+        /* Instructional Documentation Panel */
+        .info-panel {
+            background: white;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 1000px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 2px solid #e2e8f0;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .info-header {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .info-content {
+            padding: 20px;
+            display: none;
+            line-height: 1.6;
+        }
+
+        .info-content.open {
+            display: block;
+        }
+
+        .info-content ul {
+            margin-left: 20px;
+            margin-top: 8px;
+            margin-bottom: 8px;
+        }
+
+        .info-content li {
+            margin-bottom: 6px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Simple Abacus Manipulative</h1>
+    </header>
+
+    <section class="display-container">
+        <div id="numberDisplay" class="number-view" aria-live="polite">0</div>
+        <div id="hidePlaceholder" class="number-view-placeholder">???</div>
+        <div id="expandedDisplay" class="expanded-view">0</div>
+    </section>
+
+    <main class="abacus-frame">
+        <div class="abacus-inner-canvas"></div>
+        </main>
+
+    <section class="labels-container" id="labelsContainer">
+        </section>
+
+    <section class="controls-grid">
+        <button class="btn btn-reset" onclick="resetAbacus()">✕ Reset</button>
+        <button class="btn btn-random" onclick="setRandomValue()">🎲 Random</button>
+        <button class="btn btn-toggle" id="toggleVisibilityBtn" onclick="toggleNumberVisibility()">👁 Hide Number</button>
+        <button class="btn btn-inc" onclick="adjustValue(1)">+1 Add</button>
+        <button class="btn btn-dec" onclick="adjustValue(-1)">-1 Sub</button>
+    </section>
+
+    <section class="info-panel">
+        <div class="info-header" onclick="toggleInstructionPanel()">
+            <span>📖 How to Use This Abacus</span>
+            <span id="accordionArrow">▼</span>
+        </div>
+        <div class="info-content" id="instructionContent">
+            <p>Welcome to the <strong>Digital Abacus Manipulative</strong>! This mathematical learning tool translates abstract arithmetic values into spatial logic patterns.</p>
+            <ul>
+                <li><strong>Moving Beads:</strong> Click or Tap directly on any bead to slide it. Tapping a bead moves it along with all consecutive adjacent values.</li>
+                <li><strong>Counting Rules:</strong> Inactive beads rest at the <strong>top</strong>. Slide beads <strong>down</strong> to activate them.</li>
+                <li><strong>Place Values:</strong> Columns display numbers from right to left (Ones, Tens, Hundreds, Thousands... up to Hundred Crores / Billions).</li>
+                <li><strong>Keyboard Accessibility:</strong> Press <code>Tab</code> to focus onto a rod wire. Use <code>Up Arrow</code> and <code>Down Arrow</code> to adjust values dynamically. Navigate across wires using your <code>Left Arrow</code> and <code>Right Arrow</code> keys.</li>
+            </ul>
+        </div>
+    </section>
+
+    <script>
+        /**
+         * System Configuration Paradigms
+         * Array configurations mirror traditional base-10 right-to-left layout matrices.
+         * Index 0 represents the rightmost column (Ones).
+         */
+        const CONFIG = [
+            { name: "Ones", short: "O", color: "var(--color-rod-0)" },
+            { name: "Tens", short: "T", color: "var(--color-rod-1)" },
+            { name: "Hundreds", short: "H", color: "var(--color-rod-2)" },
+            { name: "Thousands", short: "Th", color: "var(--color-rod-3)" },
+            { name: "Ten Thousands", short: "T-Th", color: "var(--color-rod-4)" },
+            { name: "Lakhs", short: "L", color: "var(--color-rod-5)" },
+            { name: "Ten Lakhs", short: "T-L", color: "var(--color-rod-6)" },
+            { name: "Crores", short: "Cr", color: "var(--color-rod-7)" },
+            { name: "Ten Crores", short: "T-Cr", color: "var(--color-rod-8)" },
+            { name: "H. Crores / Bil", short: "HC/B", color: "var(--color-rod-9)" }
+        ];
+
+        const TOTAL_RODS = 10;
+        const BEADS_PER_ROD = 10;
+        const BEAD_HEIGHT = 32; 
+        const FRAME_PADDING = 0;
+        const TOTAL_HEIGHT = 480;
+
+        // Current runtime application matrices
+        let rodStates = Array(TOTAL_RODS).fill(0); // Holds active count for each rod (0 to 10)
+        let isHiddenMode = false;
+
+        // Core Dom References
+        const abacusFrame = document.querySelector('.abacus-frame');
+        const labelsContainer = document.getElementById('labelsContainer');
+        const numberDisplay = document.getElementById('numberDisplay');
+        const hidePlaceholder = document.getElementById('hidePlaceholder');
+        const expandedDisplay = document.getElementById('expandedDisplay');
+        const toggleVisibilityBtn = document.getElementById('toggleVisibilityBtn');
+
+        /**
+         * Procedural Audio Synthesis Architecture
+         * Generates organic mechanical wood click transients without external assets.
+         */
+        let audioCtx = null;
+        function playClickSound() {
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(140, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.04);
+                
+                gainNode.gain.setValueAtTime(0.25, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.04);
+            } catch (e) {
+                // Fail-silent catch structure if API lacks initialization permissions
+            }
+        }
+
+        /**
+         * Initialize App Components
+         * Builds UI structures from left-to-right (structural reverse order matching standard math displays).
+         */
+        function initAbacus() {
+            abacusFrame.querySelectorAll('.abacus-rod-container').forEach(el => el.remove());
+            labelsContainer.innerHTML = '';
+
+            // Generate rods structurally from index 9 (left) down to index 0 (right)
+            for (let i = TOTAL_RODS - 1; i >= 0; i--) {
+                const cfg = CONFIG[i];
+
+                // Create Rod UI Node Element
+                const rodElement = document.createElement('div');
+                rodElement.className = 'abacus-rod-container';
+                rodElement.tabIndex = 0;
+                rodElement.setAttribute('aria-label', `${cfg.name} column, current value ${rodStates[i]}`);
+                rodElement.dataset.rodIndex = i;
+
+                // Wire Track
+                const wire = document.createElement('div');
+                wire.className = 'rod-wire';
+                rodElement.appendChild(wire);
+
+                // Populate Beads inside Rod Container
+                for (let b = 0; b < BEADS_PER_ROD; b++) {
+                    const bead = document.createElement('div');
+                    bead.className = 'bead';
+                    bead.style.backgroundColor = cfg.color;
+                    bead.dataset.beadIndex = b; // 0 = topmost bead, 9 = bottommost bead
+                    
+                    // Click/Touch Event Subsystem
+                    bead.addEventListener('pointerdown', (e) => {
+                        e.stopPropagation();
+                        handleBeadInteraction(i, b);
+                    });
+
+                    rodElement.appendChild(bead);
+                }
+
+                // Append Event Listeners for Keyboard Interactivity
+                rodElement.addEventListener('keydown', (e) => handleKeyboardInteractivity(e, i));
+
+                abacusFrame.appendChild(rodElement);
+
+                // Generate Footprint Complementary Data Grid Metadata System Labels
+                const labelBox = document.createElement('div');
+                labelBox.className = 'rod-label-box';
+                labelBox.id = `label-box-${i}`;
+                labelBox.innerHTML = `
+                    <div class="counter-pill" id="counter-pill-${i}">0</div>
+                    <div class="title-text" title="${cfg.name}">${cfg.short}</div>
+                `;
+                labelsContainer.appendChild(labelBox);
+            }
+
+            updateAbacusUI();
+        }
+
+        /**
+         * Bead Dynamic Position Matrix Processing Core Logic
+         * Calculates boundary thresholds to snap stacked assets beautifully.
+         */
+        function updateAbacusUI() {
+            let totalValue = 0;
+            let expandedSegments = [];
+
+            for (let i = 0; i < TOTAL_RODS; i++) {
+                const activeCount = rodStates[i];
+                const rodContainer = document.querySelector(`.abacus-rod-container[data-rod-index="${i}"]`);
+                
+                if (rodContainer) {
+                    rodContainer.setAttribute('aria-label', `${CONFIG[i].name} column, current value ${activeCount}`);
+                    const beads = rodContainer.querySelectorAll('.bead');
+                    
+                    // Calculate visual positions for active and inactive beads
+                    for (let b = 0; b < BEADS_PER_ROD; b++) {
+                        let topPos = 0;
+                        if (b < BEADS_PER_ROD - activeCount) {
+                            // Inactive stack at the top
+                            topPos = FRAME_PADDING + (b * BEAD_HEIGHT);
+                        } else {
+                            // Active stack at the bottom
+                            const activeIndexFromBottom = BEADS_PER_ROD - 1 - b;
+                            topPos = TOTAL_HEIGHT - FRAME_PADDING - ((activeIndexFromBottom + 1) * BEAD_HEIGHT);
+                        }
+                        beads[b].style.top = `${topPos}px`;
+                    }
+                }
+
+                // Synchronize label text indicators
+                const counterPill = document.getElementById(`counter-pill-${i}`);
+                if (counterPill) counterPill.innerText = activeCount;
+
+                // Process absolute numerical value additions
+                const multiplier = Math.pow(10, i);
+                const absoluteRodContribution = activeCount * multiplier;
+                totalValue += absoluteRodContribution;
+
+                if (activeCount > 0) {
+                    expandedSegments.push({
+                        weight: multiplier,
+                        str: `${activeCount} × ${multiplier.toLocaleString()}`
+                    });
+                }
+            }
+
+            // Render Output Text Engine Strings
+            if (isHiddenMode) {
+                numberDisplay.classList.add('hidden-value');
+                hidePlaceholder.classList.add('active');
+                expandedDisplay.innerText = "Expanded form hidden";
+            } else {
+                numberDisplay.classList.remove('hidden-value');
+                hidePlaceholder.classList.remove('active');
+                numberDisplay.innerText = totalValue.toLocaleString();
+
+                // Sort and construct clean expanded notation text output
+                expandedSegments.sort((a, b) => b.weight - a.weight);
+                const expandedString = expandedSegments.map(item => item.str).join(" + ");
+                expandedDisplay.innerText = expandedString || "0";
+            }
+        }
+
+        /**
+         * Core Bead Interaction Engine
+         * Determines the target active state based on where the user tapped.
+         */
+        function handleBeadInteraction(rodIndex, beadIndex) {
+            const currentActive = rodStates[rodIndex];
+            const clickedBeadPositionFromTop = beadIndex; // 0 = top, 9 = bottom
+            const isClickedBeadActive = (clickedBeadPositionFromTop >= BEADS_PER_ROD - currentActive);
+
+            if (!isClickedBeadActive) {
+                // User tapped an inactive bead at the top -> Move it and all beads below it down
+                rodStates[rodIndex] = BEADS_PER_ROD - clickedBeadPositionFromTop;
+            } else {
+                // User tapped an active bead at the bottom -> Move it and all beads above it up
+                rodStates[rodIndex] = BEADS_PER_ROD - 1 - clickedBeadPositionFromTop;
+            }
+
+            playClickSound();
+            updateAbacusUI();
+        }
+
+        /**
+         * Global Keyboard Interactivity Map Router Handler
+         */
+        function handleKeyboardInteractivity(e, rodIndex) {
+            let handled = false;
+            switch(e.key) {
+                case "ArrowUp":
+                    if (rodStates[rodIndex] < BEADS_PER_ROD) {
+                        rodStates[rodIndex]++;
+                        playClickSound();
+                        updateAbacusUI();
+                    }
+                    handled = true;
+                    break;
+                case "ArrowDown":
+                    if (rodStates[rodIndex] > 0) {
+                        rodStates[rodIndex]--;
+                        playClickSound();
+                        updateAbacusUI();
+                    }
+                    handled = true;
+                    break;
+                case "ArrowLeft":
+                    // Navigate focus to the higher place value column (left)
+                    if (rodIndex < TOTAL_RODS - 1) {
+                        const target = document.querySelector(`.abacus-rod-container[data-rod-index="${rodIndex + 1}"]`);
+                        if (target) target.focus();
+                    }
+                    handled = true;
+                    break;
+                case "ArrowRight":
+                    // Navigate focus to the lower place value column (right)
+                    if (rodIndex > 0) {
+                        const target = document.querySelector(`.abacus-rod-container[data-rod-index="${rodIndex - 1}"]`);
+                        if (target) target.focus();
+                    }
+                    handled = true;
+                    break;
+            }
+
+            if (handled) {
+                e.preventDefault();
+            }
+        }
+
+        /**
+         * System Command Panel Handlers
+         */
+        function resetAbacus() {
+            rodStates.fill(0);
+            playClickSound();
+            updateAbacusUI();
+        }
+
+        function setRandomValue() {
+            for (let i = 0; i < TOTAL_RODS; i++) {
+                // Random integer between 0 and 9 for normal standard digit configurations
+                rodStates[i] = Math.floor(Math.random() * 10);
+            }
+            playClickSound();
+            updateAbacusUI();
+        }
+
+        function toggleNumberVisibility() {
+            isHiddenMode = !isHiddenMode;
+            toggleVisibilityBtn.innerText = isHiddenMode ? "👁 Show Number" : "👁 Hide Number";
+            updateAbacusUI();
+        }
+
+        /**
+         * Adjusts the current abacus total value by an incremental offset (+1 or -1)
+         * with seamless carrying and borrowing across place value columns.
+         */
+        function adjustValue(delta) {
+            // Calculate current total value integer
+            let currentVal = 0;
+            for (let i = 0; i < TOTAL_RODS; i++) {
+                currentVal += rodStates[i] * Math.pow(10, i);
+            }
+
+            let targetVal = currentVal + delta;
+            
+            // Boundary constraints checking
+            if (targetVal < 0) targetVal = 0;
+            const maxAllowed = Math.pow(10, TOTAL_RODS) - 1;
+            if (targetVal > maxAllowed) targetVal = maxAllowed;
+
+            // Re-distribute the base-10 integer value back out onto the individual rod states
+            let workingVal = targetVal;
+            for (let i = 0; i < TOTAL_RODS; i++) {
+                rodStates[i] = workingVal % 10;
+                workingVal = Math.floor(workingVal / 10);
+            }
+
+            playClickSound();
+            updateAbacusUI();
+        }
+
+        function toggleInstructionPanel() {
+            const content = document.getElementById('instructionContent');
+            const arrow = document.getElementById('accordionArrow');
+            content.classList.toggle('open');
+            arrow.innerText = content.classList.contains('open') ? "▲" : "▼";
+        }
+
+        // Run application setup sequence initialization routine execution
+        window.addEventListener('DOMContentLoaded', initAbacus);
+    </script>
+</body>
+</html>

@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capacity Measuring Jugs Manipulative</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-color: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --primary: #0284c7;
+            --primary-light: #e0f2fe;
+            --water-color: rgba(14, 165, 233, 0.65);
+            --water-border: #0284c7;
+            --border-color: #cbd5e1;
+            --success: #22c55e;
+            --success-light: #dcfce7;
+            --highlight: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
+            max-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 20px;
+            overflow: hidden;
+        }
+
+        header {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            flex-shrink: 0;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 1200px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 0;
+        }
+
+        /* Panels Row */
+        .panels-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .panel {
+            background: var(--card-color);
+            border-radius: 12px;
+            padding: 12px 16px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+            border: 1px solid #e2e8f0;
+        }
+
+        .panel-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Live Reading Panel */
+        .reading-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+        .reading-item {
+            padding: 8px;
+            border-radius: 8px;
+            background: var(--bg-color);
+            border-left: 5px solid var(--primary);
+        }
+
+        /* Challenge Panel */
+        .challenge-box {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+        }
+        .challenge-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+        .challenge-status {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--success);
+        }
+
+        /* Workspace Grid (Viewport Proportional) */
+        .workspace {
+            background: var(--card-color);
+            border-radius: 20px;
+            padding: 15px 55px 15px 25px; /* Generous right padding prevents scale labels overflowing workspace */
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            flex: 1;
+            min-height: 200px;
+            max-height: 360px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+            border: 1px solid #e2e8f0;
+            position: relative;
+            gap: 40px;
+        }
+
+        /* Jug Styling */
+        .jug-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            flex-grow: 1;
+            max-width: 240px;
+            height: 100%;
+            justify-content: flex-end;
+            cursor: pointer;
+        }
+
+        .jug-label-top {
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 8px;
+            color: var(--text-main);
+            transition: opacity 0.2s;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .jug-container {
+            position: relative;
+            width: 100%;
+            border: 4px solid #64748b;
+            border-top: none;
+            border-radius: 0 0 20px 20px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.6) 0%, rgba(240,244,248,0.4) 100%);
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.02);
+            transition: box-shadow 0.3s, border-color 0.3s;
+        }
+
+        .jug-wrapper.selected .jug-container {
+            border-color: var(--highlight);
+            box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.25), inset 0 0 15px rgba(0,0,0,0.04);
+        }
+
+        /* Scaled Responsive Heights Inside the Flex Container */
+        .jug-1000 { height: 82%; }
+        .jug-500 { height: 62%; }
+        .jug-250 { height: 42%; }
+
+        .water-layer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: var(--water-color);
+            border-top: 4px solid var(--water-border);
+            border-radius: 0 0 16px 16px;
+            transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        /* Drag Handle line */
+        .drag-handle {
+            position: absolute;
+            left: -12px;
+            width: calc(100% + 24px);
+            height: 24px;
+            margin-top: -12px;
+            z-index: 10;
+            cursor: ns-resize;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            pointer-events: all;
+        }
+        .drag-node {
+            width: 18px;
+            height: 18px;
+            background: var(--highlight);
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            border: 2px solid white;
+        }
+
+        /* Clean Non-overlapping Scale Configuration */
+        .scale-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+
+        .tick {
+            position: absolute;
+            right: 0; /* Align ticks along the inside right margin line */
+            width: 12px;
+            height: 2px;
+            background-color: #64748b;
+        }
+
+        .tick.major {
+            width: 22px;
+            background-color: #1e293b;
+        }
+
+        .tick-label {
+            position: absolute;
+            right: -48px; /* Position text completely outside the jug container to remove layer overlapping */
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #334155;
+            transform: translateY(50%);
+            white-space: nowrap;
+        }
+
+        /* Dynamic Visibility Utilities */
+        .hide-labels .jug-label-top, 
+        .hide-labels .reading-grid { opacity: 0 !important; }
+        .hide-scales .scale-container { opacity: 0 !important; }
+
+        /* Pouring Control Station */
+        .pour-station {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            justify-content: center;
+            background: var(--card-color);
+            padding: 10px 16px;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            flex-shrink: 0;
+        }
+
+        .select-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .btn-toggle {
+            padding: 8px 14px;
+            border: 2px solid var(--border-color);
+            background: white;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.15s;
+        }
+
+        .btn-toggle.active {
+            background: var(--primary-light);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Global Button Layouts */
+        .toolbar, .teacher-toolbox {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            width: 100%;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 22px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-light);
+            color: var(--primary);
+        }
+        .btn-primary:hover { background-color: #bae6fd; }
+        
+        .btn-action {
+            background-color: var(--primary);
+            color: white;
+            font-size: 1.1rem;
+            padding: 10px 35px;
+        }
+        .btn-action:hover { background-color: #0369a1; }
+        .btn-action:disabled {
+            background-color: var(--border-color);
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background-color: #f1f5f9;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            font-size: 0.95rem;
+            padding: 8px 16px;
+        }
+        .btn-secondary:hover { background-color: #e2e8f0; }
+        .btn-secondary.active {
+            background-color: #334155;
+            color: white;
+        }
+
+        /* Comparison Display Panel */
+        .comparison-banner {
+            width: 100%;
+            background: #fef3c7;
+            border-left: 6px solid var(--highlight);
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            display: none;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        /* Responsive Viewport Tweaks for smaller screens */
+        @media(max-width: 768px) {
+            body { padding: 8px 12px; }
+            .workspace { gap: 20px; padding-right: 48px; }
+            .tick-label { right: -38px; font-size: 0.7rem; }
+            .btn { padding: 8px 14px; font-size: 0.9rem; }
+            .btn-action { padding: 8px 24px; font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🥛 Capacity Measuring Jugs</h1>
+        <button class="btn btn-secondary" onclick="toggleFullscreen()">⛶ Fullscreen</button>
+    </header>
+
+    <div class="main-container">
+        
+        <div class="panels-row">
+            <div class="panel">
+                <div class="panel-title">📊 Live Water Readings</div>
+                <div class="reading-grid" id="readingPanel">
+                    <div class="reading-item" style="border-color:#ef4444">A: 0 mL</div>
+                    <div class="reading-item" style="border-color:#3b82f6">B: 0 mL</div>
+                    <div class="reading-item" style="border-color:#10b981">C: 0 mL</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">🎯 Classroom Challenge</div>
+                <div class="challenge-box">
+                    <div class="challenge-text" id="challengeText">Click "New Challenge" to begin!</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                        <div class="challenge-status" id="challengeStatus"></div>
+                        <button class="btn btn-secondary" onclick="generateChallenge()" style="padding: 4px 10px; font-size: 0.85rem;">🎲 New Challenge</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="comparison-banner" id="comparisonBanner"></div>
+
+        <div class="workspace" id="workspaceContainer">
+            <div class="jug-wrapper" id="jug-wrap-0" onclick="selectJug(0)">
+                <div class="jug-label-top">Jug A (250 mL)</div>
+                <div class="jug-container jug-250" id="jug-body-0">
+                    <div class="water-layer" id="water-0"></div>
+                    <div class="scale-container" id="scale-0"></div>
+                    <div class="drag-handle" id="handle-0"><div class="drag-node"></div><div class="drag-node"></div></div>
+                </div>
+            </div>
+
+            <div class="jug-wrapper" id="jug-wrap-1" onclick="selectJug(1)">
+                <div class="jug-label-top">Jug B (500 mL)</div>
+                <div class="jug-container jug-500" id="jug-body-1">
+                    <div class="water-layer" id="water-1"></div>
+                    <div class="scale-container" id="scale-1"></div>
+                    <div class="drag-handle" id="handle-1"><div class="drag-node"></div><div class="drag-node"></div></div>
+                </div>
+            </div>
+
+            <div class="jug-wrapper" id="jug-wrap-2" onclick="selectJug(2)">
+                <div class="jug-label-top">Jug C (1000 mL / 1L)</div>
+                <div class="jug-container jug-1000" id="jug-body-2">
+                    <div class="water-layer" id="water-2"></div>
+                    <div class="scale-container" id="scale-2"></div>
+                    <div class="drag-handle" id="handle-2"><div class="drag-node"></div><div class="drag-node"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="pour-station">
+            <div class="select-group">
+                <span>From Source:</span>
+                <button class="btn-toggle" id="src-btn-0" onclick="setPourSource(0)">Jug A</button>
+                <button class="btn-toggle" id="src-btn-1" onclick="setPourSource(1)">Jug B</button>
+                <button class="btn-toggle" id="src-btn-2" onclick="setPourSource(2)">Jug C</button>
+            </div>
+            
+            <button class="btn btn-action" id="pourBtn" onclick="executePour()" disabled>💧 Pour</button>
+
+            <div class="select-group">
+                <span>To Destination:</span>
+                <button class="btn-toggle" id="dst-btn-0" onclick="setPourDest(0)">Jug A</button>
+                <button class="btn-toggle" id="dst-btn-1" onclick="setPourDest(1)">Jug B</button>
+                <button class="btn-toggle" id="dst-btn-2" onclick="setPourDest(2)">Jug C</button>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <button class="btn btn-primary" onclick="fillSelected()">🩵 Fill Selected</button>
+            <button class="btn btn-primary" onclick="emptySelected()">🩵 Empty Selected</button>
+            <button class="btn btn-primary" onclick="randomizeLevels()">🎲 Random Levels</button>
+            <button class="btn btn-primary" style="background:#fecdd3; color:#e11d48;" onclick="resetAll()">🔄 Reset All</button>
+        </div>
+
+        <div class="teacher-toolbox">
+            <button class="btn btn-secondary" id="toggleLabelsBtn" onclick="toggleLabels()">🙈 Hide Labels</button>
+            <button class="btn btn-secondary" id="toggleScalesBtn" onclick="toggleScales()">📏 Hide Scale</button>
+            <button class="btn btn-secondary" id="compareJugsBtn" onclick="toggleCompareMode()">⚖️ Compare Jugs</button>
+            <button class="btn btn-secondary" onclick="window.print()">🖨️ Print Workspace</button>
+            <button class="btn btn-secondary" onclick="exportWorkspacePNG()">🖼️ Export as PNG</button>
+        </div>
+
+    </div>
+
+    <script>
+        // State Configuration
+        const jugs = [
+            { id: 0, label: 'Jug A', max: 250, current: 0 },
+            { id: 1, label: 'Jug B', max: 500, current: 0 },
+            { id: 2, label: 'Jug C', max: 1000, current: 0 }
+        ];
+
+        let selectedJugIdx = null;
+        let pourSourceIdx = null;
+        let pourDestIdx = null;
+        let currentChallenge = null;
+
+        // UI Toggles State
+        let showLabels = true;
+        let showScales = true;
+        let compareMode = false;
+
+        // Initialization
+        window.addEventListener('DOMContentLoaded', () => {
+            generateScales();
+            updateUI();
+            setupDragMechanics();
+        });
+
+        // Generate Scale Marks Mathematically
+        function generateScales() {
+            jugs.forEach((jug, idx) => {
+                const scaleContainer = document.getElementById(`scale-${idx}`);
+                scaleContainer.innerHTML = '';
+                
+                // Draw intervals of 50 mL
+                for (let v = 50; v <= jug.max; v += 50) {
+                    const percentage = (v / jug.max) * 100;
+                    const isMajor = v % 100 === 0;
+                    
+                    const tick = document.createElement('div');
+                    tick.className = `tick ${isMajor ? 'major' : ''}`;
+                    tick.style.bottom = `${percentage}%`;
+                    
+                    if (isMajor) {
+                        const label = document.createElement('div');
+                        label.className = 'tick-label';
+                        label.innerText = `${v} mL`;
+                        label.style.bottom = `${percentage}%`;
+                        scaleContainer.appendChild(label);
+                    }
+                    scaleContainer.appendChild(tick);
+                }
+            });
+        }
+
+        // Master UI Sync Function
+        function updateUI() {
+            jugs.forEach((jug, idx) => {
+                // Update heights
+                const percent = (jug.current / jug.max) * 100;
+                document.getElementById(`water-${idx}`).style.height = `${percent}%`;
+                document.getElementById(`handle-${idx}`).style.bottom = `${percent}%`;
+
+                // Update visual selection
+                const wrapper = document.getElementById(`jug-wrap-${idx}`);
+                if (selectedJugIdx === idx) {
+                    wrapper.classList.add('selected');
+                } else {
+                    wrapper.classList.remove('selected');
+                }
+            });
+
+            // Update Live Readings
+            const readingPanel = document.getElementById('readingPanel');
+            readingPanel.children[0].innerText = `A: ${jugs[0].current} mL`;
+            readingPanel.children[1].innerText = `B: ${jugs[1].current} mL`;
+            readingPanel.children[2].innerText = `C: ${jugs[2].current} mL`;
+
+            // Evaluate active interactive challenge
+            checkChallengeStatus();
+
+            // Handle Compare Mode Real-time output
+            updateComparisonData();
+        }
+
+        // Interactive Pointer/Touch Drag & Snap System
+        function setupDragMechanics() {
+            jugs.forEach((jug, idx) => {
+                const container = document.getElementById(`jug-body-${idx}`);
+                
+                function handlePointerEvent(e) {
+                    const rect = container.getBoundingClientRect();
+                    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+                    if(!clientY) return;
+
+                    const relativeY = clientY - rect.top;
+                    const fillPercentage = 1 - (relativeY / rect.height);
+                    
+                    let targetVolume = fillPercentage * jug.max;
+                    // Snap mechanics to nearest 50 mL
+                    let snappedVolume = Math.round(targetVolume / 50) * 50;
+                    
+                    // Clamp limits
+                    if (snappedVolume > jug.max) snappedVolume = jug.max;
+                    if (snappedVolume < 0) snappedVolume = 0;
+
+                    jug.current = snappedVolume;
+                    updateUI();
+                }
+
+                // Drag/Click listeners unified across Pointer events for seamless Smart board finger support
+                container.addEventListener('pointerdown', (e) => {
+                    selectJug(idx);
+                    handlePointerEvent(e);
+                    
+                    function onPointerMove(moveEvent) {
+                        handlePointerEvent(moveEvent);
+                    }
+                    
+                    function onPointerUp() {
+                        window.removeEventListener('pointermove', onPointerMove);
+                        window.removeEventListener('pointerup', onPointerUp);
+                    }
+                    
+                    window.addEventListener('pointermove', onPointerMove);
+                    window.addEventListener('pointerup', onPointerUp);
+                });
+            });
+        }
+
+        // Jug Sandbox Direct Modifiers
+        function selectJug(idx) {
+            selectedJugIdx = idx;
+            updateUI();
+        }
+
+        // Modified functions to check if a specific jug is selected, else modify all
+        function fillSelected() {
+            if (selectedJugIdx !== null) {
+                jugs[selectedJugIdx].current = jugs[selectedJugIdx].max;
+                updateUI();
+            } else {
+                jugs.forEach(j => j.current = j.max);
+                updateUI();
+            }
+        }
+
+        function emptySelected() {
+            if (selectedJugIdx !== null) {
+                jugs[selectedJugIdx].current = 0;
+                updateUI();
+            } else {
+                jugs.forEach(j => j.current = 0);
+                updateUI();
+            }
+        }
+
+        function randomizeLevels() {
+            jugs.forEach(jug => {
+                const steps = jug.max / 50;
+                const randomStep = Math.floor(Math.random() * (steps + 1));
+                jug.current = randomStep * 50;
+            });
+            updateUI();
+        }
+
+        function resetAll() {
+            jugs.forEach(j => j.current = 0);
+            selectedJugIdx = null;
+            pourSourceIdx = null;
+            pourDestIdx = null;
+            document.querySelectorAll('.pour-station .btn-toggle').forEach(b => b.classList.remove('active'));
+            document.getElementById('pourBtn').disabled = true;
+            updateUI();
+        }
+
+        // Simulation Fluid Mechanics & Pouring Engines
+        function setPourSource(idx) {
+            pourSourceIdx = idx;
+            document.querySelectorAll('[id^="src-btn-"]').forEach(b => b.classList.remove('active'));
+            document.getElementById(`src-btn-${idx}`).classList.add('active');
+            evaluatePourCondition();
+        }
+
+        function setPourDest(idx) {
+            pourDestIdx = idx;
+            document.querySelectorAll('[id^="dst-btn-"]').forEach(b => b.classList.remove('active'));
+            document.getElementById(`dst-btn-${idx}`).classList.add('active');
+            evaluatePourCondition();
+        }
+
+        function evaluatePourCondition() {
+            const btn = document.getElementById('pourBtn');
+            if (pourSourceIdx !== null && pourDestIdx !== null && pourSourceIdx !== pourDestIdx) {
+                btn.disabled = false;
+            } else {
+                btn.disabled = true;
+            }
+        }
+
+        function executePour() {
+            if (pourSourceIdx === null || pourDestIdx === null || pourSourceIdx === pourDestIdx) return;
+
+            const source = jugs[pourSourceIdx];
+            const dest = jugs[pourDestIdx];
+
+            const spaceInDest = dest.max - dest.current;
+            const amountToPour = Math.min(source.current, spaceInDest);
+
+            if (amountToPour > 0) {
+                source.current -= amountToPour;
+                dest.current += amountToPour;
+                updateUI();
+            }
+        }
+
+        // Smart Classroom Target Task Challenges System
+        const challengeTemplates = [
+            { text: "Fill Jug C to exactly 700 mL", validate: () => jugs[2].current === 700 },
+            { text: "Fill exactly 150 mL into Jug A", validate: () => jugs[0].current === 150 },
+            { text: "Make total liquid across all jugs exactly 1 Litre (1000 mL)", validate: () => (jugs[0].current + jugs[1].current + jugs[2].current) === 1000 },
+            { text: "Fill exactly half of Jug B", validate: () => jugs[1].current === 250 },
+            { text: "Fill three-quarters of Jug C (750 mL)", validate: () => jugs[2].current === 750 },
+            { text: "Make Jug A and Jug B hold matching identical volumes", validate: () => jugs[0].current === jugs[1].current && jugs[0].current > 0 },
+            { text: "Fill Jug B completely and leave Jug C empty", validate: () => jugs[1].current === 500 && jugs[2].current === 0 }
+        ];
+
+        function generateChallenge() {
+            const rand = Math.floor(Math.random() * challengeTemplates.length);
+            currentChallenge = challengeTemplates[rand];
+            document.getElementById('challengeText').innerText = currentChallenge.text;
+            document.getElementById('challengeStatus').innerText = "";
+            updateUI();
+        }
+
+        function checkChallengeStatus() {
+            if (!currentChallenge) return;
+            const statusEl = document.getElementById('challengeStatus');
+            if (currentChallenge.validate()) {
+                statusEl.innerText = "🎉 Success! Challenge Met!";
+                statusEl.style.color = "var(--success)";
+            } else {
+                statusEl.innerText = "";
+            }
+        }
+
+        // Specialized Teacher Pedagogical Framework Utilities
+        function toggleLabels() {
+            showLabels = !showLabels;
+            const ws = document.getElementById('workspaceContainer');
+            const btn = document.getElementById('toggleLabelsBtn');
+            if (!showLabels) {
+                ws.classList.add('hide-labels');
+                btn.innerText = "👁️ Show Labels";
+                btn.classList.add('active');
+            } else {
+                ws.classList.remove('hide-labels');
+                btn.innerText = "🙈 Hide Labels";
+                btn.classList.remove('active');
+            }
+        }
+
+        function toggleScales() {
+            showScales = !showScales;
+            const ws = document.getElementById('workspaceContainer');
+            const btn = document.getElementById('toggleScalesBtn');
+            if (!showScales) {
+                ws.classList.add('hide-scales');
+                btn.innerText = "👁️ Show Scale";
+                btn.classList.add('active');
+            } else {
+                ws.classList.remove('hide-scales');
+                btn.innerText = "📏 Hide Scale";
+                btn.classList.remove('active');
+            }
+        }
+
+        // Toggle Compare mode banner
+        function toggleCompareMode() {
+            compareMode = !compareMode;
+            const banner = document.getElementById('comparisonBanner');
+            const btn = document.getElementById('compareJugsBtn');
+            if (compareMode) {
+                banner.style.display = 'block';
+                btn.classList.add('active');
+                updateComparisonData();
+            } else {
+                banner.style.display = 'none';
+                btn.classList.remove('active');
+            }
+        }
+
+        function updateComparisonData() {
+            if (!compareMode) return;
+            const banner = document.getElementById('comparisonBanner');
+            
+            let volumes = jugs.map(j => ({ name: j.label, val: j.current }));
+            volumes.sort((a,b) => b.val - a.val);
+
+            if (volumes[0].val === volumes[2].val) {
+                banner.innerText = `⚖️ Balancing Equal: All jugs contain matching paths of ${volumes[0].val} mL!`;
+            } else {
+                banner.innerText = `⚖️ Comparison: Max volume is inside ${volumes[0].name} (${volumes[0].val} mL). Lowest volume is inside ${volumes[2].name} (${volumes[2].val} mL).`;
+            }
+        }
+
+        // Fullscreen Mode Adaptability Toggle
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {});
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Export State to PNG Graphic Using Dynamic Canvas Mapping
+        function exportWorkspacePNG() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1000;
+            canvas.height = 600;
+            const ctx = canvas.getContext('2d');
+
+            // Background canvas setup
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Print Document Title Top header
+            ctx.fillStyle = '#0284c7';
+            ctx.font = 'bold 28px sans-serif';
+            ctx.fillText('Measuring Capacity Jugs Workspace Snapshot', 40, 50);
+
+            // Render 3 standard static digital representations onto canvas data export 
+            const horizontalPositions = [150, 450, 750];
+            const jugHeights = [150, 240, 340];
+            
+            jugs.forEach((jug, i) => {
+                const x = horizontalPositions[i];
+                const h = jugHeights[i];
+                const y = 500 - h;
+                const w = 160;
+
+                // Draw Water Level
+                if(jug.current > 0) {
+                    const fillH = (jug.current / jug.max) * h;
+                    ctx.fillStyle = 'rgba(14, 165, 233, 0.7)';
+                    ctx.fillRect(x, 500 - fillH, w, fillH);
+                }
+
+                // Draw Outer Glass Beaker Wireframes
+                ctx.strokeStyle = '#475569';
+                ctx.lineWidth = 5;
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x, 500);
+                ctx.lineTo(x + w, 500);
+                ctx.lineTo(x + w, y);
+                ctx.stroke();
+
+                // Dynamic Measurement Data metrics
+                ctx.fillStyle = '#1e293b';
+                ctx.font = 'bold 16px sans-serif';
+                ctx.fillText(`${jug.label} (${jug.current} / ${jug.max} mL)`, x, y - 20);
+            });
+
+            // Trigger immediate virtual safe download sequence
+            const dataURL = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = 'capacity-jugs-workspace.png';
+            link.href = dataURL;
+            link.click();
+        }
+    </script>
+</body>
+</html>

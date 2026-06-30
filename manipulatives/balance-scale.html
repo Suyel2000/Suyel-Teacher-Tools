@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>⚖️ Virtual Balance Scale – Compare & Measure Weight</title>
+    <style>
+        :root {
+            --primary: #4A90E2;
+            --primary-dark: #357ABD;
+            --success: #2ECC71;
+            --danger: #E74C3C;
+            --warning: #F1C40F;
+            --bg-classroom: #F8FAFC;
+            --wood: #D35400;
+            --metal: #BDC3C7;
+            --scale-angle: 0deg;
+            --text-main: #2C3E50;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            margin: 0;
+            padding: 0;
+            touch-action: pan-y;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-classroom);
+            color: var(--text-main);
+            overflow-x: hidden;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            align-items: center;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 15px;
+            background: white;
+            padding: 12px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: var(--primary-dark);
+            margin-bottom: 5px;
+        }
+
+        /* Unified Single-Panel Interface Layout */
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 1000px;
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.05);
+        }
+
+        /* Modes Bar */
+        .modes-bar {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: #ECF0F1;
+            border: none;
+            padding: 10px 16px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-main);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-mode.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-action {
+            background: white;
+            border: 2px solid #BDC3C7;
+        }
+        .btn-action:hover {
+            background: #F8FAFC;
+        }
+
+        .btn-danger { background: #FADBD8; color: #C0392B; border: 1px solid #E6B0AA; }
+        .btn-danger:hover { background: #E6B0AA; }
+        .btn-success { background: #D4EFDF; color: #196F3D; border: 1px solid #A9DFBF; }
+        .btn-success:hover { background: #A9DFBF; }
+
+        /* Controls Panel integrated inline */
+        .controls-panel {
+            padding: 10px 0;
+            border-bottom: 2px solid #ECF0F1;
+            border-top: 2px solid #ECF0F1;
+            margin: 5px 0;
+        }
+
+        .control-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        /* Dynamic Challenge Banner */
+        .challenge-banner {
+            background: #EBF5FB;
+            border-left: 5px solid var(--primary);
+            padding: 15px;
+            border-radius: 0 12px 12px 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        /* The Balance Scale Container */
+        .scale-stage {
+            background: #F8FAFC;
+            border-radius: 16px;
+            height: 380px;
+            position: relative;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.02);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            padding-bottom: 40px;
+        }
+
+        /* Scale Graphic Construction */
+        .scale-base {
+            width: 240px;
+            height: 24px;
+            background: var(--wood);
+            border-radius: 6px;
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+        }
+
+        .scale-pillar {
+            width: 30px;
+            height: 200px;
+            background: linear-gradient(90deg, #BDC3C7, #95A5A6);
+            position: absolute;
+            bottom: 24px;
+            left: calc(50% - 15px);
+            z-index: 1;
+        }
+
+        .scale-pivot {
+            width: 20px;
+            height: 20px;
+            background: #34495E;
+            border-radius: 50%;
+            position: absolute;
+            top: -10px;
+            left: 5px;
+        }
+
+        .scale-beam {
+            width: 460px;
+            height: 16px;
+            background: linear-gradient(180deg, #BDC3C7, #7F8C8D);
+            position: absolute;
+            top: -4px;
+            left: calc(50% - 230px);
+            transform-origin: center center;
+            transform: rotate(var(--scale-angle));
+            transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+            border-radius: 4px;
+            z-index: 3;
+        }
+
+        /* Hanging Assembly */
+        .pan-assembly {
+            position: absolute;
+            top: 8px;
+            width: 140px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform-origin: top center;
+            transform: rotate(calc(-1 * var(--scale-angle)));
+            transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .pan-left-hook { left: 10px; }
+        .pan-right-hook { right: 10px; }
+
+        .scale-strings {
+            width: 100%;
+            height: 90px;
+        }
+
+        .scale-pan {
+            width: 150px;
+            height: 20px;
+            background: linear-gradient(180deg, #F1C40F, #F39C12);
+            border-radius: 0 0 50% 50%;
+            border-top: 3px solid #D35400;
+            position: relative;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        /* Dropzones on Pans */
+        .pan-dropzone {
+            position: absolute;
+            bottom: 15px;
+            width: 150px;
+            height: 120px;
+            display: flex;
+            flex-wrap: wrap-reverse;
+            justify-content: center;
+            align-content: flex-start;
+            gap: 4px;
+            padding: 5px;
+            border-radius: 10px;
+            transition: background 0.2s;
+        }
+        .pan-dropzone.drag-over {
+            background: rgba(46, 204, 113, 0.15);
+            border: 2px dashed var(--success);
+        }
+        .pan-dropzone.drag-deny {
+            background: rgba(231, 76, 60, 0.15);
+            border: 2px dashed var(--danger);
+        }
+
+        /* Labels Feature */
+        .scale-label {
+            position: absolute;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 10;
+        }
+        body.show-labels .scale-label {
+            opacity: 1;
+        }
+
+        /* Dashboard Readouts */
+        .weight-display-board {
+            display: flex;
+            justify-content: space-around;
+            background: #34495E;
+            color: white;
+            padding: 12px;
+            border-radius: 12px;
+            font-family: monospace;
+            font-size: 1.1rem;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.3);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .readout span {
+            color: var(--warning);
+            font-weight: bold;
+        }
+
+        /* Draggable Pools Base Styling */
+        .pool-shelf {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 10px 5px;
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            min-height: 95px;
+            align-items: center;
+        }
+
+        /* Placed / Draggable Items */
+        .weight-item {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border: 2px solid #BDC3C7;
+            border-radius: 8px;
+            padding: 6px;
+            min-width: 60px;
+            height: 65px;
+            cursor: grab;
+            position: relative;
+            transition: transform 0.15s, box-shadow 0.15s;
+            font-size: 0.8rem;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .weight-item:active { cursor: grabbing; }
+
+        .weight-item .icon {
+            font-size: 1.6rem;
+            margin-bottom: 2px;
+        }
+
+        /* Standard weight blocks specialized design */
+        .weight-item.standard-block {
+            background: linear-gradient(135deg, #7F8C8D, #95A5A6);
+            color: white;
+            border-color: #7F8C8D;
+            border-radius: 4px;
+            clip-path: polygon(15% 0%, 85% 0%, 100% 25%, 100% 100%, 0% 100%, 0% 25%);
+            height: 55px;
+            min-width: 55px;
+        }
+
+        /* Scaling representations inside the pans */
+        .pan-dropzone .weight-item {
+            transform: scale(0.85);
+            margin: -4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .hidden { display: none !important; }
+
+        /* Floating Feedback Alert */
+        .feedback-pop {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            padding: 15px 30px;
+            border-radius: 30px;
+            color: white;
+            font-size: 1.8rem;
+            font-weight: bold;
+            z-index: 100;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .feedback-pop.pop-show { transform: translate(-50%, -50%) scale(1); }
+        .feedback-pop.success { background-color: var(--success); }
+        .feedback-pop.danger { background-color: var(--danger); }
+
+        /* Demo highlight effect */
+        @keyframes pulse-highlight {
+            0% { box-shadow: 0 0 0 0 rgba(74, 144, 226, 0.7); }
+            70% { box-shadow: 0 0 0 12px rgba(74, 144, 226, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(74, 144, 226, 0); }
+        }
+        .demo-highlight {
+            animation: pulse-highlight 1.5s infinite;
+            border: 3px solid var(--primary) !important;
+        }
+
+        .shelf-label {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #7F8C8D;
+            margin-top: 5px;
+            margin-bottom: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>⚖️ Virtual Balance Scale – Compare & Measure Weight</h1>
+        <div class="modes-bar">
+            <button class="btn btn-mode active" onclick="setMode('compare')">🔍 Compare Weight</button>
+            <button class="btn btn-mode" onclick="setMode('estimate')">💭 Estimate Weight</button>
+            <button class="btn btn-mode" onclick="setMode('measure')">📐 Measure Weight</button>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <div class="challenge-banner" id="challenge-display">
+            <span id="challenge-text">Mode: Free Exploration. Place Standard Weights on Left Pan and Classroom Objects on Right Pan!</span>
+            <div id="challenge-actions" class="hidden">
+                <button class="btn btn-success" id="btn-verify" onclick="checkUserAnswer()">Check Answer</button>
+            </div>
+        </div>
+
+        <div class="scale-stage" id="stage">
+            <div class="feedback-pop" id="feedback-box"></div>
+
+            <div class="scale-label" style="left: calc(50% - 35px); bottom: 230px;">Pivot Point</div>
+            <div class="scale-label" style="left: calc(50% - 30px); bottom: 15px;">Stable Base</div>
+            <div class="scale-label" style="left: 110px; bottom: 80px;">Left Pan (Weights Only)</div>
+            <div class="scale-label" style="right: 110px; bottom: 80px;">Right Pan (Objects Only)</div>
+
+            <div class="scale-pillar">
+                <div class="scale-pivot"></div>
+                <div class="scale-beam" id="scale-beam">
+                    
+                    <div class="pan-assembly pan-left-hook">
+                        <svg class="scale-strings"><line x1="70" y1="0" x2="5" y2="90" stroke="#7F8C8D" stroke-width="2"/><line x1="70" y1="0" x2="135" y2="90" stroke="#7F8C8D" stroke-width="2"/></svg>
+                        <div class="scale-pan"></div>
+                        <div class="pan-dropzone" id="pan-left" data-side="left"></div>
+                    </div>
+
+                    <div class="pan-assembly pan-right-hook">
+                        <svg class="scale-strings"><line x1="70" y1="0" x2="5" y2="90" stroke="#7F8C8D" stroke-width="2"/><line x1="70" y1="0" x2="135" y2="90" stroke="#7F8C8D" stroke-width="2"/></svg>
+                        <div class="scale-pan"></div>
+                        <div class="pan-dropzone" id="pan-right" data-side="right"></div>
+                    </div>
+
+                </div>
+            </div>
+            <div class="scale-base"></div>
+        </div>
+
+        <div class="weight-display-board" id="weight-display-board">
+            <div class="readout">Left (Weights): <span id="weight-l">0 g</span></div>
+            <div class="readout">Balance Status: <span id="scale-status">Balanced</span></div>
+            <div class="readout">Right (Objects): <span id="weight-r">0 g</span></div>
+            <div class="readout" id="weight-diff-container">Difference: <span id="weight-diff">0 g</span></div>
+        </div>
+
+        <div class="controls-panel">
+            <div class="control-grid">
+                <button class="btn btn-action" onclick="toggleWeightsVisibility()" id="btn-toggle-weight">👁️ Hide Weights</button>
+                <button class="btn btn-action" onclick="toggleLabels()">🏷️ Labels OFF</button>
+                <button class="btn btn-action" onclick="toggleMute()" id="btn-mute">🔊 Sound On</button>
+                <button class="btn btn-action" onclick="triggerDemo()" id="btn-demo">🎓 Auto Demo</button>
+                <button class="btn btn-action" onclick="lockScale()" id="btn-lock">🔓 Unlocked</button>
+                <button class="btn btn-action" onclick="randomizeScale()">🔀 Random Mix</button>
+                <button class="btn btn-action" onclick="undo()">↩️ Undo</button>
+                <button class="btn btn-action" onclick="redo()">↪️ Redo</button>
+                <button class="btn btn-danger" onclick="clearPan('left')">🧹 Clear L</button>
+                <button class="btn btn-danger" onclick="clearPan('right')">🧹 Clear R</button>
+                <button class="btn btn-success" onclick="generateChallenge()">🎲 New Challenge</button>
+                <button class="btn btn-danger" onclick="resetAll()">♻️ Reset System</button>
+            </div>
+        </div>
+
+        <div>
+            <div class="shelf-label">🏋️ Standard Weight Metrics (Goes to Left Pan Only)</div>
+            <div class="pool-shelf" id="weights-pool"></div>
+
+            <div class="shelf-label">🍎 Classroom Objects Pool (Goes to Right Pan Only)</div>
+            <div class="pool-shelf" id="objects-pool"></div>
+        </div>
+    </div>
+
+    <script>
+        // Data Definitions
+        const CLASSROOM_OBJECTS = [
+            { id: 'apple', name: 'Apple', icon: '🍎', weight: 150 },
+            { id: 'banana', name: 'Banana', icon: '🍌', weight: 120 },
+            { id: 'orange', name: 'Orange', icon: '🍊', weight: 200 },
+            { id: 'ball', name: 'Ball', icon: '🏀', weight: 400 },
+            { id: 'toycar', name: 'Toy Car', icon: '🚗', weight: 300 },
+            { id: 'book', name: 'Book', icon: '📖', weight: 600 },
+            { id: 'pencil', name: 'Pencil', icon: '✏️', weight: 10 },
+            { id: 'eraser', name: 'Eraser', icon: '🧽', weight: 20 },
+            { id: 'waterbottle', name: 'Water Bottle', icon: '🍼', weight: 1000 },
+            { id: 'schoolbag', name: 'School Bag', icon: '🎒', weight: 3000 },
+            { id: 'cube', name: 'Cube', icon: '🧊', weight: 50 },
+            { id: 'teddybear', name: 'Teddy Bear', icon: '🧸', weight: 250 },
+            { id: 'cricketball', name: 'Cricket Ball', icon: '⚾', weight: 160 },
+            { id: 'football', name: 'Football', icon: '⚽', weight: 420 },
+            { id: 'coin', name: 'Coin', icon: '🪙', weight: 5 },
+            { id: 'chalk', name: 'Chalk', icon: '🖍️', weight: 10 },
+            { id: 'notebook', name: 'Notebook', icon: '📓', weight: 300 },
+            { id: 'lunchbox', name: 'Lunch Box', icon: '🍱', weight: 500 },
+            { id: 'brick', name: 'Brick', icon: '🧱', weight: 2000 },
+            { id: 'giftbox', name: 'Gift Box', icon: '🎁', weight: 800 }
+        ];
+
+        const STANDARD_WEIGHTS = [
+            { id: 'w10g', name: '10 g', icon: '⚖️', weight: 10, isStandard: true },
+            { id: 'w20g', name: '20 g', icon: '⚖️', weight: 20, isStandard: true },
+            { id: 'w50g', name: '50 g', icon: '⚖️', weight: 50, isStandard: true },
+            { id: 'w100g', name: '100 g', icon: '⚖️', weight: 100, isStandard: true },
+            { id: 'w200g', name: '200 g', icon: '⚖️', weight: 200, isStandard: true },
+            { id: 'w500g', name: '500 g', icon: '⚖️', weight: 500, isStandard: true },
+            { id: 'w1kg', name: '1 kg', icon: '⚖️', weight: 1000, isStandard: true },
+            { id: 'w2kg', name: '2 kg', icon: '⚖️', weight: 2000, isStandard: true },
+            { id: 'w5kg', name: '5 kg', icon: '⚖️', weight: 5000, isStandard: true }
+        ];
+
+        // State Machine
+        let state = {
+            currentMode: 'compare', // compare, estimate, measure
+            leftPan: [],
+            rightPan: [],
+            showWeights: true,
+            isMuted: false,
+            isLocked: false,
+            activeChallenge: null,
+            demoInterval: null
+        };
+
+        // Undo-Redo Memory Stacks
+        let undoStack = [];
+        let redoStack = [];
+
+        // Sound Synthesis engine setup
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        function playTone(freq, type, duration) {
+            if (state.isMuted) return;
+            try {
+                initAudio();
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) { console.log("Audio contexts blocked or unsupported"); }
+        }
+
+        function soundInteract() { playTone(600, 'sine', 0.1); }
+        function soundSuccess() { playTone(523.25, 'triangle', 0.15); setTimeout(() => playTone(659.25, 'triangle', 0.15), 100); setTimeout(() => playTone(783.99, 'triangle', 0.3), 200); }
+        function soundFail() { playTone(180, 'sawtooth', 0.4); }
+        function soundBalance() { playTone(440, 'sine', 0.2); }
+
+        // Application Lifecycles Init
+        window.addEventListener('DOMContentLoaded', () => {
+            renderShelves();
+            saveState();
+            setupInteractiveDragAndDrop();
+        });
+
+        function renderShelves() {
+            const objPool = document.getElementById('objects-pool');
+            objPool.innerHTML = '';
+            CLASSROOM_OBJECTS.forEach(obj => {
+                objPool.appendChild(createDraggableElement(obj));
+            });
+
+            const weightPool = document.getElementById('weights-pool');
+            weightPool.innerHTML = '';
+            STANDARD_WEIGHTS.forEach(w => {
+                weightPool.appendChild(createDraggableElement(w));
+            });
+        }
+
+        function createDraggableElement(item) {
+            const div = document.createElement('div');
+            div.classList.add('weight-item');
+            if (item.isStandard) div.classList.add('standard-block');
+            div.setAttribute('draggable', 'true');
+            div.setAttribute('id', `item-${item.id}-${Math.floor(Math.random()*100000)}`);
+            div.dataset.info = JSON.stringify(item);
+            
+            div.innerHTML = `
+                <div class="icon">${item.icon}</div>
+                <div>${item.name}</div>
+            `;
+
+            div.addEventListener('click', () => handleDirectTapItem(div));
+            return div;
+        }
+
+        // Pointer Drag Mechanics Implementation
+        let activeDraggedNode = null;
+
+        function setupInteractiveDragAndDrop() {
+            document.addEventListener('dragstart', (e) => {
+                if (state.isLocked) { e.preventDefault(); return; }
+                if (e.target.classList.contains('weight-item')) {
+                    activeDraggedNode = e.target;
+                    e.dataTransfer.setData('text/plain', e.target.id);
+                }
+            });
+
+            const zones = [document.getElementById('pan-left'), document.getElementById('pan-right'), document.getElementById('objects-pool'), document.getElementById('weights-pool')];
+            
+            zones.forEach(zone => {
+                zone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    if(zone.classList.contains('pan-dropzone') && activeDraggedNode) {
+                        const info = JSON.parse(activeDraggedNode.dataset.info);
+                        // Left pan allows weights only; right pan allows objects only
+                        if (zone.id === 'pan-left' && !info.isStandard) {
+                            zone.classList.add('drag-deny');
+                        } else if (zone.id === 'pan-right' && info.isStandard) {
+                            zone.classList.add('drag-deny');
+                        } else {
+                            zone.classList.add('drag-over');
+                        }
+                    }
+                });
+
+                zone.addEventListener('dragleave', () => {
+                    zone.classList.remove('drag-over', 'drag-deny');
+                });
+
+                zone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    zone.classList.remove('drag-over', 'drag-deny');
+                    if (state.isLocked) return;
+                    
+                    if (activeDraggedNode) {
+                        const info = JSON.parse(activeDraggedNode.dataset.info);
+                        // Strict validation rules check on Drop execution
+                        if (zone.id === 'pan-left' && !info.isStandard) { soundFail(); activeDraggedNode = null; return; }
+                        if (zone.id === 'pan-right' && info.isStandard) { soundFail(); activeDraggedNode = null; return; }
+
+                        executeMoveNode(activeDraggedNode, zone);
+                        activeDraggedNode = null;
+                    }
+                });
+            });
+        }
+
+        // Direct selection tap mechanic handling smart board interaction profiles
+        function handleDirectTapItem(node) {
+            if (state.isLocked) return;
+            
+            const currentParent = node.parentElement;
+            if (currentParent.classList.contains('pan-dropzone')) {
+                const info = JSON.parse(node.dataset.info);
+                const targetShelf = info.isStandard ? document.getElementById('weights-pool') : document.getElementById('objects-pool');
+                executeMoveNode(node, targetShelf);
+            } else {
+                const info = JSON.parse(node.dataset.info);
+                const targetPan = info.isStandard ? document.getElementById('pan-left') : document.getElementById('pan-right');
+                executeMoveNode(node, targetPan);
+            }
+        }
+
+        function executeMoveNode(node, targetZone) {
+            const currentParent = node.parentElement;
+            if (currentParent === targetZone) return;
+
+            if (currentParent.id === 'objects-pool' || currentParent.id === 'weights-pool') {
+                const blueprint = JSON.parse(node.dataset.info);
+                const replacement = createDraggableElement(blueprint);
+                currentParent.insertBefore(replacement, node);
+            }
+
+            if (targetZone.id === 'objects-pool' || targetZone.id === 'weights-pool') {
+                node.remove(); 
+            } else {
+                targetZone.appendChild(node);
+            }
+
+            soundInteract();
+            recalculateScaleWeights();
+            saveState();
+        }
+
+        // Processing Logic Calculations Engine
+        function recalculateScaleWeights() {
+            const leftZone = document.getElementById('pan-left');
+            const rightZone = document.getElementById('pan-right');
+
+            state.leftPan = Array.from(leftZone.children).map(n => JSON.parse(n.dataset.info));
+            state.rightPan = Array.from(rightZone.children).map(n => JSON.parse(n.dataset.info));
+
+            let totalLeft = state.leftPan.reduce((sum, item) => sum + item.weight, 0);
+            let totalRight = state.rightPan.reduce((sum, item) => sum + item.weight, 0);
+
+            document.getElementById('weight-l').innerText = state.showWeights ? `${totalLeft} g` : '???';
+            document.getElementById('weight-r').innerText = state.showWeights ? `${totalRight} g` : '???';
+            
+            let diff = Math.abs(totalLeft - totalRight);
+            document.getElementById('weight-diff').innerText = state.showWeights ? `${diff} g` : '???';
+
+            // Physics Tilting Calculations Map
+            const maxTiltAngle = 16; 
+            let calculatedAngle = 0;
+
+            if (totalLeft !== totalRight) {
+                let weightRatio = Math.max(totalLeft, totalRight) / (Math.min(totalLeft, totalRight) || 1);
+                calculatedAngle = Math.min(maxTiltAngle, 3 + weightRatio * 2);
+                if (totalLeft > totalRight) calculatedAngle = -calculatedAngle;
+            }
+
+            if (!state.isLocked) {
+                document.documentElement.style.setProperty('--scale-angle', `${calculatedAngle}deg`);
+            }
+
+            let statusText = "Perfect Balance";
+            if (totalLeft > totalRight) statusText = "Left Side Heavier";
+            if (totalRight > totalLeft) statusText = "Right Side Heavier";
+            document.getElementById('scale-status').innerText = statusText;
+
+            if (totalLeft === totalRight && totalLeft > 0) {
+                soundBalance();
+            }
+        }
+
+        // Controls Core Actions Systems
+        function toggleWeightsVisibility() {
+            state.showWeights = !state.showWeights;
+            document.getElementById('btn-toggle-weight').innerText = state.showWeights ? '👁️ Hide Weights' : '👁️ Show Weights';
+            document.getElementById('weight-diff-container').style.visibility = state.showWeights ? 'visible' : 'hidden';
+            recalculateScaleWeights();
+        }
+
+        function toggleLabels() {
+            document.body.classList.toggle('show-labels');
+            event.target.innerText = document.body.classList.contains('show-labels') ? '🏷️ Labels ON' : '🏷️ Labels OFF';
+        }
+
+        function toggleMute() {
+            state.isMuted = !state.isMuted;
+            document.getElementById('btn-mute').innerText = state.isMuted ? '🔇 Muted' : '🔊 Sound On';
+        }
+
+        function lockScale() {
+            state.isLocked = !state.isLocked;
+            document.getElementById('btn-lock').innerText = state.isLocked ? '🔒 Locked' : '🔓 Unlocked';
+            if(!state.isLocked) recalculateScaleWeights();
+        }
+
+        function clearPan(side) {
+            const pan = document.getElementById(`pan-${side}`);
+            pan.innerHTML = '';
+            recalculateScaleWeights();
+            saveState();
+        }
+
+        function resetAll() {
+            clearInterval(state.demoInterval);
+            document.getElementById('pan-left').innerHTML = '';
+            document.getElementById('pan-right').innerHTML = '';
+            state.isLocked = false;
+            document.getElementById('btn-lock').innerText = '🔓 Unlocked';
+            removeHighlights();
+            recalculateScaleWeights();
+            saveState();
+        }
+
+        function randomizeScale() {
+            resetAll();
+            const countL = Math.floor(Math.random() * 2) + 1;
+            const countR = Math.floor(Math.random() * 2) + 1;
+            
+            for(let i=0; i<countL; i++) {
+                let randomWeight = STANDARD_WEIGHTS[Math.floor(Math.random() * STANDARD_WEIGHTS.length)];
+                document.getElementById('pan-left').appendChild(createDraggableElement(randomWeight));
+            }
+            for(let i=0; i<countR; i++) {
+                let randomObj = CLASSROOM_OBJECTS[Math.floor(Math.random() * CLASSROOM_OBJECTS.length)];
+                document.getElementById('pan-right').appendChild(createDraggableElement(randomObj));
+            }
+            recalculateScaleWeights();
+            saveState();
+        }
+
+        // Memory State Undo/Redo Engine Logs
+        function saveState() {
+            let snapshot = {
+                left: Array.from(document.getElementById('pan-left').children).map(n => JSON.parse(n.dataset.info)),
+                right: Array.from(document.getElementById('pan-right').children).map(n => JSON.parse(n.dataset.info))
+            };
+            undoStack.push(JSON.stringify(snapshot));
+            redoStack = []; 
+        }
+
+        function undo() {
+            if (undoStack.length <= 1) return; 
+            let current = undoStack.pop();
+            redoStack.push(current);
+            
+            let previousState = JSON.parse(undoStack[undoStack.length - 1]);
+            restorePanSnapshot('left', previousState.left);
+            restorePanSnapshot('right', previousState.right);
+            recalculateScaleWeights();
+        }
+
+        function redo() {
+            if (redoStack.length === 0) return;
+            let nextStateStr = redoStack.pop();
+            undoStack.push(nextStateStr);
+            
+            let nextState = JSON.parse(nextStateStr);
+            restorePanSnapshot('left', nextState.left);
+            restorePanSnapshot('right', nextState.right);
+            recalculateScaleWeights();
+        }
+
+        function restorePanSnapshot(side, itemsArray) {
+            const pan = document.getElementById(`pan-${side}`);
+            pan.innerHTML = '';
+            itemsArray.forEach(item => {
+                pan.appendChild(createDraggableElement(item));
+            });
+        }
+
+        // Curriculum Mode Management Switch
+        function setMode(mode) {
+            state.currentMode = mode;
+            document.querySelectorAll('.btn-mode').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if(mode === 'compare') {
+                state.showWeights = true;
+                document.getElementById('btn-toggle-weight').innerText = '👁️ Hide Weights';
+                document.getElementById('challenge-actions').classList.add('hidden');
+                document.getElementById('challenge-text').innerText = "Mode: Compare Weight. Place standard weight metrics on left pan and classroom items on right pan.";
+            } else if(mode === 'estimate') {
+                state.showWeights = false;
+                document.getElementById('btn-toggle-weight').innerText = '👁️ Show Weights';
+                document.getElementById('challenge-text').innerText = "Mode: Estimation. Guess which side is heavier before clicking 'Show Weights' or 'Check Answer'.";
+                document.getElementById('challenge-actions').classList.add('hidden');
+            } else if(mode === 'measure') {
+                state.showWeights = true;
+                document.getElementById('challenge-text').innerText = "Mode: Measure Weight. Use standard weights on the left side to find out unknown masses.";
+            }
+            resetAll();
+        }
+
+        function generateChallenge() {
+            resetAll();
+            removeHighlights();
+            document.getElementById('challenge-actions').classList.remove('hidden');
+
+            const taskTypes = ['heavier', 'balance', 'find_weight'];
+            const chosenType = (state.currentMode === 'measure') ? 'find_weight' : taskTypes[Math.floor(Math.random() * taskTypes.length)];
+            
+            state.activeChallenge = { type: chosenType };
+
+            if(chosenType === 'heavier') {
+                state.showWeights = false;
+                document.getElementById('btn-toggle-weight').innerText = '👁️ Show Weights';
+
+                let weightItem = STANDARD_WEIGHTS[Math.floor(Math.random() * STANDARD_WEIGHTS.length)];
+                let objItem = CLASSROOM_OBJECTS[Math.floor(Math.random() * CLASSROOM_OBJECTS.length)];
+                while(weightItem.weight === objItem.weight) { objItem = CLASSROOM_OBJECTS[Math.floor(Math.random()*CLASSROOM_OBJECTS.length)]; }
+
+                document.getElementById('pan-left').appendChild(createDraggableElement(weightItem));
+                document.getElementById('pan-right').appendChild(createDraggableElement(objItem));
+
+                document.getElementById('challenge-text').innerText = "Question: Which side holds the heavier mass element cluster? (Check Answer to verify)";
+                state.activeChallenge.answerKey = weightItem.weight > objItem.weight ? 'left' : 'right';
+            } 
+            else if(chosenType === 'balance') {
+                let baseItem = CLASSROOM_OBJECTS[Math.floor(Math.random() * 8) + 5]; 
+                document.getElementById('pan-right').appendChild(createDraggableElement(baseItem));
+                document.getElementById('challenge-text').innerText = `Task: Add standard weights to the Left Pan until it balances the ${baseItem.name} perfectly!`;
+                state.activeChallenge.target = baseItem.weight;
+            }
+            else if(chosenType === 'find_weight') {
+                state.showWeights = false;
+                document.getElementById('btn-toggle-weight').innerText = '👁️ Show Weights';
+                let hiddenObject = CLASSROOM_OBJECTS[Math.floor(Math.random() * 10)];
+                document.getElementById('pan-right').appendChild(createDraggableElement(hiddenObject));
+                document.getElementById('challenge-text').innerText = `Challenge: Measure the hidden weight of ${hiddenObject.name} using standard blocks on the left pan!`;
+                state.activeChallenge.target = hiddenObject.weight;
+            }
+
+            recalculateScaleWeights();
+        }
+
+        function checkUserAnswer() {
+            if(!state.activeChallenge) return;
+            
+            let totalLeft = state.leftPan.reduce((sum, item) => sum + item.weight, 0);
+            let totalRight = state.rightPan.reduce((sum, item) => sum + item.weight, 0);
+            let userPassed = false;
+
+            if(state.activeChallenge.type === 'heavier') {
+                let dynamicWinner = totalLeft > totalRight ? 'left' : 'right';
+                if(totalLeft === totalRight) dynamicWinner = 'equal';
+                userPassed = (state.activeChallenge.answerKey === dynamicWinner);
+            } 
+            else if (state.activeChallenge.type === 'balance' || state.activeChallenge.type === 'find_weight') {
+                userPassed = (totalLeft === totalRight && totalRight > 0);
+            }
+
+            const fBox = document.getElementById('feedback-box');
+            if(userPassed) {
+                fBox.innerText = "✅ Excellent!";
+                fBox.className = "feedback-pop success pop-show";
+                soundSuccess();
+                state.showWeights = true; 
+                recalculateScaleWeights();
+            } else {
+                fBox.innerText = "❌ Try Again!";
+                fBox.className = "feedback-pop danger pop-show";
+                soundFail();
+            }
+
+            setTimeout(() => { fBox.classList.remove('pop-show'); }, 2000);
+        }
+
+        // Demonstration Automated Systems Scripting
+        function triggerDemo() {
+            resetAll();
+            let step = 0;
+            document.getElementById('challenge-text').innerText = "🎓 Commencing Auto-Demonstration Sequence...";
+            
+            state.demoInterval = setInterval(() => {
+                step++;
+                if(step === 1) {
+                    document.getElementById('challenge-text').innerText = "Demo Step 1: Placing a School Bag (3kg) on the Right Pan.";
+                    let bag = CLASSROOM_OBJECTS.find(o => o.id === 'schoolbag');
+                    let element = createDraggableElement(bag);
+                    element.classList.add('demo-highlight');
+                    document.getElementById('pan-right').appendChild(element);
+                    recalculateScaleWeights();
+                } 
+                else if(step === 2) {
+                    document.getElementById('challenge-text').innerText = "Demo Step 2: Scale tilts right! Let's counter-balance using a 2 kg standard weight on the Left Pan.";
+                    removeHighlights();
+                    let w2kg = STANDARD_WEIGHTS.find(w => w.id === 'w2kg');
+                    let element = createDraggableElement(w2kg);
+                    element.classList.add('demo-highlight');
+                    document.getElementById('pan-left').appendChild(element);
+                    recalculateScaleWeights();
+                } 
+                else if(step === 3) {
+                    document.getElementById('challenge-text').innerText = "Demo Step 3: Still unbalanced! Add an additional 1 kg block metric unit to the Left Pan.";
+                    removeHighlights();
+                    let w1kg = STANDARD_WEIGHTS.find(w => w.id === 'w1kg');
+                    let element = createDraggableElement(w1kg);
+                    element.classList.add('demo-highlight');
+                    document.getElementById('pan-left').appendChild(element);
+                    recalculateScaleWeights();
+                } 
+                else if(step === 4) {
+                    document.getElementById('challenge-text').innerText = "Demo Step 4: Perfect Balance Attained! 3000g on Left matches 3000g on Right.";
+                    removeHighlights();
+                    soundSuccess();
+                    clearInterval(state.demoInterval);
+                }
+            }, 2500);
+        }
+
+        function removeHighlights() {
+            document.querySelectorAll('.weight-item').forEach(el => el.classList.remove('demo-highlight'));
+        }
+    </script>
+</body>
+</html>

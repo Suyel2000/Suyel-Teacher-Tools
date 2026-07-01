@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🩺 Health and Hygiene Quiz</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --easy-color: #2ecc71;
+            --medium-color: #f1c40f;
+            --hard-color: #e74c3c;
+            --primary-dark: #2c3e50;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --text-main: #333333;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-main);
+            padding: 15px;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 700px;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #555;
+            margin-bottom: 25px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        /* Screen States */
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Buttons */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 16px 20px;
+            margin: 12px 0;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-easy { background-color: var(--easy-color); color: white; }
+        .btn-easy:hover { background-color: #27ae60; box-shadow: 0 5px 15px rgba(46,204,113,0.4); }
+
+        .btn-medium { background-color: var(--medium-color); color: #2c3e50; text-shadow: none; }
+        .btn-medium:hover { background-color: #f39c12; box-shadow: 0 5px 15px rgba(241,196,15,0.4); }
+
+        .btn-hard { background-color: var(--hard-color); color: white; }
+        .btn-hard:hover { background-color: #c0392b; box-shadow: 0 5px 15px rgba(231,76,60,0.4); }
+
+        .btn-nav {
+            background-color: #34495e;
+            color: white;
+            flex: 1;
+            margin: 0 5px;
+            font-size: 1rem;
+            padding: 12px 10px;
+        }
+        .btn-nav:hover { background-color: #2c3e50; }
+        .btn-nav:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+
+        .btn-option {
+            background-color: #ffffff;
+            color: #333;
+            border: 2px solid #e0e0e0;
+            text-align: left;
+            font-size: 1.1rem;
+        }
+        .btn-option:hover:not([disabled]) {
+            background-color: #f8f9fa;
+            border-color: #a0a0a0;
+        }
+
+        /* Progress & Counters */
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-size: 1rem;
+            background: rgba(0,0,0,0.05);
+            padding: 8px 15px;
+            border-radius: 10px;
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            height: 12px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: #3498db;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Question Box */
+        .question-text {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            text-align: left;
+            line-height: 1.4;
+        }
+
+        /* Options feedback */
+        .btn-option.correct {
+            background-color: #d4edda !important;
+            border-color: #28a745 !important;
+            color: #155724 !important;
+        }
+        .btn-option.wrong {
+            background-color: #f8d7da !important;
+            border-color: #dc3545 !important;
+            color: #721c24 !important;
+        }
+
+        /* Explanation Box */
+        .explanation-box {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: left;
+            font-size: 1.05rem;
+            line-height: 1.4;
+            animation: fadeIn 0.3s ease;
+        }
+        .explanation-box.correct-style { background-color: #e2f0d9; border-left: 5px solid #385723; }
+        .explanation-box.wrong-style { background-color: #fce4d6; border-left: 5px solid #c65911; }
+
+        /* Navigation Layout */
+        .nav-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
+        }
+
+        /* Summary Dashboard */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .summary-item {
+            background: rgba(0,0,0,0.03);
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+        }
+        .summary-item span { font-weight: bold; color: #2c3e50; }
+
+        .badge-box {
+            margin: 20px 0;
+            padding: 15px;
+            background: #fff8e1;
+            border: 2px dashed #ffb300;
+            border-radius: 15px;
+        }
+        .badge-title { font-size: 1.4rem; font-weight: bold; color: #ff8f00; margin-top: 5px; }
+
+        /* Confetti */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f2d74e;
+            position: fixed;
+            top: -10px;
+            z-index: 999;
+            animation: fall 3s linear infinite;
+        }
+        @keyframes fall {
+            0% { top: -10px; transform: translateX(0) rotate(0deg); }
+            100% { top: 100vh; transform: translateX(100px) rotate(360deg); }
+        }
+
+        /* Certificate Print Styles */
+        @media print {
+            body { background: white; color: black; }
+            .container { box-shadow: none; max-width: 100%; border: none; background: white; }
+            .nav-controls, .btn, .progress-container, .stats-bar, h1, .subtitle { display: none !important; }
+            .screen { display: none !important; }
+            #screen-summary { display: block !important; }
+            .print-cert-only { display: block !important; border: 10px double #333; padding: 40px; margin: 20px auto; text-align: center; }
+        }
+
+        .print-cert-only { display: none; }
+
+        /* Responsive scaling for Smartboards & Phones */
+        @media(max-width: 480px) {
+            h1 { font-size: 1.8rem; }
+            .btn { font-size: 1.1rem; padding: 14px; }
+            .question-text { font-size: 1.1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🩺 Health and Hygiene Quiz</h1>
+        <div class="subtitle">Stay Clean • Stay Healthy • Learn</div>
+
+        <!-- START SCREEN -->
+        <div id="screen-start" class="screen active">
+            <p style="font-size: 1.2rem; margin-bottom: 20px; font-weight: 500;">Choose a level to start the quiz!</p>
+            <button class="btn btn-easy" onclick="startQuiz('easy')">🟢 Easy Level</button>
+            <button class="btn btn-medium" onclick="startQuiz('medium')">🟡 Medium Level</button>
+            <button class="btn btn-hard" onclick="startQuiz('hard')">🔴 Hard Level</button>
+            <div id="saved-progress" style="margin-top: 20px; font-size: 0.9rem; color: #555;"></div>
+        </div>
+
+        <!-- QUIZ SCREEN -->
+        <div id="screen-quiz" class="screen">
+            <div class="stats-bar">
+                <div id="count-label">Question: 1/30</div>
+                <div id="score-label">Score: 0</div>
+            </div>
+            <div class="progress-container">
+                <div id="progress-bar" class="progress-bar"></div>
+            </div>
+
+            <div id="question-text" class="question-text"></div>
+            <div id="options-container"></div>
+
+            <div id="explanation-box" class="explanation-box"></div>
+
+            <!-- NAVIGATION REQUIREMENTS: Previous | Home | Next in this exact layout order -->
+            <div class="nav-controls">
+                <button id="btn-prev" class="btn btn-nav" onclick="prevQuestion()">⬅️ Previous</button>
+                <button id="btn-home" class="btn btn-nav" onclick="goHome()">🏠 Home</button>
+                <button id="btn-next" class="btn btn-nav" onclick="nextQuestion()">➡️ Next</button>
+            </div>
+        </div>
+
+        <!-- SUMMARY SCREEN -->
+        <div id="screen-summary" class="screen">
+            <h2>🎉 Quiz Completed!</h2>
+            <div class="badge-box">
+                <div>Your Achievement Badge:</div>
+                <div id="badge-title" class="badge-title">Health Hero</div>
+            </div>
+            
+            <div class="summary-grid">
+                <div class="summary-item">Level: <span id="sum-level">-</span></div>
+                <div class="summary-item">Final Score: <span id="sum-score">-</span></div>
+                <div class="summary-item">Percentage: <span id="sum-percent">-</span></div>
+                <div class="summary-item">Correct Answers: <span id="sum-correct">-</span></div>
+                <div class="summary-item">Wrong Answers: <span id="sum-wrong">-</span></div>
+                <div class="summary-item">Time Taken: <span id="sum-time">-</span></div>
+            </div>
+
+            <button class="btn btn-easy" onclick="restartQuiz()">🔄 Play Again</button>
+            <button class="btn btn-medium" onclick="goHome()">🏫 Choose Another Level</button>
+            <button class="btn btn-hard" onclick="window.print()">🖨️ Print Certificate</button>
+        </div>
+    </div>
+
+    <!-- Printable Certificate View Component -->
+    <div id="printable-certificate" class="print-cert-only">
+        <h1>📜 CERTIFICATE OF ACHIEVEMENT</h1>
+        <p style="font-size:1.5rem; margin:20px 0;">This certifies that you have completed the</p>
+        <h2>Health and Hygiene Quiz</h2>
+        <p style="font-size:1.3rem; margin:20px 0;" id="cert-level">Level: Easy</p>
+        <p style="font-size:1.3rem;" id="cert-score">Score: 100%</p>
+        <p style="font-size:1.2rem; margin-top:40px; font-weight:bold;">🌟 Keep Staying Clean and Healthy! 🌟</p>
+    </div>
+
+    <script>
+        // Audio Synthesis using Web Audio API
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'click') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'correct') {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.25);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+            } else if (type === 'complete' || type === 'badge') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
+                osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2);
+                osc.frequency.setValueAtTime(1046.50, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+            }
+        }
+
+        // FULL 90 DATA BANK (30 per level, clean English for primary schoolers)
+        const questionBank = {
+            easy: [
+                {q: "Why should we wash our hands before eating?", o: ["To wash away dirt and germs", "To make hands smell like flowers", "To look shiny"], a: 0, e: "✅ Correct! Wash your hands with soap before eating to clean away hidden germs."},
+                {q: "How many times should we brush our teeth every day?", o: ["Only on my birthday", "Twice a day (morning and night)", "Once every week"], a: 1, e: "Brush your teeth twice a day to keep them clean and healthy."},
+                {q: "Why should we take a bath every day?", o: ["To keep our body clean and fresh", "To waste water", "To change clothes"], a: 0, e: "Taking a bath daily clears away sweat, dirt, and keeps you fresh!"},
+                {q: "Should we wear clean clothes?", o: ["Yes, clean clothes keep us healthy", "No, dirty clothes are better", "Only when going outside"], a: 0, e: "Clean clothes stop bad smells and protect our skin from germ irritation."},
+                {q: "What should we drink plenty of to stay healthy?", o: ["Sweet fizzy soda", "Clean water", "Cold coffee"], a: 1, e: "Water helps our body work correctly and keeps us full of energy!"},
+                {q: "Which food option is best for our body health?", o: ["Lots of colorful candies", "Fresh sweet fruits", "Oily potato chips"], a: 1, e: "Fruits give us vitamins that help defend us from falling sick."},
+                {q: "True or False: We should keep our fingernails short and clean.", o: ["True", "False"], a: 0, e: "True! Dirt loves hiding inside long nails, so keep them trimmed short."},
+                {q: "Why should we cover our mouth while coughing or sneezing?", o: ["To stop germs from flying to others", "To hide our smile", "Because it looks funny"], a: 0, e: "Covering your mouth stops small drops of germs from spreading into the air."},
+                {q: "What is the best thing to clean our hands with?", o: ["Just a dry towel", "Water and soap", "Paper tissue"], a: 1, e: "Soap lifts dirt and germs off your skin much better than plain water alone."},
+                {q: "When should you brush your teeth in the evening?", o: ["Before eating dinner", "Before going to sleep", "Right after lunch"], a: 1, e: "Brushing before bedtime keeps sugar off your teeth while you sleep."},
+                {q: "What should we do with our hair to look neat?", o: ["Comb it properly", "Leave it messy", "Put dirt in it"], a: 0, e: "Combing your hair keeps it tangle-free, clean, and looking neat!"},
+                {q: "Complete the sentence: Clean water is ________ to drink.", o: ["dangerous", "safe and healthy", "bad tasting"], a: 1, e: "Clean safe water does not contain harmful bacteria or mud."},
+                {q: "What should you do after playing outside in the mud?", o: ["Go straight to bed", "Wash your hands and feet", "Sit on the kitchen table"], a: 1, e: "Always wash up after outdoor games to leave the outside dirt behind."},
+                {q: "How often should we change into clean socks?", o: ["Every single day", "Once a month", "When they grow small"], a: 0, e: "Socks get sweaty! Changing them daily prevents smelly, unhappy feet."},
+                {q: "What tool helps keep our teeth clean?", o: ["A hairbrush", "A toothbrush", "A metal spoon"], a: 1, e: "A soft toothbrush helps scrub food away from your teeth safely."},
+                {q: "Which of these is a healthy morning habit?", o: ["Washing your face", "Eating candy in bed", "Not waking up"], a: 0, e: "Washing your face helps you wake up clean and removes overnight oil."},
+                {q: "True or False: It is okay to share a toothbrush with a friend.", o: ["True", "False"], a: 1, e: "False! Sharing toothbrushes passes saliva germs from one person to another."},
+                {q: "What should you do if you drop a biscuit on the dirty floor?", o: ["Eat it quickly", "Do not eat it", "Give it to a friend"], a: 1, e: "Floor dirt contains germs. It's safer to discard or compost dropped food."},
+                {q: "Why do we use shampoo on our heads?", o: ["To make our hair clean and shiny", "To color our ears", "To help us sleep"], a: 0, e: "Shampoo clears away oil and dirt from your hair and scalp."},
+                {q: "Choose the healthy habit:", o: ["Biting your fingernails", "Washing hands after using the toilet", "Wiping nose on sleeves"], a: 1, e: "Always wash hands well after using the bathroom to avoid dangerous germs."},
+                {q: "What should you use to clean your body during a shower?", o: ["Mud and grass", "Body soap or wash", "Plain paper"], a: 1, e: "Soap helps wash away body oils and sweat efficiently."},
+                {q: "True or False: Keeping our ears clean is part of good personal care.", o: ["True", "False"], a: 0, e: "True! Gently clean external ears with a towel during your bath."},
+                {q: "What should you do before eating an apple?", o: ["Wash it with clean water", "Paint it red", "Peel it with your teeth"], a: 0, e: "Washing fruit removes any dirt or dust gathered from the farm store."},
+                {q: "Why do we sleep at night?", o: ["To give our body rest and energy", "To miss our favorite cartoon", "To become older"], a: 0, e: "Sleep rests your brain and muscles so you feel bright the next day."},
+                {q: "Which item should you use to wipe your wet hands?", o: ["A clean towel", "Your dirty pants", "A friend's shirt"], a: 0, e: "Wiping on a clean towel keeps your freshly washed hands clean!"},
+                {q: "Complete the sentence: Healthy food makes us feel ________.", o: ["tired and lazy", "strong and active", "sick and sad"], a: 1, e: "Good food fuels our body to run, jump, play, and study happily."},
+                {q: "How can we keep our toenails clean?", o: ["By washing and cutting them", "By hiding them in shoes", "By painting them green"], a: 0, e: "Wash your feet daily and cut your toenails straight across safely."},
+                {q: "What should we do if we spill water on the room floor?", o: ["Leave it there", "Wipe it up immediately so nobody slips", "Jump in it"], a: 1, e: "Cleaning spills keeps our home safe from slipping accidents."},
+                {q: "True or False: We should try to drink milk every day.", o: ["True", "False"], a: 0, e: "True! Milk has calcium which builds very strong bones and teeth."},
+                {q: "What is a good habit after finishing your meal?", o: ["Rinse your mouth with water", "Rub your hands on the sofa", "Leave your plate on the floor"], a: 0, e: "Rinsing clears out sticky food bits from hiding between your teeth."}
+            ],
+            medium: [
+                {q: "Why should we eat plenty of fruits and vegetables?", o: ["They have vitamins to protect us", "They are always red", "They taste like chocolate"], a: 0, e: "Eating fruits and vegetables helps us stay healthy and fight off diseases."},
+                {q: "Why is daily exercise important for children?", o: ["It makes our heart and muscles strong", "It breaks our shoes", "It saves electricity"], a: 0, e: "Exercise keeps our body strong, flexible, and fully active."},
+                {q: "How many hours of sleep do growing children need each night?", o: ["2 hours", "9 to 11 hours", "20 hours"], a: 1, e: "Children need ample sleep so their growing bodies can repair and develop."},
+                {q: "Why should we only drink clean water?", o: ["Dirty water can make us very sick", "Clean water is heavier", "Dirty water looks nicer"], a: 0, e: "Clean water avoids stomach bugs and dangerous waterborne illnesses."},
+                {q: "What are germs?", o: ["Tiny living things that can cause illness", "Small invisible insects with wings", "Type of wild plants"], a: 0, e: "Germs are tiny microorganisms. You can't see them, but they cause sickness."},
+                {q: "Why should we use a tissue or handkerchief when sneezing?", o: ["To trap germs and stop them spreading", "To sound loader", "To save time"], a: 0, e: "Tissues catch mucus drops containing germs, protecting your family and friends."},
+                {q: "Why should we keep our classroom clean?", o: ["It stops germs and helps us focus", "So we can play football inside", "To please the principal"], a: 0, e: "A clean room prevents dust allergies and stops bugs from spreading."},
+                {q: "Why should we avoid eating food left uncovered?", o: ["Flies and dust can land on it", "It stays too hot", "It changes color"], a: 0, e: "Uncovered food attracts insect pests that carry disease germs on their feet."},
+                {q: "What does a 'balanced diet' mean?", o: ["Eating only bread", "Eating the right mix of different foods", "Balancing a plate on your head"], a: 1, e: "A balanced diet ensures you get proteins, carbs, and vitamins together."},
+                {q: "How does washing hands with soap destroy germs?", o: ["It breaks down oil and kills the germs", "It colors the germs green", "It scares them away with bubbles"], a: 0, e: "Soap breaks down the outer layer of germs, washing them safely down the drain."},
+                {q: "Which of these is considered outdoor active exercise?", o: ["Playing video games", "Riding a bicycle", "Watching movie streams"], a: 1, e: "Biking makes your legs and heart work hard, boosting fitness levels."},
+                {q: "True or False: We should clean up our own dinner plates.", o: ["True", "False"], a: 0, e: "True! Keeping the dining table clean stops ants and flies coming inside."},
+                {q: "What should you do before eating raw salad items?", o: ["Wash them thoroughly under clean water", "Fry them in oil", "Leave them in the sun"], a: 0, e: "Wash salad greens to remove soil bacteria and chemical sprays."},
+                {q: "Why is junk food bad if eaten every day?", o: ["It lacks useful nutrients and contains too much sugar", "It is too cheap", "It makes us jump high"], a: 0, e: "Too much sugar and bad fats can hurt your teeth and make you feel lazy."},
+                {q: "Where should we throw away sharpenings and snack wrappers?", o: ["Under the desk", "In the waste dustbin", "Out of the window"], a: 1, e: "Always place garbage in the bin to keep the environment safe and beautiful."},
+                {q: "What could happen if you don't wash your hands after using the toilet?", o: ["Nothing at all", "You might transfer illness germs to your food", "Your fingers get longer"], a: 1, e: "Bathroom surfaces host germs that can accidentally reach your mouth via food."},
+                {q: "True or False: Sweeping the floor helps remove dust mites.", o: ["True", "False"], a: 0, e: "True! Sweeping and mopping keep dust from triggering coughs and sneezes."},
+                {q: "What is a safe way to protect our feet from sharp rocks and dirt?", o: ["Wearing clean shoes or sandals", "Walking backward", "Putting oil on skin"], a: 0, e: "Shoes protect skin from cuts and prevent worm infections from the soil."},
+                {q: "Why should we drink water instead of sugary sodas when thirsty?", o: ["Water satisfies thirst without harmful excess sugar", "Sodas are too heavy", "Water makes us sleep"], a: 0, e: "Pure water hydrates beautifully without harming teeth or adding empty calories."},
+                {q: "How do we care for our teeth after eating sticky candies?", o: ["By brushing or rinsing with water", "By eating chocolate", "By doing nothing"], a: 0, e: "Brushing cleans away the sticky candy sugar that dental plaque feeds on."},
+                {q: "True or False: Flies are clean insects that do not carry germs.", o: ["True", "False"], a: 1, e: "False! Flies sit on garbage and transfer bacteria wherever they land next."},
+                {q: "What is a good way to keep your bedroom smelling fresh?", o: ["Opening windows to let fresh air in", "Keeping dirty laundry under your pillow", "Spraying heavy perfume only"], a: 0, e: "Fresh air circulation replaces stale odor and balances room moisture."},
+                {q: "Why should we wash our hands after touching a pet dog or cat?", o: ["Animals can have hidden germs or tiny pests on their fur", "To make the pet happy", "To wash away animal colors"], a: 0, e: "Pets are wonderful, but their fur can collect outdoor grime and allergens."},
+                {q: "Complete the sentence: Regular exercise keeps our joints ________.", o: ["stiff and locked", "flexible and healthy", "weak and tired"], a: 1, e: "Movement keeps muscles healthy and improves body circulation."},
+                {q: "What should you do if your clothes get completely soaked in dirty mud?", o: ["Wear them for two days", "Change into dry clean clothes as soon as possible", "Dry them with a hair dryer while wearing them"], a: 1, e: "Wet mud can cause skin rashes; always change into clean clothes quickly."},
+                {q: "Why is skipping breakfast a bad habit?", o: ["It leaves you without energy for school lessons", "It makes you run faster", "It saves you from washing dishes"], a: 0, e: "Breakfast gives your brain the fuel it needs to think and learn clearly."},
+                {q: "True or False: Germs can multiply rapidly on warm, wet foods.", o: ["True", "False"], a: 0, e: "True! Microbes love warmth and moisture, so store food safely in refrigerators."},
+                {q: "What should we do with our nails when they grow long?", o: ["Bite them off", "Ask an adult to help trim them with a nail clipper", "Paint them black"], a: 1, e: "Trimming with a clipper keeps edges clean and prevents scratching yourself."},
+                {q: "Why shouldn't you share drinking water bottles directly by touching your lips?", o: ["It can spread spit bacteria and cold viruses", "The water will finish faster", "It changes the water color"], a: 0, e: "Pouring water into your mouth without touching lips prevents virus spread."},
+                {q: "What is the best way to maintain clean bath towels?", o: ["Hang them up to dry and wash them regularly", "Throw them on the damp bathroom floor", "Share them with five people"], a: 0, e: "Drying towels in air stops mildew fungus from growing inside the fabric fibers."}
+            ],
+            hard: [
+                {q: "Why should children receive timely health vaccinations?", o: ["To build safe immunity against dangerous diseases", "To make them look taller", "To help them pass tests"], a: 0, e: "Vaccines safely train our body defense system to fight off bad viruses."},
+                {q: "Why is a nutritious breakfast considered the most important meal?", o: ["It jumpstarts your metabolism and provides learning energy", "It tastes sweeter than lunch", "It takes the longest time to cook"], a: 0, e: "Your body has fasted all night; breakfast refills your glucose and brain energy."},
+                {q: "What should you do immediately if you feel feverish or have a high body temperature?", o: ["Tell a parent or teacher right away", "Run around the playground", "Hide under blankets and stay quiet"], a: 0, e: "Adults can measure your fever and get proper medical care or rest."},
+                {q: "Why is it important to consult a professional doctor when we are ill?", o: ["Doctors can accurately find out what is wrong and give safe medicine", "Doctors have big offices", "Doctors can fix broken toys"], a: 0, e: "Self-medicating can be unsafe. Doctors understand the exact treatment needed."},
+                {q: "Why should we limit our daily intake of highly processed junk food?", o: ["It can cause weight problems and lacks life-saving vitamins", "It is difficult to chew", "It slows down our typing speed"], a: 0, e: "Processed foods offer empty calories without nutrient values needed for growth."},
+                {q: "How does deep sleep help our brain after a full school day?", o: ["It organizes memories and rests brain cells", "It makes the brain grow bigger physical ears", "It turns off our thinking forever"], a: 0, e: "During deep sleep phases, the brain cleans out wastes and locks in what you learned."},
+                {q: "How can we actively help keep our neighborhood clean?", o: ["By never littering and joining community clean-ups", "By throwing trash into neighboring yards", "By staying inside all day"], a: 0, e: "Clean neighborhoods discourage pests like rats and protect the local ecosystem."},
+                {q: "What is a daily routine that prevents the spread of respiratory diseases?", o: ["Washing hands often and maintaining clean breathing habits", "Wearing heavy winter coats in summer", "Drinking hot chocolate every hour"], a: 0, e: "Hand hygiene and breathing etiquette break the chain of airborne transmission."},
+                {q: "What is the primary goal of applying First Aid?", o: ["To offer quick basic help to an injured person before professional care arrives", "To fix broken bones completely", "To give strong pills"], a: 0, e: "First aid prevents minor injuries from worsening until a nurse or doctor arrives."},
+                {q: "Which nutrient group helps build and repair our body muscles?", o: ["Proteins (like beans and milk)", "Sugars (like candies)", "Fats (like butter)"], a: 0, e: "Proteins act as construction blocks for growing strong body muscles."},
+                {q: "What should you do if a minor scrape on your arm starts bleeding slightly?", o: ["Clean it gently with water and apply a clean adhesive bandage", "Rub dirt on it", "Ignore it completely"], a: 0, e: "Cleaning washes away bacteria, and a bandage seals out outside infection."},
+                {q: "Why is daily physical activity useful for our mental well-being?", o: ["It releases positive chemicals that lift our mood and lower stress", "It lets us miss homework", "It makes us forget everything"], a: 0, e: "Exercise triggers endorphins, making you feel happy, relaxed, and confident."},
+                {q: "What does municipal tap water undergo before reaching our school taps?", o: ["Filtration and purification treatments", "Color painting", "Nothing, it comes straight from mud ponds"], a: 0, e: "Water plants filter dirt and apply safe treatments to destroy dangerous water bugs."},
+                {q: "True or False: Mental health means keeping our feelings and thoughts happy and balanced.", o: ["True", "False"], a: 0, e: "True! Talking to teachers or parents about feelings keeps our mind healthy."},
+                {q: "Why should we avoid coughing directly towards someone else's face?", o: ["It expels millions of mouth droplets filled with germs", "It creates too much wind", "It makes them look different"], a: 0, e: "Droplets can directly land on their eyes, nose or mouth, making them sick."},
+                {q: "Which vitamin do we get naturally when our skin experiences morning sunlight?", o: ["Vitamin D", "Vitamin C", "Vitamin B12"], a: 0, e: "Sunlight triggers our body to synthesize Vitamin D, vital for calcium absorption."},
+                {q: "What should you do if you notice a fellow student crying due to stress?", o: ["Be kind, talk to them, and suggest alerting a caring teacher", "Laugh and point fingers", "Run away fast"], a: 0, e: "Emotional support is part of general health. Kindness helps heal stress."},
+                {q: "Why is stagnation of dirty puddle water outside dangerous?", o: ["It creates breeding grounds for harmful mosquitoes", "It blocks the beautiful view", "It turns into ice instantly"], a: 0, e: "Mosquitoes lay eggs in standing water, spreading diseases like malaria or dengue."},
+                {q: "What do we call a lifestyle that includes exercise, balanced meals, and proper rest?", o: ["A healthy lifestyle", "A lazy lifestyle", "An expensive lifestyle"], a: 0, e: "Combining good food, activity, and sleep ensures long-term full-body health."},
+                {q: "True or False: Dental cavities are caused by bacteria feeding on sugars left on our teeth.", o: ["True", "False"], a: 0, e: "True! Bacteria make acid from sugars, which slowly dissolves tooth enamel."},
+                {q: "What should you do before cleaning an open wound on another person?", o: ["Wash your own hands thoroughly with soap first", "Put on gloves without cleaning", "Blow air onto the wound"], a: 0, e: "Washing your hands ensures you don't transfer your own germs into their cut."},
+                {q: "Why is dehydration bad for human body organs?", o: ["It causes headaches, low energy, and slows body function", "It changes our skin to green color", "It makes us float in air"], a: 0, e: "Water is needed for blood flow, digestion, and chemical steps inside cells."},
+                {q: "Which of these foods is rich in healthy dietary fiber?", o: ["Whole grains, oats, and green vegetables", "Sweet vanilla ice cream", "White sugar crystals"], a: 0, e: "Fiber cleans our intestines and keeps our stomach digestion smooth and comfortable."},
+                {q: "Why is proper ventilation inside a classroom necessary?", o: ["It reduces indoor airborne germs and supplies fresh oxygen", "It keeps the room dark", "It helps students speak louder"], a: 0, e: "Moving air sweeps away coughed droplets and keeps everyone alert with fresh oxygen."},
+                {q: "True or False: Lack of sleep can cause you to catch colds more easily.", o: ["True", "False"], a: 0, e: "True! Sleep deprivation weakens your immune cells, making infections easier."},
+                {q: "What can you do to support eco-friendly cleanliness?", o: ["Reduce, reuse, and recycle plastic and paper wastes", "Throw away all plastic items into rivers", "Burn trash inside the house"], a: 0, e: "Recycling stops garbage accumulation and keeps our shared planet fresh and healthy."},
+                {q: "Why should we wash our hair brushes periodically?", o: ["To remove accumulated hair oils, dead skin cells, and loose dust", "To change its color shape", "To make it soft like cloth"], a: 0, e: "Dirty brushes re-deposit grease and dandruff scalp flakes back into your clean hair."},
+                {q: "What is a good way to handle feelings of anger or frustration?", o: ["Take slow deep breaths and speak calmly about your problem", "Scream loudly and hit the table", "Skip meals and sit in dark spaces"], a: 0, e: "Calm breathing lowers your pulse rate and helps your logical brain solve issues safely."},
+                {q: "Why should kitchen cutting boards be washed carefully after cutting foods?", o: ["To avoid cross-contamination of bacteria between different foods", "To prevent the wood from growing roots", "To make the board lighter"], a: 0, e: "Raw food juices can leave bacteria behind that spoil cooked foods later."},
+                {q: "What is the healthiest habit to adopt before going to sleep at night?", o: ["Turn off digital screens an hour early to relax your eyes", "Eat a large plate of spicy chips", "Play loud action games"], a: 0, e: "Blue light from screens signals your brain to stay awake, disrupting natural deep sleep."}
+            ]
+        };
+
+        // State variables
+        let currentLevel = 'easy';
+        let currentQuestions = [];
+        let currentIndex = 0;
+        let score = 0;
+        let selectedAnswers = []; // tracks user selections per question index
+        let startTime, endTime;
+
+        // Load progress overview on startup
+        window.onload = function() {
+            showSavedProgress();
+        };
+
+        function showSavedProgress() {
+            const display = document.getElementById('saved-progress');
+            let text = "✨ Quick Stats: ";
+            let keys = ['easy', 'medium', 'hard'];
+            let found = false;
+            keys.forEach(k => {
+                let s = localStorage.getItem('quiz_score_' + k);
+                if(s !== null) {
+                    text += `<span style="text-transform:capitalize; font-weight:bold;">${k}</span>: ${s}% | `;
+                    found = true;
+                }
+            });
+            display.innerHTML = found ? text.slice(0, -3) : "💡 Tip: Finish a level to save your high score achievement here!";
+        }
+
+        // Shuffle utility
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function startQuiz(level) {
+            playSound('click');
+            currentLevel = level;
+            // Fetch original questions from bank, deep copy, shuffle questions and shuffle options
+            let rawData = JSON.parse(JSON.stringify(questionBank[level]));
+            
+            // Randomize questions
+            currentQuestions = shuffle(rawData).slice(0, 30); // Take exactly 30 questions
+            
+            // Randomize options inside each question while keeping correct answer mapping accurate
+            currentQuestions.forEach(q => {
+                let originalOptions = [...q.o];
+                let correctText = originalOptions[q.a];
+                shuffle(q.o);
+                q.a = q.o.indexOf(correctText); // reset correct index matching new order
+            });
+
+            currentIndex = 0;
+            score = 0;
+            selectedAnswers = new Array(30).fill(null);
+            startTime = new Date();
+
+            // Switch Screen
+            document.getElementById('screen-start').classList.remove('active');
+            document.getElementById('screen-quiz').classList.add('active');
+
+            showQuestion();
+        }
+
+        function showQuestion() {
+            let qData = currentQuestions[currentIndex];
+            
+            // Counters
+            document.getElementById('count-label').innerText = `Question: ${currentIndex + 1} / 30`;
+            document.getElementById('score-label').innerText = `Score: ${score}`;
+            
+            // Progress Bar
+            let progressPercent = ((currentIndex + 1) / 30) * 100;
+            document.getElementById('progress-bar').style.width = progressPercent + "%";
+
+            // Content
+            document.getElementById('question-text').innerText = qData.q;
+            
+            let optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = "";
+
+            qData.o.forEach((option, index) => {
+                let btn = document.createElement('button');
+                btn.className = "btn btn-option";
+                btn.innerText = option;
+                btn.onclick = () => selectOption(index);
+                optionsContainer.appendChild(btn);
+            });
+
+            // Handle Navigation Buttons state
+            document.getElementById('btn-prev').disabled = (currentIndex === 0);
+            
+            // Clear or display explanation box if already answered
+            let expBox = document.getElementById('explanation-box');
+            if (selectedAnswers[currentIndex] !== null) {
+                revealFeedback(selectedAnswers[currentIndex]);
+            } else {
+                expBox.style.display = 'none';
+            }
+        }
+
+        function selectOption(selectedIndex) {
+            if (selectedAnswers[currentIndex] !== null) return; // already answered
+
+            selectedAnswers[currentIndex] = selectedIndex;
+            let qData = currentQuestions[currentIndex];
+
+            if (selectedIndex === qData.a) {
+                score++;
+                playSound('correct');
+            } else {
+                playSound('wrong');
+            }
+
+            document.getElementById('score-label').innerText = `Score: ${score}`;
+            revealFeedback(selectedIndex);
+        }
+
+        function revealFeedback(selectedIndex) {
+            let qData = currentQuestions[currentIndex];
+            let optionsContainer = document.getElementById('options-container');
+            let buttons = optionsContainer.getElementsByTagName('button');
+            let expBox = document.getElementById('explanation-box');
+
+            // Apply style transformations
+            for (let i = 0; i < buttons.length; i++) {
+                buttons[i].disabled = true;
+                if (i === qData.a) {
+                    buttons[i].classList.add('correct');
+                } else if (i === selectedIndex) {
+                    buttons[i].classList.add('wrong');
+                }
+            }
+
+            // Text Explanation Box Setup
+            expBox.style.display = 'block';
+            if (selectedIndex === qData.a) {
+                expBox.className = "explanation-box correct-style";
+                expBox.innerText = "✅ Correct! " + qData.e;
+            } else {
+                expBox.className = "explanation-box wrong-style";
+                expBox.innerText = `❌ Needs Improvement. Your choice was incorrect. Remember: ` + qData.e;
+            }
+        }
+
+        function prevQuestion() {
+            if (currentIndex > 0) {
+                playSound('click');
+                currentIndex--;
+                showQuestion();
+            }
+        }
+
+        function nextQuestion() {
+            playSound('click');
+            if (selectedAnswers[currentIndex] === null) {
+                alert("Please pick an option to answer this question before moving ahead!");
+                return;
+            }
+
+            if (currentIndex < 29) {
+                currentIndex++;
+                showQuestion();
+            } else {
+                finishQuiz();
+            }
+        }
+
+        function goHome() {
+            playSound('click');
+            document.getElementById('screen-quiz').classList.remove('active');
+            document.getElementById('screen-summary').classList.remove('active');
+            document.getElementById('screen-start').classList.add('active');
+            showSavedProgress();
+        }
+
+        function restartQuiz() {
+            startQuiz(currentLevel);
+        }
+
+        function finishQuiz() {
+            endTime = new Date();
+            let elapsedSeconds = Math.floor((endTime - startTime) / 1000);
+            let mins = Math.floor(elapsedSeconds / 60);
+            let secs = elapsedSeconds % 60;
+            let timeString = `${mins}m ${secs}s`;
+
+            let percentage = Math.round((score / 30) * 100);
+
+            // Determine Badges
+            let badge = "";
+            if (percentage >= 90) { badge = "🏆 Health Hero"; }
+            else if (percentage >= 70) { badge = "🌟 Hygiene Star"; }
+            else if (percentage >= 50) { badge = "👍 Healthy Learner"; }
+            else { badge = "📚 Keep Learning"; }
+
+            // Save Progress locally
+            localStorage.setItem('quiz_score_' + currentLevel, percentage);
+
+            // Populate summary view
+            document.getElementById('sum-level').innerText = currentLevel.toUpperCase();
+            document.getElementById('sum-score').innerText = `${score} / 30`;
+            document.getElementById('sum-percent').innerText = `${percentage}%`;
+            document.getElementById('sum-correct').innerText = score;
+            document.getElementById('sum-wrong').innerText = 30 - score;
+            document.getElementById('sum-time').innerText = timeString;
+            document.getElementById('badge-title').innerText = badge;
+
+            // Prep printable certificate elements values
+            document.getElementById('cert-level').innerText = `Level: ${currentLevel.toUpperCase()}`;
+            document.getElementById('cert-score').innerText = `Final Score Achievement: ${score}/30 (${percentage}%)`;
+
+            // Transition views
+            document.getElementById('screen-quiz').classList.remove('active');
+            document.getElementById('screen-summary').classList.add('active');
+
+            if (percentage >= 70) {
+                triggerConfetti();
+                playSound('complete');
+            } else {
+                playSound('badge');
+            }
+        }
+
+        // Beautiful dynamic lightweight pure confetti effect generator
+        function triggerConfetti() {
+            for(let i=0; i<60; i++) {
+                let conf = document.createElement('div');
+                conf.className = 'confetti';
+                conf.style.left = Math.random() * window.innerWidth + 'px';
+                conf.style.backgroundColor = ['#ff2a74', '#ffcd00', '#2ed573', '#1e90ff', '#ffa500'][Math.floor(Math.random()*5)];
+                conf.style.animationDelay = Math.random() * 2 + 's';
+                conf.style.transform = `scale(${Math.random() * 0.8 + 0.5})`;
+                document.body.appendChild(conf);
+
+                setTimeout(() => { conf.remove(); }, 3000);
+            }
+        }
+    </script>
+</body>
+</html>

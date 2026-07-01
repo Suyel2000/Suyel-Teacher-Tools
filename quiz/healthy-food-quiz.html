@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🥗 Food and Nutrition Quiz</title>
+    <style>
+        :root {
+            --easy-color: #2ecc71;
+            --medium-color: #f1c40f;
+            --hard-color: #e67e22;
+            --primary-dark: #1b3a24;
+            --card-bg: rgba(255, 255, 255, 0.88);
+            --text-main: #2c3e50;
+            --correct-bg: #d4edda;
+            --correct-border: #28a745;
+            --correct-text: #155724;
+            --wrong-bg: #f8d7da;
+            --wrong-border: #dc3545;
+            --wrong-text: #721c24;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: linear-gradient(-45deg, #a8ff78, #78ffd6, #ffd194, #70e1f5);
+            background-size: 400% 400%;
+            animation: gradientBG 16s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-main);
+            padding: 15px;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 720px;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.12);
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            color: var(--primary-dark);
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #556b2f;
+            margin-bottom: 25px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Interactive App Buttons */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 16px 20px;
+            margin: 12px 0;
+            border: none;
+            border-radius: 16px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s, background-color 0.15s;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.15);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-easy { background-color: var(--easy-color); }
+        .btn-easy:hover { background-color: #27ae60; box-shadow: 0 6px 18px rgba(46,204,113,0.35); }
+
+        .btn-medium { background-color: var(--medium-color); color: #2c3e50; text-shadow: none; }
+        .btn-medium:hover { background-color: #d4ac0d; box-shadow: 0 6px 18px rgba(241,196,15,0.35); }
+
+        .btn-hard { background-color: var(--hard-color); }
+        .btn-hard:hover { background-color: #d35400; box-shadow: 0 6px 18px rgba(230,126,34,0.35); }
+
+        .btn-nav {
+            background-color: var(--primary-dark);
+            color: white;
+            flex: 1;
+            margin: 0 6px;
+            font-size: 1.05rem;
+            padding: 14px 10px;
+        }
+        .btn-nav:hover { background-color: #0e2414; }
+        .btn-nav:disabled { background-color: #bdc3c7; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        .btn-option {
+            background-color: #ffffff;
+            color: #34495e;
+            border: 2px solid #e2e8f0;
+            text-align: left;
+            font-size: 1.15rem;
+            font-weight: 600;
+            text-shadow: none;
+        }
+        .btn-option:hover:not([disabled]) {
+            background-color: #f8fafc;
+            border-color: #cbd5e1;
+            transform: translateY(-2px);
+        }
+
+        /* Feedback Styles */
+        .btn-option.correct {
+            background-color: var(--correct-bg) !important;
+            border-color: var(--correct-border) !important;
+            color: var(--correct-text) !important;
+        }
+        .btn-option.wrong {
+            background-color: var(--wrong-bg) !important;
+            border-color: var(--wrong-border) !important;
+            color: var(--wrong-text) !important;
+        }
+
+        /* Displays and Status Indicators */
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-weight: 700;
+            font-size: 1.05rem;
+            background: rgba(0,0,0,0.04);
+            padding: 10px 16px;
+            border-radius: 12px;
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: #e2e8f0;
+            border-radius: 10px;
+            height: 14px;
+            margin-bottom: 22px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #2ecc71, #3498db);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .question-text {
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 22px;
+            color: var(--primary-dark);
+            text-align: left;
+            line-height: 1.45;
+        }
+
+        .explanation-box {
+            display: none;
+            margin-top: 18px;
+            padding: 16px;
+            border-radius: 14px;
+            text-align: left;
+            font-size: 1.1rem;
+            line-height: 1.45;
+            font-weight: 600;
+            animation: fadeIn 0.35s ease;
+        }
+        .explanation-box.correct-style { background-color: var(--correct-bg); border-left: 6px solid var(--correct-border); color: var(--correct-text); }
+        .explanation-box.wrong-style { background-color: var(--wrong-bg); border-left: 6px solid var(--wrong-border); color: var(--wrong-text); }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .nav-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+            border-top: 2px solid #e2e8f0;
+            padding-top: 18px;
+        }
+
+        /* Scoreboards & Summary Layout */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+            margin: 22px 0;
+            text-align: left;
+        }
+        .summary-item {
+            background: rgba(0,0,0,0.03);
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        .summary-item span { font-weight: 700; color: var(--primary-dark); }
+
+        .badge-box {
+            margin: 20px 0;
+            padding: 18px;
+            background: #fffdf0;
+            border: 3px dashed #f1c40f;
+            border-radius: 18px;
+        }
+        .badge-title { font-size: 1.6rem; font-weight: 800; color: #d35400; margin-top: 6px; }
+
+        /* Structural Pure DOM Confetti Particle Elements */
+        .confetti {
+            position: fixed;
+            width: 12px;
+            height: 12px;
+            top: -15px;
+            z-index: 9999;
+            animation: fallAnimation 3.5s linear infinite;
+        }
+        @keyframes fallAnimation {
+            0% { top: -15px; transform: translateX(0) rotate(0deg); }
+            100% { top: 100vh; transform: translateX(120px) rotate(360deg); }
+        }
+
+        /* Print Specific Logic Engine Configuration */
+        @media print {
+            body { background: white !important; color: black !important; }
+            .container { box-shadow: none !important; max-width: 100% !important; border: none !important; background: white !important; }
+            .nav-controls, .btn, .progress-container, .stats-bar, h1, .subtitle, .badge-box { display: none !important; }
+            .screen { display: none !important; }
+            #screen-summary { display: block !important; }
+            .print-cert-only { display: block !important; border: 8px double #2c3e50; padding: 45px; margin: 30px auto; text-align: center; background: white; }
+        }
+
+        .print-cert-only { display: none; }
+
+        /* Responsive Breakpoints Adaptive scaling for Smartboards, Desktops, Notebooks and Handheld systems */
+        @media(max-width: 500px) {
+            h1 { font-size: 1.75rem; }
+            .btn { font-size: 1.1rem; padding: 14px; }
+            .question-text { font-size: 1.15rem; }
+            .summary-grid { grid-template-columns: 1fr; }
+            .nav-controls { flex-wrap: wrap; gap: 8px; }
+            .btn-nav { font-size: 0.95rem; padding: 12px 6px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🥗 Food and Nutrition Quiz</h1>
+        <div class="subtitle">Eat Healthy • Grow Strong • Learn</div>
+
+        <div id="screen-start" class="screen active">
+            <p style="font-size: 1.25rem; margin-bottom: 22px; font-weight: 600; color: #34495e;">Hello! Choose a difficulty level to begin your learning journey:</p>
+            <button class="btn btn-easy" onclick="startQuiz('easy')">🟢 Easy Level</button>
+            <button class="btn btn-medium" onclick="startQuiz('medium')">🟡 Medium Level</button>
+            <button class="btn btn-hard" onclick="startQuiz('hard')">🔴 Hard Level</button>
+            <div id="saved-progress" style="margin-top: 25px; font-size: 0.95rem; color: #4f5d73; font-weight: 600;"></div>
+        </div>
+
+        <div id="screen-quiz" class="screen">
+            <div class="stats-bar">
+                <div id="count-label">Question: 1 / 30</div>
+                <div id="score-label">Score: 0</div>
+            </div>
+            <div class="progress-container">
+                <div id="progress-bar" class="progress-bar"></div>
+            </div>
+
+            <div id="question-text" class="question-text"></div>
+            <div id="options-container"></div>
+
+            <div id="explanation-box" class="explanation-box"></div>
+
+            <div class="nav-controls">
+                <button id="btn-prev" class="btn btn-nav" onclick="prevQuestion()">⬅️ Previous</button>
+                <button id="btn-home" class="btn btn-nav" onclick="goHome()">🏠 Home</button>
+                <button id="btn-next" class="btn btn-nav" onclick="nextQuestion()">➡️ Next</button>
+            </div>
+        </div>
+
+        <div id="screen-summary" class="screen">
+            <h2>🎉 Level Completed!</h2>
+            <div class="badge-box">
+                <div style="font-size: 1.05rem; font-weight: 700; color: #555;">Your Achievement Badge:</div>
+                <div id="badge-title" class="badge-title">Food Explorer</div>
+            </div>
+            
+            <div class="summary-grid">
+                <div class="summary-item">Selected Level: <span id="sum-level">-</span></div>
+                <div class="summary-item">Final Score: <span id="sum-score">-</span></div>
+                <div class="summary-item">Percentage: <span id="sum-percent">-</span></div>
+                <div class="summary-item">Correct Answers: <span id="sum-correct">-</span></div>
+                <div class="summary-item">Wrong Answers: <span id="sum-wrong">-</span></div>
+                <div class="summary-item">Time Taken: <span id="sum-time">-</span></div>
+            </div>
+
+            <button class="btn btn-easy" onclick="restartQuiz()">🔄 Play Again</button>
+            <button class="btn btn-medium" onclick="goHome()">🏫 Choose Another Level</button>
+            <button class="btn btn-hard" onclick="window.print()">🖨️ Print Certificate</button>
+        </div>
+    </div>
+
+    <div id="printable-certificate" class="print-cert-only">
+        <h1 style="font-size: 2.5rem; color: #1b3a24; margin-bottom: 10px;">📜 CERTIFICATE OF ACHIEVEMENT</h1>
+        <p style="font-size:1.4rem; margin:25px 0; font-style: italic;">This award confirms that you successfully finished the</p>
+        <h2 style="font-size: 2.2rem; color: #e67e22; margin-bottom: 15px;">Food and Nutrition EVS Quiz</h2>
+        <p style="font-size:1.3rem; margin:15px 0; font-weight: bold;" id="cert-level">Level: Easy</p>
+        <p style="font-size:1.4rem; color: #2c3e50; font-weight: bold; margin-bottom: 30px;" id="cert-score">Score achieved: 100%</p>
+        <p style="font-size:1.25rem; font-weight:bold; color: #27ae60;">🌟 Keep Eating Healthy and Growing Strong! 🌟</p>
+    </div>
+
+    <script>
+        // High Quality Offline Web Audio API Synthesizer Architecture
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playAppSound(type) {
+            if (!audioCtx) return;
+            // Resume context if suspended by browser security configurations
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(450, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+                osc.start(); 
+                osc.stop(audioCtx.currentTime + 0.08);
+            } else if (type === 'correct') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(440, audioCtx.currentTime); // A4
+                osc.frequency.setValueAtTime(554.37, audioCtx.currentTime + 0.08); // C#5
+                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.16); // E5
+                gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+                osc.start(); 
+                osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(160, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(110, audioCtx.currentTime + 0.22);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.22);
+                osc.start(); 
+                osc.stop(audioCtx.currentTime + 0.22);
+            } else if (type === 'complete' || type === 'badge') {
+                osc.type = 'sine';
+                let notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 melodic rise
+                notes.forEach((freq, idx) => {
+                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime + (idx * 0.1));
+                });
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.55);
+                osc.start(); 
+                osc.stop(audioCtx.currentTime + 0.55);
+            }
+        }
+
+        // FULL 90 DATA SYSTEM ARRAYS (30 per level, calibrated for classes 1-5)
+        const quizDatabase = {
+            easy: [
+                {q: "Which of these foods is healthy and good for our body?", o: ["Fresh fruits", "Fizzy sweet drinks", "Oily potato chips"], a: 0, e: "Healthy food helps us grow, stay active, and fight diseases safely."},
+                {q: "Why should we eat fresh fruits every day?", o: ["They give us vitamins and keep us healthy", "They look like bright toys", "They make us turn green"], a: 0, e: "Fruits are natural protective foods packed with sweet health-boosting nutrients."},
+                {q: "Which of these vegetables is bright green in color?", o: ["Broccoli", "Potato", "Ripe Pumpkin"], a: 0, e: "Green vegetables like broccoli and spinach keep our blood healthy and strong."},
+                {q: "What should we drink plenty of every day to stay hydrated?", o: ["Clean water", "Sugary iced tea", "Fizzy cola soda"], a: 0, e: "Drinking enough clean water keeps our body functioning properly and removes waste."},
+                {q: "Which food item helps our bones and muscles grow strong?", o: ["Fresh milk", "Hard candy candy", "Salted popcorn chips"], a: 0, e: "Milk contains calcium, which is vital for building strong bones and teeth."},
+                {q: "Is it a good habit to eat too much junk food?", o: ["No, it can make us sick and lazy", "Yes, it is the best food option", "Yes, but only before going to bed"], a: 0, e: "Junk food lacks useful body nutrients and contains too much bad fat and sugar."},
+                {q: "Why is eating breakfast in the morning important?", o: ["It gives us energy to study and play", "It makes us fall asleep quickly", "It changes our skin color"], a: 0, e: "Breakfast fuels your body after a long night of sleep."},
+                {q: "Which liquid drink option is best for a growing child?", o: ["Plain milk", "Sweet coffee", "Diet soda mix"], a: 0, e: "Pure milk gives growing children proteins and vitamins needed to get taller."},
+                {q: "Where do we get delicious apples and bananas from?", o: ["From plants and trees", "From factory machines", "From deep mud rivers"], a: 0, e: "Fruits grow naturally on plants and fruit trees under natural sunlight."},
+                {q: "Which meal do we usually eat together in the morning?", o: ["Breakfast", "Dinner", "Late Lunch"], a: 0, e: "Breakfast is the very first meal of the day, eaten right after you wake up."},
+                {q: "True or False: Candy gives our bodies all the healthy nutrients we need.", o: ["True", "False"], a: 1, e: "False! Candy is mostly artificial sugar and can cause painful tooth decay."},
+                {q: "What should we do before eating raw fruits from the store?", o: ["Wash them with clean water", "Paint them with bright colors", "Leave them out in the dirt"], a: 0, e: "Washing fruit removes any hidden dirt, dust, and tiny bugs gathered on the skin."},
+                {q: "Which of these items is classified as a healthy vegetable?", o: ["Carrot", "Chocolate bar", "Baked cookie cupcake"], a: 0, e: "Carrots are vegetables that are excellent for keeping our eyesight sharp."},
+                {q: "How many main meals do we normally eat in a single day?", o: ["Three main meals", "Ten little meals", "Only one big meal"], a: 0, e: "We generally eat three healthy meals a day: breakfast, lunch, and dinner."},
+                {q: "Complete the sentence: Healthy food helps our bodies to ________.", o: ["grow strong and active", "become weak and tired", "stay sleeping all day long"], a: 0, e: "Eating well gives your body everything it needs to stay strong and energetic."},
+                {q: "Which of these is a healthy snack option to bring to school?", o: ["A handful of nuts", "Sweet jelly beans", "Fried cheesy puffs"], a: 0, e: "Nuts give us good fats and natural elements to feed our busy brains."},
+                {q: "Why do our bodies need good food every single day?", o: ["To get energy to work and play", "To grow hair down to our toes", "To make us sleep longer"], a: 0, e: "Food acts like fuel for our bodies. Without it, we would feel too tired to move."},
+                {q: "True or False: We should try to eat some vegetables during our meals.", o: ["True", "False"], a: 0, e: "True! Vegetables act like natural bodyguards to keep us from falling sick."},
+                {q: "What is a healthy habit to practice while chewing our food?", o: ["Chew quietly with our mouth closed", "Talk loudly with food inside", "Swallow big food items whole"], a: 0, e: "Chewing slowly with a closed mouth helps digestion and prevents choking accidents."},
+                {q: "Which of these is considered a natural food item?", o: ["A fresh orange", "A sweet pink bubblegum", "A packet of sour candy"], a: 0, e: "Oranges come directly from orange trees and are full of natural Vitamin C."},
+                {q: "What should you do if you feel hungry between your main meals?", o: ["Eat a healthy piece of fruit", "Eat a giant tub of ice cream", "Skip meals and cry loudly"], a: 0, e: "A fruit is the perfect light snack to keep you satisfied until dinner time."},
+                {q: "Which item is a healthy dairy product made from cow's milk?", o: ["Yogurt", "Potato fries", "Apple juice soda"], a: 0, e: "Yogurt is made from milk and keeps our digestive system happy and strong."},
+                {q: "True or False: Drinking water is better for our health than drinking sugary juices.", o: ["True", "False"], a: 0, e: "True! Water cleans our inner body organs without adding unhealthy sugars."},
+                {q: "Which color are spinach leaves?", o: ["Bright green", "Deep purple", "Neon yellow"], a: 0, e: "Spinach is a leafy green vegetable loaded with iron to make us strong."},
+                {q: "Why should we avoid eating food that smells bad or looks strange?", o: ["It might be spoiled and make us sick", "It might taste like sweet honey", "It is too expensive to eat"], a: 0, e: "Bad smells indicate that harmful bacteria have started growing on old food items."},
+                {q: "Complete the sentence: Ripe strawberries are a type of ________.", o: ["healthy fruit", "crunchy green vegetable", "sweet hot soup"], a: 0, e: "Strawberries are delicious berries rich in natural defense vitamins."},
+                {q: "What do we call the meal we share late in the evening?", o: ["Dinner", "Breakfast", "Brunch snacks"], a: 0, e: "Dinner is our final full meal of the day before we rest and sleep at night."},
+                {q: "True or False: Fish and eggs can help our bodies build strong muscles.", o: ["True", "False"], a: 0, e: "True! Eggs and fish are excellent sources of protein for body growth."},
+                {q: "Which of these is an unhealthy habit?", o: ["Eating candy instead of proper dinner", "Drinking three cups of clean water", "Finishing all our green vegetables"], a: 0, e: "Replacing nutritious meals with sugary snacks deprives your body of vitamins."},
+                {q: "What can we drink to keep our teeth and bones healthy?", o: ["Fresh white milk", "Sweet lemonade drink", "Dark soda coffee"], a: 0, e: "Milk provides natural calcium blocks to form a strong skeleton framework."}
+            ],
+            medium: [
+                {q: "What does the term 'balanced diet' mean?", o: ["Eating the right amounts of different kinds of food", "Balancing an apple perfectly on top of your head", "Eating only boiled white rice for every single meal"], a: 0, e: "A balanced diet provides all necessary nutrient categories in the right proportions."},
+                {q: "Which group of foods is best known for being 'energy-giving'?", o: ["Rice, potatoes, and wheat products", "Spinach, water, and table salt", "Boiled fish, eggs, and chicken cubes"], a: 0, e: "Carbohydrates found in grains and tubers give us energy to run and play."},
+                {q: "Which nutrient building block helps our bodies fix scrapes and build muscle?", o: ["Proteins", "Sugars", "Bad fats"], a: 0, e: "Proteins act as internal bricklayers to construct and repair tissue structures."},
+                {q: "Why is it recommended that school children drink milk regularly?", o: ["It provides rich calcium for bone structure and density", "It changes our voice sounds", "It keeps our hair perfectly blue"], a: 0, e: "Dairy products supply the skeletal system with highly absorbable calcium."},
+                {q: "Why are fruits and vegetables often called 'protective foods'?", o: ["They contain vitamins and minerals that ward off diseases", "They create a hard shield around our stomach", "They keep rain from touching our skin"], a: 0, e: "Vitamins and minerals reinforce our immune pathways against virus particles."},
+                {q: "Why should we strictly limit our intake of sweet frosted cakes and pastries?", o: ["They contain excess sugar and low nutrient values", "They make our legs grow too fast", "They turn into liquid water instantly"], a: 0, e: "Refined sugar spikes energy quickly but lacks building blocks for cell health."},
+                {q: "Which of these foods is highly rich in protein content?", o: ["Boiled eggs and lentils", "Butter and cooking oils", "White sugar granules"], a: 0, e: "Eggs, pulses, and beans are fantastic sources of protein for human development."},
+                {q: "Why is it important to consume food at fixed, regular times every day?", o: ["It keeps our body's digestive system working smoothly", "It stops the sun from setting early", "It gives us extra homework time"], a: 0, e: "Regular eating intervals train our metabolism to process nutrients efficiently."},
+                {q: "Which of these foods is classified as a dairy item?", o: ["Cheese", "Chicken wing", "Baked bread loaf"], a: 0, e: "Cheese is created from milk curd solids, making it a nutritious dairy food option."},
+                {q: "What role do cereals like oats, wheat, and corn play in our meals?", o: ["They supply essential energy carbohydrates", "They provide mostly water content", "They turn directly into bone marrow"], a: 0, e: "Whole grains contain complex carbohydrates that sustain energy for hours."},
+                {q: "True or False: Pulses, dals, and beans are primarily body-building foods.", o: ["True", "False"], a: 0, e: "True! Plant pulses are packed with protein building blocks for physical strength."},
+                {q: "What can happen if we omit protective foods from our weekly diet?", o: ["We might fall sick or get tired easily", "We will turn into strong superheroes", "Our body will float in the air"], a: 0, e: "Lacking vitamins reduces our internal immune defenses against common sicknesses."},
+                {q: "Which of these is a healthy habit that supports safe eating?", o: ["Washing our hands thoroughly before touching food", "Chewing food while running fast around the yard", "Licking our dinner plates clean on the floor"], a: 0, e: "Handwashing with soap destroys germs before they can contaminate your food supply."},
+                {q: "What do we call foods like butter, ghee, and cooking oil?", o: ["Fats", "Proteins", "Vitamins"], a: 0, e: "Fats store backup energy for our body, but we should eat them in moderate amounts."},
+                {q: "Complete the sentence: Citric fruits like oranges and lemons are rich in ________.", o: ["Vitamin C", "Iron metals", "Starch powder"], a: 0, e: "Citrus fruits offer vital Vitamin C doses to keep our skin and gums healthy."},
+                {q: "Why should we try to avoid buying food from uncovered street stalls?", o: ["Flies and outdoor dust can settle on the food surface", "The food is always completely freezing cold", "Street food has zero taste value"], a: 0, e: "Uncovered food items are easily exposed to insect tracks and airborne contamination."},
+                {q: "Which of these is the healthiest hydration choice after playing sports?", o: ["Fresh coconut water", "Fizzy bubblegum soda", "Sweet artificial energy drinks"], a: 0, e: "Coconut water provides natural hydration minerals without synthetic dyes or additives."},
+                {q: "True or False: Our body needs a mix of different nutrients because no single food has them all.", o: ["True", "False"], a: 0, e: "True! Variety ensures your body gathers proteins, carbs, and vitamins together."},
+                {q: "What do we call the nutrient group that acts as our primary fuel source?", o: ["Carbohydrates", "Water fluids", "Minerals"], a: 0, e: "Carbohydrates are broken down into quick energy glucose units by our cells."},
+                {q: "Which food item is considered a wholesome protective food?", o: ["Fresh green spinach salad", "Deep-fried sugary dough donut", "Salted potato sticks packet"], a: 0, e: "Spinach is packed with minerals that protect cells from internal stress."},
+                {q: "Why should we eat whole grains instead of highly refined sweet flour?", o: ["Whole grains retain more natural fibre and nutrients", "Whole grains dissolve like water", "Refined flour is much too dark"], a: 0, e: "Whole grains keep their nutrient-rich outer jackets intact for digestion."},
+                {q: "What important health element is found abundantly in raw carrots?", o: ["Vitamin A for sharp vision", "Sugar for high speed running", "Calcium for turning bones orange"], a: 0, e: "Carrots convert into Vitamin A, maintaining dark-adapted vision performance."},
+                {q: "True or False: Growing children require more protein per size than old adults.", o: ["True", "False"], a: 0, e: "True! Children are actively synthesizing new tissue structures and bone cells daily."},
+                {q: "Which of these is a poor eating habit?", o: ["Swallowing large meals quickly without chewing properly", "Drinking water 30 minutes after eating dinner", "Eating seasonal fruits during midday snacks"], a: 0, e: "Inadequate chewing overworks the stomach and can lead to abdominal pain."},
+                {q: "What should we add to our diet to ensure smooth bowel movements?", o: ["Fibre from fruits and vegetables", "Refined white sugar syrup", "Extra butter melting on bread"], a: 0, e: "Plant fibre adds healthy bulk to material moving through our digestive tract."},
+                {q: "Which food element helps transport oxygen inside our bloodstream?", o: ["Iron from green leafy vegetables", "Sugar from candy canes", "Fat from sweet cream ice cream"], a: 0, e: "Iron is the central building block for oxygen-carrying hemoglobin cells."},
+                {q: "True or False: Frozen desserts contain the exact same nutrition profile as fresh milk.", o: ["True", "False"], a: 1, e: "False! Ice cream treats carry much higher fat and sugar ratios than liquid milk."},
+                {q: "Why is drinking clean boiled water a safe practice during rainy seasons?", o: ["Boiling destroys hazardous germs lurking in raw water", "Boiling makes the water weight much lighter", "Boiled water never turns into ice cube blocks"], a: 0, e: "Thermal pasteurization reliably sanitizes liquid water supplies from pathogen risk."},
+                {q: "Which meal should be the lightest meal of our day according to health guidelines?", o: ["Dinner", "Lunch", "Midday feast"], a: 0, e: "Dinner should be lighter to let our digestive organs rest while we sleep."},
+                {q: "Complete the sentence: Almonds, walnuts, and cashews belong to the ________ group.", o: ["nutritious nuts and seeds", "leafy green vegetable stems", "sweet dairy cheese toppings"], a: 0, e: "Nuts offer plant oils and trace nutrients that benefit cardiorespiratory systems."}
+            ],
+            hard: [
+                {q: "Which specific macro-nutrient serves as our body's primary energy storehouse?", o: ["Carbohydrates", "Vitamins", "Minerals"], a: 0, e: "Carbohydrates are converted into glucose to generate immediate cellular energy."},
+                {q: "What basic structural unit makes up proteins for body cell tissue repair?", o: ["Amino acids", "Simple sugars", "Fatty oil chains"], a: 0, e: "Proteins break down into amino acids, which rebuild human muscle tissue blocks."},
+                {q: "Why do humans require a steady daily supply of water-soluble vitamins?", o: ["They are not stored in the body and pass out easily", "They turn into energy carbohydrates instantly", "They build the outer structure of tooth enamel"], a: 0, e: "Vitamins B and C dissolve in water and must be replenished regularly via our diet."},
+                {q: "Why is thorough hand and food washing crucial before raw consumption?", o: ["It eliminates surface micro-parasites and chemical residues", "It injects vital sugar molecules into food skin", "It prevents the fruit from losing its natural flavor"], a: 0, e: "Washing helps clear away agricultural sprays and potential disease-causing microbes."},
+                {q: "What risk is associated with consuming stale, improperly stored food items?", o: ["Food poisoning from bacterial toxin accumulations", "An instant permanent increase in memory power", "The food transforming back into raw seeds"], a: 0, e: "Decomposing foods house bacterial cultures that disrupt stomach tissue paths."},
+                {q: "Why is water filtration vital for civic municipal safety standards?", o: ["It screens out heavy metals, dirt debris, and water bugs", "It thins the liquid to flow much faster", "It converts the water into vitamin fluid"], a: 0, e: "Proper purification steps verify that liquid streams comply with biological safety codes."},
+                {q: "Why should we check the factory expiry date stamp printed on food containers?", o: ["To confirm the product is safe and fresh to eat", "To calculate how much weight the container holds", "To learn the address of the factory location"], a: 0, e: "Expiry timelines inform consumers when raw ingredients face degradation or mold risks."},
+                {q: "How does a diet containing diverse mineral tracking elements benefit bones?", o: ["Calcium and phosphorus build solid skeletal crystal lattices", "Minerals turn bone tissue into soft flexible gel", "Minerals increase body fat percentage rapidly"], a: 0, e: "Structural minerals construct the dense crystalline base of human skeletal architecture."},
+                {q: "What role does dietary fibre or roughage play inside the human intestine?", o: ["It adds non-digestible bulk to help clear waste regularly", "It breaks down into rapid energy glucose particles", "It repairs deep muscular tissue tears in legs"], a: 0, e: "Fibre provides structural passage tracking for smooth intestinal waste clearing."},
+                {q: "Which health condition can arise from a severe lack of iron nutrients?", o: ["Anemia, causing constant exhaustion and pale skin", "Scurvy, making teeth fall out of gums", "Rickets, causing weak soft leg bones"], a: 0, e: "Iron deficits reduce hemoglobin production, impairing oxygen delivery to tissues."},
+                {q: "What function does Vitamin D perform inside our metabolic pathways?", o: ["It assists the intestinal tract to absorb calcium efficiently", "It acts as a primary source of caloric energy fuel", "It turns hair cells into thick protective fabrics"], a: 0, e: "Without Vitamin D, our system cannot properly process incoming bone-building calcium elements."},
+                {q: "Why should we avoid eating ultra-processed foods packaged with chemical preserves?", o: ["They contain high sodium and artificial trans-fats that strain organs", "They are too heavy for human teeth to chew safely", "They lose all their color properties under room lamps"], a: 0, e: "High chemical additives and processed sodium levels force stress onto cardiac lines."},
+                {q: "Which nutrient is highly concentrated in foods like cod liver oil and egg yolks?", o: ["Fat-soluble vitamins like A and D", "Complex dietary plant fiber", "Simple water-soluble Vitamin C structures"], a: 0, e: "Animal fats carry fat-soluble nutrients that maintain neural cell health over time."},
+                {q: "True or False: Calcium can be synthesized naturally by our body without food intake.", o: ["True", "False"], a: 1, e: "False! Calcium is a mineral element that must be pulled out of dietary ingestion sources."},
+                {q: "What does the presence of dietary roughage do for blood sugar spikes?", o: ["It slows down sugar absorption for steady energy distribution", "It stops blood from moving inside our veins", "It converts sugars into structural protein blocks"], a: 0, e: "Intestinal plant fibers slow down glucose absorption, preventing unhealthy energy crashes."},
+                {q: "Which specific mineral is essential for proper thyroid health and body regulation?", o: ["Iodine", "Iron", "Potassium"], a: 0, e: "Iodine tracks thyroid hormone production, balancing baseline chemical metabolism scales."},
+                {q: "Why are preservatives added to commercial canned food options?", o: ["To delay chemical breakdown and prevent microbe growth", "To elevate the nutritional level of vitamins inside", "To turn the canned food items into sweet treats"], a: 0, e: "Preservatives create an inhospitable environment for incoming airborne mold spore tracking."},
+                {q: "What symptom can signal a lack of Vitamin C inside a child's food intake?", o: ["Bleeding gums and delayed skin wound healing speeds", "Extreme brittle bone fractures from slight jumps", "Loss of dark-adapted nighttime viewing capabilities"], a: 0, e: "Scurvy paths trigger connective tissue drops, degrading cellular walls inside blood capillaries."},
+                {q: "True or False: Fats yield more than twice the energy calories per gram compared to carbohydrates.", o: ["True", "False"], a: 0, e: "True! Fats are dense fuel sources, which is why we only need them in smaller daily portions."},
+                {q: "What is the primary danger of consuming excess sodium chloride daily?", o: ["It causes systemic high blood pressure and cardiac strain", "It turns bodily fluids completely into salt crystals", "It dissolves bone structures from the inside out"], a: 0, e: "Excess sodium retains excess fluid volume, elevating hydraulic pressure across blood vessels."},
+                {q: "Which nutrient class protects internal nerve coatings and structures?", o: ["Essential lipids and healthy fatty acids", "Refined flour starch carbohydrate units", "Insoluble plant roughage strings"], a: 0, e: "Myelin nerve insulation pads require healthy fats to transmit clean biological signal paths."},
+                {q: "What can cause food to spoil quickly inside warm, humid pantry conditions?", o: ["Rapid acceleration of mold spore and bacterial cell replication", "The absence of artificial bright overhead light sources", "The food absorbing too much chemical nitrogen from surrounding air"], a: 0, e: "Bacteria and fungal cultures grow quickly in warm, moist environments."},
+                {q: "Which of these foods provides an excellent source of natural plant-based minerals?", o: ["Dark green leafy greens and legumes", "White refined confectionary sugar toppings", "Hydrogenated baking shortening oil bricks"], a: 0, e: "Leafy vegetables draw up minerals from soil systems, yielding dense nutrient food alternatives."},
+                {q: "True or False: Severe dehydration can impair cognitive focus and memory tracking scores.", o: ["True", "False"], a: 0, e: "True! Brain cell water balance determines the electrical transmission speeds of thoughts."},
+                {q: "Why is a combination of cereals and pulses considered highly nutritious?", o: ["They complement each other to provide a complete amino acid profile", "They melt together to form clean vitamin fluid lines", "They prevent the body from processing unnecessary fat stores"], a: 0, e: "Pairing grains with legumes supplies all essential protein building blocks simultaneously."},
+                {q: "What health issue can tracking a zero-fresh-fruit diet profile produce over time?", o: ["Severe vitamin deficiency disorders and lowered infection resistance", "The body growing immune to all outside airborne sickness paths", "An immediate drop in physical height and body length properties"], a: 0, e: "Eliminating fresh plant foods cuts off vital micronutrients required for immunity."},
+                {q: "Which vitamin helps maximize blood clotting speeds during accidental skin cuts?", o: ["Vitamin K", "Vitamin E", "Vitamin A"], a: 0, e: "Vitamin K synthesizes coagulation proteins, preventing excessive blood loss from minor cuts."},
+                {q: "Complete the sentence: Legumes fix nitrogen to make proteins, making lentils high in ________.", o: ["structural plant protein chains", "simple sweet sucrose molecules", "liquid saturated grease compounds"], a: 0, e: "Lentils utilize nitrogen to generate healthy plant-based protein blocks for growing muscles."},
+                {q: "What structural benefit does phosphorus offer our bodies?", o: ["It pairs with calcium to maintain hard mineral structures in teeth", "It converts into immediate water molecules inside blood lines", "It turns internal muscle tissue strands into thick energetic fibres"], a: 0, e: "Phosphorus acts as a reinforcing mineral partner to support structural bone matrix density."},
+                {q: "Why should we avoid drinking large quantities of commercial sugary fruit juices?", o: ["They are stripped of beneficial fiber, leaving behind high sugar levels", "They cause the stomach to freeze operational steps completely", "They turn internal vitamin properties back into unrefined starches"], a: 0, e: "Processed juices strip out the natural fruit fiber jacket, causing fast, unhealthy blood sugar spikes."}
+            ]
+        };
+
+        // UI State Variables Engine Configuration
+        let selectedDifficulty = 'easy';
+        let targetedQuestions = [];
+        let activeQuestionIndex = 0;
+        let cumulativeScore = 0;
+        let trackedUserSelections = []; 
+        let globalStartTime, globalEndTime;
+
+        // Run checking arrays updates on screen load
+        window.onload = function() {
+            renderStoredProgressSummary();
+        };
+
+        function renderStoredProgressSummary() {
+            const progressDisplay = document.getElementById('saved-progress');
+            let baseText = "✨ Your Saved Level Top Scores: ";
+            let difficultyKeys = ['easy', 'medium', 'hard'];
+            let recordsFound = false;
+            
+            difficultyKeys.forEach(levelKey => {
+                let retrievedScore = localStorage.getItem('food_nutrition_score_' + levelKey);
+                if(retrievedScore !== null) {
+                    baseText += `<span style="text-transform:capitalize; font-weight:700; color:#1b3a24;">${levelKey}</span>: ${retrievedScore}% | `;
+                    recordsFound = true;
+                }
+            });
+            
+            progressDisplay.innerHTML = recordsFound ? baseText.slice(0, -3) : "💡 Tip: Complete any quiz level to save your high score milestone locally!";
+        }
+
+        // Lightweight Secure Fisher-Yates Array Shuffle Algorithm
+        function shuffleArrayData(targetArray) {
+            for (let pointer = targetArray.length - 1; pointer > 0; pointer--) {
+                const swapTarget = Math.floor(Math.random() * (pointer + 1));
+                [targetArray[pointer], targetArray[swapTarget]] = [targetArray[swapTarget], targetArray[pointer]];
+            }
+            return targetArray;
+        }
+
+        function startQuiz(chosenLevel) {
+            playAppSound('click');
+            selectedDifficulty = chosenLevel;
+            
+            // Perform deep copy clone to avoid data mutation leaks
+            let deepCopySource = JSON.parse(JSON.stringify(quizDatabase[chosenLevel]));
+            
+            // Randomize whole question set array
+            targetedQuestions = shuffleArrayData(deepCopySource).slice(0, 30);
+            
+            // Randomize nested options arrays while recalculating indices safely
+            targetedQuestions.forEach(questionObject => {
+                let referenceText = questionObject.o[questionObject.a];
+                shuffleArrayData(questionObject.o);
+                questionObject.a = questionObject.o.indexOf(referenceText);
+            });
+
+            activeQuestionIndex = 0;
+            cumulativeScore = 0;
+            trackedUserSelections = new Array(30).fill(null);
+            globalStartTime = new Date();
+
+            // Toggle active interface components
+            document.getElementById('screen-start').classList.remove('active');
+            document.getElementById('screen-quiz').classList.add('active');
+
+            renderCurrentQuestion();
+        }
+
+        function renderCurrentQuestion() {
+            let activeQuestion = targetedQuestions[activeQuestionIndex];
+            
+            // Synchronize label display items
+            document.getElementById('count-label').innerText = `Question: ${activeQuestionIndex + 1} / 30`;
+            document.getElementById('score-label').innerText = `Score: ${cumulativeScore}`;
+            
+            // Update percentage bar length
+            let actualProgressPercentage = ((activeQuestionIndex + 1) / 30) * 100;
+            document.getElementById('progress-bar').style.width = actualProgressPercentage + "%";
+
+            // Inject prompt text safely
+            document.getElementById('question-text').innerText = activeQuestion.q;
+            
+            let optionsBox = document.getElementById('options-container');
+            optionsBox.innerHTML = "";
+
+            // Spawn clean DOM buttons for choice parameters
+            activeQuestion.o.forEach((optionValue, optionIdx) => {
+                let optionBtn = document.createElement('button');
+                optionBtn.className = "btn btn-option";
+                optionBtn.innerText = optionValue;
+                optionBtn.onclick = () => evaluationStep(optionIdx);
+                optionsBox.appendChild(optionBtn);
+            });
+
+            // Adjust navigation boundaries
+            document.getElementById('btn-prev').disabled = (activeQuestionIndex === 0);
+            
+            // Maintain feedback memory if re-visiting answered cards
+            let commentBanner = document.getElementById('explanation-box');
+            if (trackedUserSelections[activeQuestionIndex] !== null) {
+                applyVisualFeedbackProperties(trackedUserSelections[activeQuestionIndex]);
+            } else {
+                commentBanner.style.display = 'none';
+            }
+        }
+
+        function evaluationStep(userClickedIdx) {
+            if (trackedUserSelections[activeQuestionIndex] !== null) return; // Prevent double-clicking exploitation
+
+            trackedUserSelections[activeQuestionIndex] = userClickedIdx;
+            let currentQuestionData = targetedQuestions[activeQuestionIndex];
+
+            if (userClickedIdx === currentQuestionData.a) {
+                cumulativeScore++;
+                playAppSound('correct');
+            } else {
+                playAppSound('wrong');
+            }
+
+            document.getElementById('score-label').innerText = `Score: ${cumulativeScore}`;
+            applyVisualFeedbackProperties(userClickedIdx);
+        }
+
+        function applyVisualFeedbackProperties(savedClickedIdx) {
+            let baseQuestionRef = targetedQuestions[activeQuestionIndex];
+            let buttonsCollection = document.getElementById('options-container').getElementsByTagName('button');
+            let informationalDiv = document.getElementById('explanation-box');
+
+            // Apply color classes to options
+            for (let btnLoopIdx = 0; btnLoopIdx < buttonsCollection.length; btnLoopIdx++) {
+                buttonsCollection[btnLoopIdx].disabled = true;
+                if (btnLoopIdx === baseQuestionRef.a) {
+                    buttonsCollection[btnLoopIdx].classList.add('correct');
+                } else if (btnLoopIdx === savedClickedIdx) {
+                    buttonsCollection[btnLoopIdx].classList.add('wrong');
+                }
+            }
+
+            // Expand informational text feedback box
+            informationalDiv.style.display = 'block';
+            if (savedClickedIdx === baseQuestionRef.a) {
+                informationalDiv.className = "explanation-box correct-style";
+                informationalDiv.innerText = "✅ Correct! " + baseQuestionRef.e;
+            } else {
+                informationalDiv.className = "explanation-box wrong-style";
+                informationalDiv.innerText = `❌ Needs Improvement. Remember: ` + baseQuestionRef.e;
+            }
+        }
+
+        function prevQuestion() {
+            if (activeQuestionIndex > 0) {
+                playAppSound('click');
+                activeQuestionIndex--;
+                renderCurrentQuestion();
+            }
+        }
+
+        function nextQuestion() {
+            playAppSound('click');
+            if (trackedUserSelections[activeQuestionIndex] === null) {
+                alert("Please select an answer option for this question before clicking Next!");
+                return;
+            }
+
+            if (activeQuestionIndex < 29) {
+                activeQuestionIndex++;
+                renderCurrentQuestion();
+            } else {
+                evaluateFinalQuizMetrics();
+            }
+        }
+
+        function goHome() {
+            playAppSound('click');
+            document.getElementById('screen-quiz').classList.remove('active');
+            document.getElementById('screen-summary').classList.remove('active');
+            document.getElementById('screen-start').classList.add('active');
+            renderStoredProgressSummary();
+        }
+
+        function restartQuiz() {
+            startQuiz(selectedDifficulty);
+        }
+
+        function evaluateFinalQuizMetrics() {
+            globalEndTime = new Date();
+            let rawDurationSeconds = Math.floor((globalEndTime - globalStartTime) / 1000);
+            let finalizedMinutesValue = Math.floor(rawDurationSeconds / 60);
+            let finalizedSecondsRemainder = rawDurationSeconds % 60;
+            let structuredTimeDisplay = `${finalizedMinutesValue}m ${finalizedSecondsRemainder}s`;
+
+            let successPercentageMetric = Math.round((cumulativeScore / 30) * 100);
+
+            // Calculate Achievement Badges
+            let calculatedBadgeString = "";
+            if (successPercentageMetric >= 90) { calculatedBadgeString = "🏆 Nutrition Champion"; }
+            else if (successPercentageMetric >= 70) { calculatedBadgeString = "🌟 Healthy Eater"; }
+            else if (successPercentageMetric >= 50) { calculatedBadgeString = "👍 Food Explorer"; }
+            else { calculatedBadgeString = "📚 Keep Learning"; }
+
+            // Write high scores securely into browser cache storage context
+            localStorage.setItem('food_nutrition_score_' + selectedDifficulty, successPercentageMetric);
+
+            // Pass metrics cleanly onto summary node items
+            document.getElementById('sum-level').innerText = selectedDifficulty.toUpperCase();
+            document.getElementById('sum-score').innerText = `${cumulativeScore} / 30`;
+            document.getElementById('sum-percent').innerText = `${successPercentageMetric}%`;
+            document.getElementById('sum-correct').innerText = cumulativeScore;
+            document.getElementById('sum-wrong').innerText = 30 - cumulativeScore;
+            document.getElementById('sum-time').innerText = structuredTimeDisplay;
+            document.getElementById('badge-title').innerText = calculatedBadgeString;
+
+            // Prepare hardcopy document certification values
+            document.getElementById('cert-level').innerText = `Level Track Completed: ${selectedDifficulty.toUpperCase()}`;
+            document.getElementById('cert-score').innerText = `Final Assessment Accuracy: ${cumulativeScore}/30 (${successPercentageMetric}%)`;
+
+            // Swap out active visibility parameters
+            document.getElementById('screen-quiz').classList.remove('active');
+            document.getElementById('screen-summary').classList.add('active');
+
+            if (successPercentageMetric >= 50) {
+                spawnVisualConfettiParticles();
+                playAppSound('complete');
+            } else {
+                playAppSound('badge');
+            }
+        }
+
+        function spawnVisualConfettiParticles() {
+            // High-efficiency automated programmatic particle emitter
+            for(let loopCount = 0; loopCount < 55; loopCount++) {
+                let particleNode = document.createElement('div');
+                particleNode.className = 'confetti';
+                particleNode.style.left = Math.random() * window.innerWidth + 'px';
+                
+                // Fresh palette coordinates matching dynamic ecosystem styling
+                let colorPalette = ['#2ecc71', '#f1c40f', '#e67e22', '#27ae60', '#3498db'];
+                particleNode.style.backgroundColor = colorPalette[Math.floor(Math.random() * 5)];
+                
+                particleNode.style.animationDelay = Math.random() * 1.8 + 's';
+                particleNode.style.transform = `scale(${Math.random() * 0.7 + 0.6})`;
+                document.body.appendChild(particleNode);
+
+                // Auto sweep debris out of DOM execution context memory trees after drop
+                setTimeout(() => { particleNode.remove(); }, 3500);
+            }
+        }
+    </script>
+</body>
+</html>

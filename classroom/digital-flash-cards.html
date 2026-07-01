@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📚 Topic-wise Digital Flashcards</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --card-front-bg: #ffffff;
+            --card-back-bg: #e0f2fe;
+            --text-color: #1e293b;
+            --text-light: #475569;
+            --accent-color: #ff6b81;
+            --primary-btn: #4ecdc4;
+            --shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.15);
+            --font-main: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        [data-theme="dark"] {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            --glass-bg: rgba(15, 23, 42, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --card-front-bg: #1e293b;
+            --card-back-bg: #0f172a;
+            --text-color: #f8fafc;
+            --text-light: #cbd5e1;
+            --primary-btn: #38bdf8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background: var(--bg-gradient);
+            background-size: 400% 400%;
+            animation: gradientShift 20s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            color: var(--text-color);
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        header h1 {
+            font-size: 2.3rem;
+            color: #1e293b;
+            margin-bottom: 5px;
+        }
+        [data-theme="dark"] header h1 { color: #f8fafc; }
+
+        header p {
+            font-size: 1.1rem;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        /* Selector Strip Setup */
+        .selector-bar {
+            width: 100%;
+            max-width: 900px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 15px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            margin-bottom: 15px;
+        }
+
+        .dropdown-group {
+            display: flex;
+            gap: 10px;
+            flex-grow: 1;
+            flex-wrap: wrap;
+        }
+
+        select, input {
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.7);
+            color: #1e293b;
+            font-size: 1rem;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+            min-width: 160px;
+            transition: all 0.3s ease;
+        }
+        [data-theme="dark"] select, [data-theme="dark"] input {
+            background: rgba(30, 41, 59, 0.8);
+            color: #f8fafc;
+        }
+
+        .stats-panel {
+            font-size: 0.95rem;
+            font-weight: bold;
+            background: rgba(255,255,255,0.4);
+            padding: 8px 16px;
+            border-radius: 30px;
+            display: flex;
+            gap: 15px;
+            color: #1e293b;
+        }
+        [data-theme="dark"] .stats-panel { background: rgba(0,0,0,0.2); color: #f8fafc; }
+
+        /* Main Presentation Window */
+        .stage {
+            width: 100%;
+            max-width: 900px;
+            height: 52vh;
+            min-height: 360px;
+            perspective: 1500px;
+            margin-bottom: 20px;
+        }
+
+        .card-wrapper {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: var(--shadow);
+            border-radius: 32px;
+            cursor: pointer;
+        }
+
+        .card-wrapper.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-side {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: 32px;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border: 3px solid var(--glass-border);
+            overflow-y: auto;
+        }
+
+        .side-front {
+            background: var(--card-front-bg);
+            color: var(--text-color);
+        }
+
+        .side-back {
+            background: var(--card-back-bg);
+            color: var(--text-color);
+            transform: rotateY(180deg);
+        }
+
+        .tag-badge {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: var(--accent-color);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .counter-badge {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-light);
+        }
+
+        .card-content {
+            font-size: 2.4rem;
+            font-weight: 700;
+            line-height: 1.4;
+            max-width: 900px;
+            word-wrap: break-word;
+            animation: textZoom 0.4s ease;
+        }
+
+        @keyframes textZoom {
+            from { transform: scale(0.95); opacity: 0.7; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        /* Classroom Layout Variations */
+        body.smartboard .stage {
+            max-width: 96vw;
+            height: 75vh;
+        }
+        body.smartboard .card-content {
+            font-size: 3.8rem;
+        }
+
+        /* Minimal Fixed Action Bar Setup */
+        .navigation-row {
+            display: flex;
+            gap: 15px;
+            width: 100%;
+            max-width: 900px;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+        }
+
+        .btn:active { transform: scale(0.95); }
+
+        .btn-nav {
+            background: var(--glass-bg);
+            color: var(--text-color);
+            border: 1px solid var(--glass-border);
+            flex: 1;
+            max-width: 160px;
+        }
+        [data-theme="dark"] .btn-nav { color: #f8fafc; }
+        .btn-nav:hover { background: rgba(255,255,255,0.4); }
+
+        .btn-flip {
+            background: var(--accent-color);
+            color: white;
+            flex: 1.5;
+            max-width: 240px;
+            font-size: 1.3rem;
+        }
+        .btn-flip:hover { background: #ff4757; box-shadow: 0 8px 20px rgba(255,107,129,0.4); }
+
+        /* Setup / Configuration Panel Drawer */
+        .drawer-overlay {
+            position: fixed;
+            top: 0; right: -420px;
+            width: 400px; height: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            box-shadow: -10px 0 30px rgba(0,0,0,0.15);
+            transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 100;
+            padding: 35px;
+            overflow-y: auto;
+            color: #1e293b;
+        }
+        [data-theme="dark"] .drawer-overlay {
+            background: rgba(15, 23, 42, 0.98);
+            color: #f8fafc;
+        }
+        .drawer-overlay.visible { right: 0; }
+
+        .drawer-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid rgba(0,0,0,0.05);
+            padding-bottom: 15px;
+        }
+        [data-theme="dark"] .drawer-title { border-color: rgba(255,255,255,0.05); }
+
+        .close-icon {
+            font-size: 1.6rem;
+            background: none; border: none; color: inherit; cursor: pointer;
+        }
+
+        .control-block {
+            margin-bottom: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-inline {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .control-block label { font-weight: 700; font-size: 1.05rem; }
+
+        /* Custom Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 56px; height: 30px;
+        }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .switch-track {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #cbd5e1;
+            transition: .3s; border-radius: 34px;
+        }
+        .switch-track:before {
+            position: absolute;
+            content: "";
+            height: 22px; width: 22px;
+            left: 4px; bottom: 4px;
+            background-color: white;
+            transition: .3s; border-radius: 50%;
+        }
+        input:checked + .switch-track { background-color: var(--primary-btn); }
+        input:checked + .switch-track:before { transform: translateX(26px); }
+
+        .btn-block {
+            width: 100%;
+            padding: 14px;
+            font-size: 1rem;
+            border-radius: 14px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            background: #6366f1;
+            color: white;
+            margin-top: 10px;
+        }
+
+        /* Printable Sheet Media Query Configuration */
+        @media print {
+            body { background: white !important; color: black !important; padding: 0; }
+            header, .selector-bar, .navigation-row, .drawer-overlay { display: none !important; }
+            .print-sheet {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr;
+                gap: 25px;
+                width: 100%;
+                padding: 30px;
+            }
+            .print-tile {
+                border: 3px double #000;
+                border-radius: 12px;
+                padding: 25px;
+                height: 260px;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                page-break-inside: avoid;
+            }
+            .print-side {
+                height: 48%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                text-align: center;
+            }
+            .print-q { font-weight: bold; font-size: 1.3rem; border-bottom: 1px dashed #94a3b8; }
+            .print-a { font-style: italic; font-size: 1.1rem; }
+        }
+
+        .print-sheet { display: none; }
+
+        @media (max-width: 650px) {
+            header h1 { font-size: 1.7rem; }
+            .card-content { font-size: 1.4rem; }
+            .navigation-row { gap: 6px; }
+            .btn { padding: 12px 14px; font-size: 0.9rem; border-radius: 12px; }
+            .drawer-overlay { width: 100%; right: -100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>📚 Topic-wise Digital Flashcards</h1>
+        <p>Learn • Revise • Remember</p>
+    </header>
+
+    <div class="selector-bar">
+        <div class="dropdown-group">
+            <select id="subject-dropdown" onchange="handleSubjectChange()">
+                <option value="Mathematics">Mathematics</option>
+                <option value="English">English</option>
+                <option value="EVS">EVS</option>
+                <option value="General Knowledge">General Knowledge</option>
+            </select>
+            <select id="topic-dropdown" onchange="loadTopicDeck()">
+                </select>
+            <input type="text" id="global-search" placeholder="🔍 Search curriculum..." oninput="searchFilterCurrentDeck()">
+        </div>
+        <div class="stats-panel">
+            <span>Card: <span id="stat-current">0/10</span></span>
+            <span>Seen: <span id="stat-seen">0</span></span>
+            <span>Left: <span id="stat-left">10</span></span>
+        </div>
+    </div>
+
+    <div class="stage">
+        <div class="card-wrapper" id="main-card" onclick="flipCard()">
+            <div class="card-side side-front">
+                <span class="tag-badge" id="badge-front">Subject</span>
+                <span class="counter-badge" id="counter-front">0 / 10</span>
+                <div class="card-content" id="text-front">Loading cards...</div>
+            </div>
+            <div class="card-side side-back">
+                <span class="tag-badge" id="badge-back">Subject</span>
+                <div class="card-content" id="text-back">Loading answer...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="navigation-row">
+        <button class="btn btn-nav" onclick="stepCard(-1); event.stopPropagation();">◀ Previous</button>
+        <button class="btn btn-flip" onclick="flipCard(); event.stopPropagation();">🔄 Flip</button>
+        <button class="btn btn-nav" onclick="stepCard(1); event.stopPropagation();">▶ Next</button>
+        <button class="btn btn-nav" onclick="toggleSettingsDrawer(true); event.stopPropagation();">⚙ Settings</button>
+    </div>
+
+    <div class="drawer-overlay" id="settings-drawer">
+        <div class="drawer-title">
+            <h2>App Settings</h2>
+            <button class="close-icon" onclick="toggleSettingsDrawer(false)">✕</button>
+        </div>
+
+        <div class="control-block control-inline">
+            <label>Shuffle Active Cards</label>
+            <label class="toggle-switch">
+                <input type="checkbox" id="toggle-shuffle" onchange="handleShuffleToggle(this.checked)">
+                <span class="switch-track"></span>
+            </label>
+        </div>
+
+        <div class="control-block control-inline">
+            <label>Autoplay Engine Loop</label>
+            <label class="toggle-switch">
+                <input type="checkbox" id="toggle-autoplay" onchange="handleAutoplayToggle(this.checked)">
+                <span class="switch-track"></span>
+            </label>
+        </div>
+
+        <div class="control-block">
+            <label>Loop Flipping Interval: <span id="lbl-speed">4</span> seconds</label>
+            <input type="range" id="slider-speed" min="3" max="10" value="4" oninput="changeAutoplayInterval(this.value)">
+        </div>
+
+        <div class="control-block control-inline">
+            <label>Sound FX (Web Audio)</label>
+            <label class="toggle-switch">
+                <input type="checkbox" id="toggle-sound" checked>
+                <span class="switch-track"></span>
+            </label>
+        </div>
+
+        <div class="control-block control-inline">
+            <label>Dark Mode Theme</label>
+            <label class="toggle-switch">
+                <input type="checkbox" id="toggle-dark" onchange="handleDarkModeToggle(this.checked)">
+                <span class="switch-track"></span>
+            </label>
+        </div>
+
+        <div class="control-block control-inline">
+            <label>Smartboard Presentation View</label>
+            <label class="toggle-switch">
+                <input type="checkbox" id="toggle-smartboard" onchange="handleSmartboardToggle(this.checked)">
+                <span class="switch-track"></span>
+            </label>
+        </div>
+
+        <button class="btn-block" onclick="triggerPrintEngine()">🖨 Print Current Topic Deck (A4 Layout)</button>
+    </div>
+
+    <div class="print-sheet" id="print-sheet-target"></div>
+
+    <script>
+        // Native Curriculum Flashcard Engine Storage Map Matrix
+        const flashcardDatabase = {
+            "Mathematics": {
+                "Numbers": [
+                    { f: "What is the largest 2-digit number?", b: "99\nExplanation: Counting starts at 1, and 99 is the last two-digit number before 100." },
+                    { f: "How do you write 'Forty-Five' in numerals?", b: "45\nExample: 4 tens and 5 ones equals forty-five." },
+                    { f: "What number comes just before 200?", b: "199\nFact: Subtracting 1 from any whole number gives its predecessor." },
+                    { f: "Count backwards by 10s: 50, 40, 30, ___?", b: "20\nExplanation: Each step decreases by exactly one ten." },
+                    { f: "What is the value of the digit 7 in 72?", b: "70 or 7 Tens\nExample: In 72, 7 represents seventy units." },
+                    { f: "Which is greater: 89 or 98?", b: "98\nExplanation: 98 has 9 tens, while 89 only has 8 tens." },
+                    { f: "What number is 10 more than 145?", b: "155\nFact: Increase the tens place column by 1 digit." },
+                    { f: "Write the smallest 3-digit number.", b: "100\nExplanation: 100 is the first number encountered on the 3-digit grid." },
+                    { f: "What does an 'Even Number' always end with?", b: "0, 2, 4, 6, or 8\nExample: 24, 46, and 90 are all even numbers." },
+                    { f: "What number is exactly half of 20?", b: "10\nFact: Splitting a group of 20 items into two equal blocks leaves 10 in each." }
+                ],
+                "Place Value": [
+                    { f: "In the number 345, which digit is in the hundreds place?", b: "3\nExplanation: Read from right to left: Ones (5), Tens (4), Hundreds (3)." },
+                    { f: "What is the expanded form of 128?", b: "100 + 20 + 8\nExample: Splitting the value into individual place blocks." },
+                    { f: "What is the value of 5 in the number 45?", b: "5 Ones (or 5)\nExplanation: It is located in the right-most column." },
+                    { f: "True or False: The number 63 has 3 tens.", b: "False\nExplanation: 63 has 6 tens and 3 ones." },
+                    { f: "What number is made of 5 hundreds, 0 tens, and 7 ones?", b: "507\nFact: Keep a zero placeholder in columns containing no value." },
+                    { f: "What does the digit 9 mean in the number 903?", b: "900 (Nine Hundreds)\nExplanation: It occupies the third position block from the right." },
+                    { f: "In 78, what is the value of the digit 7?", b: "70\nExample: 7 bundles of ten units." },
+                    { f: "What place is the digit 0 holding in 402?", b: "Tens place\nFact: Placeholders ensure values remain lined up accurately." },
+                    { f: "Convert 200 + 30 + 4 into standard form.", b: "234\nExplanation: Add the parts together to get the full number." },
+                    { f: "Does changing the place of a digit change its value?", b: "Yes\nExample: Moving 5 from ones to tens shifts its total value from 5 to 50." }
+                ],
+                "Addition": [
+                    { f: "What is 7 + 8?", b: "15\nExample: If you have 7 markers and buy 8 more, you have 15." },
+                    { f: "What do we call the answer to an addition problem?", b: "The Sum\nFact: Combine addends together to establish a total Sum value." },
+                    { f: "What is 20 + 30?", b: "50\nExplanation: 2 tens added to 3 tens yields 5 tens." },
+                    { f: "If you add 0 to any number, what happens?", b: "The number stays the same\nFact: This property is known as the Identity Property of Addition." },
+                    { f: "Find the missing number: 6 + ___ = 10", b: "4\nExplanation: Count up from 6 to 10 to identify the difference." },
+                    { f: "What is 15 + 5 + 2?", b: "22\nExample: 15 plus 5 equals 20, then plus 2 equals 22." },
+                    { f: "Double 12 is equal to what sum?", b: "24\nExplanation: 12 + 12 = 24." },
+                    { f: "What is 99 + 1?", b: "100\nFact: This brings you to the smallest three-digit number." },
+                    { f: "True or False: 4 + 5 is the same as 5 + 4.", b: "True\nFact: The Commutative Property means order does not change sums." },
+                    { f: "Riya has 8 books. Sam gives her 4 more. How many books total?", b: "12 books\nExample: 8 + 4 = 12 books altogether." }
+                ],
+                "Subtraction": [
+                    { f: "What is 15 - 7?", b: "8\nExplanation: Taking 7 units away from 15 leaves exactly 8." },
+                    { f: "What do we call the answer to a subtraction problem?", b: "The Difference\nFact: The difference tracks how much larger one block is than another." },
+                    { f: "What is 50 - 20?", b: "30\nExplanation: 5 tens minus 2 tens equals 3 tens." },
+                    { f: "If you subtract a number from itself, what is left?", b: "0\nExample: 9 minus 9 leaves nothing behind." },
+                    { f: "Find the missing number: 12 - ___ = 8", b: "4\nExplanation: 12 - 8 allows you to identify the missing value." },
+                    { f: "What is 100 - 10?", b: "90\nFact: One ten group removed from a complete hundred leaves 9 tens." },
+                    { f: "A box had 12 eggs. 3 broke. How many whole eggs remain?", b: "9 eggs\nExample: 12 - 3 = 9 eggs." },
+                    { f: "True or False: 10 - 4 is equal to 4 - 10.", b: "False\nFact: Order matters in subtraction processing." },
+                    { f: "What is 25 - 0?", b: "25\nExplanation: Subtracting zero changes nothing." },
+                    { f: "If you have 18 apples and eat 6, how many are left?", b: "12 apples\nExample: 18 minus 6 equals 12." }
+                ],
+                "Multiplication": [
+                    { f: "What is 3 × 4?", b: "12\nExample: 3 groups of 4 items equals 12 items." },
+                    { f: "Multiplication is also known as repeated what?", b: "Repeated Addition\nFact: 2 × 3 is matching the layout of 2 + 2 + 2." },
+                    { f: "What is any number multiplied by 0?", b: "0\nFact: Zero groups of any quantity always results in zero." },
+                    { f: "What is 5 × 10?", b: "50\nExplanation: Counting by fives ten times brings you to 50." },
+                    { f: "What is double 7 written as a multiplication fact?", b: "2 × 7 = 14\nExample: Two groups of seven equals fourteen." },
+                    { f: "What is 6 × 1?", b: "6\nFact: Any number multiplied by 1 keeps its original value." },
+                    { f: "If a bicycle has 2 wheels, how many wheels on 6 bicycles?", b: "12 wheels\nExample: 6 groups of 2 equals 12 wheels total." },
+                    { f: "True or False: 2 × 5 is equal to 5 × 2.", b: "True\nFact: The Commutative Property applies to multiplication." },
+                    { f: "What is 4 × 5?", b: "20\nExplanation: 4 groups of 5 units equals 20 total." },
+                    { f: "A box holds 5 crayons. How many crayons in 3 boxes?", b: "15 crayons\nExample: 3 × 5 = 15 crayons." }
+                ],
+                "Division": [
+                    { f: "What is 12 ÷ 3?", b: "4\nExample: Sharing 12 cookies among 3 children gives 4 to each child." },
+                    { f: "Division means sharing into ___ groups?", b: "Equal groups\nFact: Equal grouping ensures fair distribution." },
+                    { f: "What is 20 divided by 5?", b: "4\nExplanation: You can fit 4 groups of 5 into 20 total units." },
+                    { f: "What is any number divided by 1?", b: "The same number\nExample: 8 divided into 1 group stays 8." },
+                    { f: "If 10 candies are shared between 2 friends, how many does each get?", b: "5 candies\nExample: 10 ÷ 2 = 5 candies each." },
+                    { f: "What is the opposite operation of division?", b: "Multiplication\nFact: If 3 × 4 = 12, then 12 ÷ 4 = 3." },
+                    { f: "Can we divide a number by 0?", b: "No\nFact: Dividing by zero is mathematically undefined." },
+                    { f: "What is 15 ÷ 3?", b: "5\nExplanation: 5 added together 3 times creates 15." },
+                    { f: "Share 18 pencils equally into 2 boxes. How many per box?", b: "9 pencils\nExample: 18 ÷ 2 = 9." },
+                    { f: "What do we call the answer to a division problem?", b: "The Quotient\nFact: The quotient indicates the size or count of equal groups." }
+                ],
+                "Fractions": [
+                    { f: "What fraction represents exactly half of an object?", b: "1/2\nExplanation: 1 part chosen out of 2 total equal parts." },
+                    { f: "What do you call the top number in a fraction?", b: "The Numerator\nFact: The numerator shows how many equal parts are selected." },
+                    { f: "What do you call the bottom number in a fraction?", b: "The Denominator\nFact: The denominator shows the total number of equal parts." },
+                    { f: "What fraction represents one part out of four equal parts?", b: "1/4 (A Quarter)\nExample: A pizza sliced into 4 identical slices." },
+                    { f: "If a shape is split into 3 equal pieces, and 2 are colored, what is the fraction?", b: "2/3\nExplanation: 2 out of 3 parts are shaded." },
+                    { f: "True or False: 1/2 is bigger than 1/4.", b: "True\nFact: Splitting something into fewer pieces means each piece is larger." },
+                    { f: "What is a fraction?", b: "A part of a whole\nExplanation: It represents equal divisions of an object or group." },
+                    { f: "What does 4/4 equal as a whole number?", b: "1\nFact: When numerator and denominator match, it equals one whole." },
+                    { f: "How do you write three-quarters as a fraction?", b: "3/4\nExample: 3 out of 4 slices are taken." },
+                    { f: "If you eat half a cake, how much is left?", b: "1/2 (One half)\nExplanation: 1 minus 1/2 leaves the other half." }
+                ],
+                "Time": [
+                    { f: "How many minutes are in one full hour?", b: "60 minutes\nFact: The long hand takes 60 steps to complete a loop." },
+                    { f: "How many hours are in one full day?", b: "24 hours\nExplanation: 12 hours of day window and 12 hours of night cycle tracking." },
+                    { f: "What does the short hand on a clock track?", b: "Hours\nFact: The hour hand moves slowly from one digit to the next." },
+                    { f: "What does the long hand on a clock track?", b: "Minutes\nFact: The minute hand covers all 60 marker clicks every hour." },
+                    { f: "If the short hand is on 3 and long hand is on 12, what time is it?", b: "3 o'clock\nExample: Clean hour transitions hit when the long hand targets 12." },
+                    { f: "What does 'A.M.' mean?", b: "Morning / Before Noon\nFact: Time window scaling from midnight until midday." },
+                    { f: "What does 'P.M.' mean?", b: "Afternoon & Night / After Noon\nFact: Time window scaling from noon until midnight." },
+                    { f: "How many days are in a standard year?", b: "365 days\nFact: A leap year contains 366 days." },
+                    { f: "How many weeks are in one year?", b: "52 weeks\nExplanation: A week is made up of 7 consecutive days." },
+                    { f: "If it is 4:15, how else can you say that time?", b: "Quarter past 4\nFact: 15 minutes represents one quarter of a 60-minute hour." }
+                ],
+                "Money": [
+                    { f: "How many cents or paise are typically in one main currency unit?", b: "100\nFact: Small coins aggregate into a whole main unit at 100." },
+                    { f: "If you swap a $10 bill for $5 bills, how many do you get?", b: "Two $5 bills\nExplanation: 5 + 5 = 10." },
+                    { f: "You buy a toy for $7 and pay with a $10 note. What is your change?", b: "$3\nExample: 10 - 7 = 3." },
+                    { f: "Count these coins: three $1 coins and two 25-cent coins.", b: "$3.50\nExplanation: 3 whole dollars plus 50 cents total." },
+                    { f: "True or False: A coin can have a higher value than a paper note.", b: "False generally\nFact: Notes are typically used for larger amounts of money." },
+                    { f: "What do we call the money you receive back after paying for something?", b: "Change\nExample: Paying more than the price returns change." },
+                    { f: "If a pen costs $4, how much will 3 pens cost?", b: "$12\nExplanation: 3 groups of $4 equals $12 total." },
+                    { f: "What coin is usually worth 10 cents in many currency systems?", b: "A Dime\nFact: Ten dimes make up one whole dollar." },
+                    { f: "Why do we use money instead of trading items?", b: "It makes buying and selling fair and easy\nFact: Money acts as a standard tool for trade." },
+                    { f: "You have $15. Can you buy a book that costs $18?", b: "No, you need $3 more\nExplanation: 18 is greater than 15." }
+                ],
+                "Shapes": [
+                    { f: "How many sides does a triangle have?", b: "3 sides\nFact: A triangle also features exactly 3 vertex corners." },
+                    { f: "What shape has 4 equal sides and 4 square corners?", b: "A Square\nExample: A chess board face or a square sticky note." },
+                    { f: "How many sides does a circle have?", b: "0 straight sides (it is curved)\nFact: A circle has a smooth, continuous edge." },
+                    { f: "What is a 3D shape that looks like a playing ball?", b: "A Sphere\nExample: Earth, basketballs, and marbles are all spheres." },
+                    { f: "What 2D shape looks like a stretched out square?", b: "A Rectangle\nFact: It has 4 sides, where opposite sides are equal in length." },
+                    { f: "How many corners does a cube have?", b: "8 corners\nExample: A standard playing die features 8 corners and 6 flat faces." },
+                    { f: "What shape looks like an egg?", b: "An Oval\nFact: An oval is curved but elongated compared to a circle." },
+                    { f: "How many sides does a pentagon have?", b: "5 sides\nFact: 'Penta' is a prefix meaning five." },
+                    { f: "What 3D shape looks like an Egyptian monument?", b: "A Pyramid\nFact: It features a flat base with sides that meet at a single point." },
+                    { f: "What is the flat face of a cylinder shaped like?", b: "A Circle\nExample: The top and bottom faces of a soup can." }
+                ],
+                "Measurement": [
+                    { f: "What unit do we use to measure how heavy an item is?", b: "Grams or Kilograms (or Pounds)\nFact: Scales measure mass weight values." },
+                    { f: "What tool is used to measure ambient room temperature?", b: "A Thermometer\nExample: It tracks heat energy levels in Celsius or Fahrenheit." },
+                    { f: "How many centimeters are inside 1 meter?", b: "100 centimeters\nFact: 'Cent' means hundred." },
+                    { f: "What unit is best to track liquid in a juice box?", b: "Milliliters (mL)\nFact: Small fluid volumes are tracked in milliliters." },
+                    { f: "Which tool measures short straight line lengths?", b: "A Ruler\nExample: Used to draw lines in notebooks." },
+                    { f: "Which is heavier: 1 kilogram of rocks or 1 kilogram of feathers?", b: "They weigh the same\nExplanation: Both have a mass of exactly 1 kilogram." },
+                    { f: "What unit is used to track distances between cities?", b: "Kilometers (or Miles)\nFact: 'Kilo' scales standard meters up by 1,000 times." },
+                    { f: "What does capacity mean?", b: "How much liquid a container can hold\nExample: A bucket has a higher capacity than a cup." },
+                    { f: "How many grams are in 1 kilogram?", b: "1,000 grams\nFact: 1,000 standard weight units combine to form one kilogram." },
+                    { f: "To measure your height, which unit would you use?", b: "Meters / Centimeters (or Feet / Inches)\nFact: Linear height follows length metrics." }
+                ]
+            },
+            "English": {
+                "Alphabet": [
+                    { f: "How many letters are in the English alphabet?", b: "26 letters\nFact: These 26 letters create all the words in the language." },
+                    { f: "What is the very first letter of the alphabet?", b: "A\nFact: Letter A leads the entire structure sequence." },
+                    { f: "What is the final letter of the alphabet?", b: "Z\nFact: Letter Z closes out the sequence tracking." },
+                    { f: "Are letters arranged in a specific order?", b: "Yes, Alphabetical Order\nExample: A, B, C, D follows the alphabet's standard order." },
+                    { f: "What letter comes right after M?", b: "N\nFact: The middle sequence sounds like 'L, M, N, O...'" },
+                    { f: "How many main types of letters do we split the alphabet into?", b: "2 types: Vowels and Consonants\nFact: Combined, they allow us to pronounce words." },
+                    { f: "What letter comes right before T?", b: "S\nFact: The sequence follows '...R, S, T...'" },
+                    { f: "Can we write any word without using letters?", b: "No\nExplanation: Letters represent the speech sounds we use to spell words." },
+                    { f: "Name three letters that come after X.", b: "Y and Z (Only two letters follow X)\nFact: X, Y, Z marks the end of the alphabet." },
+                    { f: "Why do we learn the alphabet?", b: "To read, write, and spell words\nFact: It forms the foundation of literacy." }
+                ],
+                "Capital & Small Letters": [
+                    { f: "When do you ALWAYS use a capital letter at the start of a word?", b: "For names of people, places, and the start of a sentence\nExample: 'Ben went to London.'" },
+                    { f: "What is another name for capital letters?", b: "Uppercase letters\nFact: Small letters are called lowercase letters." },
+                    { f: "Which letter looks completely different in small and capital forms?", b: "Examples: A/a, G/g, E/e, R/r\nFact: Many letters look different in lowercase." },
+                    { f: "Is the word 'apple' spelled with an uppercase or lowercase 'a' in mid-sentence?", b: "Lowercase 'a'\nFact: Common nouns do not get capitalized unless they start a sentence." },
+                    { f: "How should the pronoun 'I' always be written?", b: "Always capitalized\nExample: 'My brother and I played outside.'" },
+                    { f: "What type of letter starts the days of the week?", b: "Capital letter\nExample: Monday, Tuesday, Wednesday." },
+                    { f: "True or False: The first word after a period starts with a capital letter.", b: "True\nFact: Capital letters signal the start of a new sentence." },
+                    { f: "What is the lowercase form of the letter 'Q'?", b: "q\nFact: Keep track of which way the tail flips." },
+                    { f: "What is the uppercase form of the letter 'f'?", b: "F\nFact: Capital letters sit fully on the baseline." },
+                    { f: "Why do names of cities start with capital letters?", b: "They are proper nouns\nExample: Paris, New York, Tokyo." }
+                ],
+                "Phonics": [
+                    { f: "What sound does the letter 'B' make?", b: "/b/ as in bat or boy\nFact: Phonics focuses on the sounds letters make." },
+                    { f: "What sound do you hear at the start of 'Cat'?", b: "/k/ sound\nFact: The letter C often makes a hard /k/ sound before 'a'." },
+                    { f: "Which letter makes the sound /s/ like a snake?", b: "Letter S\nExample: Sun, star, and soup." },
+                    { f: "What blend sound do 'C' and 'H' make when put together?", b: "/ch/ sound\nExample: Chair, chips, and chop." },
+                    { f: "What sound does the letter 'M' make?", b: "/m/ as in monkey or milk\nFact: Keep your lips closed to make the /m/ sound." },
+                    { f: "What sound do you hear at the end of the word 'Dog'?", b: "/g/ sound\nFact: Focus on the final sound in the word." },
+                    { f: "What sound does a short 'I' make?", b: "/i/ as in igloo or ink\nFact: Vowels can make both short and long sounds." },
+                    { f: "What blend sound do 'S' and 'H' make?", b: "/sh/ sound\nExample: Ship, shell, and shoe." },
+                    { f: "Name a word that starts with the sound /f/.", b: "Fish, Fox, or Frog\nFact: The letter F makes this blowing sound." },
+                    { f: "What sound does the letter 'R' make?", b: "/r/ as in rabbit or rain\nFact: Growling sound style tracking." }
+                ],
+                "Vowels": [
+                    { f: "Name the 5 main vowels in English.", b: "A, E, I, O, U\nFact: Almost every English word contains at least one vowel sound." },
+                    { f: "What special rule applies to vowels?", b: "They can make two sounds: Short and Long\nExample: 'Hat' (short) vs 'Hate' (long)." },
+                    { f: "Which vowel is used in the word 'Bed'?", b: "Letter E\nFact: This word features a short 'e' sound." },
+                    { f: "What article do you use before a word starting with a vowel sound?", b: "An\nExample: An apple, An elephant, An umbrella." },
+                    { f: "What vowel sound do you hear in 'Dog'?", b: "Letter O\nFact: Short 'o' sound tracking." },
+                    { f: "True or False: Every syllable needs a vowel sound.", b: "True\nFact: Vowels form the core sound of word divisions." },
+                    { f: "What vowel sound do you hear in 'Sun'?", b: "Letter U\nFact: Short 'u' sound tracking." },
+                    { f: "What is the long vowel sound in 'Cake'?", b: "The letter 'A' says its own name\nFact: A silent 'e' at the end often makes a vowel long." },
+                    { f: "Which vowel is found in 'Pig'?", b: "Letter I\nFact: Short 'i' sound tracking." },
+                    { f: "Can the letter 'Y' sometimes act like a vowel?", b: "Yes\nExample: In words like 'Fly' or 'Cry', Y makes a vowel sound." }
+                ],
+                "Consonants": [
+                    { f: "What are consonants?", b: "All the letters that are not vowels\nFact: There are 21 consonants in the English alphabet." },
+                    { f: "Name three consonants.", b: "Examples: B, C, D, F, G, etc.\nFact: Any letter other than A, E, I, O, U." },
+                    { f: "What article do you use before a word starting with a consonant sound?", b: "A\nExample: A book, A cat, A tree." },
+                    { f: "Which consonant is silent in the word 'Knee'?", b: "Letter K\nFact: When 'k' is placed before 'n', it is often silent." },
+                    { f: "Which consonant is silent in the word 'Write'?", b: "Letter W\nFact: The word sounds exactly like 'right'." },
+                    { f: "What consonant cluster starts the word 'Frog'?", b: "Fr\nFact: A blend of two consonant sounds." },
+                    { f: "True or False: The letter 'B' is a consonant.", b: "True\nFact: It is not part of the vowel group." },
+                    { f: "What consonant sound do you hear at the end of 'Jump'?", b: "/p/ sound\nFact: Pay attention to the closing sound." },
+                    { f: "Which consonant double-letter is inside 'Egg'?", b: "g\nFact: Double letters often make a single sound." },
+                    { f: "What consonant sound starts the word 'Yellow'?", b: "/y/ sound (Letter Y)\nFact: Y acts as a consonant at the start of words." }
+                ],
+                "Opposites": [
+                    { f: "What is the opposite of 'Hot'?", b: "Cold\nExample: Fire is hot, ice is cold." },
+                    { f: "What is the opposite of 'Big'?", b: "Small / Little\nExample: An elephant is big, an ant is small." },
+                    { f: "What is the opposite of 'Up'?", b: "Down\nExample: Look up at the sky, look down at the grass." },
+                    { f: "What is the opposite of 'Happy'?", b: "Sad\nExample: Smiling means happy, crying means sad." },
+                    { f: "What is the opposite of 'Fast'?", b: "Slow\nExample: A cheetah is fast, a turtle is slow." },
+                    { f: "What is the opposite of 'Day'?", b: "Night\nExample: The sun shines during the day, stars come out at night." },
+                    { f: "What is the opposite of 'Open'?", b: "Closed / Shut\nExample: Open the book to read, close it when finished." },
+                    { f: "What is the opposite of 'Heavy'?", b: "Light\nExample: A rock is heavy, a feather is light." },
+                    { f: "What is the opposite of 'Clean'?", b: "Dirty\nExample: Wash your hands when they are dirty to make them clean." },
+                    { f: "What is the opposite of 'Tall'?", b: "Short\nExample: A giraffe is tall, a mouse is short." }
+                ],
+                "Synonyms": [
+                    { f: "What is a synonym for 'Big'?", b: "Large, Huge, or Giant\nFact: Synonyms are words with the same or similar meanings." },
+                    { f: "What is a synonym for 'Happy'?", b: "Glad, Joyful, or Cheerful\nExample: 'I am glad you came' means the same as 'I am happy'." },
+                    { f: "What is a synonym for 'Small'?", b: "Little, Tiny, or Petite\nExample: A tiny insect is a small insect." },
+                    { f: "What is a synonym for 'Fast'?", b: "Quick, Rapid, or Speedy\nExample: Run fast or run quickly." },
+                    { f: "What is a synonym for 'Beautiful'?", b: "Pretty, Lovely, or Gorgeous\nExample: A pretty flower is a beautiful flower." },
+                    { f: "What is a synonym for 'Smart'?", b: "Clever, Intelligent, or Wise\nFact: Words that describe standard high-brain tracking skill." },
+                    { f: "What is a synonym for 'Sad'?", b: "Unhappy, Gloomy, or Sorrowful\nExample: He felt sad when it rained." },
+                    { f: "What is a synonym for 'Silent'?", b: "Quiet or Still\nExample: A quiet room is a silent room." },
+                    { f: "What is a synonym for 'Begin'?", b: "Start or Launch\nExample: Let's begin the game now." },
+                    { f: "What is a synonym for 'Stones'?", b: "Rocks\nFact: Different words referencing identical solid nature elements." }
+                ],
+                "Vocabulary": [
+                    { f: "What do we call a person who flies an airplane?", b: "A Pilot\nFact: Pilots undergo specialized training to navigate aircraft safely." },
+                    { f: "What word describes a place filled with trees and wild animals?", b: "A Forest or Jungle\nExample: Deer, monkeys, and owls live in the forest." },
+                    { f: "What do you call a baby dog?", b: "A Puppy\nFact: Baby animals often have unique names." },
+                    { f: "What word means a very tall building in a city?", b: "A Skyscraper\nExample: These buildings seem to scrape the sky." },
+                    { f: "What do you call a place where books are kept for people to borrow?", b: "A Library\nFact: Libraries are quiet spaces meant for reading and study." },
+                    { f: "What word describes a season when leaves fall from trees?", b: "Autumn or Fall\nFact: One of the four main seasons of the year." },
+                    { f: "What do you call a person who cooks food in a restaurant?", b: "A Chef or Cook\nExample: The chef prepared a delicious meal." },
+                    { f: "What instrument is used to see distant stars clearly?", b: "A Telescope\nFact: It magnifies distant objects in space." },
+                    { f: "What word means very, very cold?", b: "Freezing or Icy\nExample: The freezing water turned to ice." },
+                    { f: "What do you call a vehicle that travels into space?", b: "A Spaceship or Rocket\nFact: Astronauts use them to explore the moon." }
+                ],
+                "Grammar": [
+                    { f: "What is a Noun?", b: "A naming word for a person, place, animal, or thing\nExample: Sam, school, dog, and book are nouns." },
+                    { f: "What is a Verb?", b: "An action or doing word\nExample: Run, sleep, read, and swim are verbs." },
+                    { f: "What punctuation mark goes at the end of a question?", b: "A Question Mark (?)\nExample: 'Where are you going?'" },
+                    { f: "What is an Adjective?", b: "A describing word that tells us more about a noun\nExample: In 'blue sky', blue is the adjective." },
+                    { f: "Name the plural form of the noun 'Cat'.", b: "Cats\nFact: Add an 's' to make most common nouns plural." },
+                    { f: "What pronoun can you use to replace the name 'Tom'?", b: "He\nExample: 'Tom is running' becomes 'He is running.'" },
+                    { f: "What punctuation mark goes at the end of a regular sentence?", b: "A Period or Full Stop (.)\nFact: It signals that a thought is complete." },
+                    { f: "Change the verb 'Walk' to past tense form.", b: "Walked\nFact: Add 'ed' to regular verbs to show they happened in the past." },
+                    { f: "What are the articles in English grammar?", b: "A, An, and The\nExample: A book, an owl, the sun." },
+                    { f: "Identify the noun in this sentence: 'The dog barked loudly.'", b: "Dog\nExplanation: Dog is the animal being named." }
+                ],
+                "Reading": [
+                    { f: "What is the main person in a story called?", b: "The Character\nFact: Stories can have one or many characters." },
+                    { f: "What do you call the name of a book?", b: "The Title\nExample: 'The Three Little Pigs' is a book title." },
+                    { f: "What is the front cover of a book for?", b: "To protect pages and show the title and author\nFact: It gives you a preview of what the book is about." },
+                    { f: "What does the Author of a book do?", b: "Writes the words and story text\nFact: The author creates the plot and dialogue." },
+                    { f: "What does the Illustrator of a book do?", b: "Draws or paints the pictures\nFact: Illustrations help bring the story to life." },
+                    { f: "What do we call a line of words in a book?", b: "A Sentence\nFact: Sentences combine to form paragraphs." },
+                    { f: "Why do we look at pictures while reading?", b: "To help understand the story context better\nFact: Pictures provide visual clues about the plot." },
+                    { f: "What is a fable?", b: "A short story that teaches a lesson or moral\nExample: 'The Tortoise and the Hare'." },
+                    { f: "Where do you look to find page numbers in a book?", b: "The Table of Contents\nFact: It lists chapters and page numbers at the front." },
+                    { f: "What does it mean to predict while reading?", b: "To guess what will happen next in the story\nFact: Good readers make guesses based on clues." }
+                ]
+            },
+            "EVS": {
+                "Plants": [
+                    { f: "What part of the plant grows underground?", b: "The Roots\nFact: Roots anchor the plant and absorb water from the soil." },
+                    { f: "What part of the plant makes its food?", b: "The Leaves\nFact: Leaves use sunlight to produce food via photosynthesis." },
+                    { f: "What green pigment helps leaves catch sunlight?", b: "Chlorophyll\nFact: It gives leaves their bright green color." },
+                    { f: "What does a seed need to grow into a plant?", b: "Water, Soil, Air, and Sunlight\nFact: Missing any of these makes growth difficult." },
+                    { f: "What part of the plant supports it and carries water?", b: "The Stem\nFact: The stem acts like a straw to move nutrients upward." },
+                    { f: "What do flowers grow into?", b: "Fruits\nFact: Fruits protect the seeds inside them." },
+                    { f: "Name a plant that grows in deserts with very little water.", b: "Cactus\nFact: Cacti store water in their thick stems." },
+                    { f: "True or False: Plants give us oxygen to breathe.", b: "True\nFact: Plants release oxygen while making their food." },
+                    { f: "What do we call a very large, strong plant?", b: "A Tree\nExample: Oaks, maples, and banyans are trees." },
+                    { f: "Where do plants get their primary energy from?", b: "The Sun\nFact: Sunlight provides the energy plants need to grow." }
+                ],
+                "Animals": [
+                    { f: "What do we call animals that live with us at home?", b: "Domestic or Pet animals\nExample: Dogs, cats, and cows." },
+                    { f: "What do we call animals that live in forests?", b: "Wild animals\nExample: Lions, tigers, bears, and giraffes." },
+                    { f: "Name an animal that eats only plants.", b: "Herbivore (e.g., Cow, Deer, Elephant)\nFact: Herbivores have teeth adapted for grinding plants." },
+                    { f: "Name an animal that eats only meat.", b: "Carnivore (e.g., Lion, Tiger, Hawk)\nFact: Carnivores have sharp teeth and claws for hunting." },
+                    { f: "What are animals called that eat both plants and meat?", b: "Omnivores\nExample: Humans, bears, and crows are omnivores." },
+                    { f: "Which animal is known as the 'Ship of the Desert'?", b: "Camel\nFact: Camels can travel long distances without water." },
+                    { f: "How do fish breathe underwater?", b: "Through their Gills\nFact: Gills extract oxygen directly from the water." },
+                    { f: "Name the largest mammal on Earth.", b: "The Blue Whale\nFact: Blue whales live in the ocean and are larger than any dinosaur was." },
+                    { f: "What protects a turtle's soft body?", b: "A hard Shell\nFact: Turtles pull their head and legs inside for safety." },
+                    { f: "True or False: All animals have bones inside them.", b: "False\nFact: Insects and jellyfish do not have skeletons inside." }
+                ],
+                "Birds": [
+                    { f: "What covers a bird's body to keep it warm?", b: "Feathers\nFact: Feathers also help birds fly and stay dry." },
+                    { f: "Name a bird that cannot fly but runs very fast.", b: "Ostrich\nFact: The ostrich is the largest bird in the world." },
+                    { f: "What do birds use instead of teeth to eat?", b: "A Beak or Bill\nFact: Beak shapes vary based on what the bird eats." },
+                    { f: "Where do birds lay their eggs?", b: "In Nests\nFact: Nests are built from twigs, leaves, and straw." },
+                    { f: "Name a bird that can swim underwater but cannot fly in the air.", b: "Penguin\nFact: Penguins use their wings as flippers to swim." },
+                    { f: "Which bird is active at night and can see in the dark?", b: "An Owl\nFact: Owls hunt for food at night." },
+                    { f: "How do birds keep their balance and steer while flying?", b: "Using their Tail feathers\nFact: Tail feathers act like a rudder on a boat." },
+                    { f: "Name our National Bird (India).", b: "The Peacock\nFact: Known for its colorful feathers." },
+                    { f: "True or False: All birds can fly.", b: "False\nExample: Penguins, ostriches, and emus cannot fly." },
+                    { f: "What makes birds' bones special for flight?", b: "They are hollow and lightweight\nFact: Hollow bones make it easier for birds to fly." }
+                ],
+                "Insects": [
+                    { f: "How many legs does a regular adult insect have?", b: "6 legs\nFact: Having 6 legs is a defining feature of insects." },
+                    { f: "Into how many body parts is an insect split?", b: "3 parts: Head, Thorax, and Abdomen\nFact: All true insects share this body structure." },
+                    { f: "Which insect makes sweet honey for us?", b: "The Honeybee\nFact: Honeybees collect nectar from flowers." },
+                    { f: "What do you call the feelers on an insect's head?", b: "Antennae\nFact: Insects use antennae to smell, touch, and navigate." },
+                    { f: "Which insect transforms from a caterpillar?", b: "A Butterfly\nFact: This change is called metamorphosis." },
+                    { f: "True or False: Spiders are insects.", b: "False\nFact: Spiders have 8 legs, making them arachnids." },
+                    { f: "Name an insect that lives in large underground colonies.", b: "Ant\nFact: Ants work together in highly organized groups." },
+                    { f: "Which insect can glow in the dark at night?", b: "Firefly or Glow-worm\nFact: They use chemical reactions to make light." },
+                    { f: "Where do mosquitoes lay their eggs?", b: "In stagnant, still water\nFact: Clearing standing water helps prevent mosquitoes." },
+                    { f: "Do all insects have wings?", b: "No\nExample: Ants and fleas do not have wings." }
+                ],
+                "Family": [
+                    { f: "What do we call a small family with parents and one or two children?", b: "A Nuclear Family\nFact: Also known as a immediate family." },
+                    { f: "What do we call a large family where grandparents, aunts, uncles, and cousins live together?", b: "A Joint or Extended Family\nFact: Common in many cultures around the world." },
+                    { f: "Who are your parents' parents?", b: "Your Grandparents\nFact: Grandfather and Grandmother." },
+                    { f: "What do you call your aunt or uncle's children?", b: "Your Cousins\nFact: Cousins are part of your extended family." },
+                    { f: "What is your mother's brother called?", b: "Your Uncle\nFact: Your father's brother is also called your uncle." },
+                    { f: "Why do family members share a common last name?", b: "It is their Surname\nExample: Smith, Jones, or Sharma." },
+                    { f: "True or False: Family members should help and care for each other.", b: "True\nFact: Supporting each other is an important part of family life." },
+                    { f: "What is your father's sister called?", b: "Your Aunt\nFact: Your mother's sister is also called your aunt." },
+                    { f: "What do we call siblings?", b: "Your brothers and sisters\nFact: They share the same parents." },
+                    { f: "How do families build strong bonds?", b: "By spending time together and sharing meals\nFact: Shared experiences strengthen family ties." }
+                ],
+                "Community Helpers": [
+                    { f: "Who delivers letters and packages to our homes?", b: "A Postal Worker or Mail Carrier\nFact: They sort and deliver mail from the post office." },
+                    { f: "Who puts out fires and rescues people from danger?", b: "A Firefighter\nFact: They use specialized trucks and gear to fight fires." },
+                    { f: "Who maintains law and order to keep our neighborhoods safe?", b: "A Police Officer\nFact: They enforce rules and assist people in emergencies." },
+                    { f: "Who grows crops and food for us to eat?", b: "A Farmer\nFact: Farmers tend to crops and livestock." },
+                    { f: "Who diagnoses illnesses and helps us stay healthy?", b: "A Doctor\nFact: Doctors prescribe medicine and treat injuries." },
+                    { f: "Who guides us to learn new concepts at school?", b: "A Teacher\nFact: Teachers help students develop knowledge and skills." },
+                    { f: "Who mends leaky water pipes and taps?", b: "A Plumber\nFact: Plumbers install and repair water systems." },
+                    { f: "Who bakes fresh bread, cakes, and pastries?", b: "A Baker\nFact: Bakers use ovens to prepare baked goods." },
+                    { f: "Who cleans roads and public spaces?", b: "A Sanitation Worker / Street Sweeper\nFact: They play a key role in public health and hygiene." },
+                    { f: "Who sews and alters our clothes?", b: "A Tailor\nFact: Tailors measure, cut, and stitch fabric." }
+                ],
+                "Transport": [
+                    { f: "Name two modes of land transport.", b: "Car, Bus, Train, or Bicycle\nFact: Land transport moves along roads or tracks." },
+                    { f: "What mode of transport travels through the sky?", b: "Air Transport (e.g., Airplane, Helicopter)\nFact: Air transport is the fastest way to travel long distances." },
+                    { f: "What do we call vehicles that move on water?", b: "Water Transport (e.g., Ship, Boat, Submarine)\nFact: Used to move goods and passengers across oceans." },
+                    { f: "Which vehicle runs on metal tracks or rails?", b: "A Train\nFact: Trains can carry many passengers and heavy cargo." },
+                    { f: "What is the fastest mode of travel available today?", b: "Airplanes\nFact: Airplanes connect countries across long distances." },
+                    { f: "Name a vehicle that does not use fuel or an engine.", b: "Bicycle or Bull-cart\nFact: Bicycles rely on pedal power." },
+                    { f: "What special vehicle carries sick people to the hospital?", b: "An Ambulance\nFact: Ambulances have sirens to clear traffic in emergencies." },
+                    { f: "Which fuel is cleaner and helps reduce city pollution?", b: "CNG (Compressed Natural Gas) or Electricity\nFact: Electric vehicles produce zero tailpipe emissions." },
+                    { f: "What do tracks, roads, and runways facilitate?", b: "Transport infrastructure\nFact: They allow vehicles to move safely and efficiently." },
+                    { f: "Why do vehicles need wheels?", b: "To reduce friction and roll smoothly on the ground\nFact: The wheel is one of history's most important inventions." }
+                ],
+                "Communication": [
+                    { f: "What is communication?", b: "Sharing thoughts, ideas, and information with others\nFact: It can be spoken, written, or non-verbal." },
+                    { f: "What device lets us talk to friends instantly anywhere?", b: "A Telephone or Smartphone\nFact: Modern smartphones also connect to the internet." },
+                    { f: "Name a written form of communication delivered to homes.", b: "Letters or Newspapers\nFact: Newspapers share daily information with many people." },
+                    { f: "What tool allows people to send digital mail instantly?", b: "E-mail (Electronic Mail)\nFact: E-mails travel via the internet in seconds." },
+                    { f: "Which medium shares news and entertainment with large audiences via sound only?", b: "Radio\nFact: One of the oldest forms of mass communication." },
+                    { f: "What do we call communication aimed at a very large audience at once?", b: "Mass Communication\nExample: Television, newspapers, and websites." },
+                    { f: "How do people communicate without speaking?", b: "Through Gestures, Sign Language, and Expressions\nFact: Body language plays a major role in communication." },
+                    { f: "What network connects computers worldwide to share data?", b: "The Internet\nFact: The internet powers modern websites, apps, and video calls." },
+                    { f: "What device combines visual images and audio to broadcast news?", b: "Television (TV)\nFact: It allows people to watch events as they happen." },
+                    { f: "Why is listening an important part of communication?", b: "It ensures you understand the message clearly\nFact: Good communication requires both speaking and listening." }
+                ],
+                "Safety Rules": [
+                    { f: "Where should pedestrians walk along busy roads?", b: "On the Footpath or Sidewalk\nFact: This keeps pedestrians safe from vehicle traffic." },
+                    { f: "What pattern should you use to cross a street safely?", b: "The Zebra Crossing\nFact: Drivers should slow down when approaching a zebra crossing." },
+                    { f: "What do the three colors of a traffic light mean?", b: "Red = Stop, Yellow = Wait/Slow down, Green = Go\nFact: Following these signals prevents road accidents." },
+                    { f: "Should you play with matches or lighters?", b: "No, they can cause dangerous fires\nFact: Matches and lighters are tools for adults, not toys." },
+                    { f: "What safety gear should you wear while riding a bicycle?", b: "A Helmet\nFact: Helmets protect your head in case of a fall." },
+                    { f: "Is it safe to accept candy or rides from strangers?", b: "No, always say no and tell an adult&#13;Fact: Safe adults will not ask children for help without permission." },
+                    { f: "What should you wear when traveling in a moving car?", b: "A Seatbelt\nFact: Seatbelts keep passengers safe during sudden stops." },
+                    { f: "Why shouldn't you run while holding sharp objects like scissors?", b: "You could fall and injure yourself&#13;Fact: Walk carefully and carry sharp objects points-down." },
+                    { f: "What should you do before crossing a street?", b: "Look left, look right, and look left again\nFact: Cross only when the road is completely clear." },
+                    { f: "Is it safe to play on open roads?", b: "No, play in parks or designated playgrounds&#13;Fact: Roads are for vehicles, not games." }
+                ],
+                "Health & Hygiene": [
+                    { f: "How long should you wash your hands to remove germs?", b: "At least 20 seconds with soap\nFact: Washing thoroughly helps prevent the spread of illness." },
+                    { f: "How many times a day should you brush your teeth?", b: "Twice a day (Morning and Night)\nFact: Brushing regularly prevents cavities and keeps teeth healthy." },
+                    { f: "Why do we clip our fingernails regularly?", b: "To prevent dirt and germs from collecting underneath\nFact: Clean nails help prevent contamination when eating." },
+                    { f: "What should you use when sneezing or coughing?", b: "A Handkerchief or Tissue (or your elbow)\nFact: This blocks germs from spreading through the air." },
+                    { f: "Why is a daily bath or shower important?", b: "It removes dirt, sweat, and germs from your skin\nFact: Regular bathing keeps your body clean and fresh." },
+                    { f: "How often should you wash your clothes?", b: "Wear clean clothes daily, washing them after they get dirty\nFact: Clean clothes prevent skin irritation and odor." },
+                    { f: "Why should we avoid biting our fingernails?", b: "It can transfer harmful germs into your mouth\nFact: Nail biting can introduce bacteria into your digestive system." },
+                    { f: "What should you do before and after eating meals?", b: "Wash your hands thoroughly with soap and water\nFact: This keeps food safe from unwanted bacteria." },
+                    { f: "Why is regular physical exercise good for your body?", b: "It strengthens your muscles, bones, and heart\nFact: Exercise helps keep your body healthy and energetic." },
+                    { f: "Why do we need 8-10 hours of sleep every night?", b: "To rest your brain and body so they can recharge\nFact: Adequate sleep supports growth and concentration." }
+                ],
+                "Food & Nutrition": [
+                    { f: "What do we call food that keeps our bodies strong and healthy?", b: "Nutritious or Healthy Food\nExample: Fruits, vegetables, grains, and milk." },
+                    { f: "Why does your body need protein?", b: "To help your muscles grow and repair injuries\nFact: Foods like eggs, beans, and fish are rich in protein." },
+                    { f: "Which mineral found in milk keeps your bones and teeth strong?", b: "Calcium\nFact: Drinking milk regularly provides calcium for growth." },
+                    { f: "What energy-providing nutrient is found in bread and rice?", b: "Carbohydrates\nFact: Carbohydrates supply fuel for daily activities." },
+                    { f: "Why should we limit junk food like chips and candy?", b: "They are high in sugar and fat but low in nutrients\nFact: Too much junk food can lead to health issues." },
+                    { f: "What vitamin found in oranges helps protect you from colds?", b: "Vitamin C\nFact: Citrus fruits are excellent sources of Vitamin C." },
+                    { f: "Why does your body need water every day?", b: "To digest food and regulate body temperature\nFact: Staying hydrated supports overall body function." },
+                    { f: "What do fruits and vegetables provide to protect us from illness?", b: "Vitamins and Minerals\nFact: They help boost your body's immune system." },
+                    { f: "What do we call a meal that contains all the necessary nutrients?", b: "A Balanced Diet\nFact: A balanced diet includes a variety of healthy foods." },
+                    { f: "Where does our food come from?", b: "Plants and Animals\nFact: Fruits come from plants, while milk comes from animals." }
+                ],
+                "Environment": [
+                    { f: "What is the environment?", b: "Everything around us, including air, water, land, and living things\nFact: We depend on the environment to survive." },
+                    { f: "What are the '3 Rs' of waste management?", b: "Reduce, Reuse, and Recycle\nFact: Practicing the 3 Rs helps reduce trash in landfills." },
+                    { f: "Why should we plant more trees?", b: "They clean the air and provide homes for wildlife\nFact: Trees absorb carbon dioxide and release oxygen." },
+                    { f: "What does recycling mean?", b: "Turning old waste materials into new useful items\nExample: Transforming used plastic bottles into park benches." },
+                    { f: "Why shouldn't we litter in public places?", b: "It pollutes the land and can harm animals\nFact: Keeping spaces clean protects the ecosystem." },
+                    { f: "What causes air pollution in large cities?", b: "Smoke from cars, factories, and burning trash\nFact: Air pollution can cause respiratory health issues." },
+                    { f: "How can we save water at home?", b: "Turn off the tap while brushing your teeth\nFact: Small changes can conserve large amounts of water." },
+                    { f: "Why is plastic waste harmful to the environment?", b: "It takes hundreds of years to break down\nFact: Plastic pollution can harm wildlife and oceans." },
+                    { f: "What is a landfill?", b: "A large area where trash is buried in the ground\nFact: Reducing waste helps keep landfills from filling up too quickly." },
+                    { f: "How does picking up trash help local wildlife?", b: "It prevents animals from eating or getting tangled in garbage&#13;Fact: Keeping habitats clean protects local ecosystems." }
+                ],
+                "Seasons": [
+                    { f: "How many main seasons occur throughout the year?", b: "Four (Summer, Autumn, Winter, Spring)\nFact: The cycle repeats every year as Earth orbits the sun." },
+                    { f: "Which season is the hottest time of the year?", b: "Summer\nFact: Summer features long days and high temperatures." },
+                    { f: "What type of clothes keep you warm in Winter?", b: "Thick wool blankets and woolen clothes\nFact: Wool traps body heat to keep you warm." },
+                    { f: "During which season do flowers bloom and trees grow new leaves?", b: "Spring\nFact: Spring features mild temperatures and new growth." },
+                    { f: "What do we call a season with heavy rainfall?", b: "Monsoon or Rainy Season\nFact: Rain provides water for crops and reservoirs." },
+                    { f: "What item protects you from getting wet in the rain?", b: "An Umbrella or Raincoat\nFact: Waterproof materials keep water out." },
+                    { f: "In which season do leaves change color and drop from trees?", b: "Autumn or Fall\nFact: Trees conserve energy ahead of the cold winter months." },
+                    { f: "Why does the length of daylight change with the seasons?", b: "Because Earth is tilted as it orbits the sun\nFact: The tilt shifts how much sunlight regions receive." },
+                    { f: "What kind of clothes are best for hot Summer days?", b: "Light cotton clothes\nFact: Cotton allows air to circulate, keeping you cool." },
+                    { f: "What season features the coldest days of the year?", b: "Winter\nFact: Winter features shorter days and cooler temperatures." }
+                ],
+                "Water": [
+                    { f: "What is the primary source of fresh water on Earth?", b: "Rain\nFact: Rain fills rivers, lakes, and underground reservoirs." },
+                    { f: "Can we drink ocean water?", b: "No, it is too salty\nFact: Human bodies cannot process high levels of salt safely." },
+                    { f: "Name three states of water.", b: "Solid (Ice), Liquid (Water), and Gas (Steam/Vapor)\nFact: Water changes state based on temperature." },
+                    { f: "What is the process of water turning into vapor due to heat?", b: "Evaporation\nFact: The sun evaporates water from oceans into the sky." },
+                    { f: "What is it called when water vapor cools into clouds?", b: "Condensation\nFact: Cooling gas transitions back into liquid water droplets." },
+                    { f: "What do we call rain, snow, or sleet falling from clouds?", b: "Precipitation\nFact: This returns water back down to Earth's surface." },
+                    { f: "Why do living things need water?", b: "To survive, grow, and digest food&#13;Fact: Most living things are made largely of water." },
+                    { f: "What does water pollution mean?", b: "When trash, chemicals, or sewage make water unsafe\nFact: Polluted water harms fish and living things." },
+                    { f: "How can we make tap water safe to drink?", b: "Boil it or use a water purifier\nFact: Heat kills harmful germs in the water." },
+                    { f: "What do we call the continuous movement of water on Earth?", b: "The Water Cycle\nFact: The water cycle recycles Earth's water indefinitely." }
+                ],
+                "Air": [
+                    { f: "Can we see air around us?", b: "No, air is invisible\nFact: We can feel air when it moves as wind." },
+                    { f: "What do we call moving air?", b: "Wind\nFact: Wind turns windmills and pushes sailboats across water." },
+                    { f: "What gas in the air do humans need to breathe?", b: "Oxygen\nFact: Oxygen fuels our cells and keeps us alive." },
+                    { f: "What gas do plants absorb from the air to make food?", b: "Carbon Dioxide\nFact: Plants filter carbon dioxide out of the air." },
+                    { f: "True or False: Air takes up space and has weight.", b: "True\nFact: Blowing up a balloon proves air occupies space." },
+                    { f: "What layers of air surround the Earth?", b: "The Atmosphere\nFact: The atmosphere shields Earth from space radiation." },
+                    { f: "Why do fires need air to burn?", b: "Oxygen in the air feeds the chemical reaction\nFact: Removing air will smother a fire." },
+                    { f: "What keeps the air trapped around Earth?", b: "Gravity\nFact: Gravity pulls the atmosphere down toward the surface." },
+                    { f: "How do trees help clean the air?", b: "They absorb carbon dioxide and release fresh oxygen\nFact: Forests act as natural air purifiers." },
+                    { f: "What is a gentle, pleasant wind called?", b: "A Breeze\nFact: Strong, dangerous winds are called storms or gales." }
+                ]
+            },
+            "General Knowledge": {
+                "National Symbols": [
+                    { f: "What animal is the National Animal of India?", b: "The Tiger\nFact: Known for its grace and power." },
+                    { f: "How many colors are on the Indian National Flag?", b: "Three (Saffron, White, Green)\nFact: The flag features the navy blue Ashoka Chakra in the center." },
+                    { f: "What is the National Flower of India?", b: "The Lotus\nFact: The lotus grows in water and symbolizes purity." },
+                    { f: "What is the circular wheel in the center of the flag called?", b: "The Ashoka Chakra\nFact: It features 24 spokes representing movement and progression." },
+                    { f: "What is the National Fruit of India?", b: "The Mango\nFact: Known as the king of fruits in many regions." },
+                    { f: "What tree is the National Tree of India?", b: "The Banyan Tree\nFact: Banyan trees feature aerial roots and can grow very large." },
+                    { f: "What aquatic animal is India's National Aquatic Animal?", b: "The Ganges River Dolphin\nFact: It represents the health of the Ganges River system." },
+                    { f: "What currency is used in India?", b: "The Indian Rupee (₹)\nFact: Issued by the Reserve Bank of India." },
+                    { f: "What is the National Anthem of India?", b: "Jana Gana Mana\nFact: Composed by Rabindranath Tagore." },
+                    { f: "What emblem serves as the Official Seal of India?", b: "The Lion Capital of Ashoka\nFact: It features four lions standing back-to-back." }
+                ],
+                "Famous Places": [
+                    { f: "In which city is the famous Taj Mahal located?", b: "Agra, India\nFact: Built by Emperor Shah Jahan in memory of his wife." },
+                    { f: "What famous ancient structures are found in Egypt?", b: "The Pyramids\nFact: Built as tombs for ancient rulers." },
+                    { f: "Where can you visit the Eiffel Tower?", b: "Paris, France\nFact: A famous iron tower built in 1889." },
+                    { f: "What long defensive wall is located in China?", b: "The Great Wall of China\nFact: Built to protect historic borders from invaders." },
+                    { f: "In which country can you find the historic Colosseum amphitheater?", b: "Rome, Italy\nFact: Used for public spectacles in ancient times." },
+                    { f: "Where is the famous Statue of Liberty located?", b: "New York, USA\nFact: A gift from France symbolizing freedom." },
+                    { f: "What ancient fortress is located in Athens, Greece?", b: "The Acropolis / Parthenon\nFact: A historic temple site dedicated to Athena." },
+                    { f: "Where is the opera house shaped like sails located?", b: "Sydney, Australia\nFact: A famous performing arts center on the harbor." },
+                    { f: "What famous historic clock tower is located in London?", b: "Big Ben\nFact: Part of the Houses of Parliament building." },
+                    { f: "What ancient palace city is located high in Peru?", b: "Machu Picchu\nFact: An ancient Inca citadel built in the mountains." }
+                ],
+                "Science Facts": [
+                    { f: "What state of matter has a fixed shape and volume?", b: "Solid\nExample: Ice, rocks, and wood are solids." },
+                    { f: "What star sits at the center of our solar system?", b: "The Sun\nFact: The sun provides light and heat to Earth." },
+                    { f: "What pulls dropped objects down toward the floor?", b: "Gravity\nFact: Gravity is the invisible force that holds us to the ground." },
+                    { f: "What gas do humans need to breathe to stay alive?", b: "Oxygen\nFact: Oxygen enters our lungs when we inhale." },
+                    { f: "How long does it take Earth to travel around the sun?", b: "One year (365 days)\nFact: This orbit creates our seasons." },
+                    { f: "What temperature does water freeze at?", b: "0 Degrees Celsius (32 Degrees Fahrenheit)\nFact: Freezing turns liquid water into solid ice." },
+                    { f: "True or False: Sound travels faster than light.", b: "False\nFact: Light travels much faster than sound, which is why you see lightning before hearing thunder." },
+                    { f: "What biological system pumps blood through your body?", b: "The Circulatory System (Heart)\nFact: Your heart beats continuously to circulate blood." },
+                    { f: "What planet is closest to the Sun?", b: "Mercury\nFact: Mercury is a rocky planet with extreme temperatures." },
+                    { f: "What turns liquid water into steam or gas?", b: "Heat / Boiling\nFact: This change is called evaporation." }
+                ],
+                "Space": [
+                    { f: "How many planets are in our solar system?", b: "8 planets\nFact: Pluto is classified as a dwarf planet." },
+                    { f: "What is the largest planet in our solar system?", b: "Jupiter\nFact: Jupiter is a gas giant with a massive storm called the Great Red Spot." },
+                    { f: "Which planet is known as the 'Red Planet'?", b: "Mars\nFact: Iron minerals in its soil give Mars a reddish look." },
+                    { f: "What natural satellite orbits the Earth?", b: "The Moon\nFact: The moon reflects light from the sun." },
+                    { f: "What planet is famous for its bright, visible rings?", b: "Saturn\nFact: Its rings are made of ice, dust, and rock particles." },
+                    { f: "What is the hottest planet in our solar system?", b: "Venus\nFact: A thick atmosphere traps heat on Venus." },
+                    { f: "What do we call a scientist who travels into space?", b: "An Astronaut\nFact: Astronauts undergo extensive training for space missions." },
+                    { f: "What galaxy do we live in?", b: "The Milky Way\nFact: A spiral galaxy containing billions of stars." },
+                    { f: "True or False: The moon makes its own light.", b: "False\nFact: The moon reflects sunlight toward Earth." },
+                    { f: "What instrument is used to study distant stars?", b: "A Telescope\nFact: Telescopes magnify distant objects in space." }
+                ],
+                "Sports": [
+                    { f: "How many players are on the field for one team in soccer?", b: "11 players\nFact: Includes 10 field players and 1 goalkeeper." },
+                    { f: "Which sport uses a racket, a net, and a shuttlecock?", b: "Badminton\nFact: Badminton can be played in singles or doubles." },
+                    { f: "Every how many years do the Olympic Games occur?", b: "Every 4 years\nFact: The Olympics feature athletes from around the world." },
+                    { f: "What sport is famous for home runs and bases?", b: "Baseball\nFact: Teams score runs by hitting a ball and running around bases." },
+                    { f: "What do you score in a basketball game when the ball goes through the hoop?", b: "Points\nFact: Shots can be worth 1, 2, or 3 points." },
+                    { f: "Which board game features kings, queens, and knights?", b: "Chess\nFact: A strategy game played on an 8x8 grid." },
+                    { f: "In cricket, what do you call the three wooden posts behind the batter?", b: "Wickets or Stumps&#13;Fact: Bowlers aim to hit the wickets to dismiss the batter." },
+                    { f: "What sport involves swimming, cycling, and running?", b: "A Triathlon\nFact: An endurance race combining three events." },
+                    { f: "What color medal goes to the first-place winner?", b: "Gold medal\nFact: Second place receives silver, and third receives bronze." },
+                    { f: "Which sport is played on ice with a puck and sticks?", b: "Ice Hockey\nFact: Players wear skates to glide across the ice." }
+                ],
+                "Computers": [
+                    { f: "What do we call the physical parts of a computer you can touch?", b: "Hardware\nExample: The keyboard, mouse, and monitor." },
+                    { f: "What part acts as the primary 'Brain' of a computer?", b: "CPU (Central Processing Unit)\nFact: The CPU processes instructions and runs programs." },
+                    { f: "What device displays images and text from the computer?", b: "The Monitor or Screen\nFact: An output device that provides visual feedback." },
+                    { f: "What do we call programs and apps that run on a computer?", b: "Software\nExample: Games, web browsers, and operating systems." },
+                    { f: "What device lets you type letters and numbers into a computer?", b: "The Keyboard\nFact: An input device with a standard layout." },
+                    { f: "What network connects computers globally to share info?", b: "The Internet\nFact: The internet allows users to access websites worldwide." },
+                    { f: "What temporary memory does a computer use to hold active tasks?", b: "RAM (Random Access Memory)\nFact: RAM clears when the computer turns off." },
+                    { f: "What device prints digital text onto paper?", b: "A Printer\nFact: Converts digital files into physical documents." },
+                    { f: "What do we call a small computer designed to be portable?", b: "A Laptop\nFact: Laptops include a built-in screen and keyboard." },
+                    { f: "Why should you use strong passwords on your accounts?", b: "To keep your private information secure\nFact: Strong passwords help prevent unauthorized access." }
+                ],
+                "Current Affairs": [
+                    { f: "Who is the leader of a city's local government?", b: "The Mayor\nFact: Mayors manage municipal services and local laws." },
+                    { f: "What global organization works to maintain international peace?", b: "The United Nations (UN)\nFact: Formed in 1945 to promote international cooperation." },
+                    { f: "What do we call the official head of a country's government?", b: "The Prime Minister or President\nFact: Roles vary based on the country's constitution." },
+                    { f: "Why do countries hold elections?", b: "To let citizens vote for their leaders\nFact: Elections are a key part of democratic systems." },
+                    { f: "What do we call the money system used by a country?", b: "Currency\nExample: Dollars, euros, rupees, and yen." },
+                    { f: "What is the capital city of your country?", b: "Varies by country (e.g., New Delhi for India, Washington D.C. for USA)\nFact: Capital cities serve as the seat of government." },
+                    { f: "Why do governments collect taxes?", b: "To pay for public services like roads, schools, and hospitals\nFact: Taxes fund infrastructure and community programs." },
+                    { f: "What do we call the official rules of a country?", b: "Laws\nFact: Laws are designed to keep communities safe and orderly." },
+                    { f: "What document outlines a country's framework and laws?", b: "The Constitution\nFact: The supreme law of the land." },
+                    { f: "What public service helps protect communities from crime?", b: "The Police Force / Law Enforcement\nFact: Officers respond to emergencies and enforce laws." }
+                ],
+                "World Around Us": [
+                    { f: "What is the largest ocean on Earth?", b: "The Pacific Ocean\nFact: The Pacific Ocean covers more area than all Earth's land combined." },
+                    { f: "How many main continents are on Earth?", b: "7 continents\nFact: Asia is the largest continent by area." },
+                    { f: "What is the tallest mountain peak above sea level?", b: "Mount Everest\nFact: Located in the Himalayas on the border of Nepal and China." },
+                    { f: "What is the longest river on Earth?", b: "The Nile River\nFact: Flows northward through northeastern Africa." },
+                    { f: "What is the largest hot desert in the world?", b: "The Sahara Desert\nFact: Covers much of northern Africa." },
+                    { f: "Which continent is the coldest and covered in ice?", b: "Antarctica\nFact: Antarctica is the coldest, windiest, and driest continent." },
+                    { f: "What imaginary line divides Earth into Northern and Southern halves?", b: "The Equator\nFact: Regions near the equator generally experience warm weather year-round." },
+                    { f: "What country has the largest land area in the world?", b: "Russia\nFact: Spans across eastern Europe and northern Asia." },
+                    { f: "Which continent is also its own country?", b: "Australia\nFact: Surrounded by the Indian and Pacific oceans." },
+                    { f: "What is the deepest known point in Earth's oceans?", b: "The Mariana Trench\nFact: Located in the western Pacific Ocean." }
+                ]
+            }
+        };
+
+        // App State Properties
+        let currentSubject = "Mathematics";
+        let currentTopic = "Numbers";
+        let activeDeck = [];
+        let currentIndex = 0;
+        let seenSet = new Set();
+        let autoplayTimer = null;
+        let autoplaySpeed = 4000;
+
+        // Sound Synthesis API Controller
+        const SoundFX = {
+            ctx: null,
+            init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+            play(type) {
+                if (!document.getElementById('toggle-sound').checked) return;
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                const timeNow = this.ctx.currentTime;
+
+                if (type === 'click') {
+                    osc.frequency.setValueAtTime(500, timeNow);
+                    gain.gain.setValueAtTime(0.1, timeNow);
+                    gain.gain.exponentialRampToValueAtTime(0.01, timeNow + 0.05);
+                    osc.start(timeNow); osc.stop(timeNow + 0.05);
+                } else if (type === 'flip') {
+                    osc.frequency.setValueAtTime(250, timeNow);
+                    osc.frequency.exponentialRampToValueAtTime(500, timeNow + 0.15);
+                    gain.gain.setValueAtTime(0.12, timeNow);
+                    gain.gain.exponentialRampToValueAtTime(0.01, timeNow + 0.15);
+                    osc.start(timeNow); osc.stop(timeNow + 0.15);
+                } else if (type === 'nav') {
+                    osc.frequency.setValueAtTime(450, timeNow);
+                    gain.gain.setValueAtTime(0.06, timeNow);
+                    gain.gain.exponentialRampToValueAtTime(0.01, timeNow + 0.08);
+                    osc.start(timeNow); osc.stop(timeNow + 0.08);
+                }
+            }
+        };
+
+        // Initialize Runtime Engine Configuration
+        window.onload = function() {
+            restoreStateFromStorage();
+            populateTopicDropdown();
+            loadTopicDeck();
+        };
+
+        function populateTopicDropdown() {
+            const topicDropdown = document.getElementById('topic-dropdown');
+            topicDropdown.innerHTML = '';
+            
+            const topics = Object.keys(flashcardDatabase[currentSubject]);
+            topics.forEach(topic => {
+                const opt = document.createElement('option');
+                opt.value = topic;
+                opt.innerText = topic;
+                if (topic === currentTopic) opt.selected = true;
+                topicDropdown.appendChild(opt);
+            });
+        }
+
+        function handleSubjectChange() {
+            SoundFX.play('click');
+            currentSubject = document.getElementById('subject-dropdown').value;
+            currentTopic = Object.keys(flashcardDatabase[currentSubject])[0];
+            populateTopicDropdown();
+            loadTopicDeck();
+            saveStateToStorage();
+        }
+
+        function loadTopicDeck() {
+            currentTopic = document.getElementById('topic-dropdown').value;
+            const originalDeck = flashcardDatabase[currentSubject][currentTopic];
+            
+            // Shallow clone mapping array context
+            activeDeck = originalDeck.map((card, index) => ({...card, originalIndex: index}));
+            
+            currentIndex = 0;
+            seenSet.clear();
+            
+            if (document.getElementById('toggle-shuffle').checked) {
+                activeDeck.sort(() => Math.random() - 0.5);
+            }
+
+            renderCardState();
+            saveStateToStorage();
+        }
+
+        function renderCardState() {
+            const cardObj = document.getElementById('main-card');
+            cardObj.classList.remove('flipped');
+
+            if (activeDeck.length === 0) {
+                document.getElementById('text-front').innerText = "No flashcards match your search constraints.";
+                document.getElementById('text-back').innerText = "";
+                updateMetricsUI(0);
+                return;
+            }
+
+            const currentCard = activeDeck[currentIndex];
+            document.getElementById('text-front').innerText = currentCard.f;
+            document.getElementById('text-back').innerText = currentCard.b;
+
+            // Badges string injection
+            document.getElementById('badge-front').innerText = currentSubject;
+            document.getElementById('badge-back').innerText = currentTopic;
+            
+            // Progress tracker counter tracking adjustment
+            const trackingText = `${currentIndex + 1} / ${activeDeck.length}`;
+            document.getElementById('counter-front').innerText = trackingText;
+
+            seenSet.add(currentCard.originalIndex);
+            updateMetricsUI(trackingText);
+        }
+
+        function updateMetricsUI(trackingText) {
+            document.getElementById('stat-current').innerText = trackingText || "0/0";
+            document.getElementById('stat-seen').innerText = seenSet.size;
+            document.getElementById('stat-left').innerText = Math.max(0, activeDeck.length - seenSet.size);
+        }
+
+        function flipCard() {
+            SoundFX.play('flip');
+            document.getElementById('main-card').classList.toggle('flipped');
+        }
+
+        function stepCard(dir) {
+            if (activeDeck.length <= 1) return;
+            SoundFX.play('nav');
+            currentIndex += dir;
+            
+            if (currentIndex >= activeDeck.length) currentIndex = 0;
+            if (currentIndex < 0) currentIndex = activeDeck.length - 1;
+
+            renderCardState();
+        }
+
+        // Search engine filter processing algorithm
+        function searchFilterCurrentDeck() {
+            const query = document.getElementById('global-search').value.toLowerCase().trim();
+            const originalDeck = flashcardDatabase[currentSubject][currentTopic];
+
+            if (!query) {
+                loadTopicDeck();
+                return;
+            }
+
+            activeDeck = originalDeck.filter(card => {
+                return card.f.toLowerCase().includes(query) || 
+                       card.b.toLowerCase().includes(query) ||
+                       currentSubject.toLowerCase().includes(query) ||
+                       currentTopic.toLowerCase().includes(query);
+            });
+
+            currentIndex = 0;
+            renderCardState();
+        }
+
+        // Utility configuration state mechanics
+        function toggleSettingsDrawer(open) {
+            SoundFX.play('click');
+            document.getElementById('settings-drawer').classList.toggle('visible', open);
+        }
+
+        function handleShuffleToggle(checked) {
+            SoundFX.play('click');
+            loadTopicDeck();
+        }
+
+        function handleAutoplayToggle(checked) {
+            SoundFX.play('click');
+            if (checked) {
+                runAutoplayLoop();
+            } else {
+                clearInterval(autoplayTimer);
+            }
+        }
+
+        function changeAutoplayInterval(val) {
+            document.getElementById('lbl-speed').innerText = val;
+            autoplaySpeed = val * 1000;
+            if (document.getElementById('toggle-autoplay').checked) {
+                runAutoplayLoop();
+            }
+        }
+
+        function runAutoplayLoop() {
+            clearInterval(autoplayTimer);
+            let modeTogglePhase = 0; 
+            autoplayTimer = setInterval(() => {
+                if (activeDeck.length === 0) return;
+                if (modeTogglePhase === 0) {
+                    flipCard();
+                    modeTogglePhase = 1;
+                } else {
+                    stepCard(1);
+                    modeTogglePhase = 0;
+                }
+            }, autoplaySpeed);
+        }
+
+        function handleDarkModeToggle(checked) {
+            SoundFX.play('click');
+            document.body.setAttribute('data-theme', checked ? 'dark' : 'light');
+            localStorage.setItem('cfg_dark', checked);
+        }
+
+        function handleSmartboardToggle(checked) {
+            SoundFX.play('click');
+            document.body.classList.toggle('smartboard', checked);
+            localStorage.setItem('cfg_smartboard', checked);
+        }
+
+        function triggerPrintEngine() {
+            SoundFX.play('click');
+            const target = document.getElementById('print-sheet-target');
+            target.innerHTML = ''; // Clear prior data
+            
+            const originalDeck = flashcardDatabase[currentSubject][currentTopic];
+            originalDeck.forEach(card => {
+                const box = document.createElement('div');
+                box.className = 'print-tile';
+                box.innerHTML = `
+                    <div class="print-side print-q">[${currentSubject} - ${currentTopic}] ${card.f}</div>
+                    <div class="print-side print-a">${card.b}</div>
+                `;
+                target.appendChild(box);
+            });
+            window.print();
+        }
+
+        // Local Storage State Persistence Systems
+        function saveStateToStorage() {
+            localStorage.setItem('state_subject', currentSubject);
+            localStorage.setItem('state_topic', currentTopic);
+        }
+
+        function restoreStateFromStorage() {
+            if (localStorage.getItem('state_subject')) {
+                currentSubject = localStorage.getItem('state_subject');
+                document.getElementById('subject-dropdown').value = currentSubject;
+            }
+            if (localStorage.getItem('state_topic')) {
+                currentTopic = localStorage.getItem('state_topic');
+            }
+            if (localStorage.getItem('cfg_dark') === 'true') {
+                document.getElementById('toggle-dark').checked = true;
+                document.body.setAttribute('data-theme', 'dark');
+            }
+            if (localStorage.getItem('cfg_smartboard') === 'true') {
+                document.getElementById('toggle-smartboard').checked = true;
+                document.body.classList.add('smartboard');
+            }
+        }
+    </script>
+</body>
+</html>

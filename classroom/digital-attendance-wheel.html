@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎡 Digital Attendance Wheel</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --success: #10b981;
+            --success-hover: #059669;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --neutral: #6b7280;
+            --neutral-hover: #4b5563;
+            --bg-gradient: linear-gradient(135deg, #0f172a, #1e1b4b, #2e1065);
+            --glass-bg: rgba(255, 255, 255, 0.07);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --text-main: #f8fafc;
+            --text-muted: #cbd5e1;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 5px;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            letter-spacing: -0.5px;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+
+        @media (min-width: 900px) {
+            .container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s ease;
+        }
+
+        /* Config Block */
+        .config-panel {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 16px;
+        }
+
+        .config-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .config-group label {
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .config-group input {
+            width: 70px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 8px;
+            color: white;
+            font-size: 1.1rem;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        /* Stats dashboard */
+        .stats-bar {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .stat-box {
+            background: rgba(0,0,0,0.15);
+            padding: 12px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .stat-box.present-box { border-bottom: 4px solid var(--success); }
+        .stat-box.absent-box { border-bottom: 4px solid var(--danger); }
+        .stat-box.rem-box { border-bottom: 4px solid var(--primary); }
+
+        .stat-val {
+            font-size: 1.8rem;
+            font-weight: 800;
+        }
+
+        .stat-lbl {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+
+        /* Wheel Area */
+        .wheel-container {
+            position: relative;
+            width: 360px;
+            height: 360px;
+            margin: 15px 0;
+        }
+
+        @media (max-width: 400px) {
+            .wheel-container {
+                width: 290px;
+                height: 290px;
+            }
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            box-shadow: 0 0 30px rgba(0,0,0,0.4);
+            transition: transform 0.1s linear;
+        }
+
+        .pointer {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 18px solid transparent;
+            border-right: 18px solid transparent;
+            border-top: 30px solid #f43f5e;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
+            z-index: 10;
+        }
+
+        .pointer.bounce {
+            animation: pointerBounce 0.3s ease;
+        }
+
+        @keyframes pointerBounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(8px); }
+        }
+
+        /* Large Active Display */
+        .display-panel {
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+            text-align: center;
+            width: 100%;
+        }
+
+        .active-roll {
+            font-size: 4.5rem;
+            font-weight: 900;
+            text-shadow: 0 0 20px rgba(255,255,255,0.2);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .active-roll.present-glow { animation: greenGlow 0.5s ease-in-out; }
+        .active-roll.absent-glow { animation: redGlow 0.5s ease-in-out; }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes greenGlow {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0px var(--success)); }
+            50% { transform: scale(1.15); filter: drop-shadow(0 0 30px var(--success)); color: var(--success); }
+        }
+
+        @keyframes redGlow {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0px var(--danger)); }
+            50% { transform: scale(1.15); filter: drop-shadow(0 0 30px var(--danger)); color: var(--danger); }
+        }
+
+        /* Controls design */
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            width: 100%;
+            margin-top: auto;
+        }
+
+        .btn-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            width: 100%;
+        }
+
+        button {
+            border: none;
+            outline: none;
+            padding: 16px 24px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            border-radius: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        button:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-spin {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-spin:hover:not(:disabled) { background: var(--primary-hover); box-shadow: 0 0 20px rgba(79, 70, 229, 0.4); }
+
+        .btn-present { background: var(--success); color: white;}
+        .btn-present:hover:not(:disabled) { background: var(--success-hover); box-shadow: 0 0 20px rgba(16, 185, 129, 0.4); }
+
+        .btn-absent { background: var(--danger); color: white;}
+        .btn-absent:hover:not(:disabled) { background: var(--danger-hover); box-shadow: 0 0 20px rgba(239, 68, 68, 0.4); }
+
+        .btn-reset { background: var(--neutral); color: white; }
+        .btn-reset:hover:not(:disabled) { background: var(--neutral-hover); }
+
+        /* Report Log Layout */
+        .log-panel {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .log-panel h2 {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            align-self: flex-start;
+            border-bottom: 2px solid var(--glass-border);
+            width: 100%;
+            padding-bottom: 8px;
+        }
+
+        .log-container {
+            flex-grow: 1;
+            width: 100%;
+            overflow-y: auto;
+            max-height: 420px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding-right: 5px;
+        }
+
+        .log-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        .log-container::-webkit-scrollbar-thumb {
+            background: var(--glass-border);
+            border-radius: 10px;
+        }
+
+        .log-section {
+            background: rgba(0,0,0,0.1);
+            padding: 15px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .log-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .log-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .log-tag {
+            background: rgba(255,255,255,0.1);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            min-width: 38px;
+            text-align: center;
+        }
+
+        .log-section.present .log-title { color: #34d399; }
+        .log-section.present .log-tag { background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.3); }
+
+        .log-section.absent .log-title { color: #f87171; }
+        .log-section.absent .log-tag { background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.3); }
+
+        /* Canvas Confetti */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        /* Printable Summary Overlays */
+        #print-report-wrapper {
+            display: none;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #print-report-wrapper, #print-report-wrapper * {
+                visibility: visible;
+            }
+            #print-report-wrapper {
+                display: block !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                color: #000 !important;
+                background: #fff !important;
+                padding: 40px;
+                font-family: 'Arial', sans-serif;
+            }
+            .print-header {
+                text-align: center;
+                border-bottom: 3px solid #000;
+                padding-bottom: 15px;
+                margin-bottom: 30px;
+            }
+            .print-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 30px;
+            }
+            .print-table th, .print-table td {
+                border: 1px solid #666;
+                padding: 12px;
+                text-align: left;
+                font-size: 1.1rem;
+            }
+            .print-table th { background: #f0f0f0; }
+            .print-section {
+                margin-bottom: 25px;
+            }
+            .print-section h3 {
+                border-bottom: 1px solid #999;
+                padding-bottom: 5px;
+                margin-bottom: 12px;
+            }
+            .print-list {
+                font-size: 1.1rem;
+                line-height: 1.6;
+                word-wrap: break-word;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <header>
+        <h1>🎡 Digital Attendance Wheel</h1>
+        <p>Spin • Mark • Complete Attendance</p>
+    </header>
+
+    <main class="container">
+        <div class="card">
+            <div class="config-panel" id="config-panel">
+                <div class="config-group">
+                    <label>From</label>
+                    <input type="number" id="input-from" value="1" min="1" max="999">
+                </div>
+                <div class="config-group">
+                    <label>To</label>
+                    <input type="number" id="input-to" value="40" min="1" max="999">
+                </div>
+            </div>
+
+            <div class="stats-bar">
+                <div class="stat-box present-box">
+                    <div class="stat-val" id="stat-present">0</div>
+                    <div class="stat-lbl">Present</div>
+                </div>
+                <div class="stat-box absent-box">
+                    <div class="stat-val" id="stat-absent">0</div>
+                    <div class="stat-lbl">Absent</div>
+                </div>
+                <div class="stat-box rem-box">
+                    <div class="stat-val" id="stat-remaining">40</div>
+                    <div class="stat-lbl">Remaining</div>
+                </div>
+            </div>
+
+            <div class="wheel-container">
+                <div class="pointer" id="wheel-pointer"></div>
+                <canvas id="wheel-canvas" width="600" height="600"></canvas>
+            </div>
+
+            <div class="display-panel" id="display-panel">
+                <div class="active-roll" id="active-roll-text">Ready</div>
+            </div>
+
+            <div class="controls">
+                <button class="btn-spin" id="btn-spin">🎡 Spin</button>
+                <div class="btn-row">
+                    <button class="btn-present" id="btn-present" disabled>✅ Present</button>
+                    <button class="btn-absent" id="btn-absent" disabled>❌ Absent</button>
+                </div>
+                <button class="btn-reset" id="btn-reset">🔄 Reset</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="log-panel">
+                <h2>Roll Number Status</h2>
+                <div class="log-container">
+                    <div class="log-section present">
+                        <div class="log-title">🟢 Present</div>
+                        <div class="log-grid" id="log-present-grid">
+                            </div>
+                    </div>
+                    <div class="log-section absent">
+                        <div class="log-title">🔴 Absent</div>
+                        <div class="log-grid" id="log-absent-grid">
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="print-report-wrapper">
+        <div class="print-header">
+            <h1>Attendance Report</h1>
+            <h2 style="font-weight: 500; margin-top: 5px;" id="print-date">Date: --</h2>
+        </div>
+        <table class="print-table">
+            <tr>
+                <th>Total Students</th>
+                <td id="print-total">0</td>
+                <th>Attendance %</th>
+                <td id="print-percentage">0%</td>
+            </tr>
+            <tr>
+                <th>🟢 Present</th>
+                <td id="print-present-count">0</td>
+                <th>🔴 Absent</th>
+                <td id="print-absent-count">0</td>
+            </tr>
+        </table>
+        <div class="print-section">
+            <h3>Present Roll Numbers</h3>
+            <div class="print-list" id="print-present-list">None</div>
+        </div>
+        <div class="print-section">
+            <h3>Absent Roll Numbers</h3>
+            <div class="print-list" id="print-absent-list">None</div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * Web Audio Synthesizer Engine Engine Module Definition
+         * Emulates clean, retro-educational geometric wave triggers dynamically without assets
+         */
+        const AudioEngine = {
+            ctx: null,
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
+            playClick() {
+                this.init();
+                let osc = this.ctx.createOscillator();
+                let gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.05);
+                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.05);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.05);
+            },
+            playTick() {
+                this.init();
+                let osc = this.ctx.createOscillator();
+                let gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+                gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.03);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.03);
+            },
+            playSelect() {
+                this.init();
+                let osc = this.ctx.createOscillator();
+                let gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, this.ctx.currentTime); // C5
+                osc.frequency.exponentialRampToValueAtTime(1046.50, this.ctx.currentTime + 0.15); // C6
+                gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.2);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.2);
+            },
+            playPresent() {
+                this.init();
+                let now = this.ctx.currentTime;
+                this.playTone(523.25, 0.1, now, 'sine'); // C5
+                this.playTone(659.25, 0.1, now + 0.08, 'sine'); // E5
+                this.playTone(783.99, 0.2, now + 0.16, 'sine'); // G5
+            },
+            playAbsent() {
+                this.init();
+                let now = this.ctx.currentTime;
+                this.playTone(392.00, 0.12, now, 'triangle'); // G4
+                this.playTone(311.13, 0.25, now + 0.1, 'triangle'); // Eb4
+            },
+            playComplete() {
+                this.init();
+                let now = this.ctx.currentTime;
+                this.playTone(523.25, 0.1, now, 'sine');
+                this.playTone(659.25, 0.1, now + 0.1, 'sine');
+                this.playTone(783.99, 0.1, now + 0.2, 'sine');
+                this.playTone(1046.50, 0.4, now + 0.3, 'sine');
+            },
+            playTone(freq, duration, time, type) {
+                let osc = this.ctx.createOscillator();
+                let gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, time);
+                gain.gain.setValueAtTime(0.12, time);
+                gain.gain.linearRampToValueAtTime(0, time + duration);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(time);
+                osc.stop(time + duration);
+            }
+        };
+
+        /**
+         * Confetti Animation Engine Frame Module Design
+         */
+        const ConfettiEngine = {
+            canvas: document.getElementById('confetti-canvas'),
+            ctx: null,
+            particles: [],
+            active: false,
+            init() {
+                this.ctx = this.canvas.getContext('2d');
+                window.addEventListener('resize', () => this.resize());
+                this.resize();
+            },
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            },
+            burst() {
+                this.init();
+                this.particles = [];
+                this.active = true;
+                const colors = ['#4f46e5', '#10b981', '#ef4444', '#f59e0b', '#3b82f6', '#ec4899'];
+                for (let i = 0; i < 120; i++) {
+                    this.particles.push({
+                        x: window.innerWidth / 2,
+                        y: window.innerHeight / 2 - 50,
+                        vx: (Math.random() - 0.5) * 15,
+                        vy: (Math.random() - 0.7) * 15 - 5,
+                        size: Math.random() * 8 + 5,
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        rotation: Math.random() * 360,
+                        rSpeed: (Math.random() - 0.5) * 10,
+                        opacity: 1
+                    });
+                }
+                this.loop();
+            },
+            loop() {
+                if (!this.active) return;
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                let alive = false;
+
+                this.particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.3; // gravity
+                    p.vx *= 0.98; // air drag
+                    p.rotation += p.rSpeed;
+                    p.opacity -= 0.015;
+
+                    if (p.opacity > 0) {
+                        alive = true;
+                        this.ctx.save();
+                        this.ctx.translate(p.x, p.y);
+                        this.ctx.rotate(p.rotation * Math.PI / 180);
+                        this.ctx.fillStyle = p.color;
+                        this.ctx.globalAlpha = p.opacity;
+                        this.ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+                        this.ctx.restore();
+                    }
+                });
+
+                if (alive) {
+                    requestAnimationFrame(() => this.loop());
+                } else {
+                    this.active = false;
+                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                }
+            }
+        };
+
+        /**
+         * Main Operational Framework Application Controller Logic
+         */
+        const App = {
+            // State Variables
+            configFrom: 1,
+            configTo: 40,
+            remainingPool: [],
+            presentList: [],
+            absentList: [],
+            
+            // Spinning Wheel Animation Mechanics State
+            isSpinning: false,
+            currentRotation: 0, 
+            selectedNumber: null,
+
+            // DOM Elements Mapping Cache
+            el: {
+                from: document.getElementById('input-from'),
+                to: document.getElementById('input-to'),
+                statPresent: document.getElementById('stat-present'),
+                statAbsent: document.getElementById('stat-absent'),
+                statRemaining: document.getElementById('stat-remaining'),
+                canvas: document.getElementById('wheel-canvas'),
+                pointer: document.getElementById('wheel-pointer'),
+                activeRoll: document.getElementById('active-roll-text'),
+                btnSpin: document.getElementById('btn-spin'),
+                btnPresent: document.getElementById('btn-present'),
+                btnAbsent: document.getElementById('btn-absent'),
+                btnReset: document.getElementById('btn-reset'),
+                gridPresent: document.getElementById('log-present-grid'),
+                gridAbsent: document.getElementById('log-absent-grid'),
+                configPanel: document.getElementById('config-panel'),
+                // Printable nodes
+                pDate: document.getElementById('print-date'),
+                pTotal: document.getElementById('print-total'),
+                pPercent: document.getElementById('print-percentage'),
+                pPresCount: document.getElementById('print-present-count'),
+                pAbsCount: document.getElementById('print-absent-count'),
+                pPresList: document.getElementById('print-present-list'),
+                pAbsList: document.getElementById('print-absent-list'),
+            },
+
+            init() {
+                this.ctx = this.el.canvas.getContext('2d');
+                this.setupEventListeners();
+                this.loadFromStorage();
+                this.drawWheel();
+            },
+
+            setupEventListeners() {
+                this.el.from.addEventListener('change', () => this.handleConfigChange());
+                this.el.to.addEventListener('change', () => this.handleConfigChange());
+                this.el.btnSpin.addEventListener('click', () => this.spinWheel());
+                this.el.btnPresent.addEventListener('click', () => this.markAttendance(true));
+                this.el.btnAbsent.addEventListener('click', () => this.markAttendance(false));
+                this.el.btnReset.addEventListener('click', () => this.resetSession());
+            },
+
+            handleConfigChange() {
+                let f = parseInt(this.el.from.value) || 1;
+                let t = parseInt(this.el.to.value) || 1;
+                if (f < 1) f = 1;
+                if (t < f) t = f;
+                
+                this.el.from.value = f;
+                this.el.to.value = t;
+
+                this.configFrom = f;
+                this.configTo = t;
+                
+                this.resetSession(true); // Soft dynamic structural reconfiguration reset
+            },
+
+            generateCryptoRandom() {
+                const totalItems = this.remainingPool.length;
+                if (totalItems === 0) return 0;
+                
+                if (window.crypto && window.crypto.getRandomValues) {
+                    const buffer = new Uint32Array(1);
+                    window.crypto.getRandomValues(buffer);
+                    return buffer[0] % totalItems;
+                } else {
+                    return Math.floor(Math.random() * totalItems);
+                }
+            },
+
+            saveToStorage() {
+                const state = {
+                    from: this.configFrom,
+                    to: this.configTo,
+                    pool: this.remainingPool,
+                    present: this.presentList,
+                    absent: this.absentList,
+                    selected: this.selectedNumber
+                };
+                localStorage.setItem('digital_wheel_attendance_state_2026', JSON.stringify(state));
+            },
+
+            loadFromStorage() {
+                const stored = localStorage.getItem('digital_wheel_attendance_state_2026');
+                if (stored) {
+                    try {
+                        const state = JSON.parse(stored);
+                        this.configFrom = state.from;
+                        this.configTo = state.to;
+                        this.remainingPool = state.pool;
+                        this.presentList = state.present;
+                        this.absentList = state.absent;
+                        this.selectedNumber = state.selected;
+
+                        this.el.from.value = this.configFrom;
+                        this.el.to.value = this.configTo;
+
+                        this.updateUI();
+                        
+                        if (this.selectedNumber !== null) {
+                            this.el.activeRoll.textContent = `#${this.selectedNumber}`;
+                            this.el.btnPresent.disabled = false;
+                            this.el.btnAbsent.disabled = false;
+                            this.el.btnSpin.disabled = true;
+                        }
+                        
+                        if (this.remainingPool.length === 0 && (this.presentList.length > 0 || this.absentList.length > 0)) {
+                            this.triggerCompletionDisplay();
+                        }
+                        return;
+                    } catch(e) {
+                        console.error("Storage corruption encountered. Flushing fallback state context.", e);
+                    }
+                }
+                this.rebuildPool();
+            },
+
+            rebuildPool() {
+                this.remainingPool = [];
+                for (let i = this.configFrom; i <= this.configTo; i++) {
+                    this.remainingPool.push(i);
+                }
+                this.presentList = [];
+                this.absentList = [];
+                this.selectedNumber = null;
+                this.updateUI();
+            },
+
+            resetSession(silent = false) {
+                if(!silent) AudioEngine.playClick();
+                if(!silent && !confirm("Are you sure you want to completely reset all current attendance logs?")) return;
+                this.el.configPanel.style.pointerEvents = "auto";
+                this.el.configPanel.style.opacity = "1";
+                this.el.activeRoll.textContent = "Ready";
+                this.el.activeRoll.className = "active-roll";
+                this.rebuildPool();
+                this.saveToStorage();
+            },
+
+            updateUI() {
+                this.el.statPresent.textContent = this.presentList.length;
+                this.el.statAbsent.textContent = this.absentList.length;
+                this.el.statRemaining.textContent = this.remainingPool.length;
+
+                // Sync Lists Output Visual Components
+                this.el.gridPresent.innerHTML = this.presentList.map(n => `<div class="log-tag">${n}</div>`).join('');
+                this.el.gridAbsent.innerHTML = this.absentList.map(n => `<div class="log-tag">${n}</div>`).join('');
+
+                // Manage standard primary interaction accessibility parameters
+                if (!this.isSpinning) {
+                    if (this.selectedNumber === null) {
+                        this.el.btnSpin.disabled = this.remainingPool.length === 0;
+                        this.el.btnPresent.disabled = true;
+                        this.el.btnAbsent.disabled = true;
+                    } else {
+                        this.el.btnSpin.disabled = true;
+                        this.el.btnPresent.disabled = false;
+                        this.el.btnAbsent.disabled = false;
+                    }
+                }
+                this.drawWheel();
+            },
+
+            drawWheel() {
+                const totalSegments = this.remainingPool.length;
+                const width = this.el.canvas.width;
+                const height = this.el.canvas.height;
+                const radius = width / 2;
+                
+                this.ctx.clearRect(0, 0, width, height);
+
+                if (totalSegments === 0) {
+                    // Render Empty Fallback Vector Indicator Circle
+                    this.ctx.save();
+                    this.ctx.translate(radius, radius);
+                    this.ctx.fillStyle = 'rgba(255,255,255,0.05)';
+                    this.ctx.beginPath();
+                    this.ctx.arc(0, 0, radius - 10, 0, 2 * Math.PI);
+                    this.ctx.fill();
+                    this.ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+                    this.ctx.lineWidth = 4;
+                    this.ctx.stroke();
+                    this.ctx.restore();
+                    return;
+                }
+
+                const arcSize = (2 * Math.PI) / totalSegments;
+
+                // Distinct thematic accent palette generator mapping arrays
+                const baseColors = [
+                    '#4f46e5', '#06b6d4', '#10b981', '#f59e0b', 
+                    '#ec4899', '#8b5cf6', '#3b82f6', '#f43f5e'
+                ];
+
+                this.ctx.save();
+                this.ctx.translate(radius, radius);
+                this.ctx.rotate(this.currentRotation);
+
+                for (let i = 0; i < totalSegments; i++) {
+                    const currentArcAngle = i * arcSize;
+                    this.ctx.fillStyle = baseColors[this.remainingPool[i] % baseColors.length];
+                    
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(0, 0);
+                    this.ctx.arc(0, 0, radius - 10, currentArcAngle, currentArcAngle + arcSize);
+                    this.ctx.closePath();
+                    this.ctx.fill();
+
+                    // Radial separation lines
+                    this.ctx.strokeStyle = 'rgba(15,23,42,0.4)';
+                    this.ctx.lineWidth = 3;
+                    this.ctx.stroke();
+
+                    // Text Content Render Transformation Pass
+                    this.ctx.save();
+                    this.ctx.fillStyle = '#ffffff';
+                    this.ctx.font = totalSegments > 25 ? 'bold 13px sans-serif' : 'bold 18px sans-serif';
+                    this.ctx.textAlign = 'right';
+                    this.ctx.textBaseline = 'middle';
+                    
+                    // Rotate translation coordinate matrix direct to target element vector
+                    this.ctx.rotate(currentArcAngle + (arcSize / 2));
+                    this.ctx.fillText(this.remainingPool[i], radius - 35, 0);
+                    this.ctx.restore();
+                }
+
+                // Inner Hub Vector Cap Design
+                this.ctx.beginPath();
+                this.ctx.arc(0, 0, 35, 0, 2 * Math.PI);
+                this.ctx.fillStyle = '#ffffff';
+                this.ctx.shadowBlur = 15;
+                this.ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                this.ctx.fill();
+
+                this.ctx.beginPath();
+                this.ctx.arc(0, 0, 25, 0, 2 * Math.PI);
+                this.ctx.fillStyle = '#0f172a';
+                this.ctx.shadowBlur = 0; // reset
+                this.ctx.fill();
+
+                // Outer bounds design track rim perimeter stroke element line
+                this.ctx.beginPath();
+                this.ctx.arc(0, 0, radius - 10, 0, 2 * Math.PI);
+                this.ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+                this.ctx.lineWidth = 6;
+                this.ctx.stroke();
+
+                this.ctx.restore();
+            },
+
+            spinWheel() {
+                if (this.isSpinning || this.remainingPool.length === 0) return;
+                
+                AudioEngine.playClick();
+                
+                // Lockdown functional state interface controls during operational runtime sequence execution
+                this.isSpinning = true;
+                this.el.btnSpin.disabled = true;
+                this.el.btnReset.disabled = true;
+                this.el.btnPresent.disabled = true;
+                this.el.btnAbsent.disabled = true;
+                this.el.configPanel.style.pointerEvents = "none";
+                this.el.configPanel.style.opacity = "0.5";
+
+                this.el.activeRoll.textContent = "🎰";
+                this.el.activeRoll.className = "active-roll";
+
+                const targetIndex = this.generateCryptoRandom();
+                const totalSegments = this.remainingPool.length;
+                const segmentArc = (2 * Math.PI) / totalSegments;
+
+                // Pointing mechanism is absolute fixed vertically at top position (1.5 * Math.PI relative radial space calculation adjustment)
+                // Mathematical configuration targeting matrix calculation:
+                const targetArcCenter = (targetIndex * segmentArc) + (segmentArc / 2);
+                const completeRotations = (Math.random() * 3 + 4) * 2 * Math.PI; // 4-7 complete structural dynamic wheel revolutions
+                const targetRotationValue = (1.5 * Math.PI) - targetArcCenter + completeRotations;
+
+                const startRotation = this.currentRotation % (2 * Math.PI);
+                const deltaRotation = targetRotationValue - startRotation;
+                
+                const executionDuration = Math.random() * 1500 + 3000; // 3 to 4.5 seconds balanced variation envelope range space
+                const startTime = performance.now();
+
+                let lastTickAngle = startRotation;
+                const tickThreshold = segmentArc;
+
+                const animate = (now) => {
+                    const elapsed = now - startTime;
+                    const progress = Math.min(elapsed / executionDuration, 1);
+                    
+                    // Ease-Out Cubic Progression Curve
+                    const easeOutCubic = 1 - Math.pow(1 - progress, 3);
+                    this.currentRotation = startRotation + (deltaRotation * easeOutCubic);
+                    
+                    // Audio Tick Synchronisation Framework
+                    if (Math.abs(this.currentRotation - lastTickAngle) >= tickThreshold) {
+                        AudioEngine.playTick();
+                        this.triggerPointerBounce();
+                        lastTickAngle = this.currentRotation;
+                    }
+
+                    this.drawWheel();
+
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        // Execution Finish Trigger Sequence Anchor
+                        this.isSpinning = false;
+                        this.selectedNumber = this.remainingPool[targetIndex];
+                        
+                        AudioEngine.playSelect();
+                        this.el.activeRoll.textContent = `#${this.selectedNumber}`;
+                        
+                        this.el.btnReset.disabled = false;
+                        this.el.btnPresent.disabled = false;
+                        this.el.btnAbsent.disabled = false;
+                        this.saveToStorage();
+                    }
+                };
+
+                requestAnimationFrame(animate);
+            },
+
+            triggerPointerBounce() {
+                this.el.pointer.classList.remove('bounce');
+                void this.el.pointer.offsetWidth; // Force hardware reflow cycle loop layout rebuild trigger
+                this.el.pointer.classList.add('bounce');
+            },
+
+            markAttendance(isPresent) {
+                if (this.selectedNumber === null) return;
+
+                if (isPresent) {
+                    AudioEngine.playPresent();
+                    this.presentList.push(this.selectedNumber);
+                    this.presentList.sort((a,b)=>a-b);
+                    this.el.activeRoll.classList.add('present-glow');
+                } else {
+                    AudioEngine.playAbsent();
+                    this.absentList.push(this.selectedNumber);
+                    this.absentList.sort((a,b)=>a-b);
+                    this.el.activeRoll.classList.add('absent-glow');
+                }
+
+                // Process vector extraction transformation filter logic instantly array sequence mapping
+                this.remainingPool = this.remainingPool.filter(n => n !== this.selectedNumber);
+                this.selectedNumber = null;
+
+                // Delay operational cycle step to allow viewport interface glow tracking states to display clean properties
+                setTimeout(() => {
+                    this.el.activeRoll.className = "active-roll";
+                    if (this.remainingPool.length === 0) {
+                        this.triggerCompletionDisplay();
+                    } else {
+                        this.el.activeRoll.textContent = "Ready";
+                    }
+                    this.updateUI();
+                    this.saveToStorage();
+                }, 500);
+            },
+
+            triggerCompletionDisplay() {
+                AudioEngine.playComplete();
+                ConfettiEngine.burst();
+
+                const total = this.presentList.length + this.absentList.length;
+                const percentage = total > 0 ? Math.round((this.presentList.length / total) * 100) : 0;
+
+                this.el.activeRoll.innerHTML = `
+                    <div style="font-size: 1.8rem; font-weight: 800; color: #60a5fa; margin-bottom: 5px;">🎉 Attendance Complete!</div>
+                    <div style="font-size: 1.2rem; font-weight: 600; color: var(--text-muted); line-height: 1.4;">
+                        Present: <span style="color:var(--success)">${this.presentList.length}</span> | 
+                        Absent: <span style="color:var(--danger)">${this.absentList.length}</span><br>
+                        Rate: <span style="color:#f59e0b">${percentage}%</span>
+                    </div>
+                    <button class="btn-spin" style="font-size:1rem; padding: 8px 16px; margin-top:12px; border-radius:10px;" onclick="App.printReport()">🖨️ Print Report</button>
+                `;
+
+                this.el.btnSpin.disabled = true;
+            },
+
+            printReport() {
+                const total = this.presentList.length + this.absentList.length;
+                const percentage = total > 0 ? Math.round((this.presentList.length / total) * 100) : 0;
+
+                // Mapping variable nodes elements fields directly into formatting targets
+                this.el.pDate.textContent = `Date & Time: ${new Date().toLocaleString()}`;
+                this.el.pTotal.textContent = total;
+                this.el.pPercent.textContent = `${percentage}%`;
+                this.el.pPresCount.textContent = this.presentList.length;
+                this.el.pAbsCount.textContent = this.absentList.length;
+                
+                this.el.pPresList.textContent = this.presentList.length > 0 ? this.presentList.join(', ') : 'None';
+                this.el.pAbsList.textContent = this.absentList.length > 0 ? this.absentList.join(', ') : 'None';
+
+                window.print();
+            }
+        };
+
+        // Fire Application Framework Context Loop Setup Initialization
+        window.addEventListener('DOMContentLoaded', () => App.init());
+    </script>
+</body>
+</html>

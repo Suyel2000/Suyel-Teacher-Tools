@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📝 Exit Ticket Generator</title>
+    <style>
+        /* --- RESET & VARIABLES --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.15);
+            --glass-border: rgba(255, 255, 255, 0.25);
+            --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+            --text-main: #ffffff;
+            --text-dark: #2d3748;
+            --primary: #4a5568;
+            --easy-color: #48bb78;
+            --medium-color: #ecc94b;
+            --hard-color: #f56565;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1rem;
+            overflow-x: hidden;
+        }
+
+        /* --- TYPOGRAPHY & HEADERS --- */
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            text-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            font-style: italic;
+            opacity: 0.9;
+            letter-spacing: 2px;
+        }
+
+        /* --- CONTAINER & GLASSMORPHISM --- */
+        .container {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: var(--card-shadow);
+            animation: fadeIn 1s ease;
+        }
+
+        /* --- CONFIGURATION CONTROLS --- */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.9;
+        }
+
+        select, input {
+            padding: 0.8rem;
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--text-dark);
+            font-size: 1rem;
+            font-weight: 500;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        select:focus, input:focus {
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.4);
+        }
+
+        /* --- BUTTONS --- */
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            color: white;
+        }
+
+        .btn-generate { background-color: #4c51bf; }
+        .btn-new { background-color: #319795; }
+        .btn-print { background-color: #2b6cb0; }
+        .btn-settings { background-color: #4a5568; }
+
+        .btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(255,255,255,0.25);
+            filter: brightness(1.1);
+        }
+
+        .btn:active {
+            transform: translateY(-1px);
+        }
+
+        /* --- THE EXIT TICKET CARD --- */
+        .ticket-wrapper {
+            background: white;
+            color: var(--text-dark);
+            border-radius: 12px;
+            padding: 2.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            position: relative;
+            transition: transform 0.4s ease, opacity 0.4s ease;
+        }
+
+        .ticket-wrapper.refreshing {
+            transform: scale(0.95) translateY(10px);
+            opacity: 0;
+        }
+
+        .ticket-border {
+            border: 3px dashed #cbd5e0;
+            padding: 2rem;
+            border-radius: 8px;
+            background: #fff;
+        }
+
+        .ticket-header {
+            text-align: center;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .ticket-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #1a202c;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .student-meta {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            font-size: 1.05rem;
+        }
+
+        .meta-line {
+            border-bottom: 2px solid #718096;
+            padding-bottom: 0.2rem;
+            white-space: nowrap;
+        }
+
+        /* --- QUESTIONS ARCHITECTURE --- */
+        .questions-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+        }
+
+        .question-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .question-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .answer-space {
+            margin-top: 0.4rem;
+        }
+
+        /* Question Variants Formatting */
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.8rem;
+            margin-top: 0.4rem;
+        }
+
+        .option-box {
+            border: 1px solid #cbd5e0;
+            padding: 0.6rem 1rem;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+        }
+
+        .checkbox-mock {
+            width: 18px;
+            height: 18px;
+            border: 2px solid #718096;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .line-space {
+            border-bottom: 1px dotted #a0aec0;
+            height: 2.5rem;
+            width: 100%;
+        }
+
+        .double-line-space {
+            border-bottom: 1px dotted #a0aec0;
+            height: 2.5rem;
+            width: 100%;
+            box-shadow: 0 1.2rem 0 -1px white, 0 1.3rem 0 0 #a0aec0;
+            margin-bottom: 1rem;
+        }
+
+        .emoji-rating {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .emoji-box {
+            border: 1px solid #cbd5e0;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* --- ANIMATIONS --- */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-25px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- COLLAPSIBLE SETTINGS METER --- */
+        .settings-panel {
+            max-height: 500px;
+            transition: max-height 0.3s ease-in-out, padding 0.3s ease;
+            overflow: hidden;
+        }
+
+        .settings-panel.collapsed {
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            border-top: none;
+            border-bottom: none;
+            margin: 0;
+        }
+
+        /* --- PRINT STYLES --- */
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+                padding: 0;
+                margin: 0;
+            }
+            header, .panel, .btn, .action-buttons {
+                display: none !important;
+            }
+            .container {
+                max-width: 100%;
+                box-shadow: none !important;
+            }
+            .ticket-wrapper {
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+            }
+            .ticket-border {
+                border: 2px dashed #000 !important;
+                padding: 1.5rem !important;
+            }
+            @page {
+                size: A4;
+                margin: 15mm;
+            }
+        }
+
+        /* --- SMARTBOARD / TABLET OPTIMIZATIONS --- */
+        @media(max-width: 768px) {
+            h1 { font-size: 2rem; }
+            .student-meta {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>📝 Exit Ticket Generator</h1>
+        <div class="subtitle">Reflect • Review • Learn</div>
+    </header>
+
+    <div class="container">
+        
+        <div id="settingsPanel" class="panel settings-panel">
+            <div class="controls-grid">
+                <div class="control-group">
+                    <label for="subjectSelect">📘 Select Subject</label>
+                    <select id="subjectSelect">
+                        <option value="math">📘 Mathematics</option>
+                        <option value="english">📗 English</option>
+                        <option value="evs">🌿 EVS</option>
+                        <option value="general">🎯 General Reflection</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label for="countSelect">📊 Question Count</label>
+                    <select id="countSelect">
+                        <option value="3">3 Questions</option>
+                        <option value="4">4 Questions</option>
+                        <option value="5">5 Questions</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label for="difficultySelect">⚡ Difficulty</label>
+                    <select id="difficultySelect">
+                        <option value="easy">🟢 Easy</option>
+                        <option value="medium" selected>🟡 Medium</option>
+                        <option value="hard">🔴 Hard</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn btn-settings" id="toggleSettingsBtn">⚙️ Settings</button>
+            <button class="btn btn-generate" id="generateBtn">🎲 Generate</button>
+            <button class="btn btn-new" id="newTicketBtn">🔄 New Ticket</button>
+            <button class="btn btn-print" id="printBtn">🖨️ Print</button>
+        </div>
+
+        <div class="ticket-wrapper" id="ticketContainer">
+            <div class="ticket-border">
+                <div class="ticket-header">
+                    <div class="ticket-title" id="displaySubject">Exit Ticket</div>
+                </div>
+
+                <div class="student-meta">
+                    <div class="meta-line">Student Name: ___________________________</div>
+                    <div class="meta-line">Roll No: ___________</div>
+                    <div class="meta-line">Date: _______________</div>
+                </div>
+
+                <div class="questions-container" id="questionsOutput">
+                    </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        /* --- AUDIO SYNTH ENGINE (WEB AUDIO API) --- */
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playTone(freq, type, duration) {
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e) { console.log("Audio not allowed yet"); }
+        }
+
+        function playSound(style) {
+            if(style === 'click') playTone(600, 'sine', 0.08);
+            if(style === 'generate') {
+                playTone(440, 'triangle', 0.1);
+                setTimeout(() => playTone(880, 'triangle', 0.15), 80);
+            }
+            if(style === 'print') {
+                playTone(300, 'sawtooth', 0.1);
+                setTimeout(() => playTone(500, 'sawtooth', 0.1), 100);
+            }
+        }
+
+        /* --- ROBUST 300+ QUESTION DATA REPOSITORY --- */
+        const questionBank = {
+            general: {
+                easy: [
+                    { t: "What did you learn today?", type: "short" },
+                    { t: "What was the easiest part of today's lesson?", type: "short" },
+                    { t: "Did you enjoy today's activities?", type: "yesno" },
+                    { t: "How confident do you feel about this topic?", type: "emoji" },
+                    { t: "Write one word that describes today's lesson.", type: "oneword" },
+                    { t: "Did you finish all your work today?", type: "yesno" },
+                    { t: "Who did you help in class today?", type: "short" },
+                    { t: "Draw or write how you feel right now.", type: "short" },
+                    { t: "What is one rule we followed today?", type: "oneword" },
+                    { t: "Was today's goal easy to understand?", type: "yesno" },
+                    { t: "What helped you learn best today?", type: "short" },
+                    { t: "Did you listen carefully today?", type: "yesno" },
+                    { t: "Name one tool you used today.", type: "oneword" },
+                    { t: "Are you ready to learn more about this?", type: "yesno" },
+                    { t: "What made you smile today?", type: "short" },
+                    { t: "Did you ask any questions today?", type: "yesno" },
+                    { t: "Rate your behavior today:", type: "emoji" },
+                    { t: "What is one thing you want to practice more?", type: "short" },
+                    { t: "Was the teacher clear today?", type: "yesno" },
+                    { t: "Name one classmate who did a great job.", type: "oneword" },
+                    { t: "What line or word do you remember most?", type: "short" },
+                    { t: "Did you try your best?", type: "yesno" },
+                    { t: "How happy are you with your effort?", type: "emoji" },
+                    { t: "Where you sitting comfortably?", type: "yesno" },
+                    { t: "Write one thing you did well.", type: "short" }
+                ],
+                medium: [
+                    { t: "What was the most interesting thing you learned?", type: "short" },
+                    { t: "What was difficult or confusing today?", type: "short" },
+                    { t: "Write one new fact you learned.", type: "short" },
+                    { t: "How would you explain today's lesson to a friend?", type: "short" },
+                    { t: "Why is today's topic important to learn?", type: "short" },
+                    { t: "What is one question you still have?", type: "short" },
+                    { t: "I need more help with: ________________", type: "short" },
+                    { t: "Can you use today's lesson in real life?", type: "yesno" },
+                    { t: "Rate your understanding of the main idea:", type: "emoji" },
+                    { t: "What took the most time to complete?", type: "short" },
+                    { t: "What trick helped you understand?", type: "short" },
+                    { t: "If you could change one thing about today, what is it?", type: "short" },
+                    { t: "Did you work better alone or in a team?", type: "tick", o: ["Alone", "In a Team"] },
+                    { t: "Which resource was the most helpful?", type: "tick", o: ["Board", "Worksheet", "Books", "Blocks"] },
+                    { t: "What distracted you the most today?", type: "short" },
+                    { t: "Name one skill you used today.", type: "oneword" },
+                    { t: "How hard did you work on a scale of 1-3?", type: "emoji" },
+                    { t: "What was the turning point in understanding?", type: "short" },
+                    { t: "Did you find any mistakes in your work?", type: "yesno" },
+                    { t: "How can the teacher help you more tomorrow?", type: "short" },
+                    { t: "What pattern did you notice today?", type: "short" },
+                    { t: "Was your team successful?", type: "yesno" },
+                    { t: "What vocabulary word stood out?", type: "oneword" },
+                    { t: "Rate your focus level during instruction:", type: "emoji" },
+                    { t: "What was the big picture of today?", type: "short" }
+                ],
+                hard: [
+                    { t: "Summarize today's lesson in exactly two sentences.", type: "short" },
+                    { t: "Predict what we will study next based on today.", type: "short" },
+                    { t: "What is the core connection between today and yesterday?", type: "short" },
+                    { t: "Design a single test question based on today's lesson.", type: "short" },
+                    { t: "What was the biggest breakthrough you had today?", type: "short" },
+                    { t: "Evaluate your group performance critically.", type: "short" },
+                    { t: "Where do you think you might make a mistake next?", type: "short" },
+                    { t: "Argue why this topic matters to a non-student.", type: "short" },
+                    { t: "Identify the hardest rule to remember.", type: "short" },
+                    { t: "What step took the longest to master?", type: "short" },
+                    { t: "How does today change your outlook on the subject?", type: "short" },
+                    { t: "Rate your ability to teach this to someone else:", type: "emoji" },
+                    { t: "Which concept do you need to review tonight?", type: "oneword" },
+                    { t: "What was a misconception you had before today?", type: "short" },
+                    { t: "Create an alternate title for today's lesson.", type: "short" },
+                    { t: "Explain a part you found logical but tricky.", type: "short" },
+                    { t: "Did this lesson challenge your thinking?", type: "yesno" },
+                    { t: "Which assignment aspect required critical thought?", type: "short" },
+                    { t: "How would you simplify the hardest step?", type: "short" },
+                    { t: "What is the most complex term you used?", type: "oneword" },
+                    { t: "Rate your stamina during today's extended task:", type: "emoji" },
+                    { t: "What real-world problem does this help solve?", type: "short" },
+                    { t: "If you had 5 more minutes, what would you finish?", type: "short" },
+                    { t: "Did you rely on help or independent strategy?", type: "tick", o: ["Help", "Strategy"] },
+                    { t: "Formulate a goal for tomorrow's continuation.", type: "short" }
+                ]
+            },
+            math: {
+                easy: [
+                    { t: "What is 5 + 4?", type: "mc", o: ["7", "8", "9", "10"] },
+                    { t: "Count backwards: 10, 9, 8, 7, __.", type: "oneword" },
+                    { t: "What number comes right after 19?", type: "oneword" },
+                    { t: "Is 7 an even number?", type: "yesno" },
+                    { t: "What shape has 3 sides?", type: "mc", o: ["Square", "Circle", "Triangle", "Star"] },
+                    { t: "What is 10 - 3?", type: "oneword" },
+                    { t: "True or False: A square has 4 equal sides.", type: "yesno" },
+                    { t: "What is 2 + 2 + 2?", type: "oneword" },
+                    { t: "Which is more: 15 or 51?", type: "mc", o: ["15", "51"] },
+                    { t: "What number is one less than 30?", type: "oneword" },
+                    { t: "Does a circle have corners?", type: "yesno" },
+                    { t: "What is 5 x 2?", type: "mc", o: ["7", "10", "12", "52"] },
+                    { t: "How many hands does a standard clock have?", type: "oneword" },
+                    { t: "What is half of 6?", type: "oneword" },
+                    { t: "Is 0 a counting number?", type: "yesno" },
+                    { t: "Which number is in the middle of 2 and 4?", type: "oneword" },
+                    { t: "What sign goes here: 5 [ ] 3 = 8", type: "mc", o: ["+", "-", "x", "÷"] },
+                    { t: "How many sides does a rectangle have?", type: "oneword" },
+                    { t: "What is 20 + 7?", type: "oneword" },
+                    { t: "Is 12 greater than 20?", type: "yesno" },
+                    { t: "Complete: 5, 10, 15, __.", type: "oneword" },
+                    { t: "What shape looks like an egg?", type: "mc", o: ["Circle", "Oval", "Square"] },
+                    { t: "What is 9 - 0?", type: "oneword" },
+                    { t: "Double the number 4.", type: "oneword" },
+                    { t: "Is a triangle flat or 3D?", type: "tick", o: ["Flat", "3D"] }
+                ],
+                medium: [
+                    { t: "What is 12 x 3?", type: "mc", o: ["32", "36", "42", "48"] },
+                    { t: "How many minutes are in half an hour?", type: "oneword" },
+                    { t: "What is the value of the 4 in 245?", type: "mc", o: ["4", "40", "400"] },
+                    { t: "What is 1/2 + 1/2?", type: "oneword" },
+                    { t: "How many centimeters are in 1 meter?", type: "oneword" },
+                    { t: "What is 45 divided by 5?", type: "oneword" },
+                    { t: "Which fraction is bigger?", type: "tick", o: ["1/2", "1/4"] },
+                    { t: "Find the missing number: 12, 16, 20, __, 28", type: "oneword" },
+                    { t: "What is 150 + 250?", type: "mc", o: ["350", "400", "450", "500"] },
+                    { t: "How many corners does a cube have?", type: "oneword" },
+                    { t: "What is 100 - 35?", type: "oneword" },
+                    { t: "Is 35 a multiple of 5?", type: "yesno" },
+                    { t: "A toy costs $5. How much do 4 toys cost?", type: "oneword" },
+                    { t: "What shape has 6 sides?", type: "mc", o: ["Pentagon", "Hexagon", "Octagon"] },
+                    { t: "What is 7 x 8?", type: "oneword" },
+                    { t: "Is 21 an odd number?", type: "yesno" },
+                    { t: "What is 300 + 40 + 7?", type: "oneword" },
+                    { t: "How many days are in two weeks?", type: "oneword" },
+                    { t: "What is the double of 25?", type: "oneword" },
+                    { t: "Can you divide 15 equally by 2 without leftovers?", type: "yesno" },
+                    { t: "What is 80 ÷ 10?", type: "oneword" },
+                    { t: "Round 47 to the nearest ten.", type: "mc", o: ["40", "50", "45"] },
+                    { t: "What is 11 minus 4 then plus 3?", type: "oneword" },
+                    { t: "How many angles does a square have?", type: "oneword" },
+                    { t: "Is 1/3 larger than 1/2?", type: "yesno" }
+                ],
+                hard: [
+                    { t: "What is 125 x 4?", type: "mc", o: ["400", "450", "500", "600"] },
+                    { t: "Find the perimeter of a square with side 6cm.", type: "oneword" },
+                    { t: "What is 3/4 of 24?", type: "oneword" },
+                    { t: "Solve: (12 + 8) ÷ 4", type: "oneword" },
+                    { t: "How many grams are in 2.5 kilograms?", type: "mc", o: ["250g", "2500g", "25000g"] },
+                    { t: "What is 715 rounded to the nearest hundred?", type: "oneword" },
+                    { t: "Find the missing factor: 6 x __ = 72", type: "oneword" },
+                    { t: "What is 14 x 5?", type: "oneword" },
+                    { t: "Express 0.5 as a fraction in simplest form.", type: "oneword" },
+                    { t: "How many edges does a rectangular prism have?", type: "mc", o: ["6", "8", "12", "16"] },
+                    { t: "If a train leaves at 2:15 PM and arrives at 4:45 PM, how long was the trip?", type: "short" },
+                    { t: "Solve: 99 + 99 + 99", type: "oneword" },
+                    { t: "What is the area of a rectangle with length 8cm and width 5cm?", type: "oneword" },
+                    { t: "Is the product of two odd numbers always odd?", type: "yesno" },
+                    { t: "Find the value: 1000 - 450 - 50", type: "oneword" },
+                    { t: "What is 15 x 6?", type: "oneword" },
+                    { t: "Convert 3 hours into minutes.", type: "oneword" },
+                    { t: "What is 2/5 of 50?", type: "mc", o: ["10", "20", "25", "30"] },
+                    { t: "Determine the pattern: 2, 4, 8, 16, __.", type: "oneword" },
+                    { t: "What is the remainder when 23 is divided by 4?", type: "oneword" },
+                    { t: "How many quarters make up 3 whole dollars?", type: "oneword" },
+                    { t: "Is a cylinder a polyhedron?", type: "yesno" },
+                    { t: "Calculate: 15 + (4 x 5)", type: "oneword" },
+                    { t: "What number is exactly halfway between 100 and 200?", type: "oneword" },
+                    { t: "Find the value of X: X - 15 = 45", type: "oneword" }
+                ]
+            },
+            english: {
+                easy: [
+                    { t: "What is the capital letter for 'b'?", type: "oneword" },
+                    { t: "Which word rhymes with 'cat'?", type: "mc", o: ["Dog", "Hat", "Car", "Sun"] },
+                    { t: "Is 'apple' a naming word (noun)?", type: "yesno" },
+                    { t: "Fill in the vowel: h __ t (something you wear)", type: "oneword" },
+                    { t: "What is the opposite of 'big'?", type: "mc", o: ["Tall", "Small", "Huge"] },
+                    { t: "Unscramble: o-g-d", type: "oneword" },
+                    { t: "Is 'run' an action word (verb)?", type: "yesno" },
+                    { t: "Which letter comes before M?", type: "oneword" },
+                    { t: "Select the correctly spelled word:", type: "tick", o: ["Bwuk", "Book"] },
+                    { t: "What sound does 'sh' make in 'ship'?", type: "oneword" },
+                    { t: "Is 'he' used for a boy or girl?", type: "tick", o: ["Boy", "Girl"] },
+                    { t: "Fix the capitalization: i like candy.", type: "short" },
+                    { t: "What is the plural of 'cat'?", type: "oneword" },
+                    { t: "Choose the action word: 'The dog barked.'", type: "mc", o: ["The", "dog", "barked"] },
+                    { t: "Does 'sun' start with the letter S?", type: "yesno" },
+                    { t: "What is the opposite of 'hot'?", type: "oneword" },
+                    { t: "Identify the pronoun: 'She is happy.'", type: "mc", o: ["She", "is", "happy"] },
+                    { t: "Which word means more than one?", type: "tick", o: ["Tree", "Trees"] },
+                    { t: "Fill in the blank: An ________ (apple/banana).", type: "oneword" },
+                    { t: "Is 'happy' an emotion?", type: "yesno" },
+                    { t: "What punctuation goes at the end of a statement?", type: "mc", o: [".", "?", "!"] },
+                    { t: "Spell the number 3 in words.", type: "oneword" },
+                    { t: "What is the rhyming word for 'tree'?", type: "oneword" },
+                    { t: "Is a desk a person, place, or thing?", type: "mc", o: ["Person", "Place", "Thing"] },
+                    { t: "Combine: rain + bow = ________.", type: "oneword" }
+                ],
+                medium: [
+                    { t: "Identify the adjective: 'The blue ball rolled away.'", type: "mc", o: ["The", "blue", "ball", "rolled"] },
+                    { t: "What is the plural of 'child'?", type: "oneword" },
+                    { t: "Choose the correct compound word:", type: "tick", o: ["Sunlight", "Sunheavy"] },
+                    { t: "What is a synonym for 'happy'?", type: "mc", o: ["Sad", "Glad", "Angry", "Tired"] },
+                    { t: "Which suffix makes 'play' happen in the past?", type: "mc", o: ["-ing", "-ed", "-s"] },
+                    { t: "Is the word 'softly' an adverb?", type: "yesno" },
+                    { t: "Change this statement into a question: 'You are going.'", type: "short" },
+                    { t: "What are the vowels in the word 'PENCIL'?", type: "oneword" },
+                    { t: "Choose the antonym for 'fast':", type: "mc", o: ["Quick", "Slow", "High"] },
+                    { t: "What is the root word of 'unhappy'?", type: "oneword" },
+                    { t: "Fix this sentence: 'they has two dogs.'", type: "short" },
+                    { t: "Which punctuation mark shows excitement?", type: "oneword" },
+                    { t: "Identify the preposition: 'The book is under the table.'", type: "mc", o: ["book", "under", "table"] },
+                    { t: "Is 'bought' the past tense of 'buy'?", type: "yesno" },
+                    { t: "What do you call a person who writes books?", type: "oneword" },
+                    { t: "Choose the correct homophone: 'I can ____ the ocean.'", type: "mc", o: ["see", "sea"] },
+                    { t: "What is the plural form of 'box'?", type: "oneword" },
+                    { t: "Find the conjunction: 'I wanted to go, but it rained.'", type: "mc", o: ["wanted", "but", "rained"] },
+                    { t: "Is 'beautiful' an adjective?", type: "yesno" },
+                    { t: "What is the meaning of the prefix 're-'?", type: "mc", o: ["Not", "Again", "Before"] },
+                    { t: "Make a sentence using the word 'brave'.", type: "short" },
+                    { t: "What contraction is made from 'do not'?", type: "oneword" },
+                    { t: "Which word is spelled correctly?", type: "tick", o: ["Friend", "Freind"] },
+                    { t: "What is the collective noun for a group of wolves?", type: "oneword" },
+                    { t: "Is 'it' a singular pronoun?", type: "yesno" }
+                ],
+                hard: [
+                    { t: "Identify the complete subject: 'The old oak tree swayed in the wind.'", type: "short" },
+                    { t: "What is the plural form of 'mouse'?", type: "oneword" },
+                    { t: "Choose the correct form: 'Either Jack or his friends (is/are) coming.'", type: "mc", o: ["is", "are"] },
+                    { t: "What is the meaning of the idiom 'a piece of cake'?", type: "short" },
+                    { t: "Identify the adverb: 'The wizard walked extremely slowly.'", type: "mc", o: ["wizard", "extremely", "slowly"] },
+                    { t: "Is a metaphor the same as a simile?", type: "yesno" },
+                    { t: "Write the correct possessive form of 'the books belonging to the girls'.", type: "short" },
+                    { t: "What figure of speech is: 'The stars danced playfully'?", type: "mc", o: ["Simile", "Metaphor", "Personification"] },
+                    { t: "What does the root word 'bio' mean?", type: "oneword" },
+                    { t: "Identify the conjunction: 'Although it was freezing, we walked outside.'", type: "mc", o: ["Although", "freezing", "outside"] },
+                    { t: "Rewrite this in the past perfect tense: 'I eat dinner.'", type: "short" },
+                    { t: "What is the comparative form of 'bad'?", type: "oneword" },
+                    { t: "Which word contains a silent letter?", type: "tick", o: ["Light", "Jump"] },
+                    { t: "What is the antonym of 'generous'?", type: "mc", o: ["Kind", "Stingy", "Helpful"] },
+                    { t: "Is 'audible' related to seeing or hearing?", type: "tick", o: ["Seeing", "Hearing"] },
+                    { t: "Identify the object in: 'The boy kicked the soccer ball.'", type: "short" },
+                    { t: "What is the definition of a 'noun'?", type: "short" },
+                    { t: "Choose the correct spelling:", type: "mc", o: ["Receive", "Recieve"] },
+                    { t: "What punctuation sets off direct quotes?", type: "oneword" },
+                    { t: "Is the phrase 'run like the wind' a simile?", type: "yesno" },
+                    { t: "What is the superlative form of 'good'?", type: "oneword" },
+                    { t: "Identify the prefix in 'disobey'.", type: "oneword" },
+                    { t: "What type of sentence is this: 'Clean your room right now!'", type: "mc", o: ["Declarative", "Imperative", "Exclamatory"] },
+                    { t: "What is a word called that sounds the same but has a different meaning?", type: "oneword" },
+                    { t: "Combine into a complex sentence using 'because': 'It rained. We stayed inside.'", type: "short" }
+                ]
+            },
+            evs: {
+                easy: [
+                    { t: "Which part of a plant grows under the ground?", type: "mc", o: ["Leaf", "Stem", "Root", "Flower"] },
+                    { t: "Are dogs living things?", type: "yesno" },
+                    { t: "What do we use our eyes for?", type: "oneword" },
+                    { t: "Which animal gives us milk?", type: "mc", o: ["Lion", "Cow", "Eagle"] },
+                    { t: "Is the sun a star?", type: "yesno" },
+                    { t: "Name a fruit that is red.", type: "oneword" },
+                    { t: "Where does a fish live?", type: "mc", o: ["Land", "Water", "Air"] },
+                    { t: "Should we waste water?", type: "yesno" },
+                    { t: "How many sense organs do humans have?", type: "oneword" },
+                    { t: "Which vehicle flies in the sky?", type: "mc", o: ["Car", "Boat", "Aeroplane"] },
+                    { t: "Is a rock a living thing?", type: "yesno" },
+                    { t: "Who helps us when we are sick?", type: "oneword" },
+                    { t: "What part of a plant makes seeds?", type: "mc", o: ["Flower", "Root", "Stem"] },
+                    { t: "Do plants need sunlight to grow?", type: "yesno" },
+                    { t: "What color is a leaf usually?", type: "oneword" },
+                    { t: "Which animal is called the king of the jungle?", type: "oneword" },
+                    { t: "Is junk food good for health everyday?", type: "yesno" },
+                    { t: "What do we breathe in from the air?", type: "oneword" },
+                    { t: "Which animal barks?", type: "mc", o: ["Cat", "Dog", "Cow"] },
+                    { t: "Do birds use wings to fly?", type: "yesno" },
+                    { t: "Name a winter clothing item.", type: "oneword" },
+                    { t: "Which is a community helper?", type: "tick", o: ["Teacher", "Monster"] },
+                    { t: "Is the moon visible during a bright day?", type: "yesno" },
+                    { t: "What is the main source of water on earth?", type: "oneword" },
+                    { t: "We should cross the road at the __________ crossing.", type: "oneword" }
+                ],
+                medium: [
+                    { t: "What gas do plants release that we need to breathe?", type: "oneword" },
+                    { t: "Which of these is a herbivore?", type: "mc", o: ["Tiger", "Deer", "Fox", "Eagle"] },
+                    { t: "What protects our brain from injury?", type: "oneword" },
+                    { t: "Is cotton obtained from a plant or animal?", type: "tick", o: ["Plant", "Animal"] },
+                    { t: "What is the process of a seed growing into a plant called?", type: "mc", o: ["Pollination", "Germination", "Digestion"] },
+                    { t: "Are mosquitoes responsible for spreading malaria?", type: "yesno" },
+                    { t: "Name the closest star to our planet Earth.", type: "oneword" },
+                    { t: "Which organ pumps blood throughout our body?", type: "oneword" },
+                    { t: "Are all insects able to fly?", type: "yesno" },
+                    { t: "Which habitat does a camel belong to?", type: "mc", o: ["Forest", "Ocean", "Desert"] },
+                    { t: "What turns water into water vapor?", type: "mc", o: ["Cooling", "Heating", "Freezing"] },
+                    { t: "Is plastic biodegradable?", type: "yesno" },
+                    { t: "Name one underground stem that we eat.", type: "oneword" },
+                    { t: "What do bees collect from flowers?", type: "oneword" },
+                    { t: "Which bird cannot fly?", type: "mc", o: ["Sparrow", "Ostrich", "Crow"] },
+                    { t: "Do amphibians live both on land and in water?", type: "yesno" },
+                    { t: "What component gives leaves their green color?", type: "oneword" },
+                    { t: "Which system helps us break down food?", type: "mc", o: ["Nervous", "Digestive", "Respiratory"] },
+                    { t: "Is wind energy a renewable resource?", type: "yesno" },
+                    { t: "What is the solid form of water?", type: "oneword" },
+                    { t: "Which planet is known as the Blue Planet?", type: "oneword" },
+                    { t: "Should we throw trash into rivers?", type: "yesno" },
+                    { t: "What do caterpillars turn into?", type: "oneword" },
+                    { t: "Which sense organ detects temperature?", type: "oneword" },
+                    { t: "Is the spine part of the skeletal system?", type: "yesno" }
+                ],
+                hard: [
+                    { t: "Explain the main purpose of photosynthesis.", type: "short" },
+                    { t: "What is the dynamic movement of water on, above, and below Earth called?", type: "mc", o: ["Nitrogen Cycle", "Water Cycle", "Rock Cycle"] },
+                    { t: "Which organ produces insulin in the human body?", type: "oneword" },
+                    { t: "Is global warming caused by excessive greenhouse gases?", type: "yesno" },
+                    { t: "What type of root system do carrots have?", type: "mc", o: ["Fibrous Root", "Taproot", "Prop Root"] },
+                    { t: "Do plants perform respiration at night?", type: "yesno" },
+                    { t: "Describe one way we can conserve electrical energy at home.", type: "short" },
+                    { t: "What is the outermost layer of our planet Earth called?", type: "oneword" },
+                    { t: "Which gas is most abundant in Earth's atmosphere?", type: "mc", o: ["Oxygen", "Nitrogen", "Carbon Dioxide"] },
+                    { t: "Are mushrooms classified as plants?", type: "yesno" },
+                    { t: "What is the primary role of decomposers in an ecosystem?", type: "short" },
+                    { t: "Name the process where water vapor converts directly into liquid drops.", type: "oneword" },
+                    { t: "Which vitamin do we obtain when skin is exposed to sunlight?", type: "oneword" },
+                    { t: "Is deforesting land beneficial to maintaining local wildlife?", type: "yesno" },
+                    { t: "What are structural changes that help an animal survive called?", type: "mc", o: ["Hibernation", "Adaptation", "Migration"] },
+                    { t: "What is the functional unit of our lungs?", type: "oneword" },
+                    { t: "Why do desert plants have waxy stems and spines?", type: "short" },
+                    { t: "Which layer of the atmosphere contains the ozone layer?", type: "oneword" },
+                    { t: "Is solar power dependable on rainy days?", type: "yesno" },
+                    { t: "What determines the traits inherited by living organisms?", type: "oneword" },
+                    { t: "Name an animal that undergoes complete metamorphosis.", type: "oneword" },
+                    { t: "What is the hazard of using single-use plastics on marine life?", type: "short" },
+                    { t: "Which blood cells fight infections?", type: "mc", o: ["Red Blood Cells", "White Blood Cells", "Platelets"] },
+                    { t: "Is gravity a pulling force or a pushing force?", type: "tick", o: ["Pulling", "Pushing"] },
+                    { t: "Define the term 'Endangered Species'.", type: "short" }
+                ]
+            }
+        };
+
+        /* --- STATE ENGINE & STORAGE MANAGMENT --- */
+        const DOM = {
+            subject: document.getElementById('subjectSelect'),
+            count: document.getElementById('countSelect'),
+            difficulty: document.getElementById('difficultySelect'),
+            settingsPanel: document.getElementById('settingsPanel'),
+            toggleSettingsBtn: document.getElementById('toggleSettingsBtn'),
+            generateBtn: document.getElementById('generateBtn'),
+            newTicketBtn: document.getElementById('newTicketBtn'),
+            printBtn: document.getElementById('printBtn'),
+            displaySubject: document.getElementById('displaySubject'),
+            questionsOutput: document.getElementById('questionsOutput'),
+            ticketContainer: document.getElementById('ticketContainer')
+        };
+
+        // Initialize state configuration from cache or default
+        let config = {
+            subject: localStorage.getItem('et_subject') || 'general',
+            count: parseInt(localStorage.getItem('et_count')) || 3,
+            difficulty: localStorage.getItem('et_difficulty') || 'medium',
+            lastTicket: localStorage.getItem('et_last_ticket') ? JSON.parse(localStorage.getItem('et_last_ticket')) : null
+        };
+
+        function saveConfig() {
+            localStorage.setItem('et_subject', config.subject);
+            localStorage.setItem('et_count', config.count);
+            localStorage.setItem('et_difficulty', config.difficulty);
+            if(config.lastTicket) {
+                localStorage.setItem('et_last_ticket', JSON.stringify(config.lastTicket));
+            }
+        }
+
+        function applyUiFromConfig() {
+            DOM.subject.value = config.subject;
+            DOM.count.value = config.count;
+            DOM.difficulty.value = config.difficulty;
+        }
+
+        /* --- TICKET LOGIC ARCHITECTURE --- */
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        function generateTicket() {
+            const pools = questionBank[config.subject][config.difficulty];
+            // Deep copy pool to allow mutation/shuffling safety
+            let poolCopy = [...pools];
+            shuffle(poolCopy);
+            
+            // Build subset based on configurations
+            let selection = poolCopy.slice(0, Math.min(config.count, poolCopy.length));
+            
+            config.lastTicket = {
+                subjectText: DOM.subject.options[DOM.subject.selectedIndex].text,
+                questions: selection
+            };
+            
+            saveConfig();
+            renderTicket(config.lastTicket);
+        }
+
+        function renderTicket(ticketData) {
+            if(!ticketData) return;
+            
+            DOM.displaySubject.innerText = ticketData.subjectText + " - Exit Ticket";
+            DOM.questionsOutput.innerHTML = "";
+
+            ticketData.questions.forEach((q, idx) => {
+                const qItem = document.createElement('div');
+                qItem.className = 'question-item';
+
+                const qText = document.createElement('div');
+                qText.className = 'question-text';
+                qText.innerText = `${idx + 1}. ${q.t}`;
+                qItem.appendChild(qText);
+
+                const ansSpace = document.createElement('div');
+                ansSpace.className = 'answer-space';
+
+                // Factory conditional formatters based on schema types
+                if(q.type === 'short') {
+                    ansSpace.className = 'double-line-space';
+                } else if(q.type === 'oneword') {
+                    ansSpace.className = 'line-space';
+                } else if(q.type === 'yesno') {
+                    ansSpace.innerHTML = `
+                        <div class="options-grid">
+                            <div class="option-box"><span class="checkbox-mock"></span> Yes</div>
+                            <div class="option-box"><span class="checkbox-mock"></span> No</div>
+                        </div>`;
+                } else if(q.type === 'emoji') {
+                    ansSpace.innerHTML = `
+                        <div class="emoji-rating">
+                            <div class="emoji-box">😊</div>
+                            <div class="emoji-box">😐</div>
+                            <div class="emoji-box">😟</div>
+                        </div>`;
+                } else if(q.type === 'mc' || q.type === 'tick') {
+                    let optsHtml = '<div class="options-grid">';
+                    q.o.forEach(opt => {
+                        optsHtml += `<div class="option-box"><span class="checkbox-mock"></span> ${opt}</div>`;
+                    });
+                    optsHtml += '</div>';
+                    ansSpace.innerHTML = optsHtml;
+                }
+
+                qItem.appendChild(ansSpace);
+                DOM.questionsOutput.appendChild(qItem);
+            });
+        }
+
+        function triggerRefreshAnimation() {
+            DOM.ticketContainer.classList.add('refreshing');
+            setTimeout(() => {
+                generateTicket();
+                DOM.ticketContainer.classList.remove('refreshing');
+            }, 400);
+        }
+
+        /* --- EVENTS INITIALIZATION CONTROLLER --- */
+        // Listeners for Live Configuration Modifications
+        DOM.subject.addEventListener('change', (e) => { config.subject = e.target.value; saveConfig(); });
+        DOM.count.addEventListener('change', (e) => { config.count = parseInt(e.target.value); saveConfig(); });
+        DOM.difficulty.addEventListener('change', (e) => { config.difficulty = e.target.value; saveConfig(); });
+
+        // Functional Button Trigger Listeners
+        DOM.toggleSettingsBtn.addEventListener('click', () => {
+            playSound('click');
+            DOM.settingsPanel.classList.toggle('collapsed');
+        });
+
+        DOM.generateBtn.addEventListener('click', () => {
+            playSound('generate');
+            triggerRefreshAnimation();
+        });
+
+        DOM.newTicketBtn.addEventListener('click', () => {
+            playSound('generate');
+            triggerRefreshAnimation();
+        });
+
+        DOM.printBtn.addEventListener('click', () => {
+            playSound('print');
+            window.print();
+        });
+
+        // Initialize Core View
+        applyUiFromConfig();
+        if(config.lastTicket) {
+            renderTicket(config.lastTicket);
+        } else {
+            generateTicket();
+        }
+    </script>
+</body>
+</html>

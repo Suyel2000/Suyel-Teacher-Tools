@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🎲 Random Roll Number Picker</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --success: #10b981;
+            --danger: #ef4444;
+            --accent: #f59e0b;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            min-height: 100vh;
+            background: var(--bg-gradient);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Glassmorphism Container */
+        .app-container {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 5px;
+            color: #111827;
+        }
+
+        header p {
+            font-size: 1rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 30px;
+        }
+
+        /* Range Inputs */
+        .range-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            background: rgba(0, 0, 0, 0.04);
+            padding: 15px;
+            border-radius: 16px;
+        }
+
+        .range-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .range-group label {
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .range-group input {
+            width: 80px;
+            padding: 10px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .range-group input:focus {
+            border-color: var(--primary);
+        }
+
+        /* Display Area */
+        .display-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 20px;
+            margin-bottom: 35px;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.05);
+            min-height: 220px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .display-label {
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .roll-number {
+            font-size: 5.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            line-height: 1;
+            transition: transform 0.1s ease;
+        }
+
+        .winner-glow {
+            animation: winnerPulse 0.6s ease-in-out infinite alternate, bounce 0.5s ease-out;
+            color: var(--success);
+        }
+
+        @keyframes winnerPulse {
+            from { text-shadow: 0 0 10px rgba(16, 185, 129, 0.2); transform: scale(1); }
+            to { text-shadow: 0 0 30px rgba(16, 185, 129, 0.6); transform: scale(1.05); }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .remaining-count {
+            margin-top: 15px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: #f3f4f6;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        /* Action Buttons */
+        .controls-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 16px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .btn-main {
+            background: var(--primary);
+            color: white;
+            padding: 20px 40px;
+            width: 100%;
+            box-shadow: 0 8px 16px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn-main:hover:not(:disabled) {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 20px rgba(79, 70, 229, 0.4);
+        }
+
+        .btn-main:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+
+        .btn-main:disabled {
+            background: #9ca3af;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        .sub-controls {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn-sub {
+            flex: 1;
+            padding: 14px 20px;
+            font-size: 1.1rem;
+            background: white;
+            border: 2px solid #e5e7eb;
+            color: var(--text-main);
+        }
+
+        .btn-sub:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+        }
+
+        /* Settings Panel Overlay */
+        .settings-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 100;
+            padding: 20px;
+        }
+
+        .settings-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .settings-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .settings-overlay.active .settings-card {
+            transform: scale(1);
+        }
+
+        .settings-card h3 {
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .setting-item:last-of-type {
+            border-bottom: none;
+            margin-bottom: 15px;
+        }
+
+        .setting-label {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        /* Custom Toggle Switch CSS */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 55px;
+            height: 30px;
+        }
+
+        .switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc;
+            transition: .3s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--success);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(25px);
+        }
+
+        /* Canvas Elements for Confetti Overlay */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 99;
+        }
+
+        /* Smartboard & Responsive Overrides */
+        @media(max-width: 480px) {
+            .app-container { padding: 20px; }
+            .roll-number { font-size: 4rem; }
+            .range-container { flex-direction: column; gap: 10px; }
+        }
+
+        @media(min-width: 1024px) {
+            /* Enhancements for Smartboards / Large Projectors */
+            .app-container { max-width: 750px; padding: 50px; }
+            .roll-number { font-size: 7rem; }
+            .btn-main { font-size: 1.6rem; padding: 25px; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <div class="app-container">
+        <header>
+            <h1>🎲 Random Roll Number Picker</h1>
+            <p>Fair • Fast • Simple</p>
+        </header>
+
+        <div class="range-container">
+            <div class="range-group">
+                <label for="min-roll">From</label>
+                <input type="number" id="min-roll" value="1" min="1">
+            </div>
+            <div class="range-group">
+                <label for="max-roll">To</label>
+                <input type="number" id="max-roll" value="40" min="1">
+            </div>
+        </div>
+
+        <div class="display-card" id="display-card">
+            <div class="display-label" id="display-label">Selected Roll Number</div>
+            <div class="roll-number" id="roll-display">#--</div>
+            <div class="remaining-count" id="remaining-display" style="display: none;">Remaining: --</div>
+        </div>
+
+        <div class="controls-container">
+            <button class="btn btn-main" id="btn-pick">🎲 Pick Random Roll Number</button>
+            <div class="sub-controls">
+                <button class="btn btn-sub" id="btn-reset">🔄 Reset</button>
+                <button class="btn btn-sub" id="btn-settings">⚙ Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="settings-overlay" id="settings-overlay">
+        <div class="settings-card">
+            <h3>⚙ Settings</h3>
+            
+            <div class="setting-item">
+                <span class="setting-label">🔊 Sound Effects</span>
+                <label class="switch">
+                    <input type="checkbox" id="setting-sound" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="setting-item">
+                <span class="setting-label">🎉 Confetti Burst</span>
+                <label class="switch">
+                    <input type="checkbox" id="setting-confetti" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="setting-item">
+                <span class="setting-label">☑ No Repeat Mode</span>
+                <label class="switch">
+                    <input type="checkbox" id="setting-norepeat" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <button class="btn btn-main" id="btn-settings-close" style="padding: 12px; margin-top: 10px; font-size: 1.1rem;">Save & Close</button>
+        </div>
+    </div>
+
+    <script>
+        // --- State Management ---
+        let state = {
+            min: 1,
+            max: 40,
+            pool: [],
+            history: [],
+            soundOn: true,
+            confettiOn: true,
+            noRepeat: true,
+            isRolling: false
+        };
+
+        // --- DOM Cache Elements ---
+        const minInput = document.getElementById('min-roll');
+        const maxInput = document.getElementById('max-roll');
+        const rollDisplay = document.getElementById('roll-display');
+        const displayLabel = document.getElementById('display-label');
+        const remainingDisplay = document.getElementById('remaining-display');
+        const displayCard = document.getElementById('display-card');
+        
+        const btnPick = document.getElementById('btn-pick');
+        const btnReset = document.getElementById('btn-reset');
+        const btnSettings = document.getElementById('btn-settings');
+        const btnSettingsClose = document.getElementById('btn-settings-close');
+        const settingsOverlay = document.getElementById('settings-overlay');
+
+        const toggleSound = document.getElementById('setting-sound');
+        const toggleConfetti = document.getElementById('setting-confetti');
+        const toggleNoRepeat = document.getElementById('setting-norepeat');
+        
+        const canvas = document.getElementById('confetti-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // --- Web Audio Synthesizer Engine ---
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (!state.soundOn) return;
+            initAudio();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const now = audioCtx.currentTime;
+            
+            if (type === 'click') {
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            } 
+            else if (type === 'tick') {
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(150 + Math.random() * 100, now);
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.03);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.03);
+            } 
+            else if (type === 'winner') {
+                // Harmonic Chime chord
+                [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                    let osc = audioCtx.createOscillator();
+                    let gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                    gain.gain.setValueAtTime(0.15, now + idx * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6 + idx * 0.08);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now + idx * 0.08);
+                    osc.stop(now + 0.8 + idx * 0.08);
+                });
+            }
+        }
+
+        // --- Cryptographic Fair Random Selection ---
+        function secureRandomInt(min, max) {
+            const range = max - min + 1;
+            if (window.crypto && window.crypto.getRandomValues) {
+                const uint32 = new Uint32Array(1);
+                window.crypto.getRandomValues(uint32);
+                return min + (uint32[0] % range);
+            } else {
+                return Math.floor(Math.random() * range) + min;
+            }
+        }
+
+        // --- Confetti Generation Engine ---
+        let confettiParticles = [];
+        function setupCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', setupCanvas);
+
+        function createConfetti() {
+            confettiParticles = [];
+            const colors = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#3b82f6'];
+            for (let i = 0; i < 100; i++) {
+                confettiParticles.push({
+                    x: window.innerWidth / 2,
+                    y: window.innerHeight / 2,
+                    vx: (Math.random() - 0.5) * 15,
+                    vy: (Math.random() - 0.7) * 15 - 5,
+                    radius: Math.random() * 4 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    alpha: 1,
+                    decay: Math.random() * 0.015 + 0.015
+                });
+            }
+            animateConfetti();
+        }
+
+        function animateConfetti() {
+            if (confettiParticles.length === 0) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            for (let i = confettiParticles.length - 1; i >= 0; i--) {
+                let p = confettiParticles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.3; // Gravity element
+                p.alpha -= p.decay;
+                
+                if (p.alpha <= 0) {
+                    confettiParticles.splice(i, 1);
+                    continue;
+                }
+                
+                ctx.save();
+                ctx.globalAlpha = p.alpha;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+                ctx.restore();
+            }
+            
+            if (confettiParticles.length > 0) {
+                requestAnimationFrame(animateConfetti);
+            } else {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        // --- Core Application Logic ---
+        function initPool() {
+            state.pool = [];
+            for (let i = state.min; i <= state.max; i++) {
+                if (!state.noRepeat || !state.history.includes(i)) {
+                    state.pool.push(i);
+                }
+            }
+            updateRemainingUI();
+        }
+
+        function updateRemainingUI() {
+            if (state.noRepeat) {
+                remainingDisplay.style.display = 'inline-block';
+                remainingDisplay.innerText = `Remaining: ${state.pool.length}`;
+            } else {
+                remainingDisplay.style.display = 'none';
+            }
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('roll_picker_state', JSON.stringify({
+                min: state.min,
+                max: state.max,
+                history: state.history,
+                soundOn: state.soundOn,
+                confettiOn: state.confettiOn,
+                noRepeat: state.noRepeat
+            }));
+        }
+
+        function loadFromLocalStorage() {
+            const data = localStorage.getItem('roll_picker_state');
+            if (data) {
+                try {
+                    const parsed = JSON.parse(data);
+                    state.min = parsed.min ?? 1;
+                    state.max = parsed.max ?? 40;
+                    state.history = parsed.history ?? [];
+                    state.soundOn = parsed.soundOn ?? true;
+                    state.confettiOn = parsed.confettiOn ?? true;
+                    state.noRepeat = parsed.noRepeat ?? true;
+
+                    // Sync UI configs
+                    minInput.value = state.min;
+                    maxInput.value = state.max;
+                    toggleSound.checked = state.soundOn;
+                    toggleConfetti.checked = state.confettiOn;
+                    toggleNoRepeat.checked = state.noRepeat;
+                } catch(e) {
+                    console.error("Local storage sync error", e);
+                }
+            }
+            initPool();
+        }
+
+        function pickRandomNumber() {
+            if (state.isRolling) return;
+            playSound('click');
+
+            // Bounds protection dynamic validate
+            const parsedMin = parseInt(minInput.value) || 1;
+            const parsedMax = parseInt(maxInput.value) || 1;
+            if (parsedMin !== state.min || parsedMax !== state.max) {
+                state.min = Math.min(parsedMin, parsedMax);
+                state.max = Math.max(parsedMin, parsedMax);
+                state.history = [];
+                initPool();
+            }
+
+            if (state.noRepeat && state.pool.length === 0) {
+                displayEndRoundUI();
+                return;
+            }
+
+            state.isRolling = true;
+            btnPick.disabled = true;
+            rollDisplay.classList.remove('winner-glow');
+            displayLabel.innerText = "Rolling...";
+
+            // Deceleration configuration structure
+            let currentDuration = 50; 
+            const maxDuration = 400; 
+            const totalAnimationTime = 2500;
+            const startTime = performance.now();
+
+            function cycle() {
+                const elapsed = performance.now() - startTime;
+                
+                // Show a completely random visual selection during roll step
+                const visualTickerNum = secureRandomInt(state.min, state.max);
+                rollDisplay.innerText = `#${visualTickerNum}`;
+                playSound('tick');
+
+                if (elapsed < totalAnimationTime) {
+                    // Gradual easing slowdown math calculation
+                    currentDuration += (maxDuration - currentDuration) * 0.08;
+                    setTimeout(cycle, currentDuration);
+                } else {
+                    finalizeSelection();
+                }
+            }
+            
+            setTimeout(cycle, currentDuration);
+        }
+
+        function finalizeSelection() {
+            let selected;
+            if (state.noRepeat) {
+                const poolIndex = secureRandomInt(0, state.pool.length - 1);
+                selected = state.pool.splice(poolIndex, 1)[0];
+                state.history.push(selected);
+            } else {
+                selected = secureRandomInt(state.min, state.max);
+            }
+
+            saveToLocalStorage();
+            
+            // Final adjustments and animations
+            rollDisplay.innerText = `#${selected}`;
+            displayLabel.innerText = "Selected Roll Number";
+            rollDisplay.classList.add('winner-glow');
+            updateRemainingUI();
+            playSound('winner');
+
+            if (state.confettiOn) {
+                createConfetti();
+            }
+
+            state.isRolling = false;
+            btnPick.disabled = false;
+
+            // Instantly transition state visual if that was the absolute final selection
+            if (state.noRepeat && state.pool.length === 0) {
+                setTimeout(() => {
+                    if(!state.isRolling && state.pool.length === 0) displayEndRoundUI();
+                }, 1500);
+            }
+        }
+
+        function displayEndRoundUI() {
+            displayLabel.innerText = "🎉 All done!";
+            rollDisplay.style.fontSize = "2rem";
+            rollDisplay.innerText = "All roll numbers have been selected.";
+            remainingDisplay.style.display = 'none';
+            btnPick.innerText = "🎉 Start New Round";
+        }
+
+        function resetRound() {
+            playSound('click');
+            state.history = [];
+            rollDisplay.style.fontSize = "";
+            rollDisplay.innerText = "#--";
+            displayLabel.innerText = "Selected Roll Number";
+            btnPick.innerText = "🎲 Pick Random Roll Number";
+            btnPick.disabled = false;
+            initPool();
+            saveToLocalStorage();
+        }
+
+        // --- Event Listeners Setup ---
+        btnPick.addEventListener('click', () => {
+            if (state.noRepeat && state.pool.length === 0 && !state.isRolling) {
+                resetRound();
+            } else {
+                pickRandomNumber();
+            }
+        });
+
+        btnReset.addEventListener('click', resetRound);
+        
+        btnSettings.addEventListener('click', () => {
+            playSound('click');
+            settingsOverlay.classList.add('active');
+        });
+
+        btnSettingsClose.addEventListener('click', () => {
+            playSound('click');
+            state.soundOn = toggleSound.checked;
+            state.confettiOn = toggleConfetti.checked;
+            
+            if (state.noRepeat !== toggleNoRepeat.checked) {
+                state.noRepeat = toggleNoRepeat.checked;
+                state.history = []; // reset if structure criteria parameters shift
+                initPool();
+            }
+            
+            saveToLocalStorage();
+            settingsOverlay.classList.remove('active');
+        });
+
+        // Background Modal Dismiss handler
+        settingsOverlay.addEventListener('click', (e) => {
+            if (e.target === settingsOverlay) btnSettingsClose.click();
+        });
+
+        // Realtime sync input adjustments safeguards
+        [minInput, maxInput].forEach(element => {
+            element.addEventListener('change', () => {
+                let pMin = parseInt(minInput.value) || 1;
+                let pMax = parseInt(maxInput.value) || 1;
+                state.min = Math.min(pMin, pMax);
+                state.max = Math.max(pMin, pMax);
+                state.history = [];
+                initPool();
+                saveToLocalStorage();
+            });
+        });
+
+        // Initialize Runtime setup lifecycle
+        setupCanvas();
+        loadFromLocalStorage();
+    </script>
+</body>
+</html>

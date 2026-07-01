@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🪙 Digital Coin Flip</title>
+    <style>
+        /* --- CSS Reset & Variables --- */
+        :root {
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.15);
+            --glass-border: rgba(255, 255, 255, 0.25);
+            --text-main: #ffffff;
+            --text-sub: #e0e0e0;
+            --accent: #ffeb3b;
+            --btn-primary: #4caf50;
+            --btn-secondary: #f44336;
+            --btn-accent: #2196f3;
+            --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            
+            --coin-size: 200px;
+        }
+
+        [data-theme="dark"] {
+            --bg-gradient: linear-gradient(135deg, #121214 0%, #1a1a24 100%);
+            --glass-bg: rgba(0, 0, 0, 0.3);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f5f5f7;
+            --text-sub: #a1a1aa;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-gradient);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* --- Glassmorphism Layout --- */
+        .container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 30px;
+            width: 100%;
+            max-width: 650px;
+            box-shadow: var(--card-shadow);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 5px;
+            font-weight: 800;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            color: var(--text-sub);
+            letter-spacing: 1px;
+            margin-bottom: 30px;
+        }
+
+        /* --- 3D Coin Graphics & Frame --- */
+        .coin-stage {
+            perspective: 1000px;
+            width: var(--coin-size);
+            height: var(--coin-size);
+            margin: 40px auto;
+            position: relative;
+        }
+
+        .coin-shadow {
+            position: absolute;
+            width: var(--coin-size);
+            height: 15px;
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 50%;
+            bottom: -30px;
+            left: 0;
+            filter: blur(6px);
+            transition: transform 0.1s linear, opacity 0.1s linear;
+        }
+
+        .coin {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            transform-style: preserve-3d;
+            will-change: transform;
+            cursor: pointer;
+        }
+
+        .coin-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.4), 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .coin-front {
+            transform: rotateY(0deg);
+        }
+
+        .coin-back {
+            transform: rotateY(180deg);
+        }
+
+        .coin.sparkle::after {
+            content: '';
+            position: absolute;
+            top: -10%; left: -10%; right: -10%; bottom: -10%;
+            background: radial-gradient(circle, rgba(255,235,59,0.6) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 50%;
+            z-index: -1;
+            animation: sparklePulse 0.6s ease-out forwards;
+        }
+
+        @keyframes sparklePulse {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: scale(1.3); opacity: 0; }
+        }
+
+        .coin.bounce {
+            animation: softBounce 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        @keyframes softBounce {
+            0%, 100% { margin-top: 0; }
+            50% { margin-top: -20px; }
+        }
+
+        /* --- Dynamic Results Banner --- */
+        .result-display {
+            min-height: 80px;
+            margin-bottom: 25px;
+        }
+
+        .result-status {
+            font-size: 1.1rem;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .result-text {
+            font-size: 2.8rem;
+            font-weight: 900;
+            color: var(--accent);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        /* --- Control Interface System --- */
+        .controls-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 35px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            border: none;
+            outline: none;
+            padding: 14px 28px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border-radius: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            color: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-flip { background: var(--btn-primary); font-size: 1.2rem; padding: 16px 36px; }
+        .btn-reset { background: var(--btn-secondary); }
+        .btn-settings { background: var(--btn-accent); }
+
+        /* --- Educational Metric Matrix --- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stats-card-full {
+            grid-column: span 2;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-sub);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+        }
+
+        /* --- Flip History Stream --- */
+        .history-section {
+            border-top: 1px solid var(--glass-border);
+            padding-top: 20px;
+            text-align: left;
+        }
+
+        .history-title {
+            font-size: 1rem;
+            color: var(--text-sub);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+
+        .history-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            min-height: 35px;
+            align-items: center;
+        }
+
+        .history-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            animation: badgeIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .badge-heads { background: rgba(76, 175, 80, 0.3); border: 1px solid #4caf50; color: #81c784; }
+        .badge-tails { background: rgba(33, 150, 243, 0.3); border: 1px solid #2196f3; color: #64b5f6; }
+
+        @keyframes badgeIn {
+            0% { transform: scale(0.5) translateY(10px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        /* --- Modular Settings Panel --- */
+        .settings-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .settings-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .settings-modal {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--card-shadow);
+            width: 90%;
+            max-width: 400px;
+            border-radius: 24px;
+            padding: 25px;
+            color: var(--text-main);
+            transform: translateY(20px);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .settings-overlay.active .settings-modal {
+            transform: translateY(0);
+        }
+
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 10px;
+        }
+
+        .settings-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .settings-label {
+            font-weight: 600;
+            font-size: 1.05rem;
+        }
+
+        /* Toggle Switches */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(255,255,255,0.2);
+            transition: .3s; border-radius: 34px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .slider:before {
+            position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;
+            background-color: white; transition: .3s; border-radius: 50%;
+        }
+
+        input:checked + .slider { background-color: var(--btn-primary); }
+        input:checked + .slider:before { transform: translateX(24px); }
+
+        .select-input {
+            background: rgba(255,255,255,0.15);
+            color: var(--text-main);
+            border: 1px solid var(--glass-border);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+        }
+        .select-input option {
+            background: #2a2a36;
+            color: white;
+        }
+
+        .btn-close {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* --- Smartboard & Mobile Optimization --- */
+        @media(max-width: 480px) {
+            header h1 { font-size: 2rem; }
+            .btn { width: 100%; justify-content: center; }
+            .controls-group { flex-direction: column; gap: 10px; }
+            :root { --coin-size: 160px; }
+        }
+
+        @media(min-width: 1024px) {
+            .container { max-width: 750px; padding: 40px; }
+            .stat-value { font-size: 2.2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>🪙 Digital Coin Flip</h1>
+            <p>Flip • Decide • Learn</p>
+        </header>
+
+        <div class="result-display">
+            <div id="resultStatus" class="result-status">Ready to Flip</div>
+            <div id="resultText" class="result-text">🪙</div>
+        </div>
+
+        <div class="coin-stage" id="coinStage">
+            <div class="coin" id="coinVisual">
+                <div class="coin-face coin-front">
+                    <svg width="100%" height="100%" viewBox="0 0 200 200">
+                        <defs>
+                            <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#ffe082" />
+                                <stop offset="50%" stop-color="#ffb300" />
+                                <stop offset="100%" stop-color="#b78103" />
+                            </linearGradient>
+                        </defs>
+                        <circle cx="100" cy="100" r="94" fill="url(#goldGrad)" stroke="#ffca28" stroke-width="4"/>
+                        <circle cx="100" cy="100" r="82" fill="none" stroke="#b78103" stroke-width="2" stroke-dasharray="6,4"/>
+                        <text x="50%" y="55%" text-anchor="middle" fill="#5d4037" font-family="sans-serif" font-weight="900" font-size="28" letter-spacing="1">HEADS</text>
+                        <text x="50%" y="80%" text-anchor="middle" fill="#8d6e63" font-family="sans-serif" font-weight="bold" font-size="32">🪙</text>
+                    </svg>
+                </div>
+                <div class="coin-face coin-back">
+                    <svg width="100%" height="100%" viewBox="0 0 200 200">
+                        <defs>
+                            <linearGradient id="silverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#cfd8dc" />
+                                <stop offset="50%" stop-color="#78909c" />
+                                <stop offset="100%" stop-color="#37474f" />
+                            </linearGradient>
+                        </defs>
+                        <circle cx="100" cy="100" r="94" fill="url(#silverGrad)" stroke="#b0bec5" stroke-width="4"/>
+                        <circle cx="100" cy="100" r="82" fill="none" stroke="#37474f" stroke-width="2" stroke-dasharray="6,4"/>
+                        <text x="50%" y="55%" text-anchor="middle" fill="#212121" font-family="sans-serif" font-weight="900" font-size="28" letter-spacing="1">TAILS</text>
+                        <text x="50%" y="80%" text-anchor="middle" fill="#455a64" font-family="sans-serif" font-weight="bold" font-size="32">👑</text>
+                    </svg>
+                </div>
+            </div>
+            <div class="coin-shadow" id="coinShadow"></div>
+        </div>
+
+        <div class="controls-group">
+            <button class="btn btn-flip" id="btnFlip" onclick="triggerFlip()">🪙 Flip Coin</button>
+            <button class="btn btn-reset" id="btnReset" onclick="triggerReset()">🔄 Reset</button>
+            <button class="btn btn-settings" id="btnSettings" onclick="toggleSettings(true)">⚙ Settings</button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-box">
+                <span class="stat-label">Heads</span>
+                <span class="stat-value" id="statHeadsCount">0</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">Tails</span>
+                <span class="stat-value" id="statTailsCount">0</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">Heads %</span>
+                <span class="stat-value" id="statHeadsPct">0%</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">Tails %</span>
+                <span class="stat-value" id="statTailsPct">0%</span>
+            </div>
+            <div class="stat-box stats-card-full">
+                <span class="stat-label">Total Flips</span>
+                <span class="stat-value" id="statTotalCount">0</span>
+            </div>
+        </div>
+
+        <div class="history-section">
+            <h3 class="history-title">Flip History (Last 10)</h3>
+            <div class="history-badges" id="historyStream"></div>
+        </div>
+    </div>
+
+    <div class="settings-overlay" id="settingsOverlay" onclick="closeOverlayOutside(event)">
+        <div class="settings-modal">
+            <div class="settings-header">
+                <h2>Settings</h2>
+                <button class="btn-close" onclick="toggleSettings(false)">&times;</button>
+            </div>
+            
+            <div class="settings-row">
+                <span class="settings-label">✔ Sound Effects</span>
+                <label class="switch">
+                    <input type="checkbox" id="cfgSound" checked onchange="saveConfigState()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="settings-row">
+                <span class="settings-label">✔ Animations</span>
+                <label class="switch">
+                    <input type="checkbox" id="cfgAnim" checked onchange="saveConfigState()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="settings-row">
+                <span class="settings-label">✔ Dark Mode</span>
+                <label class="switch">
+                    <input type="checkbox" id="cfgDark" onchange="toggleDarkTheme()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="settings-row">
+                <span class="settings-label">✔ Auto Flip Batch</span>
+                <select class="select-input" id="cfgAutoFlip" onchange="checkAutoFlipBatch(this)">
+                    <option value="none">Disabled</option>
+                    <option value="10">10 Flips</option>
+                    <option value="20">20 Flips</option>
+                    <option value="50">50 Flips</option>
+                    <option value="100">100 Flips</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let appState = {
+            stats: { heads: 0, tails: 0, total: 0 },
+            history: [],
+            config: { sound: true, anim: true, darkMode: false }
+        };
+
+        let isFlipping = false;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (!appState.config.sound) return;
+            initAudio();
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(10, now + 0.05);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.05);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            } else if (type === 'toss') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(850, now + 0.15);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.linearRampToValueAtTime(0.05, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } else if (type === 'land') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.setValueAtTime(150, now + 0.05);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            }
+        }
+
+        function getCryptographicRandomSide() {
+            try {
+                const cryptoObj = window.crypto || window.msCrypto;
+                if (cryptoObj && cryptoObj.getRandomValues) {
+                    const arr = new Uint8Array(1);
+                    cryptoObj.getRandomValues(arr);
+                    return arr[0] % 2 === 0 ? 'Heads' : 'Tails';
+                }
+            } catch (e) {}
+            return Math.random() < 0.5 ? 'Heads' : 'Tails';
+        }
+
+        function triggerFlip() {
+            if (isFlipping) return;
+            isFlipping = true;
+            
+            // Disable interface buttons
+            document.getElementById('btnFlip').disabled = true;
+            document.getElementById('btnReset').disabled = true;
+            document.getElementById('btnSettings').disabled = true;
+            
+            playSound('toss');
+            const outcome = getCryptographicRandomSide();
+
+            const coinVisual = document.getElementById('coinVisual');
+            const coinShadow = document.getElementById('coinShadow');
+            const resStatus = document.getElementById('resultStatus');
+            const resText = document.getElementById('resultText');
+
+            resStatus.textContent = "Flipping...";
+            resText.textContent = "⏳";
+
+            if (appState.config.anim) {
+                let startTimestamp = null;
+                const duration = 2200; // 2.2 Seconds duration
+                const spins = 7; 
+                const targetDeg = outcome === 'Heads' ? 0 : 180;
+                const totalTargetRotation = (spins * 360) + targetDeg;
+
+                function step(timestamp) {
+                    if (!startTimestamp) startTimestamp = timestamp;
+                    const elapsed = timestamp - startTimestamp;
+                    const progress = Math.min(elapsed / duration, 1);
+                    
+                    // Cubic deceleration easing curve
+                    const easeOut = 1 - Math.pow(1 - progress, 3);
+                    const currentRotation = easeOut * totalTargetRotation;
+                    
+                    coinVisual.style.transform = `rotateY(${currentRotation}deg)`;
+                    
+                    // Shadow tracking transformation logic
+                    const shadowScale = 1 - (Math.sin(progress * Math.PI) * 0.4);
+                    coinShadow.style.transform = `scale(${shadowScale})`;
+                    coinShadow.style.opacity = shadowScale - 0.2;
+
+                    if (progress < 1) {
+                        requestAnimationFrame(step);
+                    } else {
+                        // Enforce perfect structural clean landing angle alignment
+                        coinVisual.style.transform = `rotateY(${targetDeg}deg)`;
+                        coinShadow.style.transform = `scale(1)`;
+                        coinShadow.style.opacity = 1;
+                        finalizeFlipResult(outcome);
+                    }
+                }
+                requestAnimationFrame(step);
+            } else {
+                const degree = outcome === 'Heads' ? 0 : 180;
+                coinVisual.style.transform = `rotateY(${degree}deg)`;
+                finalizeFlipResult(outcome);
+            }
+        }
+
+        function finalizeFlipResult(side) {
+            isFlipping = false;
+            document.getElementById('btnFlip').disabled = false;
+            document.getElementById('btnReset').disabled = false;
+            document.getElementById('btnSettings').disabled = false;
+            playSound('land');
+
+            const coinVisual = document.getElementById('coinVisual');
+            if (appState.config.anim) {
+                coinVisual.classList.add('sparkle', 'bounce');
+                setTimeout(() => {
+                    coinVisual.classList.remove('sparkle', 'bounce');
+                }, 600);
+            }
+
+            appState.stats.total++;
+            if (side === 'Heads') appState.stats.heads++;
+            else appState.stats.tails++;
+
+            appState.history.unshift(side);
+            if (appState.history.length > 10) appState.history.pop();
+
+            saveStateToStorage();
+            renderStatsAndHistory();
+
+            document.getElementById('resultStatus').textContent = "🎉 Result";
+            document.getElementById('resultText').textContent = side;
+        }
+
+        function renderStatsAndHistory() {
+            const hCount = appState.stats.heads;
+            const tCount = appState.stats.tails;
+            const total = appState.stats.total;
+
+            document.getElementById('statHeadsCount').textContent = hCount;
+            document.getElementById('statTailsCount').textContent = tCount;
+            document.getElementById('statTotalCount').textContent = total;
+
+            const hPct = total > 0 ? Math.round((hCount / total) * 100) : 0;
+            const tPct = total > 0 ? Math.round((tCount / total) * 100) : 0;
+
+            document.getElementById('statHeadsPct').textContent = `${hPct}%`;
+            document.getElementById('statTailsPct').textContent = `${tPct}%`;
+
+            const container = document.getElementById('historyStream');
+            container.innerHTML = '';
+            appState.history.forEach(item => {
+                const badge = document.createElement('span');
+                badge.className = `history-badge badge-${item.toLowerCase()}`;
+                badge.textContent = item;
+                container.appendChild(badge);
+            });
+        }
+
+        function checkAutoFlipBatch(selectNode) {
+            const val = selectNode.value;
+            if (val === 'none') return;
+            
+            playSound('click');
+            const operationsCount = parseInt(val, 10);
+            
+            document.getElementById('btnFlip').disabled = true;
+            toggleSettings(false);
+
+            setTimeout(() => {
+                for (let i = 0; i < operationsCount; i++) {
+                    const side = getCryptographicRandomSide();
+                    appState.stats.total++;
+                    if (side === 'Heads') appState.stats.heads++;
+                    else appState.stats.tails++;
+                    
+                    appState.history.unshift(side);
+                }
+                if (appState.history.length > 10) {
+                    appState.history = appState.history.slice(0, 10);
+                }
+
+                saveStateToStorage();
+                renderStatsAndHistory();
+
+                document.getElementById('resultStatus').textContent = `Batch Sequence Complete`;
+                document.getElementById('resultText').textContent = `+${operationsCount} Flips`;
+                document.getElementById('btnFlip').disabled = false;
+                selectNode.value = 'none';
+            }, 300);
+        }
+
+        function triggerReset() {
+            playSound('click');
+            const confirmation = confirm("Are you sure you want to completely reset all statistics, historical data, and orientations?");
+            if (!confirmation) return;
+
+            appState.stats = { heads: 0, tails: 0, total: 0 };
+            appState.history = [];
+            
+            saveStateToStorage();
+            renderStatsAndHistory();
+
+            document.getElementById('coinVisual').style.transform = `rotateY(0deg)`;
+            document.getElementById('resultStatus').textContent = "Ready to Flip";
+            document.getElementById('resultText').textContent = "🪙";
+        }
+
+        function toggleSettings(openState) {
+            playSound('click');
+            const overlay = document.getElementById('settingsOverlay');
+            if (openState) overlay.classList.add('active');
+            else overlay.classList.remove('active');
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') toggleSettings(false);
+        });
+
+        function closeOverlayOutside(e) {
+            if (e.target.id === 'settingsOverlay') {
+                toggleSettings(false);
+            }
+        }
+
+        function toggleDarkTheme() {
+            const isDark = document.getElementById('cfgDark').checked;
+            if (isDark) document.documentElement.setAttribute('data-theme', 'dark');
+            else document.documentElement.removeAttribute('data-theme');
+            saveConfigState();
+        }
+
+        function saveConfigState() {
+            appState.config.sound = document.getElementById('cfgSound').checked;
+            appState.config.anim = document.getElementById('cfgAnim').checked;
+            appState.config.darkMode = document.getElementById('cfgDark').checked;
+            saveStateToStorage();
+        }
+
+        function saveStateToStorage() {
+            localStorage.setItem('digital_coin_flip_state', JSON.stringify(appState));
+        }
+
+        function loadStateFromStorage() {
+            const stored = localStorage.getItem('digital_coin_flip_state');
+            if (stored) {
+                try {
+                    const parsed = JSON.parse(stored);
+                    if (parsed.stats) appState.stats = parsed.stats;
+                    if (parsed.history) appState.history = parsed.history;
+                    if (parsed.config) appState.config = parsed.config;
+                } catch (e) { console.error("Persistence loading fallback error", e); }
+            }
+            
+            document.getElementById('cfgSound').checked = appState.config.sound;
+            document.getElementById('cfgAnim').checked = appState.config.anim;
+            document.getElementById('cfgDark').checked = appState.config.darkMode;
+            
+            if (appState.config.darkMode) document.documentElement.setAttribute('data-theme', 'dark');
+            else document.documentElement.removeAttribute('data-theme');
+
+            renderStatsAndHistory();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadStateFromStorage();
+            document.getElementById('coinVisual').addEventListener('click', () => {
+                triggerFlip();
+            });
+        });
+    </script>
+</body>
+</html>

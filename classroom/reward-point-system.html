@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏆 Classroom Reward Point System</title>
+    <style>
+        /* --- Design System & Variables --- */
+        :root {
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.15);
+            --glass-border: rgba(255, 255, 255, 0.25);
+            --glass-blur: blur(12px);
+            --text-main: #ffffff;
+            --text-muted: #e0e0ff;
+            --accent-gold: #ffd700;
+            --accent-silver: #e0e0e0;
+            --accent-bronze: #cd7f32;
+            --success-color: #4cd137;
+            --danger-color: #e84118;
+            --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.3);
+        }
+
+        /* --- Global Reset & Typography --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        /* --- Layout Structure --- */
+        .app-container {
+            width: 100%;
+            max-width: 1000px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        @media (min-width: 768px) {
+            .app-container {
+                grid-template-columns: 1.2fr 0.8fr;
+            }
+            .full-width {
+                grid-column: span 2;
+            }
+        }
+
+        /* --- Glassmorphism Card Style --- */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        /* --- Header Elements --- */
+        header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            margin-bottom: 5px;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+        }
+
+        /* --- Utility Forms & Inputs --- */
+        .flex-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        input, select {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            color: white;
+            padding: 12px;
+            font-size: 1.1rem;
+            outline: none;
+            transition: background 0.3s;
+        }
+
+        input[type="number"] {
+            width: 80px;
+            text-align: center;
+        }
+
+        select, .search-input {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        input:focus, select:focus {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: var(--accent-gold);
+        }
+
+        option {
+            background: #4b377c;
+            color: white;
+        }
+
+        /* --- Standard Button Styling --- */
+        .btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        /* --- Core Controller View --- */
+        .student-display-panel {
+            text-align: center;
+            position: relative;
+            padding: 35px 20px;
+        }
+
+        .roll-headline {
+            font-size: 2rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .badge-display {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            min-height: 30px;
+        }
+
+        .points-display {
+            font-size: 5.5rem;
+            font-weight: 900;
+            color: var(--accent-gold);
+            text-shadow: 0 4px 20px rgba(255,215,0,0.3);
+            line-height: 1;
+            margin-bottom: 20px;
+            transition: transform 0.1s ease;
+        }
+
+        /* --- Point Modifiers Grid --- */
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .btn-reward { font-size: 1.3rem; padding: 18px; }
+        .btn-plus-1 { background-color: #2ecc71; }
+        .btn-plus-2 { background-color: #3498db; }
+        .btn-plus-5 { background-color: #9b59b6; }
+        .btn-plus-10 { background-color: #f1c40f; color: #333; }
+        
+        .btn-deduct { background-color: #e74c3c; font-size: 1.1rem; padding: 12px; }
+        .deduct-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        /* --- Floating Floating Score Indicator --- */
+        .floating-indicator {
+            position: absolute;
+            font-size: 2.5rem;
+            font-weight: 900;
+            pointer-events: none;
+            animation: floatUp 0.8s ease-out forwards;
+            left: 50%;
+            top: 40%;
+            transform: translateX(-50%);
+            text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translate(-50%, 0) scale(0.8); }
+            100% { opacity: 0; transform: translate(-50%, -80px) scale(1.3); }
+        }
+
+        /* --- Modern Progress Bar Component --- */
+        .progress-container {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            height: 18px;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #38ef7d, #11998e);
+            height: 100%;
+            width: 0%;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* --- Global Toolbar Panel --- */
+        .system-toolbar {
+            display: flex;
+            gap: 12px;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .system-toolbar .btn { flex: 1; min-width: 110px; }
+
+        /* --- Leaderboard Layout --- */
+        .leaderboard-list {
+            margin-top: 15px;
+            max-height: 380px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.1);
+            margin-bottom: 8px;
+            padding: 12px 18px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .leaderboard-item.rank-1 { background: rgba(255, 215, 0, 0.25); border-color: var(--accent-gold); }
+        .leaderboard-item.rank-2 { background: rgba(224, 224, 224, 0.2); border-color: var(--accent-silver); }
+        .leaderboard-item.rank-3 { background: rgba(205, 127, 50, 0.2); border-color: var(--accent-bronze); }
+
+        .rank-badge {
+            font-weight: 800;
+            font-size: 1.1rem;
+            width: 35px;
+        }
+
+        .leaderboard-name {
+            flex: 1;
+            font-weight: 600;
+            padding-left: 10px;
+        }
+
+        .leaderboard-score {
+            font-weight: 800;
+            color: var(--accent-gold);
+        }
+
+        /* --- Global Stats Box --- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-box {
+            background: rgba(0,0,0,0.15);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .stat-box div:first-child {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-box div:last-child {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+
+        /* --- Modal Panel Framework --- */
+        .modal-overlay {
+            position: fixed;
+            top:0; left:0; right:0; bottom:0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            padding: 15px;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            width: 100%;
+            max-width: 500px;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .close-modal {
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        /* --- Particle Animation Overlay Canvas --- */
+        #animation-canvas {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        /* --- Printing Report Formatting Layout --- */
+        #print-report-wrapper {
+            display: none;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #print-report-wrapper, #print-report-wrapper * {
+                visibility: visible;
+            }
+            #print-report-wrapper {
+                display: block !important;
+                position: absolute;
+                left: 0; top: 0; width: 100%;
+                color: #000;
+                background: #fff;
+                padding: 30px;
+                font-family: Arial, sans-serif;
+            }
+            .print-header {
+                text-align: center;
+                border-bottom: 3px double #000;
+                padding-bottom: 15px;
+                margin-bottom: 30px;
+            }
+            .print-header h1 { font-size: 26pt; margin-bottom: 5px; color: #000; }
+            .print-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px;
+            }
+            .print-table th, .print-table td {
+                border: 1px solid #333;
+                padding: 10px;
+                text-align: center;
+                font-size: 11pt;
+            }
+            .print-table th { background-color: #f2f2f2; font-weight: bold; }
+            .print-meta {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 20px;
+                font-size: 12pt;
+                font-weight: bold;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="animation-canvas"></canvas>
+
+    <header class="full-width" style="max-width: 1000px; width: 100%;">
+        <h1>🏆 Classroom Reward Point System</h1>
+        <p>Encourage • Reward • Motivate</p>
+    </header>
+
+    <main class="app-container">
+        
+        <section class="glass-card full-width flex-group" style="justify-content: space-between;">
+            <div class="flex-group">
+                <div>
+                    <label>From </label>
+                    <input type="number" id="range-from" value="1" min="1">
+                </div>
+                <div>
+                    <label>To </label>
+                    <input type="number" id="range-to" value="40" min="1">
+                </div>
+                <button class="btn" id="btn-update-range">🔄 Sync Class</button>
+            </div>
+            
+            <div class="flex-group" style="flex: 1; justify-content: flex-end;">
+                <label>🔍 Find Roll </label>
+                <input type="number" id="search-roll" class="search-input" placeholder="Jump to #...">
+            </div>
+        </section>
+
+        <section class="glass-card student-display-panel">
+            <div class="flex-group" style="justify-content: space-between; margin-bottom: 15px;">
+                <button class="btn" id="btn-prev">◀ Prev</button>
+                <select id="select-roll-dropdown"></select>
+                <button class="btn" id="btn-next">Next ▶</button>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--glass-border); margin: 15px 0;">
+
+            <div class="roll-headline" id="display-roll-number">Roll Number #1</div>
+            <div class="badge-display" id="display-badge">👑 Classroom Champion</div>
+
+            <div class="points-display" id="display-points">0</div>
+
+            <div class="action-grid">
+                <button class="btn btn-reward btn-plus-1" data-delta="1">加 +1</button>
+                <button class="btn btn-reward btn-plus-2" data-delta="2">🌟 +2</button>
+                <button class="btn btn-reward btn-plus-5" data-delta="5">🏅 +5</button>
+                <button class="btn btn-reward btn-plus-10" data-delta="10">⭐ +10</button>
+            </div>
+            <div class="deduct-grid">
+                <button class="btn btn-deduct" data-delta="-1">➖ -1</button>
+                <button class="btn btn-deduct" data-delta="-2">➖ -2</button>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="student-progress-bar"></div>
+            </div>
+        </section>
+
+        <section class="glass-card" style="display: flex; flex-direction: column;">
+            <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 10px;">🏆 Top Performers</h2>
+            <div class="leaderboard-list" id="leaderboard-container">
+                </div>
+        </section>
+
+        <section class="glass-card full-width">
+            <div class="stats-grid" id="stats-container">
+                <div class="stat-box"><div>Total Students</div><div id="stat-total-students">0</div></div>
+                <div class="stat-box"><div>Highest Points</div><div id="stat-max-points">0</div></div>
+                <div class="stat-box"><div>Average Points</div><div id="stat-avg-points">0</div></div>
+                <div class="stat-box"><div>Total Points Given</div><div id="stat-total-points">0</div></div>
+                <div class="stat-box"><div>Top Performer</div><div id="stat-top-performer">-</div></div>
+            </div>
+        </section>
+
+        <section class="glass-card full-width system-toolbar">
+            <button class="btn" id="btn-save">💾 Save Backup</button>
+            <button class="btn" id="btn-print">📊 Print Report</button>
+            <button class="btn" id="btn-open-settings" style="background-color: rgba(241, 196, 15, 0.2);">⚙ Reset Options</button>
+        </section>
+
+    </main>
+
+    <div class="modal-overlay" id="settings-modal">
+        <div class="glass-card modal-content">
+            <div class="modal-header">
+                <span>⚙ Class Action Utilities</span>
+                <button class="close-modal" id="btn-close-settings">&times;</button>
+            </div>
+            <p style="margin-bottom: 20px; color: var(--text-muted); font-size: 0.95rem;">
+                Select a reset procedure strategy. Confirm variations cannot be rolled back.
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <button class="btn" id="btn-reset-selected" style="background-color: var(--danger-color);">🔄 Reset Current Student Score</button>
+                <button class="btn" id="btn-reset-all" style="background-color: var(--danger-color); font-weight: 900;">🚨 Reset Entire Class Records</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="print-report-wrapper">
+        <div class="print-header">
+            <h1 id="print-title">🏆 Classroom Reward Point Summary Report</h1>
+            <div class="print-meta">
+                <span id="print-meta-date">Date: --/--/----</span>
+                <span id="print-meta-stats">Total Class Population: -</span>
+            </div>
+        </div>
+        <table class="print-table">
+            <thead>
+                <tr>
+                    <th>Rank Hierarchy</th>
+                    <th>Roll Number</th>
+                    <th>Earned Reward Points</th>
+                    <th>Acquired Achievement Badge</th>
+                </tr>
+            </thead>
+            <tbody id="print-table-body">
+                </tbody>
+        </table>
+    </div>
+
+    <script>
+        /**
+         * System Configuration Model Engine
+         */
+        let appState = {
+            config: { startRoll: 1, endRoll: 40 },
+            scores: {}, // Primary data mapping: { rollNum: pointsValue }
+            currentSelectedRoll: 1
+        };
+
+        // Initialize Native High Fidelity Web Audio Context Synthesis Engine
+        const AudioEngine = {
+            ctx: null,
+            init() {
+                if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            },
+            play(type) {
+                this.init();
+                if (!this.ctx) return;
+                
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                const now = this.ctx.currentTime;
+
+                switch(type) {
+                    case 'click':
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(600, now);
+                        gain.gain.setValueAtTime(0.1, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                        osc.start(now); osc.stop(now + 0.05);
+                        break;
+                    case 'add':
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(523.25, now); // C5
+                        osc.frequency.exponentialRampToValueAtTime(880, now + 0.15); // A5
+                        gain.gain.setValueAtTime(0.15, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                        osc.start(now); osc.stop(now + 0.2);
+                        break;
+                    case 'remove':
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(300, now);
+                        osc.frequency.linearRampToValueAtTime(150, now + 0.2);
+                        gain.gain.setValueAtTime(0.15, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                        osc.start(now); osc.stop(now + 0.2);
+                        break;
+                    case 'badge':
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(587.33, now); // D5
+                        osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+                        osc.frequency.setValueAtTime(880, now + 0.16); // A5
+                        gain.gain.setValueAtTime(0.2, now);
+                        gain.gain.exponentialRampToValueAtTime(0.02, now + 0.4);
+                        osc.start(now); osc.stop(now + 0.4);
+                        break;
+                    case 'modal':
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(440, now);
+                        osc.frequency.linearRampToValueAtTime(554.37, now + 0.15);
+                        gain.gain.setValueAtTime(0.1, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
+                        osc.start(now); osc.stop(now + 0.18);
+                        break;
+                }
+            }
+        };
+
+        // Canvas Particle Engine Logic
+        const CanvasFX = {
+            canvas: document.getElementById('animation-canvas'),
+            ctx: null,
+            particles: [],
+            animationFrame: null,
+            init() {
+                this.ctx = this.canvas.getContext('2d');
+                window.addEventListener('resize', () => this.resize());
+                this.resize();
+            },
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            },
+            spawnBurst(x, y, count = 35) {
+                for (let i = 0; i < count; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = Math.random() * 6 + 4;
+                    this.particles.push({
+                        x: x,
+                        y: y,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed - 2, // Upward bias
+                        radius: Math.random() * 5 + 4,
+                        color: `hsla(${Math.random() * 360}, 100%, 60%, 1)`,
+                        alpha: 1,
+                        decay: Math.random() * 0.015 + 0.015,
+                        type: Math.random() > 0.5 ? 'star' : 'coin'
+                    });
+                }
+                if (!this.animationFrame) this.runLoop();
+            },
+            runLoop() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                for (let i = this.particles.length - 1; i >= 0; i--) {
+                    const p = this.particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.15; // Gravity simulated simulation
+                    p.alpha -= p.decay;
+
+                    if (p.alpha <= 0) {
+                        this.particles.splice(i, 1);
+                        continue;
+                    }
+
+                    this.ctx.save();
+                    this.ctx.globalAlpha = p.alpha;
+                    this.ctx.fillStyle = p.color;
+                    this.ctx.beginPath();
+                    if (p.type === 'star') {
+                        // Drawing miniature vector stars
+                        for (let j = 0; j < 5; j++) {
+                            this.ctx.lineTo(p.x + Math.cos((18 + j * 72) * Math.PI / 180) * p.radius, p.y + Math.sin((18 + j * 72) * Math.PI / 180) * p.radius);
+                            this.ctx.lineTo(p.x + Math.cos((54 + j * 72) * Math.PI / 180) * (p.radius/2), p.y + Math.sin((54 + j * 72) * Math.PI / 180) * (p.radius/2));
+                        }
+                    } else {
+                        this.ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    }
+                    this.ctx.fill();
+                    this.ctx.restore();
+                }
+
+                if (this.particles.length > 0) {
+                    this.animationFrame = requestAnimationFrame(() => this.runLoop());
+                } else {
+                    this.animationFrame = null;
+                }
+            }
+        };
+
+        /**
+         * Core Business Rules Mapping
+         */
+        function determineBadge(points) {
+            if (points >= 100) return { text: "👑 Classroom Champion", tier: "champion" };
+            if (points >= 50) return { text: "🥇 Gold Star", tier: "gold" };
+            if (points >= 25) return { text: "🥈 Silver Star", tier: "silver" };
+            if (points >= 10) return { text: "🥉 Bronze Star", tier: "bronze" };
+            return { text: "🌱 Novice Learner", tier: "base" };
+        }
+
+        function calculateMaxProgressBarWidth(points) {
+            // Fluid scaling dynamic ceiling algorithm wrapper
+            if (points <= 10) return (points / 10) * 100;
+            if (points <= 25) return (points / 25) * 100;
+            if (points <= 50) return (points / 50) * 100;
+            if (points <= 100) return (points / 100) * 100;
+            return 100; // Cap presentation width strictly at maximum threshold scale
+        }
+
+        /**
+         * State Infrastructure Pipeline Synchronization
+         */
+        function initializeEngineDataState() {
+            const rawConfig = localStorage.getItem('crm_config');
+            const rawScores = localStorage.getItem('crm_scores');
+
+            if (rawConfig && rawScores) {
+                appState.config = JSON.parse(rawConfig);
+                appState.scores = JSON.parse(rawScores);
+            } else {
+                rebuildDefaultClassStructure(1, 40);
+            }
+            appState.currentSelectedRoll = appState.config.startRoll;
+        }
+
+        function rebuildDefaultClassStructure(from, to) {
+            appState.config = { startRoll: from, endRoll: to };
+            appState.scores = {};
+            for (let i = from; i <= to; i++) {
+                appState.scores[i] = 0;
+            }
+            saveStateToStoragePipeline();
+        }
+
+        function saveStateToStoragePipeline() {
+            localStorage.setItem('crm_config', JSON.stringify(appState.config));
+            localStorage.setItem('crm_scores', JSON.stringify(appState.scores));
+        }
+
+        /**
+         * Reactive Document Object UI Mutation Control Layer
+         */
+        const HTML = {
+            selectDropdown: document.getElementById('select-roll-dropdown'),
+            displayRoll: document.getElementById('display-roll-number'),
+            displayBadge: document.getElementById('display-badge'),
+            displayPoints: document.getElementById('display-points'),
+            progressBar: document.getElementById('student-progress-bar'),
+            rangeFrom: document.getElementById('range-from'),
+            rangeTo: document.getElementById('range-to'),
+            searchRoll: document.getElementById('search-roll'),
+            leaderboard: document.getElementById('leaderboard-container'),
+            modal: document.getElementById('settings-modal'),
+            
+            // Statistics selectors
+            statTotalStudents: document.getElementById('stat-total-students'),
+            statMaxPoints: document.getElementById('stat-max-points'),
+            statAvgPoints: document.getElementById('stat-avg-points'),
+            statTotalPoints: document.getElementById('stat-total-points'),
+            statTopPerformer: document.getElementById('stat-top-performer'),
+
+            populateDropdown() {
+                this.selectDropdown.innerHTML = '';
+                for (let i = appState.config.startRoll; i <= appState.config.endRoll; i++) {
+                    const opt = document.createElement('option');
+                    opt.value = i;
+                    opt.textContent = `Roll Number #${i}`;
+                    this.selectDropdown.appendChild(opt);
+                }
+                this.selectDropdown.value = appState.currentSelectedRoll;
+            },
+
+            syncInterfaceToSelectedRoll(animatePoints = false) {
+                const currentPoints = appState.scores[appState.currentSelectedRoll] || 0;
+                this.selectDropdown.value = appState.currentSelectedRoll;
+                this.displayRoll.textContent = `Roll Number #${appState.currentSelectedRoll}`;
+                
+                const badgeInfo = determineBadge(currentPoints);
+                this.displayBadge.textContent = badgeInfo.text;
+                
+                this.displayPoints.textContent = currentPoints;
+                this.progressBar.style.width = `${calculateMaxProgressBarWidth(currentPoints)}%`;
+
+                if (animatePoints) {
+                    this.displayPoints.style.transform = 'scale(1.2)';
+                    setTimeout(() => this.displayPoints.style.transform = 'scale(1)', 100);
+                }
+
+                this.renderLeaderboardAndStatsView();
+            },
+
+            renderLeaderboardAndStatsView() {
+                // Compile metrics
+                const entries = Object.entries(appState.scores).map(([roll, pts]) => ({
+                    roll: parseInt(roll),
+                    points: pts,
+                    badge: determineBadge(pts).text
+                }));
+
+                // Sort high to low
+                entries.sort((a, b) => b.points - a.points || a.roll - b.roll);
+
+                // Render functional minimal leaderboard items
+                this.leaderboard.innerHTML = '';
+                entries.forEach((item, index) => {
+                    const rank = index + 1;
+                    let rankDisplay = `#${rank}`;
+                    let classModifier = '';
+
+                    if (rank === 1) { rankDisplay = '🥇'; classModifier = 'rank-1'; }
+                    else if (rank === 2) { rankDisplay = '🥈'; classModifier = 'rank-2'; }
+                    else if (rank === 3) { rankDisplay = '🥉'; classModifier = 'rank-3'; }
+
+                    const el = document.createElement('div');
+                    el.className = `leaderboard-item ${classModifier}`;
+                    el.innerHTML = `
+                        <span class="rank-badge">${rankDisplay}</span>
+                        <span class="leaderboard-name">Roll #${item.roll} <small style="display:block; font-size:0.75rem; color:var(--text-muted);">${item.badge}</small></span>
+                        <span class="leaderboard-score">${item.points} pts</span>
+                    `;
+                    // Click mapping configuration for cross navigation
+                    el.style.cursor = 'pointer';
+                    el.onclick = () => {
+                        AudioEngine.play('click');
+                        appState.currentSelectedRoll = item.roll;
+                        this.syncInterfaceToSelectedRoll();
+                    };
+                    this.leaderboard.appendChild(el);
+                });
+
+                // Compute Core System Analytics
+                const totalStudents = entries.length;
+                const totalPoints = entries.reduce((acc, curr) => acc + curr.points, 0);
+                const maxPoints = totalStudents > 0 ? entries[0].points : 0;
+                const avgPoints = totalStudents > 0 ? (totalPoints / totalStudents).toFixed(1) : 0;
+                
+                let topPerformerText = "-";
+                if(totalStudents > 0 && entries[0].points > 0) {
+                    // Collect matching top score allocations
+                    const topScorers = entries.filter(e => e.points === maxPoints).map(e => `#${e.roll}`);
+                    topPerformerText = topScorers.join(', ');
+                    if(topPerformerText.length > 15) topPerformerText = topPerformerText.substring(0, 12) + '...';
+                }
+
+                this.statTotalStudents.textContent = totalStudents;
+                this.statMaxPoints.textContent = maxPoints;
+                this.statAvgPoints.textContent = avgPoints;
+                this.statTotalPoints.textContent = totalPoints;
+                this.statTopPerformer.textContent = topPerformerText;
+            },
+
+            triggerFloatingIndicatorText(text, isPositive, eventTarget) {
+                const element = document.createElement('div');
+                element.className = 'floating-indicator';
+                element.textContent = text;
+                element.style.color = isPositive ? 'var(--accent-gold)' : 'var(--danger-color)';
+                
+                // Position engine allocation target configuration
+                document.querySelector('.student-display-panel').appendChild(element);
+                setTimeout(() => element.remove(), 800);
+            }
+        };
+
+        /**
+         * Orchestration Infrastructure Wiring / Events Interceptor Controller
+         */
+        function registerEventHandlers() {
+            // Reward / Deduction processing center core logic
+            const processScoreMutation = (targetDelta, event) => {
+                const oldPoints = appState.scores[appState.currentSelectedRoll] || 0;
+                let newPoints = oldPoints + targetDelta;
+                if (newPoints < 0) newPoints = 0; // Strict boundary layout
+
+                if (newPoints === oldPoints) return; // Break loop execution early on non-change
+
+                appState.scores[appState.currentSelectedRoll] = newPoints;
+                saveStateToStoragePipeline();
+
+                const isPositive = targetDelta > 0;
+                
+                // Track badge updates
+                const oldBadge = determineBadge(oldPoints).text;
+                const newBadge = determineBadge(newPoints).text;
+
+                if (isPositive) {
+                    AudioEngine.play(oldBadge !== newBadge ? 'badge' : 'add');
+                    // Canvas particle positioning coordinates capture fallback configuration tracking
+                    const rect = HTML.displayPoints.getBoundingClientRect();
+                    CanvasFX.spawnBurst(rect.left + (rect.width / 2), rect.top + (rect.height / 2));
+                } else {
+                    AudioEngine.play('remove');
+                }
+
+                HTML.triggerFloatingIndicatorText(`${isPositive ? '+' : ''}${targetDelta}`, isPositive, event.target);
+                HTML.syncInterfaceToSelectedRoll(true);
+            };
+
+            // Capture clicks across point system modifications buttons elements seamlessly
+            document.querySelectorAll('.btn-reward, .btn-deduct').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const delta = parseInt(e.target.getAttribute('data-delta'));
+                    processScoreMutation(delta, e);
+                });
+            });
+
+            // Handle Direct Component Event Attachments
+            HTML.selectDropdown.addEventListener('change', (e) => {
+                AudioEngine.play('click');
+                appState.currentSelectedRoll = parseInt(e.target.value);
+                HTML.syncInterfaceToSelectedRoll();
+            });
+
+            document.getElementById('btn-prev').addEventListener('click', () => {
+                AudioEngine.play('click');
+                appState.currentSelectedRoll--;
+                if (appState.currentSelectedRoll < appState.config.startRoll) {
+                    appState.currentSelectedRoll = appState.config.endRoll;
+                }
+                HTML.syncInterfaceToSelectedRoll();
+            });
+
+            document.getElementById('btn-next').addEventListener('click', () => {
+                AudioEngine.play('click');
+                appState.currentSelectedRoll++;
+                if (appState.currentSelectedRoll > appState.config.endRoll) {
+                    appState.currentSelectedRoll = appState.config.startRoll;
+                }
+                HTML.syncInterfaceToSelectedRoll();
+            });
+
+            // Quick Intercept Filter Search Input Box Logic Mapping
+            HTML.searchRoll.addEventListener('input', (e) => {
+                const targetVal = parseInt(e.target.value);
+                if (targetVal >= appState.config.startRoll && targetVal <= appState.config.endRoll) {
+                    appState.currentSelectedRoll = targetVal;
+                    HTML.syncInterfaceToSelectedRoll();
+                }
+            });
+
+            // Core Class Sync Ranges Event Handler Update
+            document.getElementById('btn-update-range').addEventListener('click', () => {
+                AudioEngine.play('click');
+                const fromVal = parseInt(HTML.rangeFrom.value) || 1;
+                const toVal = parseInt(HTML.rangeTo.value) || 40;
+
+                if (fromVal >= toVal || fromVal < 1) {
+                    alert("Invalid Roll Number Range Context Parameters.");
+                    return;
+                }
+
+                if (confirm(`Change configuration database structure scope range to ${fromVal} - ${toVal}? This resets current scores.`)) {
+                    rebuildDefaultClassStructure(fromVal, toVal);
+                    appState.currentSelectedRoll = fromVal;
+                    HTML.rangeFrom.value = fromVal;
+                    HTML.rangeTo.value = toVal;
+                    HTML.populateDropdown();
+                    HTML.syncInterfaceToSelectedRoll();
+                }
+            });
+
+            // Action Utility Trigger Windows Management
+            document.getElementById('btn-open-settings').addEventListener('click', () => {
+                AudioEngine.play('modal');
+                HTML.modal.classList.add('active');
+            });
+
+            const closeSettingsModalFunc = () => {
+                AudioEngine.play('click');
+                HTML.modal.classList.remove('active');
+            };
+            document.getElementById('btn-close-settings').addEventListener('click', closeSettingsModalFunc);
+            
+            // Destructive Action Target Implementation Operations Engine 
+            document.getElementById('btn-reset-selected').addEventListener('click', () => {
+                if(confirm(`Reset scores completely to zero for current Student Roll #${appState.currentSelectedRoll}?`)) {
+                    appState.scores[appState.currentSelectedRoll] = 0;
+                    saveStateToStoragePipeline();
+                    HTML.syncInterfaceToSelectedRoll();
+                    closeSettingsModalFunc();
+                }
+            });
+
+            document.getElementById('btn-reset-all').addEventListener('click', () => {
+                if(confirm("🚨 WARNING: Are you sure you want to clear records for the ENTIRE class?")) {
+                    rebuildDefaultClassStructure(appState.config.startRoll, appState.config.endRoll);
+                    HTML.syncInterfaceToSelectedRoll();
+                    closeSettingsModalFunc();
+                }
+            });
+
+            // Static Manual Trigger Data Payload Sync Safe Preservation Backup Alert
+            document.getElementById('btn-save').addEventListener('click', () => {
+                AudioEngine.play('badge');
+                saveStateToStoragePipeline();
+                alert("✨ All point metrics backed up successfully to secure Local Storage framework context database layout!");
+            });
+
+            // Native Core Report Printing Execution Subsystem Compilation
+            document.getElementById('btn-print').addEventListener('click', () => {
+                AudioEngine.play('modal');
+                
+                // Map components explicitly directly to DOM target node architecture for processing
+                document.getElementById('print-meta-date').textContent = `Date Compiled: ${new Date().toLocaleDateString()}`;
+                document.getElementById('print-meta-stats').textContent = `Class Population: ${Object.keys(appState.scores).length} Active Tracked Entries`;
+
+                const printTableBody = document.getElementById('print-table-body');
+                printTableBody.innerHTML = '';
+
+                // Build structural table rows mapped dynamically to structural current system variables context matrix profiles
+                const printingDataMatrix = Object.entries(appState.scores).map(([roll, pts]) => ({
+                    roll: parseInt(roll),
+                    points: pts,
+                    badge: determineBadge(pts).text
+                })).sort((a,b) => b.points - a.points || a.roll - b.roll);
+
+                printingDataMatrix.forEach((item, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><b>Rank #${index + 1}</b></td>
+                        <td>Roll Student #${item.roll}</td>
+                        <td><b>${item.points} Points</b></td>
+                        <td>${item.badge}</td>
+                    `;
+                    printTableBody.appendChild(row);
+                });
+
+                // Call immediate background OS window contextual rendering stream pipeline window mapping process execution 
+                window.print();
+            });
+        }
+
+        /**
+         * Global Operational Bootstrapper Execution Hook
+         */
+        window.addEventListener('DOMContentLoaded', () => {
+            initializeEngineDataState();
+            CanvasFX.init();
+            
+            // Update Setup Control Box Component Defaults Coordinates
+            HTML.rangeFrom.value = appState.config.startRoll;
+            HTML.rangeTo.value = appState.config.endRoll;
+            
+            HTML.populateDropdown();
+            HTML.syncInterfaceToSelectedRoll();
+            registerEventHandlers();
+        });
+    </script>
+</body>
+</html>

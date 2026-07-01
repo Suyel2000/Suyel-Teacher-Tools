@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐠 Aquatic Animals Quiz</title>
+    <style>
+        /* --- RESET & GLOBAL STYLES --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(-45deg, #0f2027, #203a43, #2c5364, #00c6ff, #0072ff);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* --- CONTAINER & GLASSMORPHISM --- */
+        .quiz-container {
+            width: 100%;
+            max-width: 800px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        /* --- SCREEN MANAGEMENT --- */
+        .screen {
+            display: none;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- TYPOGRAPHY & HEADINGS --- */
+        .title-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #e0f7fa;
+            font-weight: 400;
+            text-shadow: 1px 1px 4px rgba(0,0,0,0.2);
+        }
+
+        /* --- BUTTONS --- */
+        .btn {
+            display: inline-block;
+            cursor: pointer;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-align: center;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            user-select: none;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-easy { background-color: #2ecc71; color: white; }
+        .btn-easy:hover { background-color: #27ae60; box-shadow: 0 6px 20px rgba(46,204,113,0.4); }
+
+        .btn-medium { background-color: #f1c40f; color: #333; }
+        .btn-medium:hover { background-color: #f39c12; box-shadow: 0 6px 20px rgba(241,196,15,0.4); }
+
+        .btn-hard { background-color: #e74c3c; color: white; }
+        .btn-hard:hover { background-color: #c0392b; box-shadow: 0 6px 20px rgba(231,76,60,0.4); }
+
+        .btn-nav { background-color: rgba(255, 255, 255, 0.2); color: white; border: 1px solid rgba(255,255,255,0.3); }
+        .btn-nav:hover:not(:disabled) { background-color: rgba(255, 255, 255, 0.35); }
+        .btn-nav:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .btn-primary { background: linear-gradient(135deg, #00c6ff, #0072ff); color: white; }
+        .btn-primary:hover { box-shadow: 0 6px 20px rgba(0,114,255,0.4); }
+
+        /* --- START SCREEN SPECIFIC --- */
+        .level-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .level-container .btn {
+            font-size: 1.3rem;
+            padding: 20px;
+        }
+
+        /* --- QUIZ PROGRESS HEADER --- */
+        .quiz-header-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-weight: 600;
+            font-size: 1rem;
+            background: rgba(0, 0, 0, 0.15);
+            padding: 10px 20px;
+            border-radius: 12px;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 12px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #00ffcc, #0072ff);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        /* --- QUESTION CARD --- */
+        .question-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .question-text {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .option-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 14px;
+            padding: 16px 20px;
+            text-align: left;
+            font-size: 1.1rem;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .option-btn:hover:not(.disabled) {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateX(4px);
+        }
+
+        .option-btn.correct {
+            background-color: rgba(46, 204, 113, 0.8) !important;
+            border-color: #2ecc71 !important;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .option-btn.wrong {
+            background-color: rgba(231, 76, 60, 0.8) !important;
+            border-color: #e74c3c !important;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .option-btn.disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .option-btn.correct.disabled, .option-btn.wrong.disabled {
+            opacity: 1;
+        }
+
+        /* --- FEEDBACK BOX --- */
+        .feedback-container {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 14px;
+            display: none;
+            animation: fadeIn 0.4s ease forwards;
+            line-height: 1.5;
+        }
+
+        .feedback-container.correct-box {
+            background: rgba(46, 204, 113, 0.2);
+            border: 1px solid rgba(46, 204, 113, 0.4);
+        }
+
+        .feedback-container.wrong-box {
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid rgba(231, 76, 60, 0.4);
+        }
+
+        .feedback-status {
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 6px;
+        }
+        
+        .feedback-status.status-correct { color: #2ecc71; }
+        .feedback-status.status-wrong { color: #ff6b6b; }
+
+        .explanation-text {
+            font-size: 1.05rem;
+            color: #f0f4f8;
+        }
+
+        /* --- NAVIGATION FOOTER --- */
+        .nav-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-top: 25px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 20px;
+        }
+
+        .nav-footer .btn {
+            flex: 1;
+            max-width: 160px;
+            padding: 12px 20px;
+            font-size: 1rem;
+        }
+
+        /* --- SUMMARY SCREEN --- */
+        .summary-card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .badge-display {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 215, 0, 0.15);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 14px;
+            display: inline-block;
+            color: #ffd700;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 25px 0;
+        }
+
+        .stat-item {
+            background: rgba(0,0,0,0.15);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #b0bec5;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .summary-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-width: 320px;
+            margin: 25px auto 0 auto;
+        }
+
+        .summary-actions .btn {
+            width: 100%;
+        }
+
+        /* --- CANVAS CONFETTI SIMULATION --- */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 999;
+            display: none;
+        }
+
+        /* --- CERTIFICATE PRINT STYLES --- */
+        .print-only {
+            display: none;
+        }
+
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+                padding: 0;
+            }
+            .quiz-container, #confetti-canvas {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+                width: 100%;
+                max-width: 800px;
+                margin: 40px auto;
+                padding: 50px;
+                border: 10px double #2c3e50;
+                text-align: center;
+                background: white;
+                color: #333;
+                font-family: 'Georgia', serif;
+            }
+            .cert-title { font-size: 3rem; font-weight: bold; color: #2c3e50; margin-bottom: 20px; }
+            .cert-subtitle { font-size: 1.5rem; font-style: italic; margin-bottom: 40px; }
+            .cert-recipient { font-size: 2rem; font-weight: bold; border-bottom: 2px solid #333; display: inline-block; padding: 0 30px; margin-bottom: 30px; }
+            .cert-text { font-size: 1.2rem; line-height: 1.6; margin-bottom: 40px; }
+            .cert-badge { font-size: 1.6rem; font-weight: bold; color: #d4af37; margin-bottom: 50px; }
+            .cert-footer { display: flex; justify-content: space-between; margin-top: 60px; padding: 0 40px; }
+            .cert-sig { border-top: 1px solid #999; width: 200px; padding-top: 10px; font-size: 1rem; }
+        }
+
+        /* --- RESPONSIVENESS --- */
+        @media (max-width: 600px) {
+            h1 { font-size: 2rem; }
+            .subtitle { font-size: 1rem; }
+            .quiz-container { padding: 20px; }
+            .question-text { font-size: 1.15rem; }
+            .option-btn { font-size: 1rem; padding: 12px 16px; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .nav-footer { gap: 8px; }
+            .nav-footer .btn { padding: 10px 12px; font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="confetti-canvas"></div>
+
+    <div class="quiz-container">
+        <div class="title-container">
+            <h1> Aquarium Animals Quiz </h1>
+            <div class="subtitle">Observe • Identify • Explore • Learn</div>
+        </div>
+
+        <div id="screen-start" class="screen active">
+            <div class="level-container">
+                <button class="btn btn-easy" onclick="startQuiz('easy')">🟢 Easy Level</button>
+                <button class="btn btn-medium" onclick="startQuiz('medium')">🟡 Medium Level</button>
+                <button class="btn btn-hard" onclick="startQuiz('hard')">🔴 Hard Level</button>
+            </div>
+        </div>
+
+        <div id="screen-quiz" class="screen">
+            <div class="quiz-header-meta">
+                <div>Level: <span id="label-level" style="text-transform: capitalize; font-weight: bold;">-</span></div>
+                <div>Score: <span id="label-score">0</span></div>
+                <div>Question: <span id="label-counter">1/30</span></div>
+            </div>
+
+            <div class="progress-bar-container">
+                <div id="quiz-progress" class="progress-bar"></div>
+            </div>
+
+            <div class="question-card">
+                <div id="quiz-question-text" class="question-text">Loading question content...</div>
+                <div id="quiz-options" class="options-container">
+                    </div>
+            </div>
+
+            <div id="quiz-feedback" class="feedback-container">
+                <div id="feedback-status" class="feedback-status">Correct!</div>
+                <div id="explanation-text" class="explanation-text">Explanation block text.</div>
+            </div>
+
+            <div class="nav-footer">
+                <button id="btn-prev" class="btn btn-nav" onclick="navigateQuestion(-1)">⬅️ Previous</button>
+                <button id="btn-home" class="btn btn-nav" onclick="confirmGoHome()">🏠 Home</button>
+                <button id="btn-next" class="btn btn-nav" onclick="navigateQuestion(1)">➡️ Next</button>
+            </div>
+        </div>
+
+        <div id="screen-summary" class="screen">
+            <div class="summary-card">
+                <h2>Quiz Completed!</h2>
+                <div id="summary-badge" class="badge-display">🏆 Aquatic Animal Expert</div>
+                
+                <div class="stats-grid">
+                    <div class="stat-item"><div class="stat-label">Selected Level</div><div id="stat-level" class="stat-value" style="text-transform:capitalize;">-</div></div>
+                    <div class="stat-item"><div class="stat-label">Final Score</div><div id="stat-score" class="stat-value">-</div></div>
+                    <div class="stat-item"><div class="stat-label">Accuracy Rate</div><div id="stat-percent" class="stat-value">-</div></div>
+                    <div class="stat-item"><div class="stat-label">Correct Answers</div><div id="stat-correct" class="stat-value" style="color:#2ecc71;">-</div></div>
+                    <div class="stat-item"><div class="stat-label">Wrong Answers</div><div id="stat-wrong" class="stat-value" style="color:#ff6b6b;">-</div></div>
+                    <div class="stat-item"><div class="stat-label">Time Taken</div><div id="stat-time" class="stat-value">-</div></div>
+                </div>
+
+                <div class="summary-actions">
+                    <button class="btn btn-primary" onclick="restartCurrentLevel()">Play Again</button>
+                    <button class="btn btn-nav" onclick="goHome()">Choose Another Level</button>
+                    <button class="btn btn-easy" onclick="window.print()">Print Certificate</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="print-only">
+        <div class="cert-title">Certificate of Achievement</div>
+        <div class="cert-subtitle">Aquatic Animals EVS Quiz Champion</div>
+        <p class="cert-text">This is proudly awarded to a brilliant student for completing the</p>
+        <div id="cert-level-name" class="cert-recipient">Easy Level Quiz</div>
+        <p class="cert-text" style="margin-top:20px;">with an amazing accuracy score of</p>
+        <div id="cert-score-value" class="cert-title" style="font-size:2.2rem; color:#0072ff;">100%</div>
+        <div id="cert-badge-title" class="cert-badge">🏆 Aquatic Animal Expert</div>
+        <p class="cert-text">"Protect our waters, rivers, oceans, and all the beautiful animals living inside them!"</p>
+        <div class="cert-footer">
+            <div class="cert-sig">EVS Quiz Coordinator</div>
+            <div class="cert-sig">Nature Explorer Club</div>
+        </div>
+    </div>
+
+    <script>
+        /* --- QUESTION BANK ARRAY CORE DATA --- */
+        const questionBank = {
+            easy: [
+                { q: "Which animal lives completely inside water?", o: ["Fish", "Cat", "Cow", "Dog"], a: "Fish", e: "Fish have gills that help them live and breathe completely inside water." },
+                { q: "Which aquatic animal has eight long arms?", o: ["Octopus", "Goldfish", "Whale", "Crab"], a: "Octopus", e: "An octopus has eight arms covered in round suckers." },
+                { q: "What is called the largest animal on the entire Earth?", o: ["Blue Whale", "Elephant", "Shark", "Dolphin"], a: "Blue Whale", e: "The Blue Whale lives in the ocean and is the largest animal ever known." },
+                { q: "Where do fish live?", o: ["In water", "On trees", "In desert sand", "In underground caves"], a: "In water", e: "Water is the home of fish. They cannot survive on dry land." },
+                { q: "Which animal is a common colorful pet kept in an aquarium at home?", o: ["Goldfish", "Blue Whale", "Shark", "Octopus"], a: "Goldfish", e: "Goldfish are small, bright, and very popular pets for home aquariums." },
+                { q: "Which body parts help a fish balance and swim in water?", o: ["Fins and Tail", "Wings", "Long Legs", "Beak"], a: "Fins and Tail", e: "Fish wiggle their tails and move their fins to push through water." },
+                { q: "Can a normal fish live out on dry land for a long time?", o: ["No, they cannot", "Yes, always", "Only during the night", "Only on hot days"], a: "No, they cannot", e: "Fish need water to get oxygen. They will die if left out on land." },
+                { q: "Which of these animals can swim easily in small rivers and garden ponds?", o: ["Small Fish", "Lion", "Giraffe", "Monkey"], a: "Small Fish", e: "Small fish are perfectly built to swim around smoothly in rivers, lakes, and ponds." },
+                { q: "What color is the vast open sea where marine life lives?", o: ["Blue", "Bright Pink", "Pitch Black", "Neon Yellow"], a: "Blue", e: "Sea water looks beautifully blue because it reflects the open sky above." },
+                { q: "Identify the aquatic animal from this simple group:", o: ["Starfish", "Horse", "Goat", "Tiger"], a: "Starfish", e: "A starfish is an ocean animal shaped exactly like a bright star." },
+                { q: "Which of these is NOT a water animal?", o: ["Cow", "Dolphin", "Whale", "Octopus"], a: "Cow", e: "Cows live on farms on land. They are not aquatic animals." },
+                { q: "Complete the sentence: A fish uses its _____ to breathe water.", o: ["Gills", "Nose", "Wings", "Toes"], a: "Gills", e: "Gills are special body parts on the side of a fish used for breathing water." },
+                { q: "Is a sea turtle considered an aquatic animal?", o: ["Yes, it lives in the sea", "No, it is a bird", "No, it lives in trees", "Only when it rains"], a: "Yes, it lives in the sea", e: "Sea turtles spend almost their entire lives swimming safely inside sea waters." },
+                { q: "Which of these water animals looks like a glowing star?", o: ["Starfish", "Jellyfish", "Goldfish", "Crab"], a: "Starfish", e: "Starfish live on the seabed and have five or more points like stars." },
+                { q: "Do fish have warm fur on their bodies like dogs?", o: ["No, they have scales", "Yes, soft white fur", "Yes, long wool", "Yes, colorful feathers"], a: "No, they have scales", e: "Fish bodies are covered in smooth, protective scales instead of hairy fur." },
+                { q: "Where would a wild ocean fish feel happiest living?", o: ["In the clean sea", "In a tiny dry box", "Up in a tree nest", "Inside a desert hole"], a: "In the clean sea", e: "The clean open ocean is the natural home where sea fish thrive." },
+                { q: "Which animal has a hard shell and walks sideways on the beach?", o: ["Crab", "Dolphin", "Whale", "Goldfish"], a: "Crab", e: "Crabs have hard shells to protect themselves and often run sideways." },
+                { q: "True or False: All aquatic animals look exactly the same.", o: ["False", "True"], a: "False", e: "Aquatic animals come in thousands of shapes, sizes, and colors." },
+                { q: "Which of these is a freshwater home for small aquatic animals?", o: ["A clean pond", "A dry sandbox", "A stone wall", "A hot highway"], a: "A clean pond", e: "Ponds are peaceful bodies of freshwater filled with plants and small fish." },
+                { q: "What does an octopus use its many arms for?", o: ["Swimming and holding things", "Flying high", "Singing songs", "Growing flowers"], a: "Swimming and holding things", e: "An octopus uses its strong arms to move around rocks and catch food." },
+                { q: "Which aquatic animal is famous for being incredibly friendly and playful?", o: ["Dolphin", "Crab", "Sea Urchin", "Clam"], a: "Dolphin", e: "Dolphins are smart mammals that love playing and jumping out of water." },
+                { q: "Can a goldfish fly up into the clouds like a bird?", o: ["No, it only swims", "Yes, using its tail", "Yes, at nighttime", "Only on windy days"], a: "No, it only swims", e: "Goldfish do not have wings. They can only swim through water." },
+                { q: "Which animal lives inside a shell in the water?", o: ["Snail", "Rabbit", "Fox", "Bear"], a: "Snail", e: "Water snails grow a hard coiled shell on their backs to stay safe." },
+                { q: "What covers the outside skin of most common fish?", o: ["Shiny scales", "Green leaves", "Soft feathers", "Thick wool"], a: "Shiny scales", e: "Scales form a protective, clean outer layer over the fish's body." },
+                { q: "Which animal name has the word 'fish' but is shaped like a star?", o: ["Starfish", "Catfish", "Goldfish", "Jellyfish"], a: "Starfish", e: "Starfish get their name because their body has points like a sky star." },
+                { q: "What is an aquarium?", o: ["A glass tank filled with water for fish", "A playground park", "A school book", "A cooking pot"], a: "A glass tank filled with water for fish", e: "An aquarium allows us to look after beautiful water animals at home." },
+                { q: "True or False: Whales are very tiny water animals.", o: ["False", "True"], a: "False", e: "Whales are actually huge giants of the ocean, not tiny at all." },
+                { q: "Do aquatic animals need water to survive?", o: ["Yes, they need water to live", "No, they never need it", "Only for playing games", "Only when they sleep"], a: "Yes, they need water to live", e: "Water provides the home, food, and air that aquatic animals require." },
+                { q: "Which of these has a long tail and lives in the water?", o: ["Fish", "Worm", "Spider", "Ant"], a: "Fish", e: "Most fish use their long, strong tails to steering themselves right or left." },
+                { q: "What do we call animals that spend their lives in water?", o: ["Aquatic animals", "Land animals", "Desert animals", "Sky birds"], a: "Aquatic animals", e: "'Aquatic' means relating to water. So they are called aquatic animals!" }
+            ],
+            medium: [
+                { q: "What special feature helps a fish breathe underwater?", o: ["Gills", "Lungs", "Blowhole", "Skin pores"], a: "Gills", e: "Gills filter dissolved oxygen directly from the water as it passes through." },
+                { q: "Which of these large aquatic animals is a mammal, not a fish?", o: ["Whale", "Shark", "Goldfish", "Tuna"], a: "Whale", e: "Whales are warm-blooded mammals. They breathe air and nurse their young." },
+                { q: "What is the primary function of a fish's fins?", o: ["Swimming and steering", "Catching insects", "Making sound", "Walking on stones"], a: "Swimming and steering", e: "Fins help the fish balance, steer directions, and push forward." },
+                { q: "Which animal is famous for leaping high out of the sea water?", o: ["Dolphin", "Crab", "Starfish", "Snail"], a: "Dolphin", e: "Dolphins leap into the air to breathe, travel faster, or just have fun." },
+                { q: "Where does a saltwater aquatic animal live?", o: ["In the ocean", "In a rain puddle", "In a mountain river", "In a backyard pond"], a: "In the ocean", e: "Oceans and seas contain salty water, while rivers contain fresh water." },
+                { q: "What shape is a flat stingray's body?", o: ["Flat and wide", "Perfectly round ball", "Long like a snake", "Tall like a box"], a: "Flat and wide", e: "Stingrays have flat bodies, allowing them to hide easily in bottom sand." },
+                { q: "Why must we avoid tapping hard on a glass fish tank?", o: ["The noise scares the fish", "The fish will talk back", "The water will turn green", "The fish will turn invisible"], a: "The noise scares the fish", e: "Sound travels fast in water. Glass tapping creates scary sound shocks for fish." },
+                { q: "How do ocean animals like whales breathe air?", o: ["Through a blowhole on top", "Through scales", "Through underwater gills", "Through webbed toes"], a: "Through a blowhole on top", e: "Whales rise to the ocean surface to breathe air through their blowholes." },
+                { q: "Which of these is a freshwater habitat?", o: ["A flowing river", "The wide ocean", "The deep sea", "A salt marsh"], a: "A flowing river", e: "Rivers carry fresh rainwater down mountains, unlike salty seas." },
+                { q: "What do most small fish eat inside a natural pond?", o: ["Tiny water plants and bugs", "Tree fruits", "Dry bread crumbs", "Grass on hills"], a: "Tiny water plants and bugs", e: "Natural ponds are full of tiny algae, plants, and water insects for food." },
+                { q: "Why do some aquatic animals hide under rocks or coral?", o: ["To stay safe from predators", "To get a sun tan", "To sleep in a warm bed", "To practice singing"], a: "To stay safe from predators", e: "Rocks and coral provide excellent camouflage shelters from larger fish." },
+                { q: "Which aquatic animal can change its color to blend with the seabed?", o: ["Octopus", "Goldfish", "Shark", "Jellyfish"], a: "Octopus", e: "An octopus can rapidly alter its skin color and texture to hide perfectly." },
+                { q: "What happens to fish if their water habitat becomes muddy or dirty?", o: ["They find it hard to breathe", "They grow beautiful wings", "They change into birds", "They enjoy it more"], a: "They find it hard to breathe", e: "Dirty water clogs up sensitive gills, making it tough for fish to breathe." },
+                { q: "Which of these has webbed feet to help it paddle through water?", o: ["Duck", "Goldfish", "Shark", "Starfish"], a: "Duck", e: "Ducks use their flat, webbed skin feet like paddles to swim smoothly." },
+                { q: "What body covering protects a sea turtle from danger?", o: ["A hard bony shell", "Soft fluffy fur", "Thin wet scales", "A coat of feathers"], a: "A hard bony shell", e: "Sea turtles can pull their soft parts near their tough shell for safety." },
+                { q: "Which animal is shaped like a tiny horse and swims upright?", o: ["Seahorse", "Starfish", "Jellyfish", "Swordfish"], a: "Seahorse", e: "Seahorses are actual fish that swim vertically using tiny dorsal fins." },
+                { q: "Why are aquariums equipped with air pumps?", o: ["To add clean oxygen to water", "To feed the small fish", "To heat up the tank", "To color the glass blue"], a: "To add clean oxygen to water", e: "Air pumps create bubbles, dissolving essential oxygen into the water." },
+                { q: "What is the main difference between an ocean and a river?", o: ["Ocean water is salty", "River water is salty", "Oceans are very narrow", "Rivers have no fish"], a: "Ocean water is salty", e: "Oceans hold vast amounts of saltwater, while rivers provide fresh moving water." },
+                { q: "Which animal has a body made mostly of clear, jelly-like water?", o: ["Jellyfish", "Crab", "Lobster", "Tuna"], a: "Jellyfish", e: "Jellyfish are simple, clear creatures made of over 95% water!" },
+                { q: "Where does a crab usually build its hiding spot?", o: ["In sand or rock cracks", "High in beach palm trees", "Deep in open blue water", "Inside floating clouds"], a: "In sand or rock cracks", e: "Crabs burrow into shoreline sand or squeeze under heavy rocks." },
+                { q: "What helper feature keeps ocean mammals warm in freezing water?", o: ["A thick layer of fat (blubber)", "Thick winter wool wool", "Hot scales", "Heavy feathers"], a: "A thick layer of fat (blubber)", e: "Blubber acts as a thick, insulated blanket keeping whales warm." },
+                { q: "Which large sea predator has multiple rows of sharp teeth?", o: ["Shark", "Dolphin", "Goldfish", "Blue Whale"], a: "Shark", e: "Sharks are skilled predators with rows of sharp teeth to catch fish." },
+                { q: "How do fish use their eyes underwater?", o: ["They see clearly without blinking", "They close them tight always", "They use flashlight glasses", "They only see backwards"], a: "They see clearly without blinking", e: "Fish don't have eyelids like us; their eyes stay open to watch for danger." },
+                { q: "Which of these is considered a saltwater animal?", o: ["Tuna Fish", "Garden Snail", "River Frog", "Pond Goldfish"], a: "Tuna Fish", e: "Tuna are powerful, streamlined fish that live in wide salt oceans." },
+                { q: "What body shape helps a fish cut through water rapidly?", o: ["A streamlined, pointed shape", "A flat square box shape", "A perfect round ball shape", "A very bumpy, jagged shape"], a: "A streamlined, pointed shape", e: "Smooth, pointed bodies reduce water resistance so fish glide quickly." },
+                { q: "True or False: Young fish hatch from soft eggs laid in water.", o: ["True", "False"], a: "True", e: "Most female fish lay thousands of tiny, soft eggs directly in water." },
+                { q: "What helps an octopus pull water to squirt out and swim backwards?", o: ["A muscular siphon tube", "Its long ears", "Its sharp beak", "Its shiny scales"], a: "A muscular siphon tube", e: "Squirting water out forcefully helps the octopus jet away from danger." },
+                { q: "Which animal spends time resting on land but swims out to hunt fish?", o: ["Seal", "Goldfish", "Octopus", "Starfish"], a: "Seal", e: "Seals spend time resting on rocky shores but are excellent sea hunters." },
+                { q: "Why do some small fish travel together in giant groups called schools?", o: ["For safety from big predators", "To go to a real classroom", "To play hide and seek", "To sleep more soundly"], a: "For safety from big predators", e: "Swimming in a huge group confuses large predators, keeping individual fish safer." },
+                { q: "What color helps a bottom-living fish hide in sea sand?", o: ["Sandy brown or grey", "Bright glowing pink", "Rainbow colors", "Deep bright red"], a: "Sandy brown or grey", e: "Dull brown and speckled grey shades blend with the ocean floor sand." }
+            ],
+            hard: [
+                { q: "Why should humans strictly avoid throwing plastic bags into rivers and oceans?", o: ["Animals mistake them for food and choke", "It makes the water taste sweet", "It turns fish into land animals", "It helps plants grow taller"], a: "Animals mistake them for food and choke", e: "Sea turtles often mistake plastic bags for jellyfish food, which makes them very sick." },
+                { q: "What are coral reefs?", o: ["Underwater structures made by tiny animals", "Giant piles of plastic trash", "Sunken old wooden ships", "Floating green tree leaves"], a: "Underwater structures made by tiny animals", e: "Coral reefs are beautiful underwater cities built over time by tiny creatures called polyps." },
+                { q: "How does an oil spill from a ship impact ocean wildlife?", o: ["It blocks air and ruins animal coats", "It helps fish swim much faster", "It makes water beautifully clean", "It provides delicious food for whales"], a: "It blocks air and ruins animal coats", e: "Oil coats bird feathers and sea mammal fur, destroying their ability to stay warm and breathe." },
+                { q: "Why are aquatic plants vitally important to an ocean habitat?", o: ["They make oxygen and offer shelter", "They grow tasty fruits like apples", "They stop the water from moving", "They catch fish with hooks"], a: "They make oxygen and offer shelter", e: "Just like land plants, underwater vegetation produces oxygen for marine life to breathe." },
+                { q: "What role do predatory sharks play in keeping oceans healthy?", o: ["They balance the numbers of other fish", "They clean up floating plastic bags", "They build large coral reefs", "They guide lost boats to land"], a: "They balance the numbers of other fish", e: "Sharks remove sick or weak fish, keeping the overall ocean ecosystem strong and healthy." },
+                { q: "How does dirty chemical waste from factories hurt river life?", o: ["It poisons the water habitat", "It makes fish grow beautiful feathers", "It helps the river turn into an ocean", "It provides vitamins for water snails"], a: "It poisons the water habitat", e: "Chemical toxic waste pollutes the water supply, poisoning the plants and fish inside." },
+                { q: "What simple action can students take to protect aquatic creatures?", o: ["Pick up beach litter and recycle plastic", "Throw leftover food into ponds", "Catch small fish to keep in jars", "Pour soap down storm drains"], a: "Pick up beach litter and recycle plastic", e: "Keeping beaches clean prevents trash from washing out and harming aquatic species." },
+                { q: "Why is the deep ocean zone completely dark?", o: ["Sunlight cannot travel down so deep", "The fish turn off lights to sleep", "The water is painted pitch black", "Clouds block the view permanently"], a: "Sunlight cannot travel down so deep", e: "Ocean water absorbs sunlight. Below a certain depth, it becomes completely dark." },
+                { q: "What do we call a chain showing who eats whom in the sea?", o: ["An aquatic food chain", "A water playground game", "An animal family tree", "A sea weather report"], a: "An aquatic food chain", e: "A marine food chain shows energy moving from tiny algae up to giant apex predators." },
+                { q: "How do coral reefs benefit coastal land areas?", o: ["They break large waves and protect shores", "They stop hot weather completely", "They pull gold out of sea sand", "They keep the beach totally dry"], a: "They break large waves and protect shores", e: "Reef structures act as natural barriers, slowing down rough storm waves from hitting land." },
+                { q: "What happens when global temperatures make sea water too warm?", o: ["Corals lose color and can die", "Fish learn to fly over water", "The ocean turns into a sweet drink", "All animals move onto dry beaches"], a: "Corals lose color and can die", e: "Overheated water causes coral bleaching, threatening the homes of millions of fish species." },
+                { q: "Why are wetlands, like marshes and swamps, useful to nature?", o: ["They filter and clean dirty water", "They provide excellent dry farmland", "They prevent any rain from falling", "They are perfect places to dump trash"], a: "They filter and clean dirty water", e: "Wetlands act like giant natural sponges, filtering dirt and pollution out of water." },
+                { q: "What is overfishing?", o: ["Catching too many fish before they reproduce", "Feeding fish too much food", "Teaching fish how to swim faster", "Growing fish inside clean indoor tanks"], a: "Catching too many fish before they reproduce", e: "Overfishing depletes fish populations, making it hard for species numbers to recover." },
+                { q: "Where do the majority of marine species live?", o: ["In shallow waters near coral reefs", "In the deepest dark ocean trenches", "Inside floating chunks of ice", "On sandy beaches away from waves"], a: "In shallow waters near coral reefs", e: "Shallow, sunlit coral reef waters hold about a quarter of all known marine life forms." },
+                { q: "Why should we use fewer chemical fertilizers on home lawns?", o: ["Rain washes them into rivers, causing algae blooms", "They make lawns turn bright blue", "They stop all garden plants from growing", "They evaporate and disappear into space"], a: "Rain washes them into rivers, causing algae blooms", e: "Runoff fertilizer feeds toxic river algae, which chokes out oxygen needed by fish." },
+                { q: "What gas do underwater plants produce during the daytime?", o: ["Oxygen", "Carbon dioxide", "Helium", "Nitrogen"], a: "Oxygen", e: "Underwater vegetation uses sunlight to create oxygen gas, keeping the water breathable." },
+                { q: "How do microscopic floating plants (phytoplankton) help the planet?", o: ["They generate half the Earth's oxygen", "They warm up freezing ocean water", "They stop large stormy waves", "They turn salty oceans into fresh water"], a: "They generate half the Earth's oxygen", e: "Tiny ocean phytoplankton generate huge amounts of breathable oxygen for the whole world." },
+                { q: "Why is dumping old paints or batteries down domestic drains unsafe?", o: ["They flow to local rivers and poison wildlife", "They block kitchen pipes immediately", "They turn drinking water into solid rock", "They evaporate into dark clouds"], a: "They flow to local rivers and poison wildlife", e: "Household drains often connect back to local waterways, carrying harmful toxins along." },
+                { q: "What does 'marine conservation' mean?", o: ["Protecting and saving ocean ecosystems", "Catching as many fish as possible", "Building cities on top of water", "Draining sea water to find dry land"], a: "Protecting and saving ocean ecosystems", e: "Marine conservation is the focused practice of protecting oceans and their rich wildlife." },
+                { q: "Why do deep-sea creatures sometimes grow glowing body parts?", o: ["To attract prey or see in total darkness", "To keep themselves warm", "Because they eat flashlights", "To show off to birds flying high"], a: "To attract prey or see in total darkness", e: "Bioluminescence allows deep-sea creatures to create light in the pitch-black depths." },
+                { q: "How does heavy noise from giant ships disrupt whales?", o: ["It interferes with their sound communication", "It makes them want to dance", "It changes their skin color to red", "It causes them to shrink in size"], a: "It interferes with their sound communication", e: "Whales use clicks and songs to talk across distances; loud ship engines disrupt these signals." },
+                { q: "What type of animal breaks down dead matter on the ocean floor?", o: ["Decomposers like crabs and worms", "Large apex predators like sharks", "Fast swimming dolphins", "Bright green surface plants"], a: "Decomposers like crabs and worms", e: "Bottom-dwelling scavengers clean the ocean floor by consuming organic waste." },
+                { q: "Why does trash floating in rivers eventually affect the sea?", o: ["Rivers empty their waters directly into oceans", "The wind carries all river fish away", "Trash evaporates into rain clouds", "Oceans pump water backward into small creeks"], a: "Rivers empty their waters directly into oceans", e: "Waterways flow downhill, transporting plastic pollution directly into coastal ocean ecosystems." },
+                { q: "What is an endangered aquatic animal?", o: ["An animal at high risk of dying out completely", "An animal that is very angry", "A fish that changes its home weekly", "A pet that lives inside an aquarium"], a: "An animal at high risk of dying out completely", e: "Endangered status means a species is dying off and requires immediate protection." },
+                { q: "Why are mangroves on tropical coasts heavily protected?", o: ["Their tangled roots shelter young sea creatures", "They produce sweet chocolate treats", "They keep the ocean from boiling", "They turn salty water into fresh milk"], a: "Their roots shelter young sea creatures", e: "Mangrove roots provide critical nurseries where small fish hide safely until they grow big." },
+                { q: "True or False: Clean water is essential for aquatic animal health.", o: ["True", "False"], a: "True", e: "Clean water ensures high oxygen levels and prevents dangerous disease outbreaks." },
+                { q: "What happens if a key species is removed from a marine food web?", o: ["The entire ecosystem becomes unbalanced", "Nothing changes at all", "Other fish become immortal", "The ocean instantly turns into land"], a: "The entire ecosystem becomes unbalanced", e: "Every creature connects; losing one species triggers a chain reaction across the food web." },
+                { q: "How do Marine Protected Areas (MPAs) aid underwater wildlife?", o: ["They limit human activities like fishing to let nature heal", "They put glass roofs over the entire ocean", "They teach fish how to avoid hooks", "They add artificial colors to water"], a: "They limit human activities like fishing to let nature heal", e: "Protected areas function like wildlife parks, allowing damaged marine populations to recover safely." },
+                { q: "Why should tourists avoid stepping directly onto living coral reefs?", o: ["It crushes and kills the fragile living animals", "It turns the tourist's shoes into solid gold", "It makes the sea water disappear completely", "It causes fish to leap out and attack"], a: "It crushes and kills the fragile living animals", e: "Corals are fragile living colonies that break easily under heavy footsteps." },
+                { q: "What is the ultimate goal of environmental laws regarding water pollution?", o: ["To keep waters clean and safe for all life", "To stop people from drinking water", "To make all fish look identical", "To turn oceans into dry playgrounds"], a: "To keep waters clean and safe for all life", e: "Environmental laws protect shared water resources from hazardous industrial and city waste." }
+            ]
+        };
+
+        /* --- STATE VARIABLES --- */
+        let currentLevel = 'easy';
+        let currentQuestions = [];
+        let currentIndex = 0;
+        let answersState = []; // Stores user selection, status, and randomized option configuration per index
+        let score = 0;
+        let startTime = null;
+
+        /* --- WEB AUDIO API SYSTEM --- */
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+        }
+
+        function playSound(type) {
+            try {
+                initAudio();
+                if (!audioCtx) return;
+                
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                } else if (type === 'correct') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now); // A3
+                    osc.frequency.linearRampToValueAtTime(110, now + 0.25);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'complete' || type === 'badge') {
+                    // Quick celebratory arpeggio sound
+                    osc.type = 'sine';
+                    const notes = [261.63, 329.63, 392.00, 523.25];
+                    notes.forEach((freq, idx) => {
+                        osc.frequency.setValueAtTime(freq, now + (idx * 0.08));
+                    });
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                    osc.start(now);
+                    osc.stop(now + 0.5);
+                }
+            } catch (e) {
+                console.log("Audio play blocked or unsupported:", e);
+            }
+        }
+
+        /* --- UTILITY SHUFFLE FUNCTION --- */
+        function shuffleArray(arr) {
+            const copy = [...arr];
+            for (let i = copy.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [copy[i], copy[j]] = [copy[j], copy[i]];
+            }
+            return copy;
+        }
+
+        /* --- SCREEN CONTROLLER ROUTINES --- */
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(scr => scr.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        /* --- QUIZ LOGIC MECHANICS --- */
+        function startQuiz(level) {
+            playSound('click');
+            currentLevel = level;
+            
+            // Fetch clean clone and shuffle questions
+            const rawQuestions = questionBank[level] || questionBank.easy;
+            currentQuestions = shuffleArray(rawQuestions);
+            
+            currentIndex = 0;
+            score = 0;
+            startTime = new Date();
+            answersState = new Array(currentQuestions.length).fill(null);
+
+            // Pre-generate mixed answer options for every step ahead to avoid re-shuffling on back navigation
+            currentQuestions.forEach((qItem, idx) => {
+                answersState[idx] = {
+                    userChoice: null,
+                    isCorrect: false,
+                    isAnswered: false,
+                    optionsOrder: shuffleArray(qItem.o)
+                };
+            });
+
+            // Update header configs
+            document.getElementById('label-level').innerText = level + " level";
+            
+            // Check local storage for previous runs if needed
+            localStorage.setItem('aquatic_quiz_last_level', level);
+
+            showScreen('screen-quiz');
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const questionData = currentQuestions[currentIndex];
+            const state = answersState[currentIndex];
+
+            // Render text components
+            document.getElementById('label-counter').innerText = `${currentIndex + 1} / ${currentQuestions.length}`;
+            document.getElementById('quiz-question-text').innerText = questionData.q;
+            document.getElementById('label-score').innerText = score;
+
+            // Compute Progress Bar width percentage
+            const progressPct = ((currentIndex) / currentQuestions.length) * 100;
+            document.getElementById('quiz-progress').style.width = progressPct + '%';
+
+            // Generate option buttons
+            const optionsBox = document.getElementById('quiz-options');
+            optionsBox.innerHTML = '';
+
+            state.optionsOrder.forEach(optionText => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = optionText;
+                btn.onclick = () => selectOption(optionText, btn);
+
+                // Re-apply states if already answered previously
+                if (state.isAnswered) {
+                    btn.classList.add('disabled');
+                    if (optionText === questionData.a) {
+                        btn.classList.add('correct');
+                    }
+                    if (state.userChoice === optionText && optionText !== questionData.a) {
+                        btn.classList.add('wrong');
+                    }
+                }
+                optionsBox.appendChild(btn);
+            });
+
+            // Handle bottom feedback status box layout
+            const feedbackBox = document.getElementById('quiz-feedback');
+            if (state.isAnswered) {
+                feedbackBox.style.display = 'block';
+                const statusLabel = document.getElementById('feedback-status');
+                const explanationLabel = document.getElementById('explanation-text');
+                explanationLabel.innerText = questionData.e;
+
+                if (state.isCorrect) {
+                    feedbackBox.className = 'feedback-container correct-box';
+                    statusLabel.className = 'feedback-status status-correct';
+                    statusLabel.innerText = "✅ Correct!";
+                } else {
+                    feedbackBox.className = 'feedback-container wrong-box';
+                    statusLabel.className = 'feedback-status status-wrong';
+                    statusLabel.innerText = "❌ Incorrect";
+                }
+            } else {
+                feedbackBox.style.display = 'none';
+            }
+
+            // Adjust navigation visibility toggles
+            document.getElementById('btn-prev').disabled = (currentIndex === 0);
+            
+            const nextBtn = document.getElementById('btn-next');
+            if (currentIndex === currentQuestions.length - 1) {
+                nextBtn.innerText = "Finish 🏁";
+            } else {
+                nextBtn.innerText = "Next ➡️";
+            }
+        }
+
+        function selectOption(chosenText, element) {
+            const state = answersState[currentIndex];
+            if (state.isAnswered) return; // Locked once actioned
+
+            const questionData = currentQuestions[currentIndex];
+            state.userChoice = chosenText;
+            state.isAnswered = true;
+
+            // Evaluate answer match
+            if (chosenText === questionData.a) {
+                state.isCorrect = true;
+                score++;
+                playSound('correct');
+            } else {
+                state.isCorrect = false;
+                playSound('wrong');
+            }
+
+            // Update live counters
+            document.getElementById('label-score').innerText = score;
+
+            // Freeze option interactions instantly and mark visual state
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.classList.add('disabled');
+                if (btn.innerText === questionData.a) {
+                    btn.classList.add('correct');
+                } else if (btn.innerText === chosenText) {
+                    btn.classList.add('wrong');
+                }
+            });
+
+            // Refresh item to trigger animated display of explanations
+            renderQuestion();
+            saveProgressToStorage();
+        }
+
+        function navigateQuestion(step) {
+            playSound('click');
+            
+            // Check if user is advancing without choosing an option
+            if (step === 1 && !answersState[currentIndex].isAnswered) {
+                alert("Please select an answer option to proceed!");
+                return;
+            }
+
+            currentIndex += step;
+
+            if (currentIndex >= currentQuestions.length) {
+                // End of quiz reached
+                finishQuiz();
+            } else if (currentIndex < 0) {
+                currentIndex = 0;
+            } else {
+                renderQuestion();
+            }
+        }
+
+        function confirmGoHome() {
+            playSound('click');
+            if (confirm("Are you sure you want to quit this run and return to home screen? Progress will be saved.")) {
+                goHome();
+            }
+        }
+
+        function goHome() {
+            showScreen('screen-start');
+        }
+
+        function restartCurrentLevel() {
+            startQuiz(currentLevel);
+        }
+
+        /* --- ENDGAME COMPLETION & REPORT --- */
+        function finishQuiz() {
+            playSound('complete');
+            const endTime = new Date();
+            const timeDiffSec = Math.floor((endTime - startTime) / 1000);
+            
+            // Format time text output
+            const mins = Math.floor(timeDiffSec / 60);
+            const secs = timeDiffSec % 60;
+            const timeString = mins > 0 ? `${mins}m ${secs}s` : `${secs} seconds`;
+
+            const total = currentQuestions.length;
+            const percentage = Math.round((score / total) * 100);
+            const wrongCount = total - score;
+
+            // Resolve proper achievement badge text and icons
+            let badge = "";
+            if (percentage >= 90) badge = "🏆 Aquatic Animal Expert";
+            else if (percentage >= 70) badge = "🌟 Ocean Explorer";
+            else if (percentage >= 50) badge = "👍 Water Learner";
+            else badge = "📚 Keep Learning";
+
+            // Inject metrics text strings to elements
+            document.getElementById('stat-level').innerText = currentLevel;
+            document.getElementById('stat-score').innerText = `${score} / ${total}`;
+            document.getElementById('stat-percent').innerText = `${percentage}%`;
+            document.getElementById('stat-correct').innerText = score;
+            document.getElementById('stat-wrong').innerText = wrongCount;
+            document.getElementById('stat-time').innerText = timeString;
+            document.getElementById('summary-badge').innerText = badge;
+
+            // Synchronize mirror components inside printable views
+            document.getElementById('cert-level-name').innerText = `${currentLevel.toUpperCase()} LEVEL QUIZ`;
+            document.getElementById('cert-score-value').innerText = `${percentage}% Accuracy`;
+            document.getElementById('cert-badge-title').innerText = badge;
+
+            showScreen('screen-summary');
+            
+            if (percentage >= 70) {
+                triggerConfettiCelebration();
+            }
+        }
+
+        /* --- LIGHTWEIGHT DOM CONFETTI SIMULATION EFFECT --- */
+        function triggerConfettiCelebration() {
+            playSound('badge');
+            const container = document.getElementById('confetti-canvas');
+            container.innerHTML = '';
+            container.style.display = 'block';
+
+            const colors = ['#2ecc71', '#3498db', '#f1c40f', '#e74c3c', '#e67e22', '#9b59b6', '#00ffcc'];
+            
+            for (let i = 0; i < 60; i++) {
+                const conf = document.createElement('div');
+                conf.style.position = 'absolute';
+                conf.style.width = Math.random() * 8 + 6 + 'px';
+                conf.style.height = Math.random() * 12 + 6 + 'px';
+                conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.top = '-20px';
+                conf.style.borderRadius = '2px';
+                conf.style.opacity = Math.random() * 0.5 + 0.5;
+                
+                // Add simple fallback style transition animation 
+                const speed = Math.random() * 2 + 2;
+                conf.style.transition = `transform ${speed}s linear, top ${speed}s linear`;
+                
+                container.appendChild(conf);
+
+                // Async delay rendering to force clean CSS translation drop down
+                setTimeout(() => {
+                    conf.style.top = '100vh';
+                    conf.style.transform = `rotate(${Math.random() * 360}deg) translateX(${Math.random() * 40 - 20}px)`;
+                }, 40);
+            }
+
+            // Collapse system display block after end of lifecycle
+            setTimeout(() => {
+                container.style.display = 'none';
+                container.innerHTML = '';
+            }, 4500);
+        }
+
+        /* --- PERSISTENT STORAGE INTEGRATION --- */
+        function saveProgressToStorage() {
+            const progressObj = {
+                level: currentLevel,
+                index: currentIndex,
+                score: score,
+                timestamp: new Date().getTime()
+            };
+            localStorage.setItem('aquatic_quiz_autosave', JSON.stringify(progressObj));
+        }
+
+        // Auto clean run setup on load
+        window.onload = () => {
+            // Check storage loops if recovery is requested in later expansions
+            console.log("Aquatic Animals Quiz application fully initialized.");
+        };
+    </script>
+</body>
+</html>

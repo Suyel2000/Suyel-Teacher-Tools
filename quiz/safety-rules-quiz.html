@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛡️ Safety Rules Quiz</title>
+    <style>
+        /* CSS RESET & VARIABLES */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --bg-gradient: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+            --glass-bg: rgba(255, 255, 255, 0.45);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --text-dark: #2c3e50;
+            --text-light: #ffffff;
+            --easy-color: #2ecc71;
+            --medium-color: #f39c12;
+            --hard-color: #e74c3c;
+            --primary-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            --btn-transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        body {
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-dark);
+            padding: 15px;
+            overflow-x: hidden;
+        }
+
+        /* UTILITY ANIMATIONS */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* CONTAINER AND GLASS CARDS */
+        .app-container {
+            width: 100%;
+            max-width: 650px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 2px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: var(--primary-shadow);
+            animation: fadeIn 0.5s ease-out;
+            position: relative;
+        }
+
+        /* SCREENS MANAGEMENT */
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        /* HEADER AND TYPOGRAPHY */
+        .quiz-title {
+            font-size: 2.2rem;
+            text-align: center;
+            margin-bottom: 5px;
+            color: #2c3e50;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.6);
+        }
+
+        .quiz-subtitle {
+            font-size: 1.1rem;
+            text-align: center;
+            margin-bottom: 25px;
+            color: #57606f;
+            font-weight: 600;
+        }
+
+        /* START SCREEN LEVEL BUTTONS */
+        .level-selector-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn-level {
+            padding: 18px 25px;
+            font-size: 1.25rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: var(--btn-transition);
+            color: var(--text-light);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: left;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .btn-level:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .btn-easy { background-color: var(--easy-color); }
+        .btn-medium { background-color: var(--medium-color); }
+        .btn-hard { background-color: var(--hard-color); }
+
+        .high-score-badge {
+            font-size: 0.85rem;
+            background: rgba(255,255,255,0.3);
+            padding: 4px 10px;
+            border-radius: 12px;
+            color: var(--text-light);
+        }
+
+        /* TRACKER & PROGRESS BAR */
+        .tracker-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-weight: bold;
+            font-size: 0.95rem;
+        }
+
+        .progress-wrapper {
+            background: rgba(0, 0, 0, 0.08);
+            border-radius: 10px;
+            height: 14px;
+            width: 100%;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            border-radius: 10px;
+            transition: width 0.4s ease;
+        }
+
+        /* QUESTION PANEL */
+        .question-card {
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 18px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .question-text {
+            font-size: 1.25rem;
+            font-weight: 700;
+            line-height: 1.5;
+            color: #1e272e;
+        }
+
+        /* OPTIONS LIST */
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .option-btn {
+            background: rgba(255, 255, 255, 0.85);
+            border: 2px solid transparent;
+            border-radius: 14px;
+            padding: 15px 20px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-align: left;
+            cursor: pointer;
+            transition: var(--btn-transition);
+            color: var(--text-dark);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .option-btn:hover:not([disabled]) {
+            background: #ffffff;
+            transform: translateX(4px);
+            border-color: #a4b0be;
+        }
+
+        .option-btn.correct {
+            background-color: #d4edda !important;
+            border-color: #28a745 !important;
+            color: #155724 !important;
+        }
+
+        .option-btn.incorrect {
+            background-color: #f8d7da !important;
+            border-color: #dc3545 !important;
+            color: #721c24 !important;
+        }
+
+        /* EXPLANATION BOX */
+        .explanation-box {
+            display: none;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 14px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 5px solid #2ecc71;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .explanation-box.wrong {
+            border-left-color: #e74c3c;
+        }
+
+        .explanation-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 1.05rem;
+        }
+
+        .explanation-text {
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        /* NAVIGATION BAR CONTROLS */
+        .navigation-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .nav-btn {
+            padding: 12px 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: var(--btn-transition);
+            background: #ffffff;
+            color: var(--text-dark);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .nav-btn:hover:not([disabled]) {
+            background: #f1f2f6;
+            transform: translateY(-2px);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .nav-btn.home-btn {
+            background: #ffeaa7;
+        }
+        .nav-btn.home-btn:hover {
+            background: #fed330;
+        }
+
+        /* SUMMARY SCREEN */
+        .summary-card {
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .badge-display {
+            font-size: 4rem;
+            margin: 15px 0 5px 0;
+            animation: pulse 2s infinite ease-in-out;
+        }
+
+        .badge-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .stat-item {
+            background: rgba(255,255,255,0.5);
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+        }
+
+        .stat-label {
+            font-weight: 600;
+            color: #747d8c;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 1.1rem;
+            margin-top: 2px;
+        }
+
+        .summary-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .action-btn {
+            padding: 14px 20px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: var(--btn-transition);
+            width: 100%;
+            text-align: center;
+        }
+
+        .btn-retry { background: #3498db; color: white; }
+        .btn-retry:hover { background: #2980b9; }
+        .btn-change-level { background: #9b59b6; color: white; }
+        .btn-change-level:hover { background: #8e44ad; }
+        .btn-print { background: #2ecc71; color: white; }
+        .btn-print:hover { background: #27ae60; }
+
+        /* CONFETTI LAYER */
+        #confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 999;
+            overflow: hidden;
+        }
+
+        .confetti-piece {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #ff0;
+            border-radius: 50%;
+            animation: confettiFall 3s linear forwards;
+        }
+
+        /* PRINTABLE CERTIFICATE STYLING */
+        #certificate-print-area {
+            display: none;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #certificate-print-area, #certificate-print-area * {
+                visibility: visible;
+            }
+            #certificate-print-area {
+                display: block !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                padding: 40px;
+                border: 10px double #2c3e50;
+                background: white;
+                color: black;
+                text-align: center;
+                font-family: 'Georgia', serif;
+            }
+            .cert-title { font-size: 3rem; font-weight: bold; margin-bottom: 20px; }
+            .cert-subtitle { font-size: 1.5rem; margin-bottom: 40px; italic; }
+            .cert-name { font-size: 2rem; font-weight: bold; border-bottom: 2px solid #000; display: inline-block; padding: 0 30px; margin-bottom: 30px; }
+            .cert-text { font-size: 1.25rem; line-height: 1.6; margin-bottom: 40px; }
+            .cert-badge { font-size: 5rem; margin-bottom: 20px; }
+            .cert-footer { display: flex; justify-content: space-around; margin-top: 60px; font-size: 1.1rem; }
+            .cert-sig { border-top: 1px solid #000; width: 200px; padding-top: 5px; }
+        }
+
+        /* RESPONSIVE ADJUSTMENTS */
+        @media(max-width: 500px) {
+            .quiz-title { font-size: 1.8rem; }
+            .app-container { padding: 15px; border-radius: 16px; }
+            .question-text { font-size: 1.1rem; }
+            .option-btn { font-size: 1rem; padding: 12px 15px; }
+            .nav-btn { font-size: 0.9rem; padding: 10px 5px; }
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="confetti-container"></div>
+
+    <div class="app-container">
+        
+        <div id="quiz-header-block">
+            <h1 class="quiz-title">🛡️ Safety Rules Quiz</h1>
+            <p class="quiz-subtitle">Stay Safe • Stay Smart • Learn</p>
+        </div>
+
+        <div id="screen-start" class="screen active">
+            <p style="text-align: center; font-size: 1.1rem; margin-bottom: 20px; font-weight: 500;">
+                Welcome! Choose a difficulty level to start your 30-question safety challenge:
+            </p>
+            <div class="level-selector-wrapper">
+                <button class="btn-level btn-easy" onclick="startQuiz('easy')">
+                    <span>🟢 Easy Level</span>
+                    <span class="high-score-badge" id="high-score-easy">Best: 0%</span>
+                </button>
+                <button class="btn-level btn-medium" onclick="startQuiz('medium')">
+                    <span>🟡 Medium Level</span>
+                    <span class="high-score-badge" id="high-score-medium">Best: 0%</span>
+                </button>
+                <button class="btn-level btn-hard" onclick="startQuiz('hard')">
+                    <span>🔴 Hard Level</span>
+                    <span class="high-score-badge" id="high-score-hard">Best: 0%</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="screen-quiz" class="screen">
+            <div class="tracker-container">
+                <span id="label-level" style="text-transform: capitalize; font-weight: bold;">Level: Easy</span>
+                <span id="counter-questions">Question 1 of 30</span>
+                <span id="counter-score">Score: 0</span>
+            </div>
+            
+            <div class="progress-wrapper">
+                <div id="quiz-progress-bar" class="progress-bar"></div>
+            </div>
+
+            <div class="question-card">
+                <p id="quiz-question-text" class="question-text">Should you play with fire or matchsticks?</p>
+            </div>
+
+            <div id="quiz-options-container" class="options-container">
+                </div>
+
+            <div id="quiz-explanation-box" class="explanation-box">
+                <div id="explanation-title" class="explanation-title">✅ Correct!</div>
+                <div id="explanation-text" class="explanation-text">Never play with fire. It can burn you and cause accidents.</div>
+            </div>
+
+            <div class="navigation-grid">
+                <button id="btn-nav-prev" class="nav-btn" onclick="navigatePrevious()">⬅️ Previous</button>
+                <button id="btn-nav-home" class="nav-btn home-btn" onclick="navigateHome()">🏠 Home</button>
+                <button id="btn-nav-next" class="nav-btn" onclick="navigateNext()">➡️ Next</button>
+            </div>
+        </div>
+
+        <div id="screen-summary" class="screen">
+            <div class="summary-card">
+                <h3>Quiz Completed!</h3>
+                <div id="summary-badge-icon" class="badge-display">🏆</div>
+                <div id="summary-badge-title" class="badge-title">Safety Champion</div>
+                
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">Selected Level</div>
+                        <div id="stat-level" class="stat-value">-</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Final Score</div>
+                        <div id="stat-score" class="stat-value">0 / 30</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Percentage Passed</div>
+                        <div id="stat-percentage" class="stat-value">0%</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Time Taken</div>
+                        <div id="stat-time" class="stat-value">00:00</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Correct Answers</div>
+                        <div id="stat-correct" class="stat-value" style="color: var(--easy-color);">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Wrong Answers</div>
+                        <div id="stat-wrong" class="stat-value" style="color: var(--hard-color);">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="summary-actions">
+                <button class="action-btn btn-retry" onclick="restartCurrentQuiz()">🔄 Play Again</button>
+                <button class="action-btn btn-change-level" onclick="navigateHome()">📚 Choose Another Level</button>
+                <button id="btn-cert-trigger" class="action-btn btn-print" onclick="window.print()">🖨️ Print Certificate</button>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="certificate-print-area">
+        <div class="cert-badge" id="cert-print-badge">🏆</div>
+        <div class="cert-title">Certificate of Safety Smartness</div>
+        <div class="cert-subtitle">Awarded Proudly For Outstanding Knowledge</div>
+        <p class="cert-text">
+            This certifies that a super student has successfully finished the <br>
+            <strong><span id="cert-print-level">EASY</span> LEVEL</strong> of the <strong>🛡️ Safety Rules Quiz</strong>.<br>
+            They achieved an excellent final score of <strong id="cert-print-score">0/30</strong> (<span id="cert-print-pct">0%</span>) <br>
+            demonstrating true safety wisdom and protective awareness habits.
+        </p>
+        <p class="cert-text" style="font-weight: bold; color: #2c3e50;" id="cert-print-title">RANK: SAFETY CHAMPION</p>
+        <div class="cert-footer">
+            <div class="cert-sig">
+                <strong>Safety AI Instructor</strong><br>
+                Quiz Administrator
+            </div>
+            <div class="cert-sig">
+                <strong>Date Issued</strong><br>
+                <span id="cert-print-date">July 1, 2026</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // WEB AUDIO API SYNTHESIZER
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioContext;
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new AudioCtx();
+            }
+        }
+
+        function playSound(type) {
+            try {
+                initAudio();
+                if (!audioContext) return;
+                
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+
+                const now = audioContext.currentTime;
+
+                if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.exponentialRampToValueAtTime(200, now + 0.1);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                } else if (type === 'correct') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+                    osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.linearRampToValueAtTime(110, now + 0.25);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'complete') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(261.63, now); // C4
+                    osc.frequency.setValueAtTime(329.63, now + 0.1); // E4
+                    osc.frequency.setValueAtTime(392.00, now + 0.2); // G4
+                    osc.frequency.setValueAtTime(523.25, now + 0.3); // C5
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.02, now + 0.6);
+                    osc.start(now);
+                    osc.stop(now + 0.6);
+                } else if (type === 'badge') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.exponentialRampToValueAtTime(880, now + 0.15);
+                    osc.frequency.exponentialRampToValueAtTime(1320, now + 0.3);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                }
+            } catch (e) {
+                console.log("Audio play blocked or unsupported:", e);
+            }
+        }
+
+        // FULL 90 DATA QUESTION BANK
+        const questionBank = {
+            easy: [
+                { q: "Should you play with fire or matchsticks?", o: ["No, it is dangerous", "Yes, it is fun"], a: 0, e: "Never play with fire. It can burn you and cause accidents." },
+                { q: "Should you touch a hot pan on the cooking stove?", o: ["Yes, to check it", "No, it will burn your hand"], a: 1, e: "Hot pans can cause deep burns. Keep away from stoves." },
+                { q: "Is it safe to run quickly on wet kitchen or bathroom floors?", o: ["No, you might slip and fall", "Yes, it is safe"], a: 0, e: "Wet floors are slippery. Always walk slowly on them." },
+                { q: "What should you do if you get hurt while playing?", o: ["Hide and cry alone", "Tell an adult immediately"], a: 1, e: "Always tell a parent or teacher if you get hurt so they can help you." },
+                { q: "Should children play with sharp kitchen knives?", o: ["No, sharp knives can cut you", "Yes, knives are safe toys"], a: 0, e: "Knives are tools for adults, not toys for children." },
+                { q: "Should you follow your teacher's instructions at school?", o: ["Yes, always", "No, never"], a: 0, e: "Teachers make rules to keep you safe and help you learn." },
+                { q: "Is it okay to push your friends while playing on the slide?", o: ["Yes, to go faster", "No, they could fall and get hurt"], a: 1, e: "Be gentle on the playground. Pushing causes bad injuries." },
+                { q: "Why should we wash our hands carefully before eating?", o: ["To wash away dirty germs", "To make our hands wet"], a: 0, e: "Washing hands kills invisible germs that can make your stomach sick." },
+                { q: "When you cross the road, what should you do first?", o: ["Run across blindly", "Stop, look right, left, and right again"], a: 1, e: "Always look both ways carefully before stepping onto a road." },
+                { q: "Where is the safest place to walk along a street?", o: ["On the pedestrian sidewalk", "In the very middle of the road"], a: 0, e: "Walk on the sidewalk where cars are not allowed to drive." },
+                { q: "Is it safe to jump up and down on your bedroom bed?", o: ["Yes, it is dynamic", "No, you can fall off and get hurt"], a: 1, e: "Jumping on beds leads to broken bones if you slip off." },
+                { q: "What safety gear should you always wear when riding a bicycle?", o: ["A strong safety helmet", "A birthday party hat"], a: 0, e: "A helmet protects your head and brain if you tip over." },
+                { q: "If your plastic toy breaks and becomes sharp, you should:", o: ["Give it to an adult to fix or toss away", "Keep playing with it anyway"], a: 0, e: "Broken toys with sharp points can easily scratch or cut skin." },
+                { q: "Should you put small toy blocks or marbles into your mouth?", o: ["No, you could choke on them", "Yes, they taste good"], a: 0, e: "Small items can block your breathing pipe. Never swallow them." },
+                { q: "Why must we clean up our toys from the floor after playing?", o: ["So nobody trips and falls over them", "To hide them from everyone"], a: 0, e: "Leaving toys scattered can cause people to trip up and get hurt." },
+                { q: "Is it safe to open the front door for a stranger when home alone?", o: ["Yes, be friendly", "No, never open doors to strangers"], a: 1, e: "Never open the door to unfamiliar people. Call an adult instead." },
+                { q: "When riding in a car, when should you untie your seatbelt?", o: ["Only after the car stops completely", "While the car is moving fast"], a: 0, e: "Keep your seatbelt clicked tight during the whole car ride." },
+                { q: "Should you sprint or run down the school hallways and stairs?", o: ["Yes, to be first", "No, walk calmly in a single line"], a: 1, e: "Running on stairs causes dangerous falls. Walk safely." },
+                { q: "Where should you throw your wrappers and rubbish?", o: ["Drop them on the grass", "Put them inside a trash bin"], a: 1, e: "Using bins keeps environments clean, hygienic, and free of bugs." },
+                { q: "Is it safe to pet an unknown street dog without asking?", o: ["No, it might bite you if scared", "Yes, all animals love it"], a: 0, e: "Never touch unknown animals. They might get frightened and snap." },
+                { q: "If you accidentally spill juice or water on the floor, you should:", o: ["Leave it for someone else", "Wipe it up right away"], a: 1, e: "Clean up spills instantly so no one slips over the puddle." },
+                { q: "Should you lean far out of an open window upstairs?", o: ["No, you could slip out and fall", "Yes, to get fresh air"], a: 0, e: "Leaning out of high windows is extremely unsafe. Keep back." },
+                { q: "When playing on the swings, you should:", o: ["Hold on tight with both hands", "Stand up on the seat and jump"], a: 0, e: "Hold on securely to avoid falling off when swinging high." },
+                { q: "Why should your shoe laces always be tied properly?", o: ["To prevent stepping on them and tripping", "To look fashionable"], a: 0, e: "Loose laces catch under your feet and trip you up instantly." },
+                { q: "Should you pull someone's clothing while playing a tag game?", o: ["No, it can rip clothes or trip them", "Yes, it helps you win"], a: 0, e: "Play fair and safe. Pulling garments can throw people off balance." },
+                { q: "If you notice a wet spill in the classroom, what should you do?", o: ["Inform your teacher immediately", "Step over it and don't tell anyone"], a: 0, e: "Alerting the teacher protects classmates from slipping." },
+                { q: "Is it safe to hide inside an airtight old box or refrigerator?", o: ["Yes, great hiding spot", "No, you can get trapped and lose air"], a: 1, e: "Never crawl inside boxes or appliances that lock shut." },
+                { q: "How should you sit on your classroom chair?", o: ["Sit properly with all four legs on the ground", "Lean back on two legs only"], a: 0, e: "Tipping chairs backward causes painful falls and head knocks." },
+                { q: "When walking while carrying scissors, you must:", o: ["Hold the sharp blades down in your closed hand", "Run with them pointing out"], a: 0, e: "Walk with points facing down to avoid hurting yourself if you stumble." },
+                { q: "Should you stick small objects like pencils into your nose or ears?", o: ["No, it causes severe inner damage", "Yes, to clean them"], a: 0, e: "Never insert small items in ears or nose. It hurts terribly." }
+            ],
+            medium: [
+                { q: "Is it safe to toggle or touch electrical switches with wet fingers?", o: ["No, water conducts electricity and shocks you", "Yes, switches are fully waterproof"], a: 0, e: "Wet hands + electricity = dangerous shocks. Dry your hands first." },
+                { q: "What should you do if you smell smoke inside your house?", o: ["Go outside immediately and tell an adult", "Hide deep inside your bedroom wardrobe"], a: 0, e: "Escape smoke swiftly. Never hide from a potential fire." },
+                { q: "Should you go swimming in a pool all by yourself?", o: ["Yes, if you have floaties", "No, always have a lifeguard or adult watching"], a: 1, e: "Water can be unpredictable. Never swim without supervision." },
+                { q: "Who is the safest person to give you medicinal pills or syrup?", o: ["A trusted parent, doctor, or nurse", "Your friend during lunch break"], a: 0, e: "Only take medicines from authorized adults who know the dosage." },
+                { q: "If a stranger offers you delicious sweets to go with them, you should:", o: ["Say NO firmly, run away, and tell an adult", "Accept them and say thank you"], a: 0, e: "Never accept items, food, or rides from unfamiliar strangers." },
+                { q: "What should you do if you lose your parents in a huge supermarket?", o: ["Run outside to look for their car", "Stay inside and ask a worker in uniform for help"], a: 1, e: "Uniformed store staff can announce your name and find your parents safely." },
+                { q: "How should you hand a pair of scissors to a classmate?", o: ["Pointy blades facing them first", "Handle loops facing them first"], a: 1, e: "Always present the handle loops to the other person for safety." },
+                { q: "Which emergency number service handles residential fire hazards?", o: ["The Fire Brigade department", "The Toys Delivery service"], a: 0, e: "Call the fire department immediately to suppress fires." },
+                { q: "Is it safe to stick metal forks or keys inside power sockets?", o: ["No, it will electrocute you painfully", "Yes, to test if it works"], a: 0, e: "Metal items plug directly into electrical currents, causing hazards." },
+                { q: "If someone you do not know asks you to get in their car, you should:", o: ["Get in quickly to be polite", "Say NO, run away to a busy place, and tell an adult"], a: 1, e: "Never board vehicles with unfamiliar people under any excuse." },
+                { q: "Why should you avoid standing near an active household kitchen oven?", o: ["It emits extreme heat and can cause burns", "It makes your clothes dirty"], a: 0, e: "Ovens reach high temperatures. Give them a wide safety margin." },
+                { q: "Do life jackets help you stay safe when boating on deep water lakes?", o: ["Yes, they keep you floating safely", "No, they are just for style"], a: 0, e: "Life jackets hold your head above water automatically." },
+                { q: "What should you do if you spot a mysterious chemical pill on the floor?", o: ["Eat it to see if it is candy", "Pick it up carefully or call an adult to handle it"], a: 1, e: "Unknown items are not treats. They could contain harmful chemicals." },
+                { q: "Is it safe to play tag or run around a deep body of garden pond water?", o: ["No, you could slip and tumble into deep water", "Yes, water is soft"], a: 0, e: "Playing right beside water borders risks sudden drowning hazards." },
+                { q: "If a minor pan catching grease ignites at home, you should:", o: ["Call an adult to cover it with a metal lid", "Throw a cup of water directly on it"], a: 0, e: "Water on grease fires explodes the flame. Use a lid to smother it." },
+                { q: "Are cracked, torn, or frayed electrical device cords safe to plug in?", o: ["No, bare exposed wires can spark fires", "Yes, they still work fine"], a: 0, e: "Frayed wires leak electricity. Inform an adult to discard them." },
+                { q: "What does a solid red light indicate on a traffic signal pole?", o: ["It commands all vehicles to Stop", "It means speed up and cross"], a: 0, e: "Red means Stop. Vehicles must halt before the pedestrian path." },
+                { q: "What does a green light mean at a pedestrian crosswalk road?", o: ["Walk across carefully after checking for turning cars", "Close your eyes and run"], a: 0, e: "Green means cross with caution. Check that cars have truly stopped." },
+                { q: "When crossing a wide asphalt street, we must utilize the:", o: ["Zebra crossing markings or overhead bridge", "Any random corner between parked trucks"], a: 0, e: "Crosswalks are designated zones where drivers expect walkers." },
+                { q: "Is it safe to play ball games right next to a burning stove?", o: ["No, the ball can tip hot liquids onto you", "Yes, if you throw carefully"], a: 0, e: "Keep play activities far away from heat sources and cooking areas." },
+                { q: "If a stranger online or offline knows your first name, are they safe?", o: ["Yes, they know who I am", "No, they could have read it off your bag or guessed"], a: 1, e: "Knowing a name does not mean someone is a safe family friend." },
+                { q: "What should you do if a sleeve of your clothes catches a tiny flame?", o: ["Run as fast as you can to cool off", "Stop, Drop to the ground, and Roll side to side"], a: 1, e: "Running feeds oxygen to fire. Dropping and rolling smothers it." },
+                { q: "Is it permissible to play with adult razor blades or tools?", o: ["No, they are engineered sharp and cut deeply", "Yes, they look cool"], a: 0, e: "Razors and utility tools slice skin with minimal pressure." },
+                { q: "Why is applying sun protective lotion important at summer beaches?", o: ["It blocks harmful solar rays from burning skin", "It changes your skin color green"], a: 0, e: "Sunscreen prevents painful cellular skin burns from sunlight." },
+                { q: "If you find a pack of matches on the living room sofa table:", o: ["Leave them be and alert an adult immediately", "Flick them to see sparks"], a: 0, e: "Matches are dangerous fire ignition starters. Hand them to adults." },
+                { q: "If you feel exhausted and weak while swimming in a public pool:", o: ["Signal the lifeguard and get out to rest", "Try to swim deeper"], a: 0, e: "Never push yourself when tired in water. Get out immediately." },
+                { q: "Are liquid household floor detergents and bleach bottles safe to taste?", o: ["No, they are poisonous toxins", "Yes, they smell fruity"], a: 0, e: "Cleaning solutions are highly toxic chemical poisons." },
+                { q: "If a certified uniform police officer offers assistance when lost, should you trust them?", o: ["Yes, they are trusted community safety helpers", "No, run away from them"], a: 0, e: "Police officers are trained to rescue and protect citizens." },
+                { q: "Why should you never yank or pull an electrical wire out by its cord?", o: ["It snaps inner metallic strands and risks shocks", "It changes the wall color"], a: 0, e: "Always grip the hard insulated plug head firmly to disconnect things safely." },
+                { q: "Is a vehicle safety seatbelt required for brief, short distance neighborhood trips?", o: ["Yes, accidents can happen anywhere at any time", "No, only on high-speed motorways"], a: 0, e: "Seatbelts must secure your body every single time a vehicle moves." }
+            ],
+            hard: [
+                { q: "What is the primary action to take during a sudden ground earthquake tremor?", o: ["Drop down, Cover your head under a desk, and Hold On", "Take the building elevator to the roof"], a: 0, e: "Drop, Cover, and Hold protects your vital head from falling debris." },
+                { q: "Why is memorizing your home street address and parental phone digits vital?", o: ["To assist rescue or security workers if you get lost", "To score high marks on grammar tests"], a: 0, e: "Knowing these details allows emergency crews to reconnect you with family." },
+                { q: "Should you communicate your school name or private passwords on web gaming platforms?", o: ["No, keep personal identity private online", "Yes, type it in the public chat box"], a: 0, e: "Cyber safety means locking away private metadata from web strangers." },
+                { q: "What is the primary goal of learning national emergency help numbers?", o: ["To acquire fast professional aid during crises", "To pass free time calling them"], a: 0, e: "Emergency dispatch numbers bridge you immediately with paramedics, police, or fire crews." },
+                { q: "If a friend receives a bleeding cut on their arm, what is a correct initial step?", o: ["Press a clean cloth firmly on the cut to stop bleeding", "Smear garden mud on it to fill the gap"], a: 0, e: "Direct pressure using sterile or clean linens assists in clotting blood flow safely." },
+                { q: "Why must absolute silence be maintained during a routine school fire evacuation drill?", o: ["To fully hear safety warden and teacher instructions", "To allow students to sleep walk"], a: 0, e: "Quiet operations enable quick transmission of safety orders over speakers." },
+                { q: "What action is best if you witness a student being bullied or mistreated?", o: ["Report the activity safely to an on-duty teacher", "Join the ring and cheer the actions"], a: 0, e: "Informing authorities stops systemic harassment and protects victims." },
+                { q: "Is it safe to share your personal account login passwords with best school friends?", o: ["No, true passwords should remain totally secret", "Yes, sharing shows loyalty"], a: 0, e: "Keep passwords confidential to safeguard your profiles from misuse." },
+                { q: "If the fire alarm sounder initiates in the building, what should you grab first?", o: ["Nothing. Exit the premises immediately via the closest route", "Your heavy toy collection bags"], a: 0, e: "Human lives take absolute precedence over material backpacks. Evacuate instantly." },
+                { q: "Why shouldn't you seek cover under tall isolated trees during severe lightning storms?", o: ["High points attract electric lightning discharges", "Leaves might make you wet"], a: 0, e: "Lightning paths target the highest nearby objects. Stand away from tall trees." },
+                { q: "If an online web gaming friend insists on arranging an isolated in-person meeting:", o: ["Refuse completely and alert your parents at once", "Go meet them secretly alone"], a: 0, e: "Never meet internet acquaintances without full parental knowledge and presence." },
+                { q: "What core components belong inside an ideal household emergency first-aid pouch?", o: ["Sterile bandages, antiseptic solution, and medical tape", "Chocolate bars, video games, and drawing crayons"], a: 0, e: "First-aid kits require medical components to sanitize and bind body wounds." },
+                { q: "If you observe an unidentified backpack left isolated on a public station bench, you should:", o: ["Do not touch it; report it to security staff", "Open the zippers to look inside"], a: 0, e: "Unattended parcels should be checked exclusively by security professionals." },
+                { q: "Why is playing recreational sports on iron railway tracks forbidden?", o: ["High-speed locomotives cannot halt instantly for pedestrians", "The track metal leaves stains on clothing"], a: 0, e: "Trains travel with immense weight and take immense distances to brake." },
+                { q: "If you get separated from your party group inside an active amusement theme park:", o: ["Identify an official park staff agent wearing a uniform badge", "Follow any crowded family moving outside"], a: 0, e: "Park staff possess communication radios to pinpoint lost groups securely." },
+                { q: "What does internet cyber-safety encompass?", o: ["Protecting identity data and browsing safe zones online", "Cleaning the dust off your laptop screen"], a: 0, e: "Digital safety practices shield users from malware and untrusted web contacts." },
+                { q: "What is an appropriate first care step for a minor skin heat burn?", o: ["Irrigate with cool running tap water for several minutes", "Spread thick butter or hot oils on the area"], a: 0, e: "Cool running water draws dangerous heat out from deep tissue safe and fast." },
+                { q: "Why should every house maintain two discrete emergency exit pathways?", o: ["In case a hazard blocks one main doorway path", "To provide separate entrance routes for pets"], a: 0, e: "Alternative paths ensure safe exit channels if primary doors are blocked by fire." },
+                { q: "If an adult actions make you feel uncomfortable or unsafe, you must:", o: ["Break silence and inform a trusted teacher or parent", "Keep it an absolute hidden secret forever"], a: 0, e: "Never keep secrets that make you feel worried. Talk to someone who protects you." },
+                { q: "Is it safe to operate powered gaming gadgets while plugged into chargers during lightning?", o: ["No, dynamic lightning strikes can surge wall grids", "Yes, electricity charges devices faster then"], a: 0, e: "Lightning strikes on power lines cause severe voltage surges that can travel to you." },
+                { q: "What is the optimal shelter location if caught outdoors during an intense lightning storm?", o: ["Inside a solid enclosed masonry concrete building", "Crouching underneath a metal golf umbrella"], a: 0, e: "Substantial walled structures channel electrical currents safely away to earth grounds." },
+                { q: "Why should kids avoid climbing into old discarded kitchen appliances or plastic chests?", o: ["Lids can self-latch, trapping you inside without oxygen", "The dark interiors can ruin your vision"], a: 0, e: "Old appliances lack safety inner push levers. Trapped kids can suffocate." },
+                { q: "What is a recommended physical stance for managing a standard nosebleed?", o: ["Lean slightly forward and pinch the soft nasal bridge nostrils", "Tilt your skull backward completely"], a: 0, e: "Leaning forward avoids blood flowing down your windpipe or into the stomach." },
+                { q: "Why is designating an external family assembly landmark point crucial for emergency response?", o: ["To verify everyone has exited safely without going back inside", "To have a fun picnic area"], a: 0, e: "A fixed meeting spot ensures everyone is accounted for quickly during an evacuation." },
+                { q: "If a toddler appears to be choking on a solid foreign plastic toy piece, you must:", o: ["Shout loudly for an adult helper or emergency medical support", "Give them dry biscuits to swallow"], a: 0, e: "Choking demands expert physical relief intervention immediately. Get adult help." },
+                { q: "Why should students refrain from running through tightly crowded retail malls?", o: ["You can crash into people, causing severe falls", "Store alarms will trigger automatically"], a: 0, e: "Congested zones require steady walking to prevent chain-reaction accidents." },
+                { q: "Should you download web applications or games without explicit parental authorization?", o: ["No, files can harvest private data or contain viruses", "Yes, download everything free"], a: 0, e: "Unverified apps can compromise system files and breach privacy rules." },
+                { q: "What does the phrase 'Stop, Drop, and Roll' strictly apply to?", o: ["The universal procedure to extinguish fire on your garments", "A basic technique to stretch your limbs"], a: 0, e: "Dropping and rolling on the ground smothers active fire on clothing." },
+                { q: "If you detect a jagged piece of glass at the bottom of a public swimming pool floor:", o: ["Alert the pool lifeguard immediately to clear it", "Pick it up and store it inside your swimming shorts"], a: 0, e: "Lifeguards possess specialized tools to remove submerged hazards safely." },
+                { q: "What is the core reason safety protocols are developed across schools?", o: ["To defend human health and preserve a secure environment", "Simply to fill up page layouts in school books"], a: 0, e: "Safety rules prevent preventable incidents and keep our community safe." }
+            ]
+        };
+
+        // GLOBAL APP MUTABLE STATES
+        let currentLevel = 'easy';
+        let currentQuestions = [];
+        let currentIndex = 0;
+        let score = 0;
+        let userAnswers = []; // track selection states: null = un-answered, integer = index picked
+        let startTime;
+        let totalQuizTime = 0;
+
+        // ON-LOAD LOCALSTORAGE CHECKS
+        window.addEventListener('DOMContentLoaded', () => {
+            refreshHighScoreDisplay();
+        });
+
+        function refreshHighScoreDisplay() {
+            const easyBest = localStorage.getItem('safetyscore_easy') || '0';
+            const medBest = localStorage.getItem('safetyscore_medium') || '0';
+            const hardBest = localStorage.getItem('safetyscore_hard') || '0';
+
+            document.getElementById('high-score-easy').innerText = `Best: ${easyBest}%`;
+            document.getElementById('high-score-medium').innerText = `Best: ${medBest}%`;
+            document.getElementById('high-score-hard').innerText = `Best: ${hardBest}%`;
+        }
+
+        // ARRAY SHUFFLE UTILITY (Fisher-Yates)
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // CORE ENGINE: QUIZ INITIALIZATION
+        function startQuiz(level) {
+            playSound('click');
+            currentLevel = level;
+            
+            // Fetch copy of dataset
+            const sourceQuestions = questionBank[level];
+            
+            // Randomize questions
+            currentQuestions = JSON.parse(JSON.stringify(sourceQuestions));
+            shuffleArray(currentQuestions);
+            
+            // Configure states
+            currentIndex = 0;
+            score = 0;
+            userAnswers = new Array(currentQuestions.length).fill(null);
+            startTime = Date.now();
+
+            // Set UI headers
+            document.getElementById('label-level').innerText = `Level: ${level}`;
+            document.getElementById('quiz-header-block').style.display = 'block';
+
+            // Transition panels
+            document.getElementById('screen-start').classList.remove('active');
+            document.getElementById('screen-summary').classList.remove('active');
+            document.getElementById('screen-quiz').classList.add('active');
+
+            renderQuestion();
+        }
+
+        // RENDER CURRENT QUESTION CARD
+        function renderQuestion() {
+            const qData = currentQuestions[currentIndex];
+            
+            // Elements update
+            document.getElementById('counter-questions').innerText = `Question ${currentIndex + 1} of ${currentQuestions.length}`;
+            document.getElementById('counter-score').innerText = `Score: ${score}`;
+            document.getElementById('quiz-question-text').innerText = qData.q;
+            
+            // Compute progress bar percentage
+            const progressPercent = ((currentIndex) / currentQuestions.length) * 100;
+            document.getElementById('quiz-progress-bar').style.width = `${progressPercent}%`;
+
+            // Reset/Hide Explanation Box
+            const expBox = document.getElementById('quiz-explanation-box');
+            expBox.style.display = 'none';
+            expBox.classList.remove('wrong');
+
+            // Render options list
+            const optionsContainer = document.getElementById('quiz-options-container');
+            optionsContainer.innerHTML = '';
+
+            // Render the text options directly
+            qData.o.forEach((optionText, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = optionText;
+                btn.onclick = () => handleOptionSelection(index);
+                optionsContainer.appendChild(btn);
+            });
+
+            // If question was already evaluated, freeze states and keep layout visible
+            if (userAnswers[currentIndex] !== null) {
+                lockAndHighlightOptions(userAnswers[currentIndex]);
+            }
+
+            // Sync navigation button triggers
+            document.getElementById('btn-nav-prev').disabled = (currentIndex === 0);
+            
+            // If it's the last question and answered, Next text transforms or prepares summary
+            if (currentIndex === currentQuestions.length - 1) {
+                document.getElementById('btn-nav-next').innerText = '🏁 Finish';
+            } else {
+                document.getElementById('btn-nav-next').innerText = '➡️ Next';
+            }
+        }
+
+        // ACTION EVALUATION WRAPPER
+        function handleOptionSelection(selectedIndex) {
+            if (userAnswers[currentIndex] !== null) return; // already locked
+
+            userAnswers[currentIndex] = selectedIndex;
+            lockAndHighlightOptions(selectedIndex);
+        }
+
+        // RE-APPLY OR APPLY VISUAL CRITERIA FOR ANSWERS
+        function lockAndHighlightOptions(selectedIndex) {
+            const qData = currentQuestions[currentIndex];
+            const optionsContainer = document.getElementById('quiz-options-container');
+            const optionButtons = optionsContainer.getElementsByClassName('option-btn');
+            
+            const isCorrect = (selectedIndex === qData.a);
+
+            // Recompute dynamic score state up to this step
+            recalculateScore();
+            document.getElementById('counter-score').innerText = `Score: ${score}`;
+
+            // Loop and assign visual flags
+            for (let i = 0; i < optionButtons.length; i++) {
+                optionButtons[i].disabled = true; // Lock further interactions
+                if (i === qData.a) {
+                    optionButtons[i].classList.add('correct'); // Highlight correct answer green
+                } else if (i === selectedIndex && !isCorrect) {
+                    optionButtons[i].classList.add('incorrect'); // Selected wrong choice turns red
+                }
+            }
+
+            // Fire sound notifications safely on freshly executed actions
+            if (arguments.callee.caller.name === "handleOptionSelection") {
+                playSound(isCorrect ? 'correct' : 'wrong');
+            }
+
+            // Expose explanation data
+            const expBox = document.getElementById('quiz-explanation-box');
+            const expTitle = document.getElementById('explanation-title');
+            const expText = document.getElementById('explanation-text');
+
+            if (isCorrect) {
+                expTitle.innerText = "✅ Correct!";
+                expBox.classList.remove('wrong');
+            } else {
+                expTitle.innerText = "❌ Incorrect";
+                expBox.classList.add('wrong');
+            }
+
+            expText.innerText = qData.e;
+            expBox.style.display = 'block';
+        }
+
+        function recalculateScore() {
+            let tempScore = 0;
+            userAnswers.forEach((ans, idx) => {
+                if (ans !== null && ans === currentQuestions[idx].a) {
+                    tempScore++;
+                }
+            });
+            score = tempScore;
+        }
+
+        // STSTANCE HANDLING: NEXT / PREVIOUS / HOME
+        function navigateNext() {
+            playSound('click');
+            
+            if (userAnswers[currentIndex] === null) {
+                alert("Please select an answer first to learn the safety rule!");
+                return;
+            }
+
+            if (currentIndex < currentQuestions.length - 1) {
+                currentIndex++;
+                renderQuestion();
+            } else {
+                evaluateAndShowSummary();
+            }
+        }
+
+        function navigatePrevious() {
+            playSound('click');
+            if (currentIndex > 0) {
+                currentIndex--;
+                renderQuestion();
+            }
+        }
+
+        function navigateHome() {
+            playSound('click');
+            document.getElementById('screen-quiz').classList.remove('active');
+            document.getElementById('screen-summary').classList.remove('active');
+            document.getElementById('screen-start').classList.add('active');
+            document.getElementById('quiz-header-block').style.display = 'block';
+            refreshHighScoreDisplay();
+        }
+
+        function restartCurrentQuiz() {
+            startQuiz(currentLevel);
+        }
+
+        // SHIFT TO END GRAPH METRICS SCREEN
+        function evaluateAndShowSummary() {
+            // Log elapsed time metrics
+            const endTime = Date.now();
+            totalQuizTime = Math.floor((endTime - startTime) / 1000);
+            const minutes = Math.floor(totalQuizTime / 60).toString().padStart(2, '0');
+            const seconds = (totalQuizTime % 60).toString().padStart(2, '0');
+            const timeString = `${minutes}:${seconds}`;
+
+            // Compute math metrics
+            recalculateScore();
+            const totalQs = currentQuestions.length;
+            const percentage = Math.round((score / totalQs) * 100);
+            const wrongAnswers = totalQs - score;
+
+            // Compute rank brackets & badge allocations
+            let badgeIcon = '📚';
+            let badgeTitle = 'Keep Learning';
+            
+            if (percentage >= 90) {
+                badgeIcon = '🏆';
+                badgeTitle = 'Safety Champion';
+            } else if (percentage >= 70) {
+                badgeIcon = '🌟';
+                badgeTitle = 'Safety Star';
+            } else if (percentage >= 50) {
+                badgeIcon = '👍';
+                badgeTitle = 'Safe Learner';
+            }
+
+            // Sync state records locally inside localStorage
+            const historicalKey = `safetyscore_${currentLevel}`;
+            const existingHigh = parseInt(localStorage.getItem(historicalKey) || '0', 10);
+            if (percentage > existingHigh) {
+                localStorage.setItem(historicalKey, percentage.toString());
+            }
+
+            // Inject metrics text properties into dashboard nodes
+            document.getElementById('stat-level').innerText = currentLevel.toUpperCase();
+            document.getElementById('stat-score').innerText = `${score} / ${totalQs}`;
+            document.getElementById('stat-percentage').innerText = `${percentage}%`;
+            document.getElementById('stat-time').innerText = timeString;
+            document.getElementById('stat-correct').innerText = score;
+            document.getElementById('stat-wrong').innerText = wrongAnswers;
+
+            document.getElementById('summary-badge-icon').innerText = badgeIcon;
+            document.getElementById('summary-badge-title').innerText = badgeTitle;
+
+            // Sync items to hidden printable nodes
+            document.getElementById('cert-print-badge').innerText = badgeIcon;
+            document.getElementById('cert-print-level').innerText = currentLevel.toUpperCase();
+            document.getElementById('cert-print-score').innerText = `${score}/${totalQs}`;
+            document.getElementById('cert-print-pct').innerText = `${percentage}%`;
+            document.getElementById('cert-print-title').innerText = `RANK: ${badgeTitle.toUpperCase()}`;
+            document.getElementById('cert-print-date').innerText = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+
+            // Hide normal title block inside results dashboard to maximize layout breathing room
+            document.getElementById('quiz-header-block').style.display = 'none';
+
+            // Swap view screens
+            document.getElementById('screen-quiz').classList.remove('active');
+            document.getElementById('screen-summary').classList.add('active');
+
+            // Play auditory celebratory tracks or rewards
+            if (percentage >= 50) {
+                playSound('complete');
+                triggerConfettiFlourish();
+            } else {
+                playSound('badge');
+            }
+        }
+
+        // PURE CSS ANIMATED DOM CONFETTI GENERATOR
+        function triggerConfettiFlourish() {
+            const container = document.getElementById('confetti-container');
+            container.innerHTML = '';
+            
+            const colors = ['#ff7675', '#fdcb6e', '#00cec9', '#6c5ce7', '#e84393', '#2ecc71'];
+            
+            for (let i = 0; i < 120; i++) {
+                const conf = document.createElement('div');
+                conf.className = 'confetti-piece';
+                
+                // Randomize geometric layout attributes
+                conf.style.left = `${Math.random() * 100}vw`;
+                conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                conf.style.transform = `scale(${Math.random() * 0.8 + 0.4})`;
+                
+                // Randomize delays & durations timelines
+                const duration = Math.random() * 2 + 1.5;
+                const delay = Math.random() * 0.5;
+                conf.style.animationDuration = `${duration}s`;
+                conf.style.animationDelay = `${delay}s`;
+                
+                container.appendChild(conf);
+            }
+            
+            // Clear DOM node elements later
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 4000);
+        }
+    </script>
+</body>
+</html>

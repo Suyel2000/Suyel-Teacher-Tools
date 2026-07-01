@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐦 Birds Quiz - Observe, Identify, Explore & Learn</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #e0f2fe 0%, #dcfce7 100%);
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --primary-text: #1e293b;
+            --secondary-text: #475569;
+            --easy-color: #22c55e;
+            --medium-color: #eab308;
+            --hard-color: #ef4444;
+            --correct-bg: #dcfce7;
+            --correct-border: #22c55e;
+            --wrong-bg: #fee2e2;
+            --wrong-border: #ef4444;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--primary-text);
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 680px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: 30px;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            position: relative;
+        }
+
+        .screen {
+            display: none;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Typography */
+        h1 {
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 8px;
+            color: #0f172a;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--secondary-text);
+            font-size: 1.1rem;
+            margin-bottom: 40px;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+
+        /* Buttons & Controls */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 16px 24px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 16px;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-easy { background-color: var(--easy-color); color: white; }
+        .btn-easy:hover { background-color: #16a34a; }
+
+        .btn-medium { background-color: var(--medium-color); color: #451a03; }
+        .btn-medium:hover { background-color: #ca8a04; }
+
+        .btn-hard { background-color: var(--hard-color); color: white; }
+        .btn-hard:hover { background-color: #dc2626; }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--secondary-text);
+            color: var(--secondary-text);
+        }
+        .btn-outline:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        /* Top Progress Elements */
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-weight: 600;
+            color: var(--secondary-text);
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 12px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 6px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            border-radius: 6px;
+            transition: width 0.3s ease;
+        }
+
+        /* Question Box */
+        .question-box {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 25px;
+            line-height: 1.4;
+        }
+
+        /* Options layout */
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .option-card {
+            background: white;
+            border: 2px solid rgba(0, 0, 0, 0.08);
+            border-radius: var(--radius-md);
+            padding: 16px 20px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .option-card:hover {
+            border-color: #3b82f6;
+            background-color: #f8fafc;
+        }
+
+        .option-card.correct {
+            background-color: var(--correct-bg) !important;
+            border-color: var(--correct-border) !important;
+            color: #065f46;
+        }
+
+        .option-card.wrong {
+            background-color: var(--wrong-bg) !important;
+            border-color: var(--wrong-border) !important;
+            color: #991b1b;
+        }
+
+        .option-card.disabled {
+            pointer-events: none;
+        }
+
+        /* Explanation Box */
+        .explanation-box {
+            display: none;
+            padding: 16px;
+            border-radius: var(--radius-md);
+            margin-bottom: 25px;
+            font-size: 1.05rem;
+            line-height: 1.4;
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* Navigation Area */
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+            padding-top: 20px;
+        }
+
+        .nav-btn {
+            flex: 1;
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            background: #e2e8f0;
+            color: #334155;
+            transition: background 0.2s;
+            text-align: center;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            background: #cbd5e1;
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .nav-btn-home {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .nav-btn-home:hover {
+            background: #2563eb;
+        }
+
+        /* Statistics Summary Page */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.6);
+            padding: 12px;
+            border-radius: var(--radius-md);
+            text-align: center;
+            border: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--secondary-text);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .badge-container {
+            text-align: center;
+            margin: 25px 0;
+            padding: 20px;
+            background: #fff;
+            border-radius: var(--radius-lg);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .badge-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-top: 5px;
+            color: #1e3a8a;
+        }
+
+        /* Canvas Confetti Layer */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        /* Print Certificate Layout Styles */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #print-area, #print-area * {
+                visibility: visible;
+            }
+            #print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                padding: 40px;
+                border: 10px double #1e3a8a;
+                text-align: center;
+                background: white;
+                color: black;
+            }
+        }
+
+        #print-area {
+            display: none;
+        }
+
+        /* Responsive Fixes */
+        @media (max-width: 480px) {
+            h1 { font-size: 2rem; }
+            .subtitle { margin-bottom: 25px; font-size: 0.95rem; }
+            .app-container { padding: 16px; }
+            .question-box { font-size: 1.15rem; }
+            .option-card { font-size: 1rem; padding: 12px 16px; }
+            .nav-btn { padding: 10px; font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <div class="app-container">
+        
+        <div id="screen-start" class="screen active">
+            <h1>🐦 Birds Quiz</h1>
+            <div class="subtitle">Observe • Identify • Explore • Learn</div>
+            <button class="btn btn-easy" onclick="startQuiz('easy')">🟢 Easy Level</button>
+            <button class="btn btn-medium" onclick="startQuiz('medium')">🟡 Medium Level</button>
+            <button class="btn btn-hard" onclick="startQuiz('hard')">🔴 Hard Level</button>
+            <div style="text-align: center; margin-top: 20px; font-size: 0.9rem; color: var(--secondary-text);" id="saved-progress-msg"></div>
+        </div>
+
+        <div id="screen-quiz" class="screen">
+            <div class="quiz-header">
+                <span id="txt-level-badge">Level</span>
+                <span id="txt-counter">Question 1/30</span>
+                <span id="txt-score">Score: 0</span>
+            </div>
+            <div class="progress-bar-container">
+                <div id="ui-progress" class="progress-bar"></div>
+            </div>
+
+            <div id="ui-question" class="question-box">Question string placeholder?</div>
+            
+            <div id="ui-options" class="options-container"></div>
+            
+            <div id="ui-explanation" class="explanation-box"></div>
+
+            <div class="nav-container">
+                <button id="btn-prev" class="nav-btn" onclick="handlePrev()">⬅️ Previous</button>
+                <button class="nav-btn nav-btn-home" onclick="goHome()">🏠 Home</button>
+                <button id="btn-next" class="nav-btn" onclick="handleNext()">➡️ Next</button>
+            </div>
+        </div>
+
+        <div id="screen-summary" class="screen">
+            <h1>🎉 Quiz Completed!</h1>
+            <p class="subtitle" id="summary-subtitle">Here is how well you did:</p>
+            
+            <div class="badge-container">
+                <div style="font-size: 3.5rem;" id="ui-badge-icon">🏆</div>
+                <div class="badge-title" id="ui-badge-name">Bird Expert</div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-item"><div class="stat-label">Level</div><div class="stat-value" id="res-level">-</div></div>
+                <div class="stat-item"><div class="stat-label">Score</div><div class="stat-value" id="res-score">-</div></div>
+                <div class="stat-item"><div class="stat-label">Correct</div><div class="stat-value" id="res-correct" style="color:var(--easy-color);">-</div></div>
+                <div class="stat-item"><div class="stat-label">Wrong</div><div class="stat-value" id="res-wrong" style="color:var(--hard-color);">-</div></div>
+                <div class="stat-item"><div class="stat-label">Percentage</div><div class="stat-value" id="res-percent">-</div></div>
+                <div class="stat-item"><div class="stat-label">Time Taken</div><div class="stat-value" id="res-time">-</div></div>
+            </div>
+
+            <button class="btn btn-easy" style="margin-top:20px;" onclick="restartLevel()">🔄 Play Again</button>
+            <button class="btn btn-outline" onclick="goHome()">🏠 Choose Another Level</button>
+            <button class="btn btn-outline" style="border-color:#3b82f6; color:#3b82f6;" onclick="printCertificate()">🖨️ Print Certificate</button>
+        </div>
+
+    </div>
+
+    <div id="print-area">
+        <h1>CERTIFICATE OF ACHIEVEMENT</h1>
+        <p style="font-size: 1.5rem; margin: 30px 0;">This certificate is proudly awarded to an amazing nature explorer for completing the</p>
+        <h2 style="font-size: 2.2rem; color: #1e3a8a; margin: 20px 0;" id="print-cert-title">BIRDS QUIZ</h2>
+        <p style="font-size: 1.3rem;">Achieved Performance Level: <strong id="print-cert-badge">Expert</strong></p>
+        <p style="font-size: 1.2rem; margin-top: 15px;">Final Score: <span id="print-cert-score">30/30</span> (<span id="print-cert-pct">100</span>%)</p>
+        <div style="margin-top: 60px; border-top: 2px dashed #ccc; display: inline-block; width: 250px; padding-top: 10px;">
+            Nature Quiz Master
+        </div>
+    </div>
+
+    <script>
+        // --- AUDIO ENGINE USING WEB AUDIO API ---
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioCtx();
+        }
+
+        function playSound(type) {
+            try {
+                initAudio();
+                if (!audioCtx) return;
+                
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                const now = audioCtx.currentTime;
+
+                if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                } else if (type === 'correct') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.linearRampToValueAtTime(120, now + 0.25);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'complete' || type === 'badge') {
+                    // Quick celebratory arpeggio sequence
+                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                        const o = audioCtx.createOscillator();
+                        const g = audioCtx.createGain();
+                        o.connect(g); g.connect(audioCtx.destination);
+                        o.type = 'sine';
+                        o.frequency.setValueAtTime(freq, now + (idx * 0.08));
+                        g.gain.setValueAtTime(0.1, now + (idx * 0.08));
+                        g.gain.exponentialRampToValueAtTime(0.005, now + (idx * 0.08) + 0.2);
+                        o.start(now + (idx * 0.08));
+                        o.stop(now + (idx * 0.08) + 0.2);
+                    });
+                }
+            } catch (e) { console.log("Audio play blocked or unsupported", e); }
+        }
+
+        // --- QUESTION BANK DATA ---
+        const questionBank = {
+            easy: [
+                { q: "Which bird is the national bird of India?", o: ["Peacock", "Sparrow", "Crow", "Pigeon"], a: 0, e: "The beautiful peacock with colourful feathers is the national bird of India." },
+                { q: "Which bird says 'Caw Caw'?", o: ["Parrot", "Crow", "Pigeon", "Duck"], a: 1, e: "Crows live around us and make a loud 'Caw Caw' sound." },
+                { q: "Which bird says 'Coo Coo'?", o: ["Pigeon", "Eagle", "Hen", "Owl"], a: 0, e: "Pigeons are quiet birds that love to say 'Coo Coo'." },
+                { q: "Which big bird cannot fly at all?", o: ["Sparrow", "Ostrich", "Eagle", "Parrot"], a: 1, e: "The ostrich is the biggest bird, but it can only run fast, not fly." },
+                { q: "What do birds use to fly high in the sky?", o: ["Legs", "Tail", "Wings", "Beak"], a: 2, e: "Birds use their strong wings and soft feathers to fly." },
+                { q: "What covers the whole body of a bird to keep it warm?", o: ["Hair", "Feathers", "Scales", "Shell"], a: 1, e: "Feathers cover a bird's body to help it fly and stay warm." },
+                { q: "Which bird can copy our voice and talk?", o: ["Crow", "Parrot", "Duck", "Ostrich"], a: 1, e: "Parrots are clever birds that can copy sounds and human words!" },
+                { q: "Which bird wakes up at night when it is dark?", o: ["Hen", "Owl", "Sparrow", "Peacock"], a: 1, e: "Owls stay awake at night and can see very well in the dark." },
+                { q: "Which small bird is often seen jumping in our home gardens?", o: ["Ostrich", "Eagle", "Sparrow", "Vulture"], a: 2, e: "Sparrows are sweet, tiny birds that love to skip around gardens." },
+                { q: "Which bird swims in water and says 'Quack Quack'?", o: ["Duck", "Pigeon", "Crow", "Parrot"], a: 0, e: "Ducks have webbed feet that help them swim smoothly in water." },
+                { q: "Which bird wakes us up early in the morning?", o: ["Rooster", "Owl", "Penguin", "Pigeon"], a: 0, e: "The rooster crows loudly at sunrise to welcome the day." },
+                { q: "Where do most birds live?", o: ["Under deep water", "On green trees", "Under the ground", "Inside deep caves"], a: 1, e: "Birds build safe homes called nests up in the trees." },
+                { q: "True or False: All birds can fly high.", o: ["True", "False"], a: 1, e: "False. Some birds like penguins and ostriches cannot fly." },
+                { q: "Which bird is black from head to toe?", o: ["Crow", "Parrot", "Pigeon", "Swan"], a: 0, e: "Crows have shiny black feathers over their whole body." },
+                { q: "Which bird lives in very cold snow and walks with short steps?", o: ["Penguin", "Parrot", "Hen", "Eagle"], a: 0, e: "Penguins are birds that live in ice and snow, but they cannot fly." },
+                { q: "What part of its body does a bird use to pick up seeds?", o: ["Hands", "Beak", "Ears", "Tail"], a: 1, e: "Birds do not have hands. They use their hard beaks to eat." },
+                { q: "How many legs does a bird have?", o: ["Four legs", "Two legs", "Six legs", "No legs"], a: 1, e: "All birds have exactly two legs to walk, hop, or perch." },
+                { q: "Which bird is bright green with a red ring around its neck?", o: ["Crow", "Parrot", "Pigeon", "Owl"], a: 1, e: "The green parrot has a lovely red beak and red neck ring." },
+                { q: "Complete the sentence: A bird has feathers but a cow has ___.", o: ["Wings", "Hair", "Beaks", "Feathers"], a: 1, e: "Birds have feathers, while mammals like cows have hair or fur." },
+                { q: "Which bird is very white and swims beautifully in lakes?", o: ["Crow", "Swan", "Hen", "Eagle"], a: 1, e: "Swans are elegant, large white birds that love water." },
+                { q: "What shape is a bird's body that helps it cut through the air?", o: ["Like a heavy square", "Like a flat circle", "Like a smooth boat", "Like a star"], a: 2, e: "A bird's streamlined, boat-like body helps it fly easily through air." },
+                { q: "Which bird gives us eggs that we eat for breakfast?", o: ["Hen", "Eagle", "Crow", "Peacock"], a: 0, e: "Hens are farm birds kept by humans for their nutritious eggs." },
+                { q: "What do birds do when they are happy or communicating?", o: ["They bark loudly", "They sing and chirp", "They swim deep", "They lose all fur"], a: 1, e: "Birds sing, chirp, and whistle to talk to one another." },
+                { q: "Identify the bird that cannot fly but is an amazing swimmer:", o: ["Sparrow", "Penguin", "Eagle", "Crow"], a: 1, e: "Penguins use their wing flippers to swim like fish through ice water." },
+                { q: "What does a bird use to change direction while flying?", o: ["Its beak", "Its two eyes", "Its tail feathers", "Its legs"], a: 2, e: "A bird's tail acts like a boat rudder to guide it left or right." },
+                { q: "True or False: Birds have hard teeth inside their beaks.", o: ["True", "False"], a: 1, e: "False! Birds have no teeth at all; they swallow food or crush it with beaks." },
+                { q: "Why do birds have hollow, light bones?", o: ["To help them fly easily", "To make them look big", "To make them swim deeper", "To help them sleep"], a: 0, e: "Light, hollow bones mean the bird is light enough to stay in the air." },
+                { q: "Which bird is known for its beautiful dance when it rains?", o: ["Pigeon", "Peacock", "Crow", "Owl"], a: 1, e: "Peacocks love to spread out their huge feathers and dance when rain clouds arrive." },
+                { q: "What is a bird doing when it spreads its wings and glides?", o: ["Sleeping", "Flying", "Running", "Digging"], a: 1, e: "Spreading wings allows birds to catch the wind currents and fly." },
+                { q: "Which bird is small, brown, and chirps happily near windows?", o: ["Sparrow", "Ostrich", "Vulture", "Swan"], a: 0, e: "The friendly sparrow loves building little homes near human houses." }
+            ],
+            medium: [
+                { q: "What is the cozy home built by a bird called?", o: ["Kennel", "Nest", "Den", "Stable"], a: 1, e: "Birds weave twigs, leaves, and grass together to create a safe nest." },
+                { q: "Which clever bird builds a hanging nest that swings from trees?", o: ["Weaver bird", "Crow", "Woodpecker", "Pigeon"], a: 0, e: "The Weaver bird knots grass together to make an amazing hanging nest." },
+                { q: "Which bird taps on tree trunks to make holes for its home?", o: ["Duck", "Woodpecker", "Sparrow", "Peacock"], a: 1, e: "Woodpeckers have strong, sharp beaks to drill holes into hard wood." },
+                { q: "What kind of feet do ducks have to help them paddle in water?", o: ["Sharp claws", "Webbed feet", "Long toes", "Hooves"], a: 1, e: "Webbed feet have skin between the toes that works like swimming paddles." },
+                { q: "Which bird has a strong hooked beak to tear its food?", o: ["Pigeon", "Eagle", "Duck", "Sparrow"], a: 1, e: "Eagles are birds of prey with sharp, curved beaks to hunt small animals." },
+                { q: "Why do birds build nests in safe high places?", o: ["To store water", "To lay eggs and care for babies", "To play games", "To hide from rain only"], a: 1, e: "Nests hold eggs safely away from ground predators like snakes or cats." },
+                { q: "Which bird is often kept as a sweet pet in houses because it loves seeds?", o: ["Budgie / Parakeet", "Vulture", "Eagle", "Seagull"], a: 0, e: "Small parakeets or budgies are gentle birds that enjoy living with humans." },
+                { q: "What do birds use instead of hands and teeth to catch and eat food?", o: ["Paws", "Beak", "Tail", "Wings"], a: 1, e: "A bird's beak is specially shaped to match the kind of food it eats." },
+                { q: "Match the bird with its food: What does a hummingbird drink?", o: ["Fish", "Sweet flower nectar", "Small rocks", "Dry twigs"], a: 1, e: "Hummingbirds use long straw-like beaks to sip sweet juices from flowers." },
+                { q: "Which bird flies quietly at night to hunt tiny mice?", o: ["Owl", "Parrot", "Sparrow", "Swan"], a: 0, e: "Owls have soft feathers that let them fly silently to surprise mice." },
+                { q: "What do water birds like herons eat from ponds?", o: ["Grains", "Small fish", "Tree leaves", "Grass seeds"], a: 1, e: "Herons stand quietly on long legs to snap up fish passing by." },
+                { q: "What do small birds like sparrows mostly eat?", o: ["Big animals", "Grains and seeds", "Tree branches", "Mud"], a: 1, e: "Small birds have short, strong cone-shaped beaks to crack open seeds." },
+                { q: "Which bird uses its beak like a needle to sew leaves together for its nest?", o: ["Tailorbird", "Eagle", "Ostrich", "Duck"], a: 0, e: "The Tailorbird uses plant threads and spider webs to stitch large leaves together!" },
+                { q: "True or False: Pelicans use a large pouch under their beak to scoop up fish.", o: ["True", "False"], a: 0, e: "Pelicans have huge beak pouches that work just like a fishing net." },
+                { q: "Which body part helps a water bird stay dry while swimming?", o: ["Oil glands on feathers", "Large ears", "Heavy teeth", "Long claws"], a: 0, e: "Birds spread natural oil from a gland over feathers to block out water." },
+                { q: "Where do kingfishers usually build their nests?", o: ["On high chimneys", "In holes along mud riverbanks", "On open grass", "In deep snow"], a: 1, e: "Kingfishers tunnel into soft soil banks near water to stay near fish." },
+                { q: "What kind of beak does a duck have?", o: ["Sharp and hooked", "Flat and broad", "Long and thin", "Short and curved"], a: 1, e: "A flat, broad bill helps ducks filter out food particles from muddy water." },
+                { q: "Which bird cleans up nature by eating dead animals?", o: ["Vulture", "Parrot", "Sparrow", "Pigeon"], a: 0, e: "Vultures are important cleaners because they safely eat organic waste." },
+                { q: "How do birds hold onto tree branches tightly while sleeping?", o: ["With their beaks", "With their sharp feet claws", "With their wings", "With their tails"], a: 1, e: "Bird toes lock around twigs automatically so they never fall off." },
+                { q: "Which bird is famous for laying its eggs inside other birds' nests?", o: ["Cuckoo", "Crow", "Sparrow", "Eagle"], a: 0, e: "The cuckoo saves time by tricking other birds into raising its chicks." },
+                { q: "What are the sharp claws on an eagle's feet called?", o: ["Talons", "Hooves", "Flippers", "Paws"], a: 0, e: "Talons are long, strong curved claws used to grip food firmly." },
+                { q: "What do flamingos eat to turn their feathers bright pink?", o: ["Green leaves", "Pink shrimp and algae", "White bread", "Brown sand"], a: 1, e: "The natural pink coloring in food turns flamingo feathers bright pink!" },
+                { q: "Why do geese fly together in a 'V' shape?", o: ["To save energy while flying", "To hide from bright sun", "To scare away clouds", "To catch fish easily"], a: 0, e: "Flying in a 'V' cuts down wind drag, making long trips much easier." },
+                { q: "Which bird can fly backward and hover in one spot?", o: ["Hummingbird", "Crow", "Pigeon", "Vulture"], a: 0, e: "Hummingbirds beat wings super fast, letting them move in any direction." },
+                { q: "What do mother birds do to keep eggs warm before they hatch?", o: ["Bury them in deep mud", "Sit gently on top of them", "Wash them in cold water", "Throw them in the air"], a: 1, e: "Incubation means parents sit on eggs to keep them cozy and alive." },
+                { q: "What is the hard outer layer that protects a baby bird inside the nest?", o: ["An eggshell", "A heavy fur coat", "A stone box", "A leaf wrap"], a: 0, e: "Eggshells are tough enough to protect growing chicks but easy to crack later." },
+                { q: "Which bird has an incredibly large, colourful banana-shaped beak?", o: ["Toucan", "Sparrow", "Pigeon", "Hen"], a: 0, e: "The toucan uses its lightweight, massive beak to reach fruit on deep branches." },
+                { q: "True or False: Owls can rotate their heads almost all the way around.", o: ["True", "False"], a: 0, e: "Owls have extra neck bones to look backward without moving their bodies." },
+                { q: "Which bird loves to follow farm tractors to pick up turned-up worms?", o: ["Egret / Crane", "Ostrich", "Owl", "Penguin"], a: 0, e: "Egrets watch plowed fields closely to snap up exposed insects easily." },
+                { q: "What happens to a bird's feathers when they get old and fall out?", o: ["They grow fur", "They molt and grow new ones", "They stop flying forever", "They change into skin"], a: 1, e: "Molting is nature's way of replacing worn-out feathers with strong new ones." }
+            ],
+            hard: [
+                { q: "Why do some birds migrate thousands of miles every year?", o: ["To play with new friends", "To find food and warm weather", "To learn how to swim", "To lose weight"], a: 1, e: "Migration helps birds escape freezing cold winters and find plentiful food." },
+                { q: "How do fruit-eating birds help new forests grow?", o: ["By planting seeds with shovels", "By dropping seeds in their poop", "By cutting down dead trees", "By watering the dry soil"], a: 1, e: "Birds fly far away and pass seeds out in their droppings, helping plants spread." },
+                { q: "Why should we avoid destroying bird nests in our neighbourhoods?", o: ["It makes the trees look messy", "Nests protect helpless eggs and baby chicks", "Birds will steal our food", "Nests are made of gold"], a: 1, e: "Nests are nurseries. Destroying them hurts populations and breaks nature's cycle." },
+                { q: "How do insect-eating birds help farmers grow healthy crops?", o: ["They pull out weeds", "They eat harmful pests and bugs", "They dig up soil rows", "They scare away rain"], a: 1, e: "Birds eat thousands of bugs every day, keeping crops safe without chemical sprays." },
+                { q: "Why is it important to put out clean water bowls for birds in summer?", o: ["So they can learn to dive", "To help them drink and stay cool", "To wash away tree dirt", "To stop them from flying"], a: 1, e: "Hot weather dries up ponds, so providing clean water saves thirsty urban birds." },
+                { q: "What does 'endangered bird' mean?", o: ["A bird that is very loud", "A bird group at risk of dying out completely", "A bird kept safely in a house", "A brand new type of bird"], a: 1, e: "Endangered means very few of these birds are left alive in the wild world." },
+                { q: "How can we make our home gardens safer for local birds?", o: ["By setting up cage traps", "By keeping pet cats indoors and avoiding poisons", "By cutting down all bushes", "By playing loud horn music"], a: 1, e: "Cats and toxic chemical sprays are major dangers to garden birds." },
+                { q: "Why are vultures and eagles critical for our environment?", o: ["They build the prettiest nests", "They eat dead matter to prevent disease spread", "They sing lovely songs", "They help fish swim"], a: 1, e: "Scavengers break down waste fast, preventing toxic bacteria from infecting soils." },
+                { q: "What is a main reason why many wild bird species are losing homes?", o: ["Humans are planting too much grass", "Cutting down forests to build cities", "Birds are moving into deep oceans", "Earth is getting too much rain"], a: 1, e: "Deforestation destroys the natural habitats where wild birds feed and nest." },
+                { q: "How do nectar-sipping birds help flowers reproduce?", o: ["By carrying pollen from flower to flower", "By eating the flower petals", "By hiding flowers under leaves", "By digging up flower roots"], a: 0, e: "Birds act as pollinators, helping plants create new seeds and healthy fruits." },
+                { q: "What should you do if you find a fallen bird egg or chick?", o: ["Take it home as a permanent pet", "Leave it alone or call a wildlife rescuer", "Throw it in a deep pond", "Give it chocolate to eat"], a: 1, e: "Wild birds need expert care. Human food can often make them very sick." },
+                { q: "True or False: Noise pollution can make it hard for birds to communicate.", o: ["True", "False"], a: 0, e: "Loud city noises drown out bird songs used to find mates and warm families." },
+                { q: "Which bird is famously extinct because humans hunted it completely?", o: ["Dodo bird", "Sparrow", "Pigeon", "Bald Eagle"], a: 0, e: "The flightless Dodo bird disappeared forever because it wasn't protected." },
+                { q: "What is a safe material to feed wild ducks at local ponds?", o: ["Sticky junk food and white bread", "Natural duck pellets or chopped greens", "Sugary candy wrappers", "Salty potato chips"], a: 1, e: "White bread expands in duck tummies and makes them sick; greens are much safer." },
+                { q: "How do modern wind turbines or glass windows impact birds?", o: ["They provide good food platforms", "Birds can accidentally crash into them", "They help birds fly much faster", "They keep bird feathers clean"], a: 1, e: "Clear glass and fast blades are invisible to birds, causing harmful collisions." },
+                { q: "Why do owls have asymmetric ears on the sides of their heads?", o: ["To help them balance on slim wires", "To pinpoint exact locations of hidden prey", "To shake off rain droplets", "To look funny to other owls"], a: 1, e: "Uneven ears let owls figure out exactly how high or low a mouse is moving." },
+                { q: "What is a 'sanctuary' for birds?", o: ["A market that sells wild animals", "A safe, protected park where hunting is banned", "A big cage inside an office", "A special deep water lake"], a: 1, e: "Wildlife sanctuaries preserve natural habits so birds can live without fear." },
+                { q: "Why do sea birds often accidentally eat small plastic floating in oceans?", o: ["They think it tastes sweet", "They mistake plastic trash for small fish", "They use it to clean their beaks", "They need it to build nests"], a: 1, e: "Plastic trash looks exactly like jellyfish or fish, harming sea life." },
+                { q: "What does a tracking band on a bird's leg help scientists learn?", o: ["It makes the bird look pretty", "It tracks migration pathways and life span", "It helps the bird fly higher", "It keeps the bird warm"], a: 1, e: "Light leg bands help nature scientists map exactly where birds travel." },
+                { q: "How does chemical spray on farm fields hurt birds?", o: ["It turns their feathers purple", "It poisons their food supply like bugs and seeds", "It stops them from drinking pond water", "It makes them grow too big"], a: 1, e: "Pesticides travel up the food chain, causing weak eggshells or sickness." },
+                { q: "Which sense do birds of prey like eagles rely on most to hunt?", o: ["Sense of smell", "Amazing super eyesight", "Sense of touch", "Taste buds"], a: 1, e: "Eagles can spot a tiny rabbit from miles away due to highly adapted eyes." },
+                { q: "True or False: Some migratory birds use stars and magnetic fields to navigate.", o: ["True", "False"], a: 0, e: "Amazing internal compasses allow birds to find their path without any maps." },
+                { q: "What is the study of birds called by scientists?", o: ["Ornithology", "Botany", "Geology", "Meteorology"], a: 0, e: "Ornithology is the specialized branch of science all about studying birds." },
+                { q: "Why are wood cavities made by woodpeckers useful to other birds?", o: ["They catch rainwater to drink", "Other birds use them as pre-made nesting homes", "They keep trees from falling down", "They store heavy rocks"], a: 1, e: "Bluebirds and owls move into old woodpecker holes since they can't drill wood themselves." },
+                { q: "How does warming weather across the globe affect bird migration?", o: ["Birds get larger wings", "Birds may arrive too early before food is ready", "Birds learn to speak languages", "Birds stop laying eggs entirely"], a: 1, e: "Climate shifts confuse seasonal timing, leaving chicks without enough bugs to eat." },
+                { q: "What is an indicator species?", o: ["A bird that can count numbers", "A species whose health shows the condition of the environment", "A bird that lives only in cages", "A bird with bright colors"], a: 1, e: "When birds disappear, it warns us that the local water, air, or soil is unhealthy." },
+                { q: "Why should we plant native trees instead of foreign exotic plants?", o: ["Native trees grow faster", "They provide the exact food and bugs local birds need", "They look brighter to humans", "They prevent all rain"], a: 1, e: "Local birds evolved alongside local trees to find perfect nutrition and shelter." },
+                { q: "What do we call birds that hunt during the daytime?", o: ["Nocturnal birds", "Diurnal birds of prey", "Aquatic birds", "Flightless birds"], a: 1, e: "Diurnal means active during daylight hours, like hawks and falcons." },
+                { q: "How can students help protect birds every single day?", o: ["By buying wild birds from pet shops", "By spreading awareness, cleaning water bowls, and recycling", "By catching garden birds with nets", "By cutting down older trees"], a: 1, e: "Small acts like clean feeders and reducing plastic waste keep birds safe." },
+                { q: "What unique organ allows birds to sing beautiful complex melodies?", o: ["Syrinx", "Lungs", "Beak", "Gills"], a: 0, e: "The syrinx is a bird's special deep voice box that can produce two sounds at once!" }
+            ]
+        };
+
+        // --- QUIZ STATE ---
+        let currentLevel = '';
+        let questions = [];
+        let currentIndex = 0;
+        let score = 0;
+        let userAnswers = []; // Records user choice index at each question slot
+        let startTime = null;
+
+        // --- CORE APPLICATION FLOW CONTROLLERS ---
+        function startQuiz(level) {
+            playSound('click');
+            currentLevel = level;
+            
+            // Shallow copy and perform a deep comprehensive item shuffle
+            questions = [...questionBank[level]].sort(() => Math.random() - 0.5);
+            
+            // Limit to exactly 30 randomized pool questions per requirement
+            questions = questions.slice(0, 30);
+            
+            // Randomize inner option lists for each question
+            questions.forEach(qItem => {
+                const choices = qItem.o.map((opt, i) => ({ text: opt, isCorrect: i === qItem.a }));
+                choices.sort(() => Math.random() - 0.5);
+                qItem.displayOptions = choices.map(c => c.text);
+                qItem.displayCorrectIndex = choices.findIndex(c => c.isCorrect);
+            });
+
+            currentIndex = 0;
+            score = 0;
+            userAnswers = new Array(30).fill(null);
+            startTime = new Date();
+
+            document.getElementById("screen-start").classList.remove("active");
+            document.getElementById("screen-quiz").classList.add("active");
+
+            // Render Level Indicator Upper Metadata Label
+            const badgeEl = document.getElementById("txt-level-badge");
+            badgeEl.innerText = level.toUpperCase() + " LEVEL";
+            if(level === 'easy') badgeEl.style.color = "var(--easy-color)";
+            if(level === 'medium') badgeEl.style.color = "var(--medium-color)";
+            if(level === 'hard') badgeEl.style.color = "var(--hard-color)";
+
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const currentQ = questions[currentIndex];
+            
+            // Counter and Live Score Updates
+            document.getElementById("txt-counter").innerText = `Question ${currentIndex + 1}/30`;
+            document.getElementById("txt-score").innerText = `Score: ${score}`;
+            
+            // Dynamic Progress Indicator Math Animation Bar
+            const pct = ((currentIndex + 1) / 30) * 100;
+            document.getElementById("ui-progress").style.width = `${pct}%`;
+
+            // Display question text safely
+            document.getElementById("ui-question").innerText = currentQ.q;
+
+            // Clear and build interactive answer option layout
+            const optionsContainer = document.getElementById("ui-options");
+            optionsContainer.innerHTML = "";
+
+            const expBox = document.getElementById("ui-explanation");
+            expBox.style.display = "none";
+
+            const hasAnswered = userAnswers[currentIndex] !== null;
+
+            currentQ.displayOptions.forEach((optText, index) => {
+                const card = document.createElement("div");
+                card.className = "option-card";
+                card.innerText = optText;
+
+                if (!hasAnswered) {
+                    card.onclick = () => selectOption(index);
+                } else {
+                    card.classList.add("disabled");
+                    // Highlight correct / wrong cards if already answered previously
+                    if (index === currentQ.displayCorrectIndex) {
+                        card.classList.add("correct");
+                    }
+                    if (userAnswers[currentIndex] === index && index !== currentQ.displayCorrectIndex) {
+                        card.classList.add("wrong");
+                    }
+                }
+                optionsContainer.appendChild(card);
+            });
+
+            if (hasAnswered) {
+                showExplanationBox(userAnswers[currentIndex] === currentQ.displayCorrectIndex);
+            }
+
+            // Sync structural requirements for navigation disabling parameters
+            document.getElementById("btn-prev").disabled = currentIndex === 0;
+        }
+
+        function selectOption(selectedIndex) {
+            const currentQ = questions[currentIndex];
+            userAnswers[currentIndex] = selectedIndex;
+
+            const isCorrect = selectedIndex === currentQ.displayCorrectIndex;
+            if (isCorrect) {
+                score++;
+                playSound('correct');
+            } else {
+                playSound('wrong');
+            }
+
+            // Update live statistics and lock active choice modules instantly
+            document.getElementById("txt-score").innerText = `Score: ${score}`;
+            
+            const cards = document.querySelectorAll(".option-card");
+            cards.forEach((card, idx) => {
+                card.classList.add("disabled");
+                if (idx === currentQ.displayCorrectIndex) card.classList.add("correct");
+                if (idx === selectedIndex && !isCorrect) card.classList.add("wrong");
+            });
+
+            showExplanationBox(isCorrect);
+            saveAppProgressToLocalStorage();
+        }
+
+        function showExplanationBox(isCorrect) {
+            const expBox = document.getElementById("ui-explanation");
+            const currentQ = questions[currentIndex];
+            
+            expBox.style.display = "block";
+            if (isCorrect) {
+                expBox.style.backgroundColor = "var(--correct-bg)";
+                expBox.style.border = "1px solid var(--correct-border)";
+                expBox.innerText = `✅ Correct! ${currentQ.e}`;
+            } else {
+                expBox.style.backgroundColor = "var(--wrong-bg)";
+                expBox.style.border = "1px solid var(--wrong-border)";
+                expBox.innerText = `❌ Not quite! ${currentQ.e}`;
+            }
+        }
+
+        // --- FIXED AND SEQUENTIAL NAVIGATION HANDLERS ---
+        function handleNext() {
+            playSound('click');
+            if (currentIndex < 29) {
+                currentIndex++;
+                renderQuestion();
+            } else {
+                showResultsSummaryScreen();
+            }
+        }
+
+        function handlePrev() {
+            if (currentIndex > 0) {
+                playSound('click');
+                currentIndex--;
+                renderQuestion();
+            }
+        }
+
+        function goHome() {
+            playSound('click');
+            document.getElementById("screen-quiz").classList.remove("active");
+            document.getElementById("screen-summary").classList.remove("active");
+            document.getElementById("screen-start").classList.add("active");
+            loadGlobalLeaderboardProgress();
+        }
+
+        function restartLevel() {
+            startQuiz(currentLevel);
+        }
+
+        // --- SUMMARY & METRICS DASHBOARD EVALUATOR ---
+        function showResultsSummaryScreen() {
+            document.getElementById("screen-quiz").classList.remove("active");
+            document.getElementById("screen-summary").classList.add("active");
+
+            const finalPct = Math.round((score / 30) * 100);
+            const timeDiff = Math.round((new Date() - startTime) / 1000);
+            const minutes = Math.floor(timeDiff / 60);
+            const seconds = timeDiff % 60;
+            const finalTimeString = `${minutes}m ${seconds}s`;
+
+            // Badge Matrix Rules Optimization
+            let badgeName = "";
+            let badgeIcon = "";
+            if (finalPct >= 90) { badgeName = "🏆 Bird Expert"; badgeIcon = "🏆"; }
+            else if (finalPct >= 70) { badgeName = "🌟 Bird Explorer"; badgeIcon = "🌟"; }
+            else if (finalPct >= 50) { badgeName = "👍 Nature Learner"; badgeIcon = "👍"; }
+            else { badgeName = "📚 Keep Learning"; badgeIcon = "📚"; }
+
+            // Populate view layer elements safely
+            document.getElementById("res-level").innerText = currentLevel.toUpperCase();
+            document.getElementById("res-score").innerText = `${score} / 30`;
+            document.getElementById("res-correct").innerText = score;
+            document.getElementById("res-wrong").innerText = 30 - score;
+            document.getElementById("res-percent").innerText = `${finalPct}%`;
+            document.getElementById("res-time").innerText = finalTimeString;
+            
+            document.getElementById("ui-badge-icon").innerText = badgeIcon;
+            document.getElementById("ui-badge-name").innerText = badgeName;
+
+            // Trigger celebration assets if user passes milestones
+            if (finalPct >= 50) {
+                playSound('complete');
+                triggerConfettiBurst();
+            } else {
+                playSound('wrong');
+            }
+
+            // Sync global records
+            saveBestHighscore(currentLevel, score);
+        }
+
+        // --- PRINT UTILITY GENERATOR ---
+        function printCertificate() {
+            playSound('click');
+            const finalPct = Math.round((score / 30) * 100);
+            
+            document.getElementById("print-cert-title").innerText = `BIRDS QUIZ (${currentLevel.toUpperCase()} LEVEL)`;
+            document.getElementById("print-cert-badge").innerText = document.getElementById("ui-badge-name").innerText;
+            document.getElementById("print-cert-score").innerText = `${score} / 30`;
+            document.getElementById("print-cert-pct").innerText = finalPct;
+            
+            window.print();
+        }
+
+        // --- LOCAL STORAGE PROGRESS STACK ---
+        function saveAppProgressToLocalStorage() {
+            const data = {
+                level: currentLevel,
+                currentIndex: currentIndex,
+                score: score,
+                userAnswers: userAnswers,
+                questions: questions,
+                startTimeString: startTime.toISOString()
+            };
+            localStorage.setItem("birds_quiz_ongoing_progress", JSON.stringify(data));
+        }
+
+        function saveBestHighscore(lvl, scr) {
+            const currentBest = localStorage.getItem(`birds_quiz_best_${lvl}`) || 0;
+            if (scr > parseInt(currentBest)) {
+                localStorage.setItem(`birds_quiz_best_${lvl}`, scr);
+            }
+        }
+
+        function loadGlobalLeaderboardProgress() {
+            let msg = "Your Records: ";
+            const eBest = localStorage.getItem("birds_quiz_best_easy") || 0;
+            const mBest = localStorage.getItem("birds_quiz_best_medium") || 0;
+            const hBest = localStorage.getItem("birds_quiz_best_hard") || 0;
+            
+            msg += `🟢 Easy: ${eBest}/30 | 🟡 Medium: ${mBest}/30 | 🔴 Hard: ${hBest}/30`;
+            document.getElementById("saved-progress-msg").innerText = msg;
+        }
+
+        // --- LIGHTWEIGHT ANIMATED CONFETTI CELEBRATION ENGINE ---
+        const canvas = document.getElementById("confetti-canvas");
+        const ctx = canvas.getContext("2d");
+        let confettiPieces = [];
+        let animationFrameId = null;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function triggerConfettiBurst() {
+            confettiPieces = [];
+            cancelAnimationFrame(animationFrameId);
+            
+            const colorOptions = ['#22c55e', '#eab308', '#ef4444', '#3b82f6', '#a855f7', '#ec4899'];
+            
+            for (let i = 0; i < 120; i++) {
+                confettiPieces.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    r: Math.random() * 6 + 4,
+                    d: Math.random() * canvas.height,
+                    color: colorOptions[Math.floor(Math.random() * colorOptions.length)],
+                    tilt: Math.random() * 10 - 5,
+                    tiltAngleIncremental: Math.random() * 0.07 + 0.02,
+                    tiltAngle: 0
+                });
+            }
+            animateConfettiLoop();
+        }
+
+        function animateConfettiLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let remaining = false;
+
+            confettiPieces.forEach((p) => {
+                p.tiltAngle += p.tiltAngleIncremental;
+                p.y += (Math.cos(p.d) + 3 + p.r / 2) / 2;
+                p.x += Math.sin(p.tiltAngle);
+                p.tilt = Math.sin(p.tiltAngle - p.r / 2) * 15;
+
+                if (p.y <= canvas.height) {
+                    remaining = true;
+                }
+
+                ctx.beginPath();
+                ctx.lineWidth = p.r;
+                ctx.strokeStyle = p.color;
+                ctx.moveTo(p.x + p.tilt + p.r / 2, p.y);
+                ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 2);
+                ctx.stroke();
+            });
+
+            if (remaining) {
+                animationFrameId = requestAnimationFrame(animateConfettiLoop);
+            } else {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        // Initialize state view systems at startup launch
+        window.onload = () => {
+            loadGlobalLeaderboardProgress();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>👩‍🚒 Community Helpers Quiz</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+            --easy-color: #2ec4b6;
+            --medium-color: #ffb703;
+            --hard-color: #e63946;
+            --text-dark: #2b2d42;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --radius: 24px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: linear-gradient(-45deg, #ff9a9e, #a1c4fd, #c2e9fb, #fecfef);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 700px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 5;
+        }
+
+        /* Typography */
+        h1 {
+            font-size: 2.2rem;
+            text-align: center;
+            margin-bottom: 5px;
+            color: #3a0ca3;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-weight: 600;
+            color: #5c677d;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Buttons & Menu */
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 18px 25px;
+            border: none;
+            border-radius: 16px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            width: 100%;
+            text-align: center;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-easy { background-color: var(--easy-color); color: white; }
+        .btn-medium { background-color: var(--medium-color); color: white; }
+        .btn-hard { background-color: var(--hard-color); color: white; }
+        
+        .btn-action {
+            background-color: #4cc9f0;
+            color: white;
+        }
+
+        /* Quiz UI Layout */
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-size: 1rem;
+            background: rgba(255,255,255,0.5);
+            padding: 10px 15px;
+            border-radius: 12px;
+        }
+
+        .progress-container {
+            background: rgba(0,0,0,0.05);
+            border-radius: 10px;
+            height: 14px;
+            width: 100%;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #4cc9f0, #4895ef);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .question-box {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .option-btn {
+            background: white;
+            border: 2px solid rgba(0,0,0,0.08);
+            padding: 16px 20px;
+            border-radius: 14px;
+            font-size: 1.1rem;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 600;
+        }
+
+        .option-btn:hover {
+            background: rgba(255,255,255,1);
+            border-color: #4cc9f0;
+        }
+
+        .option-btn.correct {
+            background-color: #d8f3dc !important;
+            border-color: #52b788 !important;
+            color: #1b4332 !important;
+        }
+
+        .option-btn.wrong {
+            background-color: #f8d7da !important;
+            border-color: #e63946 !important;
+            color: #721c24 !important;
+        }
+
+        .option-btn:disabled {
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        /* Feedback and Explanation */
+        .feedback-box {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 14px;
+            display: none;
+            font-weight: 600;
+            font-size: 1.05rem;
+            line-height: 1.4;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .feedback-box.show { display: block; }
+        .feedback-box.correct-bg { background-color: #d8f3dc; border-left: 5px solid #2a9d8f; }
+        .feedback-box.wrong-bg { background-color: #f8d7da; border-left: 5px solid #e63946; }
+
+        /* Navigation Control Rows */
+        .nav-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 25px;
+            gap: 10px;
+        }
+
+        .nav-btn {
+            flex: 1;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            cursor: pointer;
+            background: #e2e8f0;
+            color: #4a5568;
+            transition: background 0.2s;
+            text-align: center;
+        }
+
+        .nav-btn:hover { background: #cbd5e1; }
+        .nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .nav-btn.home-btn { background: #fef08a; color: #854d0e; }
+        .nav-btn.home-btn:hover { background: #fef08a; }
+        .nav-btn.next-btn { background: #bde0fe; color: #1d4ed8; }
+
+        /* Summary & Performance Statistics */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.6);
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .badge-box {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #fef3c7, #fffbeb);
+            border: 2px dashed #f59e0b;
+            border-radius: 16px;
+        }
+
+        .badge-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #d97706;
+            margin-top: 5px;
+        }
+
+        /* LocalStorage Tracker View */
+        .history-box {
+            margin-top: 25px;
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(0,0,0,0.1);
+            padding-top: 15px;
+        }
+
+        /* Confetti Elements */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            z-index: 999;
+            top: -10px;
+            border-radius: 50%;
+            animation: fall linear forwards;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(105vh) rotate(360deg);
+            }
+        }
+
+        /* Responsive Breakpoints & Smartboard Optimization */
+        @media (max-width: 480px) {
+            h1 { font-size: 1.7rem; }
+            .question-box { font-size: 1.15rem; }
+            .option-btn { padding: 12px 15px; font-size: 1rem; }
+            .nav-row { flex-wrap: wrap; }
+            .nav-btn { font-size: 0.85rem; padding: 10px; }
+        }
+
+        @media (min-width: 1024px) {
+            .option-btn { padding: 18px 25px; font-size: 1.2rem; }
+            .question-box { font-size: 1.5rem; }
+        }
+
+        /* Printing Layout Rules */
+        @media print {
+            body * { visibility: hidden; }
+            #certificatePrintout, #certificatePrintout * { visibility: visible; }
+            #certificatePrintout {
+                position: absolute;
+                left: 0; top: 0; width: 100%;
+                border: 10px double #4a5568;
+                padding: 40px; text-align: center;
+                background: white; color: black;
+            }
+        }
+
+        #certificatePrintout { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="quizApp">
+        <h1 id="mainTitle">👩‍🚒 Community Helpers Quiz</h1>
+        <div class="subtitle" id="mainSubtitle">Serve • Help • Care • Learn</div>
+
+        <div id="startScreen" class="screen active">
+            <p style="text-align: center; margin-bottom: 20px; font-weight: 600; color: #4a5568;">
+                Welcome! Choose a game difficulty level to start learning:
+            </p>
+            <div class="btn-group">
+                <button class="btn btn-easy" onclick="startQuiz('easy')">🟢 Easy Level</button>
+                <button class="btn btn-medium" onclick="startQuiz('medium')">🟡 Medium Level</button>
+                <button class="btn btn-hard" onclick="startQuiz('hard')">🔴 Hard Level</button>
+            </div>
+            
+            <div class="history-box" id="historyTracker">
+                <strong>🏠 Past Top Scores:</strong>
+                <div id="historyStats" style="margin-top: 5px; color: #4a5568;">No local game records saved yet.</div>
+            </div>
+        </div>
+
+        <div id="quizScreen" class="screen">
+            <div class="quiz-header">
+                <span id="levelIndicator">Level: Easy</span>
+                <span id="counterIndicator">Question: 1/30</span>
+                <span id="scoreIndicator">Score: 0</span>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="quizProgress"></div>
+            </div>
+
+            <div class="question-box" id="questionText">Question payload placeholder?</div>
+            <div class="options-list" id="optionsContainer"></div>
+
+            <div class="feedback-box" id="feedbackBox"></div>
+
+            <div class="nav-row">
+                <button class="nav-btn" id="prevBtn" onclick="navigateQuestion(-1)">⬅️ Previous</button>
+                <button class="nav-btn home-btn" id="homeBtn" onclick="confirmReturnHome()">🏠 Home</button>
+                <button class="nav-btn next-btn" id="nextBtn" onclick="navigateQuestion(1)">➡️ Next</button>
+            </div>
+        </div>
+
+        <div id="summaryScreen" class="screen">
+            <h2 style="text-align: center; color: #3a0ca3;">🎉 Quiz Finished!</h2>
+            
+            <div class="badge-box">
+                <div style="font-size: 0.9rem; text-transform: uppercase; font-weight: bold; color: #9a3412;">Earned Award Badge</div>
+                <div class="badge-title" id="badgeName">Community Hero</div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">📋 Level: <span id="summaryLevel">-</span></div>
+                <div class="stat-card">🎯 Score: <span id="summaryScore">-</span></div>
+                <div class="stat-card">📈 Percent: <span id="summaryPercent">-</span></div>
+                <div class="stat-card">⏱️ Time Taken: <span id="summaryTime">-</span></div>
+                <div class="stat-card" style="color: #2a9d8f;">✅ Correct: <span id="summaryCorrect">-</span></div>
+                <div class="stat-card" style="color: #e63946;">❌ Wrong: <span id="summaryWrong">-</span></div>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-action" onclick="restartCurrentLevel()">🔄 Play Again</button>
+                <button class="btn btn-medium" onclick="returnToMainMenu()">🗺️ Choose Another Level</button>
+                <button class="btn btn-easy" onclick="window.print()">🖨️ Print Certificate</button>
+            </div>
+
+            <div class="nav-row">
+                <button class="nav-btn" disabled>⬅️ Previous</button>
+                <button class="nav-btn home-btn" onclick="returnToMainMenu()">🏠 Home</button>
+                <button class="nav-btn" disabled>➡️ Next</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="certificatePrintout">
+        <h1 style="font-size: 3rem;">CERTIFICATE OF ACHIEVEMENT</h1>
+        <p style="font-size: 1.5rem; margin: 20px 0;">This proudly awards</p>
+        <h2 style="font-size: 2.5rem; text-decoration: underline; margin: 20px 0;">A Brilliant Young Learner</h2>
+        <p style="font-size: 1.3rem; max-width: 600px; margin: 0 auto; line-height: 1.6;">
+            For successfully completing the <strong>Community Helpers Quiz</strong> on difficulty tier <strong id="certLevel">Easy</strong> with an outstanding performance score of <strong id="certScore">100%</strong>!
+        </p>
+        <div style="margin-top: 50px; font-size: 1.2rem; color: #4a5568;">
+            Awarded Achievement Tier Status Badge: <br>
+            <strong style="font-size: 1.8rem; color: #d97706;" id="certBadge">🏆 Community Hero</strong>
+        </div>
+    </div>
+
+    <script>
+        // Audio API Sound Engine Definition
+        const soundEngine = {
+            ctx: null,
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
+            playTone(freq, type, duration, delay = 0) {
+                this.init();
+                setTimeout(() => {
+                    try {
+                        let osc = this.ctx.createOscillator();
+                        let gain = this.ctx.createGain();
+                        osc.type = type;
+                        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                        gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start();
+                        osc.stop(this.ctx.currentTime + duration);
+                    } catch(e) { console.log("Audio failed to process context nodes safely.") }
+                }, delay);
+            },
+            click() { this.playTone(600, 'sine', 0.1); },
+            correct() {
+                this.playTone(523.25, 'triangle', 0.15);
+                this.playTone(659.25, 'triangle', 0.2, 100);
+            },
+            wrong() {
+                this.playTone(220, 'sawtooth', 0.3);
+            },
+            badge() {
+                this.playTone(587.33, 'sine', 0.15);
+                this.playTone(698.46, 'sine', 0.15, 120);
+                this.playTone(880.00, 'sine', 0.3, 240);
+            },
+            completion() {
+                let scale = [523.25, 587.33, 659.25, 698.46, 783.99, 880.00, 987.77, 1046.50];
+                scale.forEach((f, i) => this.playTone(f, 'sine', 0.2, i * 100));
+            }
+        };
+
+        // 90 Complete, Domain-Specific Questions Arrays (30/level)
+        const questionsDatabase = {
+            easy: [
+                {q: "Who teaches us inside a classroom at school?", o: ["Teacher", "Doctor", "Driver", "Farmer"], a: "Teacher", e: "A teacher helps us learn new things at school."},
+                {q: "Who checks our health and gives medicine when we are sick?", o: ["Doctor", "Police Officer", "Carpenter", "Barber"], a: "Doctor", e: "A doctor treats sick people and helps us feel better."},
+                {q: "Who helps protect us and catches thieves?", o: ["Police Officer", "Tailor", "Baker", "Gardener"], a: "Police Officer", e: "A police officer keeps our neighborhoods safe from crime."},
+                {q: "Who brings letters and postcards straight to our mailboxes?", o: ["Postman", "Chef", "Plumber", "Electrician"], a: "Postman", e: "A postman delivers important mail to our homes."},
+                {q: "Who rushes to put out dangerous fires with water hoses?", o: ["Firefighter", "Mechanic", "Sweeper", "Cobbler"], a: "Firefighter", e: "A firefighter stops fires and saves people from danger."},
+                {q: "Who safely drives students on the school bus every day?", o: ["Driver", "Farmer", "Shopkeeper", "Nurse"], a: "Driver", e: "A driver safely moves vehicles from place to place."},
+                {q: "Who works in muddy fields to grow delicious food and crops?", o: ["Farmer", "Barber", "Doctor", "Teacher"], a: "Farmer", e: "A farmer grows fresh fruits, vegetables, and grains for us."},
+                {q: "Who cleans the floors and yards of our school buildings?", o: ["Sweeper", "Carpenter", "Electrician", "Tailor"], a: "Sweeper", e: "A sweeper helps keep our environment clean and tidy."},
+                {q: "Who cuts and trims our hair beautifully when it gets long?", o: ["Barber", "Plumber", "Chef", "Gardener"], a: "Barber", e: "A barber cuts or trims our hair safely with scissors."},
+                {q: "Who makes fine tables and wooden chairs out of trees?", o: ["Carpenter", "Police Officer", "Postman", "Nurse"], a: "Carpenter", e: "A carpenter builds furniture and items using wood blocks."},
+                {q: "True or False: A community helper makes our daily lives easier and safer.", o: ["True", "False"], a: "True", e: "Helpers make our everyday lives safe, healthy, and happy."},
+                {q: "Complete the sentence: A tailor stitches our ______.", o: ["clothes", "shoes", "cars", "hair"], a: "clothes", e: "A tailor sews fabric into beautiful shirts and dresses."},
+                {q: "Who mends or fixes our torn shoes and sandals?", o: ["Cobbler", "Baker", "Driver", "Teacher"], a: "Cobbler", e: "A cobbler mends, glues, and fixes broken footwear."},
+                {q: "Who cooks yummy meals and bakes desserts inside a restaurant?", o: ["Chef", "Gardener", "Sweeper", "Plumber"], a: "Chef", e: "A chef plans, prepares, and cooks food in professional kitchens."},
+                {q: "Who waters the green plants and cuts the grass in a garden?", o: ["Gardener", "Electrician", "Shopkeeper", "Doctor"], a: "Gardener", e: "A gardener cares for flowers, trees, and gardens."},
+                {q: "Who sells us milk, biscuits, and soap at the local store?", o: ["Shopkeeper", "Firefighter", "Farmer", "Postman"], a: "Shopkeeper", e: "A shopkeeper runs retail shops selling everyday items."},
+                {q: "Who assists doctors and looks after hospitalized patients?", o: ["Nurse", "Mechanic", "Tailor", "Driver"], a: "Nurse", e: "A nurse takes great care of sick people inside hospitals."},
+                {q: "Who fixes broken car engines and noisy vehicle parts?", o: ["Mechanic", "Barber", "Sweeper", "Teacher"], a: "Mechanic", e: "A mechanic uses special tools to repair cars and bikes."},
+                {q: "Everyday life: Who drops the fresh morning newspaper at our doorstep?", o: ["Newspaper delivery person", "Firefighter", "Carpenter", "Doctor"], a: "Newspaper delivery person", e: "Delivery helpers bring newspapers right to our doors."},
+                {q: "Who checks tickets on a public train or bus ride?", o: ["Conductor", "Farmer", "Cobbler", "Chef"], a: "Conductor", e: "A conductor checks passenger tickets on transport lines."},
+                {q: "True or False: Children are community helpers when they are learning at school.", o: ["False", "True"], a: "False", e: "Adult workers who offer community services are helpers."},
+                {q: "Who fixes leaking bathroom pipes and running water taps?", o: ["Plumber", "Electrician", "Police Officer", "Postman"], a: "Plumber", e: "A plumber installs and fixes water pipes and taps."},
+                {q: "Who works at a bakery making soft breads and birthday cakes?", o: ["Baker", "Gardener", "Driver", "Doctor"], a: "Baker", e: "A baker works with flour to bake tasty breads and cakes."},
+                {q: "Who helps direct traffic on busy streets so accidents don't happen?", o: ["Traffic Police", "Tailor", "Carpenter", "Farmer"], a: "Traffic Police", e: "Traffic police ensure vehicles drive smoothly and safely."},
+                {q: "Who checks and fixes broken electric lights and wire connections?", o: ["Electrician", "Cobbler", "Barber", "Sweeper"], a: "Electrician", e: "An electrician works safely with power wires and switches."},
+                {q: "Where do we go to mail a letter through a postman?", o: ["Post Office", "Hospital", "Police Station", "Farm"], a: "Post Office", e: "The post office processes mail items and packages."},
+                {q: "Who guards a residential building gates during late nights?", o: ["Watchman", "Chef", "Teacher", "Plumber"], a: "Watchman", e: "A watchman protects apartment gates and properties at night."},
+                {q: "Match helper to work: A doctor's primary duty is to ______.", o: ["heal sick people", "sew clothing", "build bricks", "grow plants"], a: "heal sick people", e: "Doctors dedicate their skills to curing body sicknesses."},
+                {q: "Who picks up household trash bags from neighborhood bins?", o: ["Garbage Collector", "Barber", "Driver", "Teacher"], a: "Garbage Collector", e: "Garbage collectors help keep our neighborhoods sanitary."},
+                {q: "True or False: We should always be polite and kind to community helpers.", o: ["True", "False"], a: "True", e: "Being polite shows respect for the helpful work they do."}
+            ],
+            medium: [
+                {q: "Where does a medical doctor spend most of their working day?", o: ["Hospital", "Police Station", "Fire Station", "Farm Field"], a: "Hospital", e: "Doctors work in clinics or hospitals to treat patients."},
+                {q: "What key tool does a firefighter use to reach high windows?", o: ["Long Ladder", "Stethoscope", "Handcuffs", "Screwdriver"], a: "Long Ladder", e: "Firefighters use tall ladders to rescue people from high levels."},
+                {q: "What specific medical instrument does a doctor use to listen to your heartbeat?", o: ["Stethoscope", "Hammer", "Measuring Tape", "Plunger"], a: "Stethoscope", e: "A stethoscope magnifies the internal sound of your heartbeat."},
+                {q: "Where does a police officer work out of?", o: ["Police Station", "Bakery", "School Classroom", "Greenhouse"], a: "Police Station", e: "Police officers are based out of regional police stations."},
+                {q: "What special tool does a teacher use to write notes on a classroom wall board?", o: ["Chalk or Marker", "Spanner Wrench", "Sewing Needle", "Axe"], a: "Chalk or Marker", e: "Teachers use chalk or markers to write lessons clearly."},
+                {q: "What tool does a professional tailor use to join fabrics together?", o: ["Sewing Machine", "Hand Saw", "Broomstick", "Wrench"], a: "Sewing Machine", e: "Tailors use sewing machines to stitch fabric edges securely."},
+                {q: "Where do farmers grow crops like rice, wheat, and corn?", o: ["On a Farm Field", "Inside a Hospital", "At a Police Station", "In a Kitchen"], a: "On a Farm Field", e: "Farmers require wide open ground fields to cultivate food crops."},
+                {q: "What instrument helps a carpenter smoothly cut large wooden planks?", o: ["Hand Saw", "Injection Syringe", "Cooking Pan", "Hair Clipper"], a: "Hand Saw", e: "Saws have sharp steel teeth designed to cut thick wood slabs."},
+                {q: "Why should we respect our neighborhood cleaning sweepers?", o: ["They keep our surroundings healthy", "They stitch our new clothes", "They build houses", "They drive buses"], a: "They keep our surroundings healthy", e: "Without sweepers, dirty trash piles would make communities sick."},
+                {q: "What does an electrician use to protect themselves from shock currents?", o: ["Rubber Gloves", "Wooden Hammer", "Metal Chains", "Paper Bags"], a: "Rubber Gloves", e: "Rubber blocks electrical flows, keeping electricians safe."},
+                {q: "Where does a chef cook gourmet meals for customers?", o: ["Restaurant Kitchen", "Post Office Lobby", "Fire Station Depot", "Schoolyard"], a: "Restaurant Kitchen", e: "A chef works inside specialized restaurant kitchens."},
+                {q: "What core tool does a plumber use to tighten leaky metal water pipes?", o: ["Pipe Wrench", "Hair Scissors", "Chalkboard Eraser", "Medical Thermometer"], a: "Pipe Wrench", e: "A pipe wrench grips metal pipe cylinders firmly to twist them."},
+                {q: "What item does a postman use to carry a lot of letters together?", o: ["Mail Delivery Bag", "Cooking Pot", "Police Handcuffs", "Spade Shovel"], a: "Mail Delivery Bag", e: "Postmen use spacious canvas bags to carry sorted letters."},
+                {q: "What main tool does a barber use to cut through strands of hair?", o: ["Scissors", "Plunger", "Saw", "Spanner"], a: "Scissors", e: "Barbers use sharp scissors and clippers to trim long hair."},
+                {q: "Where do you go if you need to buy school notebooks from a shopkeeper?", o: ["Stationery Shop", "Hospital Clinic", "Fire Station Room", "Farm Stable"], a: "Stationery Shop", e: "Stationery stores retail books, paper, and school items."},
+                {q: "What does a farmer use to turn over heavy soil earth?", o: ["Tractor or Plow", "Stethoscope", "Sewing Needle", "Measuring Tape"], a: "Tractor or Plow", e: "Plows attached to tractors turn earth over for seeding."},
+                {q: "What tool does a cobbler use to hammer tiny nails into shoe soles?", o: ["Shoemaker's Hammer", "Water Hose", "Writing Pen", "Broomstick"], a: "Shoemaker's Hammer", e: "Cobblers use flat, small hammers to fix shoe heels safely."},
+                {q: "Who wears a bright uniform with a badge and carries handcuffs?", o: ["Police Officer", "Chef", "Farmer", "Gardener"], a: "Police Officer", e: "Police officers wear uniforms with identification shields."},
+                {q: "What safety equipment does a construction worker wear on their head?", o: ["Hard Hat Helmet", "Woolen Beanie", "Chef Hat", "Swim Cap"], a: "Hard Hat Helmet", e: "Hard hats protect building crews from falling debris."},
+                {q: "Why does a school driver wear a seatbelt while operating the bus?", o: ["For road safety", "To look fashionable", "To play music", "To stay warm"], a: "For road safety", e: "Seatbelts secure drivers safely in case of sudden braking."},
+                {q: "True or False: Every community helper job requires special training and specific tools.", o: ["True", "False"], a: "True", e: "Each helper spends time learning how to use their specialized tools."},
+                {q: "Which helper uses a broom, a dustpan, and garbage bins at work?", o: ["Sweeper", "Doctor", "Tailor", "Teacher"], a: "Sweeper", e: "Sweepers utilize brooms and bins to tidy up dirty grounds."},
+                {q: "Where does a scientist or laboratory technician work?", o: ["Science Laboratory", "Bakery Shop", "Police Precinct", "Bus Terminal"], a: "Science Laboratory", e: "Scientists conduct technical research inside safe laboratories."},
+                {q: "What tool does a gardener use to dig small flower planting holes?", o: ["Trowel Shovel", "Stethoscope", "Sewing Machine", "Chalk"], a: "Trowel Shovel", e: "A trowel is a small hand shovel used to dig soil dirt."},
+                {q: "Who uses a mechanical spanner and jack lifts to check car wheels?", o: ["Mechanic", "Doctor", "Teacher", "Postman"], a: "Mechanic", e: "Mechanics employ wrenches and jacks to lift cars for repair."},
+                {q: "Complete the sentence: A nurse checks your body temperature with a ______.", o: ["Thermometer", "Wrench", "Saw", "Scale"], a: "Thermometer", e: "Thermometers accurately measure inner body temperatures."},
+                {q: "What does a firefighter connect to a street fire hydrant?", o: ["Water Hose Pipe", "Electrical Wire", "Sewing Thread", "Wooden Ladder"], a: "Water Hose Pipe", e: "Long, canvas water hoses channel water onto blazing fires."},
+                {q: "Why are traffic lights maintained carefully by technicians?", o: ["To prevent road crashes", "To decorate streets", "To save electricity", "To help birds"], a: "To prevent road crashes", e: "Working signals maintain clear traffic instructions for safety."},
+                {q: "Where does an airplane pilot work while flying passengers?", o: ["Inside an Airplane Cockpit", "On a Farm Tractor", "In a School Library", "At a Police Desk"], a: "Inside an Airplane Cockpit", e: "Pilots navigate commercial aircraft inside front cockpits."},
+                {q: "True or False: We should say 'Thank You' when a helper assists us.", o: ["True", "False"], a: "True", e: "Expressing gratitude shows respect for their efforts."}
+            ],
+            hard: [
+                {q: "Why are community helpers considered essential for a neighborhood?", o: ["They keep daily life safe and organized", "They give away free toys", "They only work during holidays", "They build amusement parks"], a: "They keep daily life safe and organized", e: "Without helpers, essential services like health care and safety would vanish."},
+                {q: "Which specific telephone number should you call in a medical crisis?", o: ["Emergency Hotline Number", "Local Toy Shop", "School Principal Office", "Your Friend's House"], a: "Emergency Hotline Number", e: "Emergency hotlines instantly dispatch ambulances during health crises."},
+                {q: "Why must citizens obey lawful instructions from active police officers?", o: ["To maintain public safety and peace", "To make officers happy", "To win prizes", "To avoid going to school"], a: "To maintain public safety and peace", e: "Police officers uphold regulatory laws to protect everyone."},
+                {q: "How do agricultural farmers help support an entire country's health?", o: ["By growing raw food for everyone", "By building strong highways", "By teaching science classes", "By putting out building fires"], a: "By growing raw food for everyone", e: "Farmers grow food supplies that feed nationwide populations."},
+                {q: "Why is it important to recognize that no helper job is better than another?", o: ["Every single job serves a vital need", "All jobs pay identical salaries", "Everyone works the same hours", "All helpers use identical tools"], a: "Every single job serves a vital need", e: "Every job solves a unique problem; we need all of them to survive."},
+                {q: "How do a doctor and a pharmacist work together as a neat team?", o: ["The doctor prescribes pills; the pharmacist dispenses them", "They drive school buses together", "They grow organic vegetables together", "They stitch school uniforms together"], a: "The doctor prescribes pills; the pharmacist dispenses them", e: "Doctors diagnose health issues; pharmacists safely supply the medicines."},
+                {q: "Which helper ensures public storm drains don't get choked with plastic litter?", o: ["Sanitation Sweeper", "Bank Manager", "Tailor Worker", "Hair Barber"], a: "Sanitation Sweeper", e: "Sanitation crews clear waste to prevent street flooding."},
+                {q: "What does teamwork mean when firefighters and police clear an accident?", o: ["Working together to handle a crisis", "Competing to finish first", "Taking long rest breaks", "Leaving the work unfinished"], a: "Working together to handle a crisis", e: "Teamwork pools special skills to resolve emergencies quickly."},
+                {q: "What would happen if all garbage collectors went on strike for weeks?", o: ["Trash would accumulate and spread germs", "Streets would become cleaner", "Hospitals would close down", "Buses would stop running"], a: "Trash would accumulate and spread germs", e: "Uncollected waste breaks down, causing health hazards."},
+                {q: "How does a school teacher practice good citizenship every day?", o: ["By shaping students into responsible citizens", "By fixing broken water taps", "By arresting traffic speeders", "By delivering parcel boxes"], a: "By shaping students into responsible citizens", e: "Teachers educate young minds to build strong societies."},
+                {q: "Why do emergency vehicles use loud sirens and flashing lights?", o: ["To alert traffic to clear the lane immediately", "To look beautiful at night", "To play music for pedestrians", "To save fuel battery power"], a: "To alert traffic to clear the lane immediately", e: "Sirens warn drivers to yield the right-of-way for urgent rescues."},
+                {q: "What is the primary role of a soldier guarding a country's borders?", o: ["Protecting the nation's safety from threats", "Teaching alphabet lessons", "Fixing broken electrical lines", "Baking fresh cookies for stores"], a: "Protecting the nation's safety from threats", e: "Soldiers guard nations against external defense emergencies."},
+                {q: "How do building carpenters and basic electricians demonstrate team coordination?", o: ["By building structures before wiring them safely", "By cutting down fruit trees", "By prescribing pills to sick people", "By fighting over tools"], a: "By building structures before wiring them safely", e: "Carpenters structure rooms, then electricians route power lines."},
+                {q: "Why should we never throw garbage directly out of moving car windows?", o: ["It litters the earth and causes hazards", "It makes cars travel slower", "It damages the car engine", "It wastes useful things"], a: "It litters the earth and causes hazards", e: "Littering defaces shared spaces and pollutes local nature habitats."},
+                {q: "True or False: A town can run smoothly with only doctors and no other helpers.", o: ["False", "True"], a: "False", e: "A town requires diverse skills like plumbing, farming, and teaching."},
+                {q: "What is the social duty of a consumer at a shopkeeper's store counter?", o: ["To pay the fair price honestly", "To take items without permission", "To hide the store products", "To shout at other buyers"], a: "To pay the fair price honestly", e: "Good citizens pay fair prices to sustain businesses."},
+                {q: "How do public library keepers serve a student community?", o: ["By providing free access to books and knowledge", "By selling sweet ice cream cones", "By fixing flat vehicle tires", "By sewing school shirts"], a: "By providing free access to books and knowledge", e: "Librarians organize book archives to help students study."},
+                {q: "Why do mail delivery services remain useful despite digital email systems?", o: ["They transport physical goods and parcels", "They travel faster than internet data", "They are completely free of cost", "They don't use roads"], a: "They transport physical goods and parcels", e: "Physical packages must be hand-delivered by courier couriers."},
+                {q: "What does an environmental forest ranger do to help the community?", o: ["Protects wild trees and native animals", "Stitches heavy leather boots", "Bakes sourdough bakery loaves", "Repairs broken city traffic signals"], a: "Protects wild trees and native animals", e: "Rangers maintain natural reserves to preserve eco-health."},
+                {q: "How can children show respect to the sweepers clean-keeping their classrooms?", o: ["By always throwing papers into dustbins", "By spilling paint on desks", "By tracking wet mud inside", "By ignoring their presence"], a: "By always throwing papers into dustbins", e: "Throwing trash away eases the sweeper's workload."},
+                {q: "Which emergency service provides rapid transport to a hospital?", o: ["Ambulance Paramedics", "Postal Cargo Truck", "School Transit Bus", "Construction Crane"], a: "Ambulance Paramedics", e: "Ambulances provide mobile life-support on the way to hospitals."},
+                {q: "Why do plumbers need to inspect structural lines in new schools?", o: ["To guarantee clean drinking water flows safely", "To choose the room paint colors", "To test the school audio bells", "To plant ornamental trees"], a: "To guarantee clean drinking water flows safely", e: "Plumbers ensure reliable drinking water and drain lines."},
+                {q: "True or False: Every small job helps the whole nation grow stronger together.", o: ["True", "False"], a: "True", e: "Every worker contributes a small piece to our big society puzzle."},
+                {q: "What is the core civic duty of a city traffic engineer?", o: ["Designing safe roads and signal intervals", "Cooking healthy student lunches", "Stitching fancy dress outfits", "Treating dental tooth cavities"], a: "Designing safe roads and signal intervals", e: "Traffic engineers design safe traffic flows to avoid accidents."},
+                {q: "Why do farmers use organic compost manure on their crops?", o: ["To nourish the soil naturally", "To keep fields looking colourful", "To scare away wild birds", "To dry up wet mud fields"], a: "To nourish the soil naturally", e: "Compost provides nutrition for healthy food crops to grow."},
+                {q: "How does a regular mechanic prevent accidents on our city streets?", o: ["By fixing faulty vehicle brakes safely", "By painting white crosswalk lines", "By delivering heavy packages", "By arrest speed violators"], a: "By fixing faulty vehicle brakes safely", e: "Fixing vehicle brakes ensures drivers can stop safely."},
+                {q: "What would happen if water treatment plants stopped processing water?", o: ["People would get sick from dirty tap water", "Houses would become stronger", "Cars would run out of fuel", "Rain would stop falling entirely"], a: "People would get sick from dirty tap water", e: "Treatment plants clear bacteria out of shared water resources."},
+                {q: "Why should communities hold celebratory appreciation days for helpers?", o: ["To thank them for keeping us safe", "To give them extra schoolwork", "To ask them to change jobs", "To sell them store merchandise"], a: "To thank them for keeping us safe", e: "Honoring helpers shows that we value their hard work and dedication."},
+                {q: "What is the job of a vet (veterinary doctor) in our neighborhood?", o: ["To treat sick or injured animals", "To repair electrical appliances", "To grow corn and wheat fields", "To fly massive airplanes"], a: "To treat sick or injured animals", e: "Veterinarians care for pets, farm livestock, and wildlife."},
+                {q: "True or False: Working together makes our community a wonderful place to live.", o: ["True", "False"], a: "True", e: "Teamwork makes our neighborhoods happy, safe, and cooperative."}
+            ]
+        };
+
+        // Runtime Global Variables
+        let currentLevel = 'easy';
+        let activeQuestions = [];
+        let currentIndex = 0;
+        let score = 0;
+        let selectedAnswers = []; // Cache track answers for navigation
+        let startTime = null;
+
+        // Shuffle Utilities (Fisher-Yates)
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // Initialize and Load Progress History
+        window.addEventListener('DOMContentLoaded', () => {
+            renderHistoryTable();
+        });
+
+        function renderHistoryTable() {
+            const container = document.getElementById('historyStats');
+            const history = localStorage.getItem('helpers_quiz_scores');
+            if(history) {
+                const data = JSON.parse(history);
+                let html = `<table style="width:100%; border-collapse:collapse; margin-top:8px;">
+                                <tr style="background:rgba(0,0,0,0.05); text-align:left;">
+                                    <th style="padding:6px; font-size:0.85rem;">Level</th>
+                                    <th style="padding:6px; font-size:0.85rem;">Score</th>
+                                    <th style="padding:6px; font-size:0.85rem;">Badge</th>
+                                </tr>`;
+                data.slice(-3).reverse().forEach(row => {
+                    html += `<tr style="border-bottom:1px solid rgba(0,0,0,0.05);">
+                                <td style="padding:6px; font-size:0.85rem; text-transform:capitalize;">${row.level}</td>
+                                <td style="padding:6px; font-size:0.85rem;">${row.score}/30 (${row.pct}%)</td>
+                                <td style="padding:6px; font-size:0.85rem;">${row.badge}</td>
+                             </tr>`;
+                });
+                html += `</table>`;
+                container.innerHTML = html;
+            }
+        }
+
+        // Action Router: Start Quiz Engine
+        function startQuiz(level) {
+            soundEngine.click();
+            currentLevel = level;
+            
+            // Deep clone and shuffle data
+            let rawQuestions = JSON.parse(JSON.stringify(questionsDatabase[level]));
+            activeQuestions = shuffleArray(rawQuestions).slice(0, 30);
+            
+            // Format options
+            activeQuestions.forEach(q => {
+                q.o = shuffleArray(q.o);
+            });
+
+            // Reset Core Counters
+            currentIndex = 0;
+            score = 0;
+            selectedAnswers = new Array(30).fill(null);
+            startTime = new Date();
+
+            // Switch Screen Framework
+            document.getElementById('startScreen').classList.remove('active');
+            document.getElementById('quizScreen').classList.add('active');
+
+            updateQuizUI();
+        }
+
+        // Core Renderer Module
+        function updateQuizUI() {
+            const currentQ = activeQuestions[currentIndex];
+            
+            // Text Header States
+            document.getElementById('levelIndicator').innerText = `Level: ${currentLevel.toUpperCase()}`;
+            document.getElementById('counterIndicator').innerText = `Question: ${currentIndex + 1}/30`;
+            document.getElementById('scoreIndicator').innerText = `Score: ${score}`;
+
+            // Progress Bar Engine
+            const progressPercent = ((currentIndex) / 30) * 100;
+            document.getElementById('quizProgress').style.width = `${progressPercent}%`;
+
+            // Inject Question text
+            document.getElementById('questionText').innerText = currentQ.q;
+
+            // Render Option Items
+            const container = document.getElementById('optionsContainer');
+            container.innerHTML = '';
+
+            const feedbackBox = document.getElementById('feedbackBox');
+            feedbackBox.className = 'feedback-box'; // reset state
+
+            const historicallyAnswered = selectedAnswers[currentIndex];
+
+            currentQ.o.forEach(option => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = option;
+                btn.onclick = () => evaluateChoice(btn, option);
+                
+                // If this step was evaluated in the past, render styling
+                if (historicallyAnswered !== null) {
+                    btn.disabled = true;
+                    if (option === currentQ.a) {
+                        btn.classList.add('correct');
+                    }
+                    if (option === historicallyAnswered && historicallyAnswered !== currentQ.a) {
+                        btn.classList.add('wrong');
+                    }
+                }
+                container.appendChild(btn);
+            });
+
+            // Handle Contextual Feedback Reconstruction on Back Navigation
+            if (historicallyAnswered !== null) {
+                if (historicallyAnswered === currentQ.a) {
+                    feedbackBox.innerText = `✅ Correct! \n${currentQ.e}`;
+                    feedbackBox.classList.add('show', 'correct-bg');
+                } else {
+                    feedbackBox.innerText = `❌ Wrong! \n${currentQ.e}`;
+                    feedbackBox.classList.add('show', 'wrong-bg');
+                }
+            }
+
+            // Sync Button States
+            document.getElementById('prevBtn').disabled = (currentIndex === 0);
+        }
+
+        // Choice Evaluation Event Processor
+        function evaluateChoice(selectedBtn, chosenText) {
+            const currentQ = activeQuestions[currentIndex];
+            selectedAnswers[currentIndex] = chosenText;
+            
+            // Freeze interaction inputs
+            const allButtons = document.querySelectorAll('#optionsContainer .option-btn');
+            allButtons.forEach(b => b.disabled = true);
+
+            const feedbackBox = document.getElementById('feedbackBox');
+
+            if (chosenText === currentQ.a) {
+                soundEngine.correct();
+                selectedBtn.classList.add('correct');
+                feedbackBox.innerText = `✅ Correct! \n${currentQ.e}`;
+                feedbackBox.className = 'feedback-box show correct-bg';
+                score++;
+                document.getElementById('scoreIndicator').innerText = `Score: ${score}`;
+            } else {
+                soundEngine.wrong();
+                selectedBtn.classList.add('wrong');
+                
+                // Highlight correct answer
+                allButtons.forEach(b => {
+                    if(b.innerText === currentQ.a) b.classList.add('correct');
+                });
+
+                feedbackBox.innerText = `❌ Not Quite! \n${currentQ.e}`;
+                feedbackBox.className = 'feedback-box show wrong-bg';
+            }
+
+            // Smooth Auto Scroll to feedback on mobile view ports
+            setTimeout(() => {
+                feedbackBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 50);
+        }
+
+        // Navigation Steps Module
+        function navigateQuestion(direction) {
+            soundEngine.click();
+            
+            // Safety Validation Guard
+            if (direction === 1 && selectedAnswers[currentIndex] === null) {
+                alert("Please select an answer choice before moving to the next question!");
+                return;
+            }
+
+            currentIndex += direction;
+
+            if (currentIndex >= 30) {
+                concludeQuiz();
+            } else if (currentIndex < 0) {
+                currentIndex = 0;
+            } else {
+                updateQuizUI();
+            }
+        }
+
+        // Early Exit Alert Engine
+        function confirmReturnHome() {
+            soundEngine.click();
+            if (confirm("Are you sure you want to quit this current level? Your current progress will be lost.")) {
+                returnToMainMenu();
+            }
+        }
+
+        function returnToMainMenu() {
+            document.getElementById('quizScreen').classList.remove('active');
+            document.getElementById('summaryScreen').classList.remove('active');
+            document.getElementById('startScreen').classList.add('active');
+            renderHistoryTable();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function restartCurrentLevel() {
+            startQuiz(currentLevel);
+        }
+
+        // Completion Framework Summary Engine
+        function concludeQuiz() {
+            const endTime = new Date();
+            const totalSeconds = Math.floor((endTime - startTime) / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            const timeString = `${minutes}m ${seconds}s`;
+
+            const percentage = Math.round((score / 30) * 100);
+            
+            // Badge Determination Logic
+            let badge = "";
+            if (percentage >= 90) badge = "🏆 Community Hero";
+            else if (percentage >= 70) badge = "🌟 Helpful Citizen";
+            else if (percentage >= 50) badge = "👍 Good Learner";
+            else badge = "📚 Keep Learning";
+
+            // Populate text elements
+            document.getElementById('summaryLevel').innerText = currentLevel.toUpperCase();
+            document.getElementById('summaryScore').innerText = `${score} / 30`;
+            document.getElementById('summaryPercent').innerText = `${percentage}%`;
+            document.getElementById('summaryTime').innerText = timeString;
+            document.getElementById('summaryCorrect').innerText = score;
+            document.getElementById('summaryWrong').innerText = 30 - score;
+            document.getElementById('badgeName').innerText = badge;
+
+            // Setup Print Elements
+            document.getElementById('certLevel').innerText = currentLevel.toUpperCase();
+            document.getElementById('certScore').innerText = `${percentage}% (${score}/30 Correct Answers)`;
+            document.getElementById('certBadge').innerText = badge;
+
+            // Cache metrics data to LocalStorage
+            saveResultsToStorage(currentLevel, score, percentage, badge);
+
+            // Screen Navigation
+            document.getElementById('quizScreen').classList.remove('active');
+            document.getElementById('summaryScreen').classList.add('active');
+
+            // Trigger celebratory sound and visual effects
+            if(percentage >= 70) {
+                soundEngine.completion();
+                triggerConfettiEffect();
+            } else {
+                soundEngine.badge();
+            }
+        }
+
+        function saveResultsToStorage(lvl, scr, pct, bdg) {
+            try {
+                let existing = localStorage.getItem('helpers_quiz_scores');
+                let arr = existing ? JSON.parse(existing) : [];
+                arr.push({ level: lvl, score: scr, pct: pct, badge: bdg, timestamp: new Date().getTime() });
+                localStorage.setItem('helpers_quiz_scores', JSON.stringify(arr));
+            } catch(e) { console.log("LocalStorage execution halted safely.") }
+        }
+
+        // Pure CSS/DOM Lightweight Confetti Generator Engine (No Canvas dependency)
+        function triggerConfettiEffect() {
+            const colors = ['#f43f5e', '#3b82f6', '#10b981', '#eab308', '#a855f7', '#ff758c'];
+            for (let i = 0; i < 100; i++) {
+                const conf = document.createElement('div');
+                conf.className = 'confetti';
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                conf.style.transform = `scale(${Math.random() * 0.7 + 0.5})`;
+                
+                const duration = Math.random() * 2 + 2;
+                conf.style.animationDuration = duration + 's';
+                conf.style.animationDelay = Math.random() * 1 + 's';
+
+                document.body.appendChild(conf);
+
+                // Garbage collect elements safely
+                setTimeout(() => { conf.remove(); }, (duration + 1) * 1000);
+            }
+        }
+    </script>
+</body>
+</html>

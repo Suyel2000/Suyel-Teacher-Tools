@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐣 Animal Babies Quiz</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #e0f2fe 0%, #fef3c7 50%, #dcfce7 100%);
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --text-main: #1e293b;
+            --text-muted: #475569;
+            --primary: #3b82f6;
+            --easy-color: #22c55e;
+            --medium-color: #eab308;
+            --hard-color: #ef4444;
+            --correct-bg: #dcfce7;
+            --correct-border: #22c55e;
+            --wrong-bg: #fee2e2;
+            --wrong-border: #ef4444;
+            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
+            --radius-lg: 24px;
+            --radius-md: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            background-size: 400% 400%;
+            animation: gradientBg 15s ease infinite;
+            min-height: 100vh;
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+
+        @keyframes gradientBg {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 700px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+
+        /* Typography */
+        h1 {
+            font-size: 2.2rem;
+            text-align: center;
+            color: #0f172a;
+            margin-bottom: 8px;
+        }
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Utility Classes */
+        .hidden { display: none !important; }
+        .text-center { text-align: center; }
+
+        /* Screens styling */
+        .screen {
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Buttons */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 16px 24px;
+            margin: 12px 0;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-easy { background-color: var(--easy-color); color: white; }
+        .btn-medium { background-color: var(--medium-color); color: white; }
+        .btn-hard { background-color: var(--hard-color); color: white; }
+        
+        .btn-nav {
+            background-color: #f1f5f9;
+            color: var(--text-main);
+            border: 1px solid #cbd5e1;
+            padding: 12px 20px;
+            font-size: 1rem;
+            margin: 0;
+            width: auto;
+            flex: 1;
+        }
+        .btn-nav:hover { background-color: #e2e8f0; }
+
+        /* Progress Bar */
+        .progress-container {
+            background: #e2e8f0;
+            border-radius: 10px;
+            height: 12px;
+            width: 100%;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            background: linear-gradient(90deg, #3b82f6, #60a5fa);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Stat Header */
+        .quiz-stats {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            font-size: 0.95rem;
+        }
+
+        /* Question Wrapper */
+        .question-box {
+            margin-bottom: 24px;
+        }
+        .question-text {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #0f172a;
+            line-height: 1.4;
+        }
+
+        /* Answer Options */
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .option-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: var(--radius-md);
+            padding: 16px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .option-card:hover {
+            border-color: #94a3b8;
+            background: #f8fafc;
+        }
+        .option-card.correct {
+            background-color: var(--correct-bg) !important;
+            border-color: var(--correct-border) !important;
+            color: #166534;
+        }
+        .option-card.wrong {
+            background-color: var(--wrong-bg) !important;
+            border-color: var(--wrong-border) !important;
+            color: #991b1b;
+        }
+        .option-card.disabled {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        /* Feedback Explanation */
+        .explanation-box {
+            margin-top: 20px;
+            padding: 16px;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 1.05rem;
+            animation: fadeIn 0.3s ease;
+        }
+        .explanation-box.correct { background: var(--correct-bg); color: #166534; border: 1px solid var(--correct-border); }
+        .explanation-box.wrong { background: var(--wrong-bg); color: #991b1b; border: 1px solid var(--wrong-border); }
+
+        /* Navigation Buttons Panel */
+        .nav-panel {
+            display: flex;
+            gap: 10px;
+            margin-top: 24px;
+            justify-content: space-between;
+        }
+
+        /* Score & Summary Screen */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 20px 0;
+        }
+        .summary-card {
+            background: white;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            border: 1px solid #e2e8f0;
+            font-size: 0.95rem;
+        }
+        .summary-card span {
+            display: block;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-top: 4px;
+        }
+
+        .badge-display {
+            text-align: center;
+            padding: 20px;
+            background: #fffbeb;
+            border: 2px dashed #f59e0b;
+            border-radius: var(--radius-md);
+            margin: 20px 0;
+        }
+        .badge-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #b45309;
+            margin-top: 8px;
+        }
+
+        /* Canvas for confetti emulation (pure styling fallback) */
+        #confetti-canvas {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 999;
+        }
+
+        /* Certificate printable styling */
+        @media print {
+            body * { visibility: hidden; }
+            #certificate-print, #certificate-print * { visibility: visible; }
+            #certificate-print { position: absolute; left: 0; top: 0; width: 100%; }
+        }
+
+        #certificate-print {
+            background: white;
+            border: 10px double #3b82f6;
+            padding: 40px;
+            text-align: center;
+            border-radius: var(--radius-md);
+            color: #1e293b;
+            margin-top: 30px;
+        }
+
+        /* Responsive Tweaks */
+        @media(max-width: 480px) {
+            h1 { font-size: 1.8rem; }
+            .subtitle { font-size: 0.9rem; }
+            .question-text { font-size: 1.15rem; }
+            .option-card { font-size: 1rem; padding: 12px; }
+            .btn-nav { padding: 10px 12px; font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <div class="container">
+        <header>
+            <h1>🐣 Animal Babies Quiz</h1>
+            <div class="subtitle">Observe • Match • Explore • Learn</div>
+        </header>
+
+        <div id="start-screen" class="screen">
+            <p class="text-center" style="margin-bottom: 20px; font-weight: 600; color: var(--text-muted);">
+                Welcome, little explorer! Choose a level to start your fun animal adventure quiz.
+            </p>
+            <button class="btn btn-easy" onclick="startQuiz('easy')">🟢 Easy Level</button>
+            <button class="btn btn-medium" onclick="startQuiz('medium')">🟡 Medium Level</button>
+            <button class="btn btn-hard" onclick="startQuiz('hard')">🔴 Hard Level</button>
+            
+            <div style="margin-top: 30px; text-align: center; font-size: 0.9rem; color: var(--text-muted);">
+                <p id="high-score-track">Your Best Rank: Loading...</p>
+            </div>
+        </div>
+
+        <div id="quiz-screen" class="screen hidden">
+            <div class="progress-container">
+                <div id="progress-bar" class="progress-bar"></div>
+            </div>
+
+            <div class="quiz-stats">
+                <span id="question-counter">Question: 1/30</span>
+                <span id="score-counter">Score: 0</span>
+            </div>
+
+            <div class="question-box">
+                <div id="question-text" class="question-text">Question text goes here?</div>
+                <div id="options-container" class="options-list">
+                    </div>
+            </div>
+
+            <div id="explanation-box" class="explanation-box hidden"></div>
+
+            <div class="nav-panel">
+                <button id="btn-prev" class="btn btn-nav" onclick="navigateQuestion(-1)">⬅️ Previous</button>
+                <button id="btn-home" class="btn btn-nav" onclick="goHome()">🏠 Home</button>
+                <button id="btn-next" class="btn btn-nav" onclick="navigateQuestion(1)">➡️ Next</button>
+            </div>
+        </div>
+
+        <div id="summary-screen" class="screen hidden">
+            <h2 class="text-center">Quiz Completed!</h2>
+            <p class="text-center" id="summary-level-tag" style="font-weight: bold; margin-top: 4px;"></p>
+
+            <div class="badge-display">
+                <p style="text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px; color: #92400e; font-weight: bold;">Badge Unlocked</p>
+                <div id="badge-title" class="badge-title">Good Learner</div>
+            </div>
+
+            <div class="summary-grid">
+                <div class="summary-card">Final Score <span id="sum-score">0</span></div>
+                <div class="summary-card">Percentage <span id="sum-percent">0%</span></div>
+                <div class="summary-card">Correct Answers <span id="sum-correct">0</span></div>
+                <div class="summary-card">Wrong Answers <span id="sum-wrong">0</span></div>
+                <div class="summary-card">Time Taken <span id="sum-time">0s</span></div>
+            </div>
+
+            <button class="btn btn-easy" onclick="restartQuiz()">🔄 Play Again</button>
+            <button class="btn btn-medium" onclick="goHome()">📚 Choose Another Level</button>
+            <button class="btn btn-hard" onclick="printCertificate()">🖨️ Print Certificate</button>
+        </div>
+
+        <div id="certificate-print" class="hidden">
+            <h1>CERTIFICATE OF ACHIEVEMENT</h1>
+            <p style="margin-top: 20px; font-size: 1.2rem;">This proudly certifies that a clever young explorer completed the</p>
+            <h2 style="color: #3b82f6; margin: 15px 0;" id="cert-level">Animal Babies Quiz</h2>
+            <p style="font-size: 1.3rem; font-weight: bold;">With a spectacular score of <span id="cert-score">100%</span>!</p>
+            <p style="margin-top: 30px; font-size: 1.1rem; font-style: italic;" id="cert-badge">Awarded Badge: Animal Family Expert</p>
+            <div style="margin-top: 40px; border-top: 2px dashed #cbd5e1; display: inline-block; width: 200px; padding-top: 8px;">
+                Quiz Master Guide
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- DATA STRUCTURES (90 Unique Questions - 30 per level) ---
+        const questionsData = {
+            easy: [
+                { q: "What is the baby of a cat called?", a: ["Kitten", "Puppy", "Calf", "Cub"], c: 0, e: "A baby cat is called a kitten." },
+                { q: "What is the baby of a dog called?", a: ["Piglet", "Puppy", "Foal", "Chick"], c: 1, e: "A baby dog is called a puppy." },
+                { q: "What is the baby of a cow called?", a: ["Calf", "Kid", "Lamb", "Duckling"], c: 0, e: "A baby cow is called a calf." },
+                { q: "What is the baby of a goat called?", a: ["Puppy", "Cub", "Kid", "Foal"], c: 2, e: "A baby goat is called a kid." },
+                { q: "What is the baby of a hen called?", a: ["Chick", "Kitten", "Calf", "Lamb"], c: 0, e: "A baby hen is called a chick." },
+                { q: "What is the baby of a duck called?", a: ["Duckling", "Bunny", "Piglet", "Puppy"], c: 0, e: "A baby duck is called a duckling." },
+                { q: "What is the baby of a sheep called?", a: ["Lamb", "Calf", "Kid", "Chick"], c: 0, e: "A baby sheep is called a lamb." },
+                { q: "What is the baby of a horse called?", a: ["Foal", "Kitten", "Puppy", "Cub"], c: 0, e: "A baby horse is called a foal." },
+                { q: "What is the baby of a pig called?", a: ["Piglet", "Lamb", "Kid", "Calf"], c: 0, e: "A baby pig is called a piglet." },
+                { q: "Match the baby animal name: Which animal has a 'Bunny'?", a: ["Rabbit", "Cat", "Dog", "Pig"], c: 0, e: "A baby rabbit is called a bunny." },
+                { q: "Choose the correct baby name: A baby dog is a...", a: ["Puppy", "Calf", "Kitten"], c: 0, e: "We call a sweet baby dog a puppy." },
+                { q: "True or False: A baby cat is called a puppy.", a: ["True", "False"], c: 1, e: "False! A baby cat is a kitten. A puppy is a baby dog." },
+                { q: "Complete the sentence: A little sheep says baa, and it is called a ___.", a: ["Lamb", "Kid", "Chick"], c: 0, e: "A little sheep is called a lamb." },
+                { q: "What is the baby of a domestic goose called?", a: ["Gosling", "Duckling", "Chick"], c: 0, e: "A baby goose is called a gosling." },
+                { q: "Which animal lives with us as a pet and has kittens?", a: ["Cat", "Lion", "Cow", "Horse"], c: 0, e: "Pet cats live with us and have cute kittens." },
+                { q: "What is the baby of a farm donkey called?", a: ["Foal", "Calf", "Puppy"], c: 0, e: "The baby of a donkey or horse is called a foal." },
+                { q: "Choose the correct baby name for a farm Hen:", a: ["Chick", "Duckling", "Lamb"], c: 0, e: "Hens hatch eggs to bring out small chicks." },
+                { q: "True or False: A baby cow is called a calf.", a: ["True", "False"], c: 0, e: "True! A young cow is always called a calf." },
+                { q: "What is a baby rabbit called?", a: ["Bunny", "Kitten", "Foal"], c: 0, e: "A lovely baby rabbit is known as a bunny." },
+                { q: "Complete the sentence: A mother dog guards her little ___.", a: ["Puppies", "Kittens", "Chicks"], c: 0, e: "Mother dogs protect their baby puppies." },
+                { q: "Which baby animal matches with a mother Goat?", a: ["Kid", "Lamb", "Piglet"], c: 0, e: "A goat's baby is called a kid." },
+                { q: "What do we call a baby pig on a farm?", a: ["Piglet", "Calf", "Foal"], c: 0, e: "A young pig is called a piglet." },
+                { q: "True or False: A baby horse is called a kid.", a: ["True", "False"], c: 1, e: "False! A baby horse is a foal. A kid is a baby goat." },
+                { q: "What is the baby of a white duck called?", a: ["Duckling", "Gosling", "Chick"], c: 0, e: "Ducks have tiny baby ducklings." },
+                { q: "Match the animal: Who is the parent of a tiny chick?", a: ["Hen", "Duck", "Cat"], c: 0, e: "A hen is the mother of a chick." },
+                { q: "Choose the baby name: A baby sheep is a...", a: ["Lamb", "Kid", "Calf"], c: 0, e: "A young sheep is called a lamb." },
+                { q: "True or False: Farm pigs give birth to piglets.", a: ["True", "False"], c: 0, e: "True! Baby pigs are always called piglets." },
+                { q: "Complete the sentence: A young horse running in the field is a ___.", a: ["Foal", "Puppy", "Kitten"], c: 0, e: "A young horse is called a foal." },
+                { q: "What is the baby of a gentle farm cow?", a: ["Calf", "Lamb", "Kid"], c: 0, e: "The baby of a cow is a calf." },
+                { q: "Which animal is a common pet that can have a puppy?", a: ["Dog", "Cow", "Sheep"], c: 0, e: "A dog is a beloved pet that gives birth to puppies." }
+            ],
+            medium: [
+                { q: "What is the baby of a wild lion called?", a: ["Cub", "Calf", "Fawn", "Puppy"], c: 0, e: "A baby lion is called a cub." },
+                { q: "What is the baby of a huge elephant called?", a: ["Calf", "Cub", "Foal", "Kid"], c: 0, e: "A baby elephant is called a calf, just like a baby cow!" },
+                { q: "What is the baby of a wild tiger called?", a: ["Cub", "Puppy", "Fawn", "Lamb"], c: 0, e: "A baby tiger is called a cub." },
+                { q: "What is the baby of a frog called?", a: ["Tadpole", "Caterpillar", "Joey", "Cub"], c: 0, e: "A young frog that swims in water is a tadpole." },
+                { q: "What is the baby of a wild deer called?", a: ["Fawn", "Calf", "Cub", "Foal"], c: 0, e: "A baby deer is called a fawn." },
+                { q: "Who usually takes care of wild baby animals?", a: ["Their mothers", "Human zookeepers", "No one"], c: 0, e: "In nature, animal mothers look after and protect their babies." },
+                { q: "Why do helpless baby animals need their mothers?", a: ["To get food and protection", "To play games all day", "To learn to read"], c: 0, e: "Mother animals feed and protect their young from danger." },
+                { q: "Which baby bird hatches out from a hard egg shell?", a: ["An owl chick", "A baby whale", "A baby dog"], c: 0, e: "All birds, including owls, hatch from eggs." },
+                { q: "What is the baby of a jumping kangaroo called?", a: ["Joey", "Cub", "Fawn", "Calf"], c: 0, e: "A baby kangaroo is called a joey and lives in its mother's pouch." },
+                { q: "What is the baby of a big wild bear called?", a: ["Cub", "Calf", "Puppy"], c: 0, e: "A baby bear is called a cub." },
+                { q: "A baby frog lives in water and has a tail. What is it?", a: ["Tadpole", "Fawn", "Joey"], c: 0, e: "A tadpole hatches from a frog egg and grows legs later." },
+                { q: "True or False: A baby elephant is called a cub.", a: ["True", "False"], c: 1, e: "False! A baby elephant is called a calf." },
+                { q: "Complete the sentence: A little deer has white spots and is called a ___.", a: ["Fawn", "Cub", "Calf"], c: 0, e: "A baby deer is called a fawn." },
+                { q: "What is the baby of a wild wolf called?", a: ["Pup or Cub", "Foal", "Kitten"], c: 0, e: "A baby wolf is called a pup or a cub." },
+                { q: "Which aquatic bird has babies called cygnets?", a: ["Swan", "Duck", "Penguin"], c: 0, e: "A beautiful baby swan is called a cygnet." },
+                { q: "True or False: A baby tiger is called a cub.", a: ["True", "False"], c: 0, e: "True! Tigers, lions, and bears all have cubs." },
+                { q: "Where does a baby kangaroo (joey) stay to keep safe?", a: ["In its mother's pouch", "Up in a tree nest", "Under mud"], c: 0, e: "A kangaroo pouch is a warm, safe home for a joey." },
+                { q: "What is the baby of an owl called?", a: ["Owlet", "Cygnet", "Chick"], c: 0, e: "A baby owl is specifically called an owlet." },
+                { q: "Match the parent: Who looks after a baby fawn in the woods?", a: ["Deer", "Lion", "Elephant"], c: 0, e: "A mother deer takes excellent care of her fawn." },
+                { q: "True or False: A baby penguin hatches from an egg.", a: ["True", "False"], c: 0, e: "True! Penguins are birds, so they lay eggs." },
+                { q: "What is the baby of a sea whale called?", a: ["Calf", "Cub", "Tadpole"], c: 0, e: "Even though they live in water, baby whales are called calves." },
+                { q: "Choose the correct baby name: A baby bear is a ___.", a: ["Cub", "Joey", "Fawn"], c: 0, e: "Bear babies are called cubs." },
+                { q: "Complete the sentence: A baby frog breathes under water like a fish and is called a ___.", a: ["Tadpole", "Owlet", "Infant"], c: 0, e: "Tadpoles look like little fish before they grow into frogs." },
+                { q: "Why do baby birds stay inside their nests?", a: ["Because they cannot fly yet", "Because they hate sunshine", "To store stones"], c: 0, e: "Baby birds stay in nests until their flight feathers grow strong." },
+                { q: "What is the baby of a fox called?", a: ["Kit or Pup", "Calf", "Foal"], c: 0, e: "A baby fox can be called a kit, pup, or cub." },
+                { q: "True or False: Giant giraffes have babies called calves.", a: ["True", "False"], c: 0, e: "True! Giraffe babies are large and are called calves." },
+                { q: "What is a baby monkey called?", a: ["Infant", "Joey", "Cub"], c: 0, e: "A baby monkey is called an infant, just like a human baby!" },
+                { q: "Match the baby: An owlet belongs to which bird parent?", a: ["Owl", "Eagle", "Duck"], c: 0, e: "An owlet is a baby owl." },
+                { q: "Why do mother animals lick their newborn babies clean?", a: ["To clean and protect them", "To play a game", "Because they love water"], c: 0, e: "Licking helps clean the babies and keeps them safe from enemies." },
+                { q: "What is the baby of a cheetah called?", a: ["Cub", "Foal", "Lamb"], c: 0, e: "A baby cheetah is called a cub." }
+            ],
+            hard: [
+                { q: "Which of these animals feeds warm milk to its babies?", a: ["A mother cow", "A mother frog", "A mother snake"], c: 0, e: "Mammals like cows produce milk to feed their hungry babies." },
+                { q: "Which group of animals hatch their young out of eggs?", a: ["Birds and Reptiles", "Dogs and Cats", "Whales and Humans"], c: 0, e: "Birds, fish, and reptiles lay eggs to hatch babies." },
+                { q: "Why do growing baby animals need plenty of food?", a: ["To grow big and strong", "To change color", "To go to sleep"], c: 0, e: "Food gives babies nutrients to build bones, muscles, and energy." },
+                { q: "Why is it important to protect wild baby animals?", a: ["So they grow up to preserve nature", "So we can trap them later", "They don't need protection"], c: 0, e: "Protecting young animals helps keep animal families alive in nature." },
+                { q: "What helps young baby birds learn how to fly safely?", a: ["Practicing with their wings", "Reading books", "Swimming in ponds"], c: 0, e: "Baby birds flap and exercise their wings to build muscle flight skills." },
+                { q: "Why should we not separate baby animals from their mothers?", a: ["They need mother's milk and safety", "They will run away instantly", "Mothers forget them"], c: 0, e: "Babies depend heavily on their mothers for nutrition and survival care." },
+                { q: "How do young animals grow up into adults?", a: ["By eating well and growing over time", "By changing skins in one day", "They stay tiny forever"], c: 0, e: "Animals grow bigger step by step over weeks, months, or years." },
+                { q: "Why do animals show care and love to their babies?", a: ["To ensure their babies survive safely", "To teach them how to sing", "To show off to others"], c: 0, e: "Caring keeps vulnerable babies safe from weather and predators." },
+                { q: "Which baby animal is called an 'infant'?", a: ["A baby Gorilla", "A baby Crocodile", "A baby Duck"], c: 0, e: "Apes and monkeys have babies called infants, just like humans." },
+                { q: "What is the baby of a platypus called?", a: ["Puggle", "Joey", "Hatchling"], c: 0, e: "A rare baby platypus is known as a puggle!" },
+                { q: "True or False: A baby whale drinks its mother's rich milk.", a: ["True", "False"], c: 0, e: "True! Whales are mammals, so they feed milk to their calves under water." },
+                { q: "What is a baby crocodile or turtle called when it hatches?", a: ["Hatchling", "Caterpillar", "Tadpole"], c: 0, e: "Animals that hatch out from eggs are called hatchlings." },
+                { q: "Complete the sentence: Mammals are animals that give birth to live babies and feed them ___.", a: ["Milk", "Leaves", "Seeds"], c: 0, e: "All mammal mothers feed their young ones with nourishing milk." },
+                { q: "Why do birds sit on their eggs before they open?", a: ["To keep the eggs warm and alive", "To hide the eggs from light", "To break them fast"], c: 0, e: "Eggs need constant body warmth for the tiny embryo inside to grow." },
+                { q: "What is a baby seal called?", a: ["Pup", "Cub", "Calf"], c: 0, e: "A baby seal is called a pup." },
+                { q: "True or False: Snakes feed milk to their young babies.", a: ["True", "False"], c: 1, e: "False! Snakes are reptiles; they do not make milk. Their babies find small food." },
+                { q: "Which animal has a baby called a 'hatchling'?", a: ["Sea Turtle", "Kangaroo", "Horse"], c: 0, e: "Sea turtles lay eggs, and their babies are called hatchlings." },
+                { q: "How does a baby kangaroo get inside its mother's pouch?", a: ["It crawls up right after birth", "The mother carries it with hands", "It jumps from a tree"], c: 0, e: "The tiny newborn crawl safely up into the pocket using its tiny front legs." },
+                { q: "What is a baby eel or small fish called?", a: ["Fry or Fingerling", "Chick", "Foal"], c: 0, e: "Baby fish are called fry, and slightly larger ones are fingerlings." },
+                { q: "True or False: Human beings are mammals who care for infants.", a: ["True", "False"], c: 0, e: "True! Humans take care of their babies for a long time." },
+                { q: "Why do camouflage patterns help baby deer (fawns) survive?", a: ["It hides them from predators", "It makes them look pretty", "It keeps them cool"], c: 0, e: "Spots blend with leaves so hungry predators cannot see them." },
+                { q: "What do we call a baby sheep that is less than one year old?", a: ["Lamb", "Kid", "Yearling"], c: 0, e: "A sheep under one year old is called a lamb." },
+                { q: "Why do some animal parents leave their babies after hatching?", a: ["They are born ready to hunt", "They get tired", "They forget their nest"], c: 0, e: "Many reptiles are born with strong instincts to care for themselves." },
+                { q: "Choose the correct fact: A baby bat is called a...", a: ["Pup", "Chick", "Kitten"], c: 0, e: "Bats are flying mammals, and their babies are called pups." },
+                { q: "What does an animal family do to shield babies from heavy rain?", a: ["They share shelters or burrows", "They buy umbrellas", "They run away alone"], c: 0, e: "Parents hide babies inside nests, dens, or caves during storms." },
+                { q: "True or False: All baby birds can fly immediately when they hatch.", a: ["True", "False"], c: 1, e: "False! Most hatchlings are blind, weak, and featherless at first." },
+                { q: "What is the baby of a wild swan called?", a: ["Cygnet", "Gosling", "Duckling"], c: 0, e: "A young swan is called a cygnet." },
+                { q: "Complete the sentence: A tiny baby bear is born very small, blind, and is called a ___.", a: ["Cub", "Pup", "Calf"], c: 0, e: "Bear babies are small cubs when born." },
+                { q: "Why should people leave bird nests completely alone?", a: ["To prevent scaring the parents away", "Nests are dangerous", "Eggs can change colors"], c: 0, e: "If humans touch a nest, the frightened parent birds might abandon their babies." },
+                { q: "What is a baby goat called?", a: ["Kid", "Lamb", "Calf"], c: 0, e: "A goat's baby is always called a kid." }
+            ]
+        };
+
+        // --- STATE MANAGEMENT ---
+        let currentLevel = 'easy';
+        let originalQuestions = [];
+        let currentQuestions = [];
+        let currentIndex = 0;
+        let score = 0;
+        let userAnswers = []; // track indexes chosen
+        let startTime;
+        let totalElapsedSeconds = 0;
+        let timerInterval;
+
+        // --- AUDIO GENERATOR (Pure Web Audio API - Offline & Instant) ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            try {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                } else if (type === 'correct') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.linearRampToValueAtTime(100, now + 0.25);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'complete' || type === 'badge') {
+                    // Upward fanfare
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(261.63, now); // C4
+                    osc.frequency.setValueAtTime(329.63, now + 0.1); // E4
+                    osc.frequency.setValueAtTime(392.00, now + 0.2); // G4
+                    osc.frequency.setValueAtTime(523.25, now + 0.3); // C5
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                    osc.start(now);
+                    osc.stop(now + 0.5);
+                }
+            } catch (e) {
+                console.log("Audio play error context: ", e);
+            }
+        }
+
+        // --- LOCAL STORAGE PROGRESS ---
+        function updateHighScoreDisplay() {
+            const best = localStorage.getItem('animal_quiz_best_badge');
+            const element = document.getElementById('high-score-track');
+            if (best) {
+                element.innerText = `🏆 Your Best Badge: ${best}`;
+            } else {
+                element.innerText = `🐣 No badges earned yet. Start playing!`;
+            }
+        }
+
+        // --- HELPER SHUFFLE ---
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // --- INTERACTIVE SYSTEM CONTROLS ---
+        function startQuiz(level) {
+            playSound('click');
+            currentLevel = level;
+            // Deep copy and shuffle questions
+            originalQuestions = JSON.parse(JSON.stringify(questionsData[level]));
+            currentQuestions = shuffleArray(originalQuestions);
+            
+            // Trim or fill to exactly 30 questions
+            currentQuestions = currentQuestions.slice(0, 30);
+
+            currentIndex = 0;
+            score = 0;
+            userAnswers = new Array(currentQuestions.length).fill(null);
+
+            // Hide startup, open quiz view
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('summary-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+
+            startTime = new Date();
+            timerInterval = setInterval(() => {
+                totalElapsedSeconds = Math.floor((new Date() - startTime) / 1000);
+            }, 1000);
+
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const qData = currentQuestions[currentIndex];
+            
+            // Progress elements
+            const pct = ((currentIndex + 1) / currentQuestions.length) * 100;
+            document.getElementById('progress-bar').style.width = `${pct}%`;
+            document.getElementById('question-counter').innerText = `Question: ${currentIndex + 1}/${currentQuestions.length}`;
+            document.getElementById('score-counter').innerText = `Score: ${score}`;
+
+            // Set Text
+            document.getElementById('question-text').innerText = qData.q;
+            
+            // Build Options
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+
+            // Generate indices for original answer mapping
+            let optionsMapping = qData.a.map((text, idx) => ({ text, isCorrect: idx === qData.c }));
+            
+            // Randomize options structure for active interactive layout
+            if (!userAnswers[currentIndex]) {
+                // Shuffle options if not answered yet
+                optionsMapping = shuffleArray(optionsMapping);
+                qData.shuffledOptionsCache = optionsMapping; 
+            } else {
+                // Use cached order for consistency upon back navigation
+                optionsMapping = qData.shuffledOptionsCache;
+            }
+
+            optionsMapping.forEach((opt, idx) => {
+                const card = document.createElement('div');
+                card.className = 'option-card';
+                card.innerText = opt.text;
+                
+                // If already answered this question
+                if (userAnswers[currentIndex] !== null) {
+                    card.classList.add('disabled');
+                    if (opt.isCorrect) {
+                        card.classList.add('correct');
+                    }
+                    if (userAnswers[currentIndex].selectedIdx === idx && !opt.isCorrect) {
+                        card.classList.add('wrong');
+                    }
+                } else {
+                    // Click binding
+                    card.onclick = () => selectOption(idx, opt.isCorrect, card);
+                }
+                container.appendChild(card);
+            });
+
+            // Handle Explanations
+            const expBox = document.getElementById('explanation-box');
+            if (userAnswers[currentIndex] !== null) {
+                expBox.classList.remove('hidden');
+                expBox.className = `explanation-box ${userAnswers[currentIndex].wasCorrect ? 'correct' : 'wrong'}`;
+                expBox.innerText = (userAnswers[currentIndex].wasCorrect ? "✅ Correct! " : "❌ Wrong! ") + qData.e;
+            } else {
+                expBox.classList.add('hidden');
+            }
+
+            // Update Nav Disabled properties
+            document.getElementById('btn-prev').disabled = (currentIndex === 0);
+        }
+
+        function selectOption(shuffledIdx, isCorrect, selectedCardElement) {
+            const qData = currentQuestions[currentIndex];
+            userAnswers[currentIndex] = {
+                selectedIdx: shuffledIdx,
+                wasCorrect: isCorrect
+            };
+
+            if (isCorrect) {
+                score++;
+                playSound('correct');
+            } else {
+                playSound('wrong');
+            }
+
+            // Lock options UI instantly
+            showQuestion();
+        }
+
+        function navigateQuestion(direction) {
+            playSound('click');
+            currentIndex += direction;
+
+            if (currentIndex >= currentQuestions.length) {
+                currentIndex = currentQuestions.length - 1;
+                finishQuiz();
+                return;
+            }
+            if (currentIndex < 0) currentIndex = 0;
+
+            showQuestion();
+        }
+
+        function goHome() {
+            playSound('click');
+            clearInterval(timerInterval);
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('summary-screen').classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
+            updateHighScoreDisplay();
+        }
+
+        function restartQuiz() {
+            startQuiz(currentLevel);
+        }
+
+        // --- CONFETTI ANIMATION SIMULATION (Pure CSS/JS Drawing - Completely Standalone) ---
+        function runConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            let particles = [];
+            for (let i = 0; i < 100; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    r: Math.random() * 6 + 4,
+                    d: Math.random() * canvas.height,
+                    color: `rgba(${Math.floor(Math.random()*255)}, ${Math.floor(Math.random()*255)}, ${Math.floor(Math.random()*255)}, 0.8)`,
+                    tilt: Math.random() * 10 - 5,
+                    tiltAngleIncremental: Math.random() * 0.07 + 0.02,
+                    tiltAngle: 0
+                });
+            }
+
+            let animationFrameId;
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach((p, idx) => {
+                    p.tiltAngle += p.tiltAngleIncremental;
+                    p.y += (Math.cos(p.d) + 3 + p.r / 2) / 2;
+                    p.x += Math.sin(p.tiltAngle);
+                    p.tilt = Math.sin(p.tiltAngle - idx/3) * 15;
+
+                    ctx.beginPath();
+                    ctx.lineWidth = p.r;
+                    ctx.strokeStyle = p.color;
+                    ctx.moveTo(p.x + p.tilt + p.r/2, p.y);
+                    ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r/2);
+                    ctx.stroke();
+                });
+
+                // Stop loop after 4 seconds
+                if (totalElapsedSeconds % 4 !== 0 || particles[0].y < canvas.height) {
+                    animationFrameId = requestAnimationFrame(draw);
+                }
+            }
+            draw();
+            setTimeout(() => cancelAnimationFrame(animationFrameId), 4000);
+        }
+
+        // --- END PROCESSES ---
+        function finishQuiz() {
+            clearInterval(timerInterval);
+            playSound('complete');
+
+            const total = currentQuestions.length;
+            const percent = Math.round((score / total) * 100);
+            
+            // Evaluate Badge
+            let badge = "📚 Keep Learning";
+            if (percent >= 90) { badge = "🏆 Animal Family Expert"; }
+            else if (percent >= 70) { badge = "🌟 Animal Explorer"; }
+            else if (percent >= 50) { badge = "👍 Good Learner"; }
+
+            // Store progress in local storage
+            const savedBestBadge = localStorage.getItem('animal_quiz_best_badge');
+            if (!savedBestBadge || percent > parseInt(localStorage.getItem('animal_quiz_best_pct') || '0')) {
+                localStorage.setItem('animal_quiz_best_badge', badge);
+                localStorage.setItem('animal_quiz_best_pct', percent.toString());
+                playSound('badge');
+            }
+
+            // Populate view DOM
+            document.getElementById('sum-score').innerText = `${score} / ${total}`;
+            document.getElementById('sum-percent').innerText = `${percent}%`;
+            document.getElementById('sum-correct').innerText = score;
+            document.getElementById('sum-wrong').innerText = total - score;
+            document.getElementById('sum-time').innerText = `${totalElapsedSeconds}s`;
+            document.getElementById('summary-level-tag').innerText = `Level Mode: ${currentLevel.toUpperCase()}`;
+            document.getElementById('badge-title').innerText = badge;
+
+            // Trigger celebration if passed well
+            if (percent >= 70) {
+                runConfetti();
+            }
+
+            // Switch Screen layout
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('summary-screen').classList.remove('hidden');
+        }
+
+        function printCertificate() {
+            const percent = Math.round((score / currentQuestions.length) * 100);
+            let badge = document.getElementById('badge-title').innerText;
+
+            document.getElementById('cert-level').innerText = `Animal Babies Quiz (${currentLevel.toUpperCase()})`;
+            document.getElementById('cert-score').innerText = `${percent}% (${score} Correct)`;
+            document.getElementById('cert-badge').innerText = `Awarded Badge Rank: ${badge}`;
+
+            window.print();
+        }
+
+        // Run on bootstrap
+        window.onload = function() {
+            updateHighScoreDisplay();
+        };
+    </script>
+</body>
+</html>

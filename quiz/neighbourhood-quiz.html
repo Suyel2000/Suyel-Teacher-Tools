@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏘️ Neighborhood Quiz</title>
+    <style>
+        /* --- CSS Reset & Variables --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --bg-gradient: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+            --easy-color: #2ec4b6;
+            --medium-color: #ffb703;
+            --hard-color: #e63946;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --text-main: #2b2d42;
+            --text-muted: #6c757d;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* --- Main Layout Container --- */
+        .quiz-container {
+            width: 100%;
+            max-width: 700px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: 30px;
+            box-shadow: var(--shadow);
+            transition: all 0.4s ease;
+            position: relative;
+        }
+
+        .hide { display: none !important; }
+
+        /* --- Typography & Elements --- */
+        h1 {
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 5px;
+            color: #1d3557;
+            font-weight: 800;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #457b9d;
+            margin-bottom: 30px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        /* --- UI Components --- */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 16px 24px;
+            margin: 14px 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+        }
+
+        .btn:active { transform: scale(0.98); }
+
+        /* Level Selection Colors */
+        .btn-easy { background-color: var(--easy-color); color: white; }
+        .btn-easy:hover { background-color: #22a699; transform: translateY(-3px); }
+        .btn-medium { background-color: var(--medium-color); color: #2b2d42; }
+        .btn-medium:hover { background-color: #e5a100; transform: translateY(-3px); }
+        .btn-hard { background-color: var(--hard-color); color: white; }
+        .btn-hard:hover { background-color: #d62839; transform: translateY(-3px); }
+
+        /* Quiz Controls */
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 14px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #4ea8de, #5e60ce);
+            border-radius: 10px;
+            transition: width 0.4s ease;
+        }
+
+        /* Question Box */
+        .question-box {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+            line-height: 1.4;
+            color: #1d3557;
+        }
+
+        .options-list {
+            list-style: none;
+        }
+
+        .option-btn {
+            background-color: white;
+            color: var(--text-main);
+            border: 2px solid #e0e0e0;
+            text-align: left;
+            font-size: 1.1rem;
+        }
+
+        .option-btn:hover:not([disabled]) {
+            border-color: #a2d2ff;
+            background-color: #f8f9fa;
+            transform: translateX(4px);
+        }
+
+        /* Feedback States */
+        .option-btn.correct {
+            background-color: #d4edda !important;
+            border-color: #c3e6cb !important;
+            color: #155724 !important;
+            font-weight: 700;
+        }
+
+        .option-btn.wrong {
+            background-color: #f8d7da !important;
+            border-color: #f5c6cb !important;
+            color: #721c24 !important;
+        }
+
+        .explanation-box {
+            margin-top: 20px;
+            padding: 15px 20px;
+            border-radius: var(--radius-md);
+            background-color: #e8f0fe;
+            border-left: 6px solid #1a73e8;
+            font-size: 1.1rem;
+            font-weight: 600;
+            line-height: 1.4;
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* --- Unified Bottom Navigation Bar --- */
+        .nav-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 30px;
+            gap: 10px;
+            border-top: 2px solid rgba(0,0,0,0.05);
+            padding-top: 20px;
+        }
+
+        .nav-btn {
+            flex: 1;
+            padding: 12px 16px;
+            font-size: 1rem;
+            font-weight: 700;
+            border: none;
+            border-radius: var(--radius-md);
+            background-color: #e1e5ee;
+            color: #4a5568;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .nav-btn:hover:not([disabled]) {
+            background-color: #cbd5e1;
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .nav-btn-home {
+            background-color: #f77f00;
+            color: white;
+        }
+        .nav-btn-home:hover { background-color: #fcbf49; color: #000; }
+
+        /* --- Score Summary Screen --- */
+        .summary-card {
+            text-align: center;
+            animation: scaleUp 0.4s ease;
+        }
+
+        .badge-display {
+            font-size: 4rem;
+            margin: 15px 0 5px 0;
+            animation: bounce 1s infinite alternate;
+        }
+
+        .badge-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #f77f00;
+            margin-bottom: 20px;
+        }
+
+        .stats-table {
+            width: 100%;
+            margin: 20px 0;
+            border-collapse: collapse;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+
+        .stats-table td {
+            padding: 12px 15px;
+            background-color: rgba(255,255,255,0.6);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            font-size: 1.1rem;
+        }
+        .stats-table td:first-child { font-weight: 700; text-align: left; }
+        .stats-table td:last-child { font-weight: 800; text-align: right; color: #1d3557; }
+
+        /* --- Certificate Printing Styling --- */
+        .certificate-container {
+            display: none;
+            width: 100%;
+            max-width: 800px;
+            border: 10px double #4a5568;
+            padding: 40px;
+            background: white;
+            text-align: center;
+            margin: 30px auto;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .certificate-container h2 { font-size: 2.5rem; color: #1a202c; font-family: 'Georgia', serif; }
+        .certificate-container p { font-size: 1.2rem; margin: 15px 0; color: #4a5568; }
+        .certificate-name { font-size: 2rem; font-weight: bold; text-decoration: underline; color: #2b6cb0; margin: 20px 0 !important; }
+        .certificate-badge { font-size: 3rem; margin: 15px; }
+
+        /* --- Confetti Layer --- */
+        .confetti-container {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            border-radius: var(--radius-lg);
+        }
+        .confetti-piece {
+            position: absolute;
+            width: 10px; height: 10px;
+            background-color: #ff0;
+            opacity: 0.8;
+            top: -10px;
+            animation: fall 3s infinite linear;
+        }
+
+        /* --- Persistent History Log --- */
+        .history-box {
+            margin-top: 25px;
+            padding: 15px;
+            background: rgba(255,255,255,0.5);
+            border-radius: var(--radius-md);
+            max-height: 150px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            text-align: left;
+        }
+        .history-title { font-weight: 700; margin-bottom: 5px; color: #4a5568;}
+
+        /* --- Animations --- */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes scaleUp { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
+        @keyframes fall {
+            0% { transform: translateY(0) rotate(0deg); top: -10px; }
+            100% { transform: translateY(600px) rotate(360deg); }
+        }
+
+        /* --- Smartboard & Media Query Optimization --- */
+        @media (max-width: 600px) {
+            h1 { font-size: 1.8rem; }
+            .quiz-container { padding: 20px 15px; }
+            .question-box { font-size: 1.15rem; }
+            .btn { padding: 14px 18px; font-size: 1.05rem; }
+            .nav-btn { padding: 10px 12px; font-size: 0.9rem; }
+        }
+
+        @media print {
+            body * { display: none !important; }
+            .certificate-container, .certificate-container * { display: block !important; }
+            .certificate-container { border: 10px double #000; position: absolute; left: 0; top: 0; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="certificate" class="certificate-container">
+        <h2>CERTIFICATE OF ACHIEVEMENT</h2>
+        <p>This is proudly presented to a spectacular junior learner for completing the</p>
+        <div class="certificate-name">🏘️ EVS Neighborhood Quiz</div>
+        <p>Difficulty Level: <span id="cert-level" style="font-weight:bold;"></span></p>
+        <p>With an amazing final score of</p>
+        <h3 id="cert-score" style="font-size:1.8rem; color:#2d3748;"></h3>
+        <div id="cert-badge" class="certificate-badge"></div>
+        <p id="cert-badge-text" style="font-weight:bold; font-size:1.4rem; color:#2b6cb0;"></p>
+        <p style="margin-top:40px; font-size:0.9rem;">Keep protecting and loving your beautiful neighborhood! ⭐</p>
+    </div>
+
+    <div class="quiz-container" id="app-card">
+        <div id="confetti-frame" class="confetti-container hide"></div>
+
+        <div id="screen-home">
+            <h1>🏘️ Neighborhood Quiz</h1>
+            <div class="subtitle">Observe • Care • Help • Learn</div>
+            <p style="text-align:center; font-size:1.1rem; margin-bottom:25px; color:#4a5568; font-weight:500;">
+                Hello friend! Choose a game level below to begin your neighborhood learning adventure:
+            </p>
+            <button class="btn btn-easy" onclick="startQuiz('easy')">🟢 Easy Level</button>
+            <button class="btn btn-medium" onclick="startQuiz('medium')">🟡 Medium Level</button>
+            <button class="btn btn-hard" onclick="startQuiz('hard')">🔴 Hard Level</button>
+
+            <div class="history-box">
+                <div class="history-title">🏆 Your Recent Scores:</div>
+                <div id="history-log">No past quiz history found yet. Ready to set a high score?</div>
+            </div>
+        </div>
+
+        <div id="screen-quiz" class="hide">
+            <div class="stats-bar">
+                <span id="label-level">Level: Easy</span>
+                <span id="label-counter">Question 1/30</span>
+                <span id="label-score">Score: 0</span>
+            </div>
+            
+            <div class="progress-container">
+                <div id="bar-progress" class="progress-bar"></div>
+            </div>
+
+            <div id="box-question" class="question-box">Loading question text here...</div>
+            
+            <div id="box-options" class="options-list">
+                </div>
+
+            <div id="box-explanation" class="explanation-box hide"></div>
+
+            <div class="nav-bar">
+                <button id="btn-prev" class="nav-btn" onclick="navigatePrevious()">⬅️ Previous</button>
+                <button class="nav-btn nav-btn-home" onclick="returnToHome()">🏠 Home</button>
+                <button id="btn-next" class="nav-btn" onclick="navigateNext()">➡️ Next</button>
+            </div>
+        </div>
+
+        <div id="screen-summary" class="hide">
+            <div class="summary-card">
+                <h1>🎉 Quiz Finished!</h1>
+                <div id="item-badge-icon" class="badge-display">🏆</div>
+                <div id="item-badge-title" class="badge-title">Neighborhood Star</div>
+
+                <table class="stats-table">
+                    <tr><td>Selected Difficulty:</td><td id="res-level">-</td></tr>
+                    <tr><td>Total Final Score:</td><td id="res-score">0 / 30</td></tr>
+                    <tr><td>Passing Percentage:</td><td id="res-percent">0%</td></tr>
+                    <tr><td>Correct Answers:</td><td id="res-correct" style="color:#2ec4b6;">0</td></tr>
+                    <tr><td>Wrong Answers:</td><td id="res-wrong" style="color:#e63946;">0</td></tr>
+                    <tr><td>Total Time Taken:</td><td id="res-time">0s</td></tr>
+                </table>
+
+                <button class="btn btn-easy" style="background-color:#4ea8de; color:white;" onclick="printCertificate()">🖨️ Print Certificate</button>
+                <button class="btn btn-medium" onclick="restartCurrentLevel()">🔄 Play Level Again</button>
+                <button class="btn btn-hard" style="background-color:#6c757d; color:white;" onclick="returnToHome()">🗺️ Choose Another Level</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* --- Comprehensive Question Database Bank (90 Questions Across 3 Difficulty Levels) --- */
+        const quizDatabase = {
+            easy: [
+                { q: "Who lives near your house?", a: ["Our neighbours", "Wild animals", "Strangers from far away"], c: 0, e: "Neighbours are the friendly people living closest to our own homes!" },
+                { q: "What is a neighborhood?", a: ["The area and houses around our home", "A deep dense forest environment", "An ocean filled with fish"], c: 0, e: "A neighborhood is the living area made up of houses and places around our home." },
+                { q: "Which place is found in a safe neighborhood?", a: ["A beautiful park or playground", "A dangerous active volcano", "A deep wild cave jungle"], c: 0, e: "A playground is an excellent public place for children to play inside a neighborhood." },
+                { q: "Why should we help our neighbours?", a: ["To live happily and peacefully together", "To get money from them", "To make them look bad"], c: 0, e: "Good neighbours care for each other and provide helpful support during normal or tough times." },
+                { q: "Where can children play safely in a neighborhood?", a: ["Inside a park or community playground", "Directly on the busy main road", "On top of building roofs"], c: 0, e: "Parks and community play fields are designed for children to run and play safe from vehicles." },
+                { q: "Why should we keep our surroundings clean?", a: ["To stay healthy and avoid getting sick", "To make our homes look dark", "To attract insects like mosquitoes"], c: 0, e: "Clean environments stop dangerous germs and sicknesses from spreading among us." },
+                { q: "Who can help you if you are in trouble nearby?", a: ["A kind neighbor or family friend", "A wild stray animal on the road", "Nobody at all"], c: 0, e: "Kind neighbours are nearby protectors who help children out of trouble when parents are away." },
+                { q: "Should we greet our neighbours politely when we see them?", a: ["Yes, saying Good Morning is polite", "No, we should hide away", "No, we should shout loudly at them"], c: 0, e: "Greeting neighbours politely with a warm smile is a fantastic habit that builds true friendship." },
+                { q: "Where do we go when we fall sick to get medication?", a: ["A hospital or neighborhood clinic", "A toy store", "A fruit shop stall"], c: 0, e: "Doctors and expert nurses treat sick people at neighborhood clinics and hospitals." },
+                { q: "What do we do with dry or wet trash in our house?", a: ["Throw it inside a trash dustbin", "Throw it directly out the window", "Hide it under our bedroom bed"], c: 0, e: "Placing all rubbish in dustbins keeps our air clean, pleasant, and smelling completely fresh." },
+                { q: "True or False: We should play very loud music late at night.", a: ["False", "True"], c: 0, e: "Loud nighttime music disturbs our working neighbours while they rest or sleep." },
+                { q: "Who delivers letters directly to your neighborhood postbox?", a: ["A postman", "A barber", "A tailor"], c: 0, e: "A reliable postman brings mail, cards, and letters safely right to our doors." },
+                { q: "Where do we go to buy daily milk, bread, and eggs?", a: ["The local market grocery shop", "The neighborhood bank", "The police station box"], c: 0, e: "Market grocery stores provide daily foods and household needs close to us." },
+                { q: "What should we do if we see dry leaves on our home lawn?", a: ["Sweep them up and throw them away", "Leave them forever", "Kick them into the neighbor's yard"], c: 0, e: "Sweeping lawn debris keeps your house clean and prevents bugs from nesting near windows." },
+                { q: "Which habit is a good habit for neighborhood kids?", a: ["Sharing toys with neighborhood friends", "Plucking every single park flower", "Throwing stones at birds"], c: 0, e: "Sharing toys builds amazing bonds and turns neighbours into lifelong friends." },
+                { q: "True or False: Plants and green trees make our neighborhood air cleaner.", a: ["True", "False"], c: 0, e: "Green trees take in stale air and release fresh oxygen for us to safely breathe!" },
+                { q: "Where do we catch a city bus to go to school?", a: ["At the neighborhood bus stop station", "Inside a bakery kitchen", "At the fire department"], c: 0, e: "Buses pick up passengers at marked neighborhood bus stops safely." },
+                { q: "What should you do when a neighbor helps you?", a: ["Say Thank You politely", "Run away without speaking", "Get angry at them"], c: 0, e: "Saying 'Thank You' shows deep appreciation for the kindness your neighbor offered." },
+                { q: "Who patrols our neighborhood streets to keep families safe?", a: ["The neighborhood police officers", "The vegetable vendor seller", "The school principal"], c: 0, e: "Police officers protect community properties and ensure families feel safe day and night." },
+                { q: "What is an improper place to leave your bicycle?", a: ["Blocking the shared public walking path", "Inside your own garage parking", "In your backyard balcony corner"], c: 0, e: "Leaving bicycles on walking tracks causes walking people to trip, fall, or get hurt." },
+                { q: "True or False: It is completely safe to talk to unknown strangers?", a: ["False", "True"], c: 0, e: "Children should never follow or accept items from unknown strangers without asking parents." },
+                { q: "Where do we go to read storybooks quietly?", a: ["The neighborhood public library", "A busy wedding party hall", "A car repair garage shop"], c: 0, e: "Libraries are beautiful silent places full of reading books for everyone." },
+                { q: "What should we do with our domestic pet dog's waste?", a: ["Clean it up completely using bags", "Leave it on the public sidewalk", "Kick it into a neighbor's gate corner"], c: 0, e: "Cleaning up after your pet keeps public walking spaces safe and sanitary for everyone." },
+                { q: "Which building is NOT typically inside a local residential neighborhood?", a: ["A massive airplane manufacturing factory", "A small primary school campus", "A local medicine pharmacy store"], c: 0, e: "Massive factories are built far away to prevent smoke from bothering residential houses." },
+                { q: "How should we behave around elderly senior neighbours?", a: ["Treat them with help and respect", "Ignore their greetings completely", "Run past them shouting loudly"], c: 0, e: "Helping older citizens with chores or holding doors shows proper respect and golden manners." },
+                { q: "True or False: Every neighborhood looks completely identical across the globe.", a: ["False", "True"], c: 0, e: "Neighborhoods vary! Some have large buildings, while others have quiet farm fields." },
+                { q: "What do we do if we hear an emergency fire alarm?", a: ["Exit carefully to an open outdoor space", "Hide under heavy bedroom blankets", "Ignore it and keep playing games"], c: 0, e: "Moving to open ground during alarms keeps you clear from fires or smoke danger." },
+                { q: "Who helps keep the neighborhood roads clean and swept?", a: ["The sanitation community sweepers", "The local bank cashiers", "The kindergarten school children"], c: 0, e: "Sanitation workers perform great work sweeping paths to keep roads beautiful." },
+                { q: "Complete the sentence: A happy neighborhood is filled with safety, peace, and...", a: ["Kindness among all families", "Constant fighting and noise", "Trash piles on every street corner"], c: 0, e: "Kindness helps families stick together and creates a beautiful, happy town." },
+                { q: "Is it a good habit to plant small flowers in our neighborhood spaces?", a: ["Yes, flowers bring colors and bees", "No, flowers look ugly", "No, we should only have bare dirt floors"], c: 0, e: "Beautiful community flower patches invite birds and make walks highly enjoyable." }
+            ],
+            medium: [
+                { q: "Why should we use a public dustbin instead of the road?", a: ["To stop flies and keep the area beautiful", "Because the road is too wide", "To hide our personal food trash"], c: 0, e: "Using dustbins keeps garbage locked away, stopping pests from spreading germs on pathways." },
+                { q: "Where do people go to borrow or read books for free?", a: ["A community public library", "A grocery supermarket checkout", "A commercial bank counter"], c: 0, e: "A library lets community citizens read books for free to build knowledge." },
+                { q: "Why should we strictly follow traffic light signals on roads?", a: ["To prevent road traffic accidents", "To make our cars go faster", "To save car battery power"], c: 0, e: "Traffic lights organize vehicles and pedestrians to keep everybody alive and safe." },
+                { q: "Why should we not throw waste items out of moving car windows?", a: ["It litters paths and causes crashes", "It makes the vehicle much lighter", "The wind will blow it right back inside"], c: 0, e: "Littering from cars can blind drivers behind you and makes roads look incredibly dirty." },
+                { q: "What should you do if you notice fresh plastic litter in a public park?", a: ["Pick it up safely with gloves and bin it", "Kick it deep into green bushes", "Ignore it since you did not drop it"], c: 0, e: "Good citizens help keep parks clean by picking up stray trash to protect nature." },
+                { q: "Why is a clean neighborhood healthy for residential families?", a: ["It prevents dangerous mosquitoes and diseases", "It makes the houses look larger", "It causes rain to fall regularly"], c: 0, e: "Mosquitoes breed in stagnant waste water. Clean zones stay free from malaria and fevers." },
+                { q: "How can children actively keep their neighborhood safer?", a: ["By reporting strange activities to parents", "By playing with electrical fuse boxes", "By staying outdoors past midnight"], c: 0, e: "Communicating strange happenings to trusted guardians keeps safety levels very high." },
+                { q: "Why should we be kind and polite to community helpers?", a: ["They work hard to provide vital services", "They will give us free gifts", "They are related to our family"], c: 0, e: "Community helpers like plumbers, sweeps, and guards make life easy and deserve respect." },
+                { q: "What is the primary function of a neighborhood Bank?", a: ["To safely store money and savings", "To sell school textbooks", "To repair damaged vehicles"], c: 0, e: "Banks protect citizens' money from theft and provide safe electronic loans." },
+                { q: "When crossing a street without a signal light, you should look:", a: ["Right, Left, then Right again carefully", "Only at your own shoes", "Up toward the sky for birds"], c: 0, e: "Checking both road directions carefully protects you from fast oncoming vehicles." },
+                { q: "True or False: Public parks are owned by one single rich family.", a: ["False", "True"], c: 0, e: "Public parks belong to the government for every single citizen to enjoy equally." },
+                { q: "What is the main role of a local Fire Station?", a: ["To put out dangerous fires and rescue people", "To deliver hot fresh foods", "To teach children dance routines"], c: 0, e: "Firefighters use high-pressure water hoses to extinguish structural fires fast." },
+                { q: "How should we handle shared neighborhood water taps?", a: ["Turn them off tightly after your use", "Leave them running to clean paths", "Break the handle off for fun"], c: 0, e: "Closing public taps prevents clean drinking water from being wasted carelessly." },
+                { q: "What should you do if your ball accidentally breaks a neighbor's window?", a: ["Apologize immediately and inform parents", "Run away fast so nobody catches you", "Blame a different friend nearby"], c: 0, e: "Being honest and apologizing helps fix problems responsibly when mistakes happen." },
+                { q: "Why are street lamps very important along dark sidewalks?", a: ["They help people walk safely at night", "They help garden flowers grow fast", "They look like stars"], c: 0, e: "Bright streetlights stop nocturnal tripping hazards and discourage illegal behavior." },
+                { q: "What does a zebra crossing line on the road mean?", a: ["It is a designated zone for walkers to cross", "It is a parking spot for cars", "It is a racing track lane"], c: 0, e: "Zebra crossings show drivers exactly where walkers have the right-of-way to cross." },
+                { q: "How can we help an injured stray animal found on the road?", a: ["Inform an adult or local animal shelter", "Throw small rocks to make it move", "Take it home without permission"], c: 0, e: "Calling animal rescue groups ensures hurt animals receive professional medical help." },
+                { q: "Why is it harmful to play outdoor sports inside a parking lot?", a: ["You could get hit by reversing cars", "The cars will steal your sports ball", "Parking lots have too much soft grass"], c: 0, e: "Drivers cannot see small children easily through blind spots while reversing vehicles." },
+                { q: "True or False: We can write or draw on public historical walls.", a: ["False", "True"], c: 0, e: "Scribbling on public structures is vandalism and destroys communal heritage beauty." },
+                { q: "What should you do if a lost toddler is crying in the market?", a: ["Take them to a security guard or policeman", "Leave them to find their own way", "Give them candy and walk away"], c: 0, e: "Security personnel can quickly broadcast announcements to locate lost parents safely." },
+                { q: "Which habit conserves public electricity in apartment halls?", a: ["Turning off lights when daytime sun is bright", "Leaving hall lights active all weekend", "Breaking light bulbs with sticks"], c: 0, e: "Saving energy reduces pollution and ensures electrical networks stay stable." },
+                { q: "Why do we have Post Boxes placed in the neighborhood?", a: ["To drop stamped letters for mailing", "To store daily milk bags", "To discard broken plastic items"], c: 0, e: "Mailing boxes gather paper letters safely until collection vans arrive." },
+                { q: "How should you respond if a neighbor asks you to keep noise down?", a: ["Lower your game volume immediately", "Shout louder to show independence", "Ignore their request completely"], c: 0, e: "Lowering noise levels shows proper respect for your neighbor's right to peace." },
+                { q: "What makes a neighborhood market highly useful?", a: ["It saves time by offering needs close by", "It has rides like an amusement park", "It gives everything away for free"], c: 0, e: "Local markets provide fresh food, saving families from travelling long distances." },
+                { q: "True or False: Children should participate in local clean-up drives.", a: ["True", "False"], c: 0, e: "Helping clean up teaches children civic responsibility and protects the ecosystem." },
+                { q: "What should we do if we see a broken public water pipe?", a: ["Report it to the local municipal office", "Play in the spraying water all day", "Cover it with plastic bags and leave"], c: 0, e: "Alerting authorities ensures technicians stop water losses quickly." },
+                { q: "Why are residential speed bumps placed on neighborhood streets?", a: ["To force cars to slow down for safety", "To make car rides exciting", "To decorate the dark asphalt paths"], c: 0, e: "Speed breakers protect pedestrians by forcing speeding vehicles to slow down." },
+                { q: "What does it mean to be a good citizen in your area?", a: ["Following rules and helping your community", "Staying indoors and ignoring everyone", "Only caring about your own property"], c: 0, e: "Good citizens work to make their shared town better for every resident." },
+                { q: "Why is it wrong to spit in shared public areas?", a: ["It spreads hazardous germs and smells bad", "It makes the ground dry", "It wastes your body's fluids"], c: 0, e: "Spitting spreads microscopic viruses through the air, causing illnesses." },
+                { q: "Where can you safely learn swimming near your house?", a: ["The community center sports pool", "An open storm drain ditch", "The rain puddles on the road"], c: 0, e: "Regulated community pools have active lifeguards to keep young swimmers fully safe." }
+            ],
+            hard: [
+                { q: "Why should citizens protect public property like bus shelters?", a: ["Because it is built using everyone's tax money", "Because it is ancient historical magic", "Because it belongs to the school principal"], c: 0, e: "Public property is built from community funds. Destroying it hurts our own community's wallet." },
+                { q: "How can neighbours best cooperate during severe weather emergencies?", a: ["By sharing food, emergency power, and shelter", "By locking gates and staying completely silent", "By evacuation without telling anyone"], c: 0, e: "Sharing resources during natural storms preserves safety and strengthens survival." },
+                { q: "Why should we plant indigenous local trees in our neighborhood?", a: ["They produce clean oxygen and shade naturally", "They grow money bills on branches", "They completely stop winter snows"], c: 0, e: "Native trees filter toxic air particles, cool the streets, and shelter wild birds." },
+                { q: "Why is it essential to conserve water in our community reservoirs?", a: ["To ensure there is enough water during dry summers", "To make swimming pools deep", "To stop fish from jumping out"], c: 0, e: "Reservoirs hold limited water supplies. Conserving it ensures families don't face sudden dry taps." },
+                { q: "How can kids practice the 3 R's (Reduce, Reuse, Recycle) daily?", a: ["By sorting paper, plastic, and food waste", "By throwing all toys into rivers", "By buying items packed in heavy plastics"], c: 0, e: "Separating waste items keeps recyclable materials out of polluting landfills." },
+                { q: "Why is community teamwork vital for local residential societies?", a: ["It solves large problems like trash disposal easily", "It allows people to stop working jobs", "It guarantees wealth for everyone"], c: 0, e: "When families unite, large cleaning or safety goals are achieved rapidly." },
+                { q: "What makes a neighborhood an exceptionally great place to live?", a: ["Safe streets, clean air, and cooperative people", "Massive highways cutting through homes", "Having zero rules or laws for residents"], c: 0, e: "Safety, health, and a helpful community form the foundation of a great residential area." },
+                { q: "Why should we respect diversities and cultures in our town?", a: ["It builds peace and teaches us unique ideas", "It is mandated by local traffic law", "It makes all food taste exactly the same"], c: 0, e: "Embracing different traditions unites families and creates an educational environment." },
+                { q: "What is the danger of letting water pool up in old tires?", a: ["It creates breeding grounds for Dengue mosquitoes", "The rubber will melt into toxic mud", "Birds will drink all of it up"], c: 0, e: "Stagnant rainwater in tires allows disease-carrying mosquitoes to multiply rapidly." },
+                { q: "Why is burning dry leaf piles harmful to your neighborhood?", a: ["It creates toxic smoke that causes asthma", "It uses up valuable lighter fluids", "It makes the soil too cold for crops"], c: 0, e: "Burning organic debris fills the air with soot, making it hard for children and seniors to breathe." },
+                { q: "True or False: We should report unlit streetlamps to local city councils.", a: ["True", "False"], c: 0, e: "Reporting broken infrastructure keeps streets illuminated and deters criminal activity." },
+                { q: "What should a family do before embarking on a long vacation?", a: ["Inform trusted neighbours to keep an eye out", "Leave all windows wide open for fresh air", "Keep the television playing loudly"], c: 0, e: "Trusted neighbours can watch for unusual activity or packages while you are away." },
+                { q: "Why should we minimize using plastic bags when grocery shopping?", a: ["Plastics choke drainage systems and harm wildlife", "Plastics are far too heavy to carry home", "Plastics dissolve instantly in sunlight"], c: 0, e: "Discarded plastic bags block storm drains, causing street flooding during rainy days." },
+                { q: "What does the presence of a neighborhood park committee ensure?", a: ["The green spaces stay safe, clean, and funded", "Children get paid money to play daily", "No adults can enter the park ever"], c: 0, e: "Committees organize maintenance crews to repair broken swings and care for grass lawns." },
+                { q: "How does a local community health center benefit poor citizens?", a: ["By providing free or affordable medical care", "By giving away free clothing and shoes", "By teaching them how to drive cars"], c: 0, e: "Public health centers ensure medical treatments are accessible to everyone, regardless of wealth." },
+                { q: "Why is it illegal to clear away community green forests for parking?", a: ["It destroys natural animal habitats and causes heat", "It makes the roads look too wide", "Trees own the land legally"], c: 0, e: "Deforestation removes natural cooling agents, making the town hot and driving away birds." },
+                { q: "What should you do if you notice a stray electrical wire hanging low?", a: ["Stay far away and alert emergency services", "Poke it with a stick to see if it is live", "Try to tie it back up to the pole yourself"], c: 0, e: "Hanging wires carry high-voltage currents that can cause fatal electric shocks." },
+                { q: "Why should we support local small businesses and neighborhood artisans?", a: ["It keeps money local and helps families thrive", "Their items are always perfectly free", "They do not pay any national taxes"], c: 0, e: "Buying local helps your direct neighbours earn a living and boosts the local economy." },
+                { q: "True or False: Noise pollution can cause health problems for old neighbours.", a: ["True", "False"], c: 0, e: "Excessive noise causes high stress, sleep loss, and hearing damage in older adults." },
+                { q: "What is the environmental benefit of a community compost pit?", a: ["It turns organic food waste into rich soil fertilizer", "It stores plastic bottles out of sight", "It creates fresh clean water sources"], c: 0, e: "Composting breaks down vegetable peels naturally, returning nutrients back to the earth." },
+                { q: "Why do neighborhood associations hold regular community meetings?", a: ["To debate local issues and plan improvements together", "To distribute cinema tickets to residents", "To judge who has the cleanest house yard"], c: 0, e: "Town meetings allow citizens to vote on security measures and upgrade public spaces." },
+                { q: "How can children reduce household water wastage significantly?", a: ["By turning off faucets while brushing teeth", "By avoiding bathing for weeks", "By drinking juice instead of water"], c: 0, e: "Turning off running taps while brushing saves up to 6 liters of pure water every minute!" },
+                { q: "What is the consequence of blocking neighborhood storm drains with trash?", a: ["Heavy rains will flood the roads and houses", "The water will turn clean instantly", "The pipes will grow beautiful flowers"], c: 0, e: "Blocked drains cannot siphon storm rainwater, resulting in muddy water entering homes." },
+                { q: "Why should we be careful when walking pets near neighbor's gardens?", a: ["To avoid trampling or ruining their delicate flowers", "Pets might eat all the garden soil", "Flowers are highly poisonous to all pets"], c: 0, e: "Respecting your neighbor's gardening efforts prevents property damage disputes." },
+                { q: "True or False: Every resident has an equal duty to keep the neighborhood clean.", a: ["True", "False"], c: 0, e: "A clean community requires shared responsibility from every resident." },
+                { q: "What is an energy-efficient way to travel short distances nearby?", a: ["Walking or riding a bicycle safely", "Taking a large diesel engine car", "Calling a private helicopter ride"], c: 0, e: "Walking or cycling cuts out carbon exhaust gases, keeping local air perfectly fresh." },
+                { q: "Why are emergency exit maps posted inside public community centers?", a: ["To show safe escape routes during panics or fires", "To show where hidden treasure boxes are", "To decorate empty corridor walls"], c: 0, e: "Exit maps guide visitors to safety during blackouts or structural fire emergencies." },
+                { q: "What is a good way to handle unwanted old clothes or books?", a: ["Donate them to local charity donation centers", "Burn them in the backyard bonfire pile", "Throw them into public street gutters"], c: 0, e: "Donating reusable goods helps less fortunate neighbors and reduces landfill waste." },
+                { q: "Why are chemical pesticides harmful when sprayed on neighborhood lawns?", a: ["They can poison useful bees, pets, and children", "They make grass look bright blue", "They wash away the asphalt pavement"], c: 0, e: "Chemical toxins can leach into groundwater or harm children playing on the grass." },
+                { q: "What does a thriving, sustainable neighborhood mean?", a: ["A place that balances human life with clean nature", "A town with only concrete buildings and no trees", "An area where everyone keeps to themselves"], c: 0, e: "Sustainability preserves resources so future generations can live healthy, safe lives." }
+            ]
+        };
+
+        /* --- Application Management State --- */
+        let activeQuestions = [];
+        let activeIndex = 0;
+        let activeLevel = 'easy';
+        let scoringTracker = 0;
+        let timeTracker = 0;
+        let timerLoop = null;
+        let selectedAnswersHistory = {}; // Key: Question Index, Value: Selected Option Index
+
+        // Initialize Audio Context for Offline Audio Synthesis via Web Audio API
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function soundSynth(type) {
+            if (audioCtx.state === 'suspended') { audioCtx.resume(); }
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'click') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'correct') {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1, 0.1); // E5
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(220, audioCtx.currentTime); // A3
+                osc.frequency.setValueAtTime(147, audioCtx.currentTime + 0.15); // D3
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.35);
+            } else if (type === 'complete') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
+                osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2);
+                osc.frequency.setValueAtTime(1046.50, audioCtx.currentTime + 0.3); // C6
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.02, audioCtx.currentTime + 0.6);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.6);
+            }
+        }
+
+        /* --- Core Logic Utilities --- */
+        function shuffleData(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        /* --- App Lifecycle Actions --- */
+        function startQuiz(level) {
+            soundSynth('click');
+            activeLevel = level;
+            
+            // Deep clone target array data to avoid mutating primary source array
+            let baseQuestions = JSON.parse(JSON.stringify(quizDatabase[level]));
+            
+            // Randomize questions
+            shuffleData(baseQuestions);
+            
+            // Process each question to shuffle its option items securely while retaining tracking of correct option
+            activeQuestions = baseQuestions.map(item => {
+                const correctText = item.a[item.c];
+                shuffleData(item.a);
+                item.c = item.a.indexOf(correctText);
+                return item;
+            });
+
+            // Reset engine variables
+            activeIndex = 0;
+            scoringTracker = 0;
+            timeTracker = 0;
+            selectedAnswersHistory = {};
+            
+            // Update Text Displays
+            document.getElementById('label-level').innerText = `Level: ${level.toUpperCase()}`;
+            
+            // Render View Panels
+            document.getElementById('screen-home').classList.add('hide');
+            document.getElementById('screen-summary').classList.add('hide');
+            document.getElementById('screen-quiz').classList.remove('hide');
+            
+            // Start clock tracking loop
+            clearInterval(timerLoop);
+            timerLoop = setInterval(() => { timeTracker++; }, 1000);
+            
+            displayQuestion();
+        }
+
+        function displayQuestion() {
+            const currentQ = activeQuestions[activeIndex];
+            
+            // Progress Bar and Text Indicators
+            document.getElementById('label-counter').innerText = `Question ${activeIndex + 1} / ${activeQuestions.length}`;
+            document.getElementById('label-score').innerText = `Score: ${scoringTracker}`;
+            const percentageProgress = ((activeIndex) / activeQuestions.length) * 100;
+            document.getElementById('bar-progress').style.width = `${percentageProgress}%`;
+
+            // Display current question
+            document.getElementById('box-question').innerText = currentQ.q;
+            
+            // Render Option Items
+            const optionsBox = document.getElementById('box-options');
+            optionsBox.innerHTML = '';
+            
+            currentQ.a.forEach((optionText, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'btn option-btn';
+                btn.innerText = optionText;
+                btn.onclick = () => selectOption(idx);
+                optionsBox.appendChild(btn);
+            });
+
+            // Process Configuration State if historical value exists
+            const explanationBox = document.getElementById('box-explanation');
+            if (selectedAnswersHistory.hasOwnProperty(activeIndex)) {
+                const pastChosenIdx = selectedAnswersHistory[activeIndex];
+                revealFeedbackLayout(pastChosenIdx, currentQ.c);
+            } else {
+                explanationBox.classList.add('hide');
+            }
+
+            // Sync structural bottom configuration button toggles
+            document.getElementById('btn-prev').disabled = (activeIndex === 0);
+            
+            // Next button shows 'Finish' on the last question
+            if (activeIndex === activeQuestions.length - 1) {
+                document.getElementById('btn-next').innerText = "Finish 🏁";
+            } else {
+                document.getElementById('btn-next').innerText = "Next ➡️";
+            }
+        }
+
+        function selectOption(chosenIdx) {
+            // Guard clause to prevent double clicks modifying saved data indexes
+            if (selectedAnswersHistory.hasOwnProperty(activeIndex)) return;
+
+            const currentQ = activeQuestions[activeIndex];
+            selectedAnswersHistory[activeIndex] = chosenIdx;
+
+            if (chosenIdx === currentQ.c) {
+                scoringTracker++;
+                soundSynth('correct');
+            } else {
+                soundSynth('wrong');
+            }
+
+            document.getElementById('label-score').innerText = `Score: ${scoringTracker}`;
+            revealFeedbackLayout(chosenIdx, currentQ.c);
+        }
+
+        function revealFeedbackLayout(chosenIdx, correctIdx) {
+            const optionsBox = document.getElementById('box-options');
+            const buttons = optionsBox.getElementsByTagName('button');
+            const explanationBox = document.getElementById('box-explanation');
+            const currentQ = activeQuestions[activeIndex];
+
+            // Add correct/wrong classes to options
+            for (let i = 0; i < buttons.length; i++) {
+                buttons[i].disabled = true;
+                if (i === correctIdx) {
+                    buttons[i].classList.add('correct');
+                } else if (i === chosenIdx) {
+                    buttons[i].classList.add('wrong');
+                }
+            }
+
+            // Display explanation
+            explanationBox.classList.remove('hide');
+            if (chosenIdx === correctIdx) {
+                explanationBox.innerHTML = `<strong>✅ Correct!</strong> ${currentQ.e}`;
+                explanationBox.style.backgroundColor = "#e8f5e9";
+                explanationBox.style.borderLeftColor = "#2e7d32";
+            } else {
+                explanationBox.innerHTML = `<strong>❌ Not quite!</strong> ${currentQ.e}`;
+                explanationBox.style.backgroundColor = "#ffebee";
+                explanationBox.style.borderLeftColor = "#c62828";
+            }
+        }
+
+        /* --- Unified Bottom Navigation Actions --- */
+        function navigatePrevious() {
+            soundSynth('click');
+            if (activeIndex > 0) {
+                activeIndex--;
+                displayQuestion();
+            }
+        }
+
+        function navigateNext() {
+            soundSynth('click');
+            
+            // Check if user has answered the question before moving forward
+            if (!selectedAnswersHistory.hasOwnProperty(activeIndex)) {
+                alert("Please select an answer option before moving forward! 😊");
+                return;
+            }
+
+            if (activeIndex < activeQuestions.length - 1) {
+                activeIndex++;
+                displayQuestion();
+            } else {
+                finishQuiz();
+            }
+        }
+
+        function returnToHome() {
+            soundSynth('click');
+            clearInterval(timerLoop);
+            document.getElementById('screen-quiz').classList.add('hide');
+            document.getElementById('screen-summary').classList.add('hide');
+            document.getElementById('screen-home').classList.remove('hide');
+            document.getElementById('confetti-frame').classList.add('hide');
+            loadSavedHistory();
+        }
+
+        function restartCurrentLevel() {
+            startQuiz(activeLevel);
+        }
+
+        /* --- Score Processing Engine --- */
+        function finishQuiz() {
+            clearInterval(timerLoop);
+            soundSynth('complete');
+            
+            const totalQuestions = activeQuestions.length;
+            const finalPercent = Math.round((scoringTracker / totalQuestions) * 100);
+            const wrongAnswersCount = totalQuestions - scoringTracker;
+
+            // Compute Achievement Badge Details
+            let badgeIcon = "📚";
+            let badgeTitle = "Keep Learning";
+            if (finalPercent >= 90) {
+                badgeIcon = "🏆"; badgeTitle = "Neighborhood Star";
+                triggerConfettiEffect();
+            } else if (finalPercent >= 70) {
+                badgeIcon = "🌟"; badgeTitle = "Good Citizen";
+                triggerConfettiEffect();
+            } else if (finalPercent >= 50) {
+                badgeIcon = "👍"; badgeTitle = "Helpful Learner";
+            }
+
+            // Render Text Results to DOM Data Panels
+            document.getElementById('res-level').innerText = activeLevel.toUpperCase();
+            document.getElementById('res-score').innerText = `${scoringTracker} / ${totalQuestions}`;
+            document.getElementById('res-percent').innerText = `${finalPercent}%`;
+            document.getElementById('res-correct').innerText = scoringTracker;
+            document.getElementById('res-wrong').innerText = wrongAnswersCount;
+            document.getElementById('res-time').innerText = `${timeTracker}s`;
+            
+            document.getElementById('item-badge-icon').innerText = badgeIcon;
+            document.getElementById('item-badge-title').innerText = badgeTitle;
+
+            // Commit results record to LocalStorage for data persistence
+            const logEntry = {
+                level: activeLevel,
+                score: scoringTracker,
+                percent: finalPercent,
+                date: new Date().toLocaleDateString()
+            };
+            let historicalLog = JSON.parse(localStorage.getItem('evs_quiz_history')) || [];
+            historicalLog.unshift(logEntry);
+            localStorage.setItem('evs_quiz_history', JSON.stringify(historicalLog.slice(0, 5))); // Keep last 5 entries
+
+            // Swap App Panels
+            document.getElementById('screen-quiz').classList.add('hide');
+            document.getElementById('screen-summary').classList.remove('hide');
+        }
+
+        /* --- CSS Animation-Based Confetti (Completely Canvas/SVG-Free) --- */
+        function triggerConfettiEffect() {
+            const frame = document.getElementById('confetti-frame');
+            frame.innerHTML = '';
+            frame.classList.remove('hide');
+            const colorPalette = ['#ffc107', '#e91e63', '#00bcd4', '#8bc34a', '#ff5722', '#e14eca'];
+
+            for (let i = 0; i < 50; i++) {
+                const div = document.createElement('div');
+                div.className = 'confetti-piece';
+                div.style.left = `${Math.random() * 100}%`;
+                div.style.backgroundColor = colorPalette[Math.floor(Math.random() * colorPalette.length)];
+                div.style.animationDelay = `${Math.random() * 2}s`;
+                div.style.animationDuration = `${1.5 + Math.random() * 2}s`;
+                div.style.transform = `rotate(${Math.random() * 360}deg)`;
+                frame.appendChild(div);
+            }
+        }
+
+        /* --- Persistent History Loader --- */
+        function loadSavedHistory() {
+            const historyLog = document.getElementById('history-log');
+            let historicalLog = JSON.parse(localStorage.getItem('evs_quiz_history')) || [];
+            if (historicalLog.length === 0) {
+                historyLog.innerText = "No past quiz history found yet. Ready to set a high score?";
+                return;
+            }
+            historyLog.innerHTML = historicalLog.map(item => 
+                `<div style="margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px dashed rgba(0,0,0,0.1);">
+                    📅 <strong>${item.date}</strong> - Level: <span style="text-transform:uppercase; font-weight:700;">${item.level}</span> | Score: <strong>${item.score}/30</strong> (${item.percent}%)
+                </div>`
+            ).join('');
+        }
+
+        /* --- Certificate Printing Utility Engine --- */
+        function printCertificate() {
+            const finalPercent = Math.round((scoringTracker / activeQuestions.length) * 100);
+            let badgeIcon = "📚";
+            let badgeTitle = "Keep Learning";
+            if (finalPercent >= 90) { badgeIcon = "🏆"; badgeTitle = "Neighborhood Star"; }
+            else if (finalPercent >= 70) { badgeIcon = "🌟"; badgeTitle = "Good Citizen"; }
+            else if (finalPercent >= 50) { badgeIcon = "👍"; badgeTitle = "Helpful Learner"; }
+
+            document.getElementById('cert-level').innerText = activeLevel.toUpperCase();
+            document.getElementById('cert-score').innerText = `${scoringTracker} / ${activeQuestions.length} (${finalPercent}%)`;
+            document.getElementById('cert-badge').innerText = badgeIcon;
+            document.getElementById('cert-badge-text').innerText = badgeTitle;
+
+            window.print();
+        }
+
+        // Run hooks on window loading sequence
+        window.onload = function() {
+            loadSavedHistory();
+        };
+    </script>
+</body>
+</html>

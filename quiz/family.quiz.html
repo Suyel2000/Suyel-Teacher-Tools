@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>👨‍👩‍👧‍👦 Family Quiz</title>
+    <style>
+        /* --- DESIGN SYSTEM & CSS VARIABLES --- */
+        :root {
+            --bg-gradient: linear-gradient(-45deg, #ff7675, #74b9ff, #a29bfe, #55efc4);
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --glass-shadow: box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            --primary-font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            
+            /* Child-friendly Color Palette */
+            --color-easy: #2ecc71;
+            --color-medium: #f1c40f;
+            --color-hard: #e74c3c;
+            --text-dark: #2c3e50;
+            --text-light: #ffffff;
+            --success: #2ed573;
+            --danger: #ff4757;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            font-family: var(--primary-font);
+            background: var(--bg-gradient);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* --- CONTAINER & GLASSMORPHISM --- */
+        .quiz-container {
+            width: 100%;
+            max-width: 750px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .screen {
+            display: none;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- TYPOGRAPHY --- */
+        h1 {
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 10px;
+            color: #2c3e50;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+        }
+
+        /* --- BUTTONS & CONTROLS --- */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 16px 24px;
+            margin: 14px 0;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-easy { background-color: var(--color-easy); color: white; }
+        .btn-medium { background-color: var(--color-medium); color: #2c3e50; }
+        .btn-hard { background-color: var(--color-hard); color: white; }
+
+        .btn:hover {
+            filter: brightness(1.05);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        /* --- QUIZ ELEMENT UI --- */
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-size: 1rem;
+            background: rgba(255,255,255,0.5);
+            padding: 10px 15px;
+            border-radius: 12px;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 14px;
+            background-color: #dfe6e9;
+            border-radius: 7px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #74b9ff, #a29bfe);
+            border-radius: 7px;
+            transition: width 0.3s ease;
+        }
+
+        .question-box {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+            line-height: 1.4;
+            color: #2c3e50;
+        }
+
+        .options-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .option-btn {
+            background-color: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 16px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-dark);
+        }
+
+        .option-btn:hover:not([disabled]) {
+            border-color: #a29bfe;
+            background-color: #f8f9fa;
+        }
+
+        /* Feedback States */
+        .option-btn.correct {
+            background-color: var(--success) !important;
+            border-color: var(--success) !important;
+            color: white !important;
+        }
+
+        .option-btn.wrong {
+            background-color: var(--danger) !important;
+            border-color: var(--danger) !important;
+            color: white !important;
+        }
+
+        .explanation-box {
+            display: none;
+            background: #f1f2f6;
+            border-left: 5px solid #74b9ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            font-weight: 600;
+            font-size: 1.05rem;
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* --- STANDARD NAVIGATION SYSTEM REQUIRED --- */
+        .nav-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 20px;
+        }
+
+        .nav-btn {
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            background-color: #e2e8f0;
+            color: #4a5568;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .nav-btn:hover:not([disabled]) {
+            background-color: #cbd5e0;
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .nav-home {
+            background-color: #74b9ff;
+            color: white;
+        }
+        .nav-home:hover { background-color: #0984e3; }
+
+        /* --- SUMMARY & STATS SYSTEM --- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.6);
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .stat-label { font-size: 0.85rem; color: #7f8c8d; font-weight: bold; text-transform: uppercase;}
+        .stat-value { font-size: 1.25rem; font-weight: 800; color: #2c3e50; margin-top: 4px;}
+
+        .badge-display {
+            text-align: center;
+            margin: 25px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #fff9db, #fff3bf);
+            border: 2px dashed #f59f00;
+            border-radius: 16px;
+        }
+
+        .badge-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #e67e22;
+            margin-top: 5px;
+        }
+
+        /* --- LEADERBOARD & LOCAL STORAGE TRACKING --- */
+        .history-box {
+            margin-top: 20px;
+            background: rgba(255,255,255,0.4);
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+        }
+
+        .history-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #4b5563;
+        }
+
+        /* --- CONFETTI GENERATION (PURE HTML/CSS) --- */
+        .confetti-container {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; overflow: hidden; z-index: 99;
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px; height: 10px;
+            background-color: #f00;
+            opacity: 0.8;
+            border-radius: 50%;
+            animation: fall 3s linear infinite;
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(-20px) rotate(0deg); }
+            100% { transform: translateY(600px) rotate(360deg); }
+        }
+
+        /* --- PRINTABLE CERTIFICATE STYLING --- */
+        #certificate-print-area {
+            display: none;
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            #certificate-print-area, #certificate-print-area * { visibility: visible; }
+            #certificate-print-area {
+                display: block;
+                position: absolute;
+                left: 0; top: 0; width: 100%;
+                border: 10px double #2c3e50;
+                padding: 40px; text-align: center;
+                background: white; color: black;
+                font-family: 'Georgia', serif;
+            }
+            .cert-title { font-size: 3rem; font-weight: bold; margin-bottom: 20px; }
+            .cert-subtitle { font-size: 1.5rem; margin-bottom: 40px; }
+            .cert-body { font-size: 1.25rem; line-height: 1.8; margin-bottom: 40px; }
+            .cert-signature { margin-top: 60px; font-size: 1.2rem; font-weight: bold; border-top: 2px solid #aaa; display: inline-block; padding-top: 5px; width: 200px; }
+        }
+
+        /* Responsive Improvements for Tablet/Smartboards */
+        @media (min-width: 600px) {
+            .options-container {
+                grid-template-columns: 1fr 1fr;
+            }
+            h1 { font-size: 3rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="quiz-container">
+        <div id="confetti-holder" class="confetti-container"></div>
+
+        <div id="screen-start" class="screen active">
+            <h1>👨‍👩‍👧‍👦 Family Quiz</h1>
+            <div class="subtitle">Love • Care • Respect • Learn</div>
+            <p style="text-align:center; font-weight:600; margin-bottom:20px; color:#555;">Choose your playing level:</p>
+            <button class="btn btn-easy" onclick="startQuiz('easy')">🟢 Easy Level</button>
+            <button class="btn btn-medium" onclick="startQuiz('medium')">🟡 Medium Level</button>
+            <button class="btn btn-hard" onclick="startQuiz('hard')">🔴 Hard Level</button>
+
+            <div class="history-box">
+                <div class="history-title">Saved Achievement Progress:</div>
+                <div id="progress-history-text">No previous games played yet on this device.</div>
+            </div>
+        </div>
+
+        <div id="screen-quiz" class="screen">
+            <div class="quiz-header">
+                <div>Level: <span id="lbl-level" style="text-transform: capitalize;">-</span></div>
+                <div>Questions: <span id="lbl-counter">1/30</span></div>
+                <div>Score: <span id="lbl-score">0</span></div>
+            </div>
+
+            <div class="progress-bar-container">
+                <div id="progress-bar" class="progress-bar"></div>
+            </div>
+
+            <div id="question-text" class="question-box"></div>
+
+            <div id="options-box" class="options-container"></div>
+
+            <div id="explanation-box" class="explanation-box"></div>
+
+            <div class="nav-container">
+                <button id="btn-prev" class="nav-btn" onclick="navigatePrev()">⬅️ Previous</button>
+                <button class="nav-btn nav-home" onclick="returnToHome()">🏠 Home</button>
+                <button id="btn-next" class="nav-btn" onclick="navigateNext()">➡️ Next</button>
+            </div>
+        </div>
+
+        <div id="screen-summary" class="screen">
+            <h1>Quiz Completed!</h1>
+            <div class="subtitle">Here is how well you know your family concepts</div>
+
+            <div class="badge-display">
+                <div>Your Achievement Badge:</div>
+                <div id="badge-title" class="badge-title">Family Star</div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-label">Level Selected</div><div id="stat-level" class="stat-value">-</div></div>
+                <div class="stat-card"><div class="stat-label">Final Score</div><div id="stat-score" class="stat-value">-</div></div>
+                <div class="stat-card"><div class="stat-label">Accuracy Rate</div><div id="stat-accuracy" class="stat-value">-</div></div>
+                <div class="stat-card"><div class="stat-label">Time Elapsed</div><div id="stat-time" class="stat-value">-</div></div>
+            </div>
+
+            <button class="btn btn-easy" onclick="restartQuiz()">🔄 Play Level Again</button>
+            <button class="btn btn-medium" onclick="returnToHome()">Choose Another Level</button>
+            <button class="btn btn-hard" onclick="window.print()">Print Award Certificate</button>
+            
+            <div class="nav-container">
+                <button class="nav-btn" disabled>⬅️ Previous</button>
+                <button class="nav-btn nav-home" onclick="returnToHome()">🏠 Home</button>
+                <button class="nav-btn" disabled>➡️ Next</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="certificate-print-area">
+        <div class="cert-title">CERTIFICATE OF ACHIEVEMENT</div>
+        <div class="cert-subtitle">Presented for excellence in EVS Family Studies</div>
+        <div class="cert-body">
+            This certifies that a student has completed the <strong>Family Quiz</strong> on difficulty setting: 
+            <strong id="cert-level" style="text-transform: capitalize;"></strong> with an accuracy metric score of 
+            <strong id="cert-score"></strong>.<br><br>
+            They have officially achieved the rank of:<br>
+            <span id="cert-badge" style="font-size: 1.8rem; font-weight: bold; color: #d97706;"></span>
+        </div>
+        <div>Date of Accomplishment: Active School Term System</div>
+        <div class="cert-signature">EVS Instructor Signoff</div>
+    </div>
+
+    <script>
+        /* --- QUESTION BANK ARRAY DATA --- */
+        const questionBank = {
+            easy: [
+                {q: "Who is your mother's father?", a: ["Grandfather", "Uncle", "Brother", "Father"], c: "Grandfather", e: "Your mother's father is called your grandfather."},
+                {q: "Who is your father's sister?", a: ["Aunt", "Mother", "Grandmother", "Sister"], c: "Aunt", e: "Your father's sister is your aunt."},
+                {q: "Who takes care of children in a family?", a: ["Parents", "Friends", "Neighbors", "Pets"], c: "Parents", e: "Parents take care of all children in a happy family."},
+                {q: "Who is your mother's mother?", a: ["Grandmother", "Aunt", "Sister", "Cousin"], c: "Grandmother", e: "Your mother's mother is your grandmother."},
+                {q: "Who is your brother's sister?", a: ["Your sister or you", "Your uncle", "Your grandmother", "Your father"], c: "Your sister or you", e: "Your brother's sister is either you or your sister."},
+                {q: "Who is usually younger than your parents?", a: ["Your baby brother", "Your grandfather", "Your grandmother", "Your great-uncle"], c: "Your baby brother", e: "Brothers and sisters are younger than parents."},
+                {q: "Who belongs to your immediate family?", a: ["Your mother", "Your shopkeeper", "Your school driver", "Your postman"], c: "Your mother", e: "Your mother is an important part of your family."},
+                {q: "Why do we love our family?", a: ["Because they care for us", "Because they have toys", "Because they are loud", "Because they go to work"], c: "Because they care for us", e: "We love our family because they protect us and care for us."},
+                {q: "What is a small family with parents and one or two children called?", a: ["Nuclear Family", "Joint Family", "Big Family", "Crowded Family"], c: "Nuclear Family", e: "A small family with only parents and children is a nuclear family."},
+                {q: "True or False: Family members should help each other.", a: ["True", "False"], c: "True", e: "Helping each other makes a family happy and strong!"},
+                {q: "Who tells us fun stories before we sleep?", a: ["Grandparents", "The doctor", "The postman", "The teacher"], c: "Grandparents", e: "Grandparents often share fun, loving stories with children."},
+                {q: "What do family members do when you are sick?", a: ["They care for you", "They leave you alone", "They get angry", "They play outside"], c: "They care for you", e: "Families give medicine and love when you feel sick."},
+                {q: "Who is your father's brother?", a: ["Uncle", "Grandfather", "Brother", "Son"], c: "Uncle", e: "Your father's brother is your uncle."},
+                {q: "What do we say when someone in our family helps us?", a: ["Thank You", "Goodbye", "No", "Nothing"], c: "Thank You", e: "Saying thank you shows respect and appreciation."},
+                {q: "Your uncle's children are your...", a: ["Cousins", "Brothers", "Sisters", "Nephews"], c: "Cousins", e: "Children of your uncles and aunts are your cousins."},
+                {q: "True or False: We should respect our mother and father.", a: ["True", "False"], c: "True", e: "Respecting parents is a very good habit."},
+                {q: "What type of family has grandparents, parents, uncles, and cousins living together?", a: ["Joint Family", "Small Family", "Nuclear Family", "Single Family"], c: "Joint Family", e: "A big family living together is a joint family."},
+                {q: "Where does a family live together?", a: ["In a home", "In a school classroom", "In a playground", "In a shop"], c: "In a home", e: "A family lives safely together inside a home."},
+                {q: "Who cooks tasty food for the family?", a: ["Family members", "The principal", "The bus conductor", "The police"], c: "Family members", e: "Parents or family members cook healthy food at home."},
+                {q: "What should you do with your toys when playing with your brother?", a: ["Share them", "Hide them", "Break them", "Throw them"], c: "Share them", e: "Sharing toys brings joy to siblings."},
+                {q: "Who is the son of your parents?", a: ["Your brother", "Your sister", "Your aunt", "Your grandmother"], c: "Your brother", e: "The son of your parents is your brother."},
+                {q: "Who is the daughter of your parents?", a: ["Your sister", "Your brother", "Your uncle", "Your grandfather"], c: "Your sister", e: "The daughter of your parents is your sister."},
+                {q: "Complete the sentence: A happy family is a ______ family.", a: ["Loving", "Angry", "Sad", "Fighting"], c: "Loving", e: "Love makes every family happy!"},
+                {q: "What do we share with our family members?", a: ["Love and food", "Only homework", "Nothing at all", "Arguments only"], c: "Love and food", e: "Families share meals, gifts, and lots of love."},
+                {q: "True or False: Animals can have families too.", a: ["True", "False"], c: "True", e: "Birds, lions, and many animals take care of their babies too."},
+                {q: "How do you feel when your family hugs you?", a: ["Safe and happy", "Scared", "Sad", "Angry"], c: "Safe and happy", e: "Hugs from family make us feel safe and loved."},
+                {q: "What is your father's father called?", a: ["Grandfather", "Brother", "Uncle", "Cousin"], c: "Grandfather", e: "Your father's father is your grandfather."},
+                {q: "Who helps you get ready for school?", a: ["Your parents", "The storekeeper", "The pet cat", "The neighbor's dog"], c: "Your parents", e: "Parents support us by helping us get ready for school."},
+                {q: "What is another name for a small family?", a: ["Nuclear family", "Joint family", "Giant family", "Crowded family"], c: "Nuclear family", e: "A nuclear family is a small family group."},
+                {q: "True or False: All families look exactly the same size.", a: ["False", "True"], c: "False", e: "Families come in many shapes and sizes. Some are big, some are small."}
+            ],
+            medium: [
+                {q: "What is a nuclear family?", a: ["Parents and children living together", "Grandparents, uncles, and cousins living together", "Friends living together", "Teachers living in a school"], c: "Parents and children living together", e: "A nuclear family consists only of parents and their children."},
+                {q: "What is a joint family?", a: ["A large family with grandparents, parents, and relatives", "A tiny family with one parent", "Two friends living in an apartment", "A classroom of children"], c: "A large family with grandparents, parents, and relatives", e: "A joint family includes multiple generations living under one roof."},
+                {q: "Why should we respect our grandparents?", a: ["They love us and have wisdom", "They give us money only", "They are strict", "They watch television"], c: "They love us and have wisdom", e: "Grandparents pass down wonderful values and care to us."},
+                {q: "Who helps us learn good habits first?", a: ["Our family members", "The internet", "The bus driver", "The shopkeeper"], c: "Our family members", e: "Family is our very first school where we learn values."},
+                {q: "Why should children help with household work?", a: ["To share the family's work", "To get paid money", "Because school is closed", "To stay awake"], c: "To share the family's work", e: "Sharing chores makes housework fast and keeps parents happy."},
+                {q: "Why should family members share work?", a: ["So no single person gets too tired", "To fight with each other", "To win a school prize", "Because the law says so"], c: "So no single person gets too tired", e: "Sharing responsibilities spreads out the effort fairly."},
+                {q: "What makes a happy family?", a: ["Love, respect, and helping each other", "Having lots of expensive electronics", "Never talking to each other", "Living in different cities"], c: "Love, respect, and helping each other", e: "Kindness and cooperation create peace at home."},
+                {q: "Why should we care for younger family members?", a: ["They are small and need guidance", "They do our homework", "They are strong", "They give us toys"], c: "They are small and need guidance", e: "Younger siblings need our protection and soft guidance."},
+                {q: "How can you show respect to your elders at home?", a: ["By listening to them politely", "By ignoring their words", "By shouting out loud", "By locking your room"], c: "By listening to them politely", e: "Listening when elders talk shows respect and discipline."},
+                {q: "What do we call our family members who lived long ago?", a: ["Ancestors", "Friends", "Neighbors", "Strangers"], c: "Ancestors", e: "Ancestors are family members from past generations."},
+                {q: "Which of these is a good habit at the dinner table?", a: ["Eating together and talking kindly", "Playing video games", "Throwing food at your sister", "Leaving without telling anyone"], c: "Eating together and talking kindly", e: "Sharing meal times nicely helps family bonding."},
+                {q: "If your grandmother finds it hard to walk, what should you do?", a: ["Hold her hand and help her", "Run away past her", "Laugh out loud", "Tell her to hurry up"], c: "Hold her hand and help her", e: "Caring for our elders when they need physical support is an essential duty."},
+                {q: "Who is a sibling?", a: ["Your brother or sister", "Your cousin", "Your best friend", "Your uncle"], c: "Your brother or sister", e: "Siblings share the same biological parents."},
+                {q: "What does it mean to co-operate at home?", a: ["Working together peacefully", "Fighting over the television", "Doing nothing all day", "Letting mom do everything"], c: "Working together peacefully", e: "Cooperation means combining actions to finish tasks happily."},
+                {q: "True or False: Only mothers should clean the house.", a: ["False", "True"], c: "False", e: "All family members can participate in keeping the home clean."},
+                {q: "What should you do if you break a family rule?", a: ["Say sorry and tell the truth", "Hide the mistake", "Blame your brother", "Cry out loud"], c: "Say sorry and tell the truth", e: "Honesty builds long-term trust inside families."},
+                {q: "What do we call a family tree?", a: ["A chart showing family relationships", "A tree growing in the garden", "A drawing of forest leaves", "A list of school friends"], c: "A chart showing family relationships", e: "A family tree visually tracks generations of relatives."},
+                {q: "How does a joint family help working parents?", a: ["Grandparents can watch the children", "Uncles can do school homework", "Cousins pay the bills", "Everyone sleeps all day"], c: "Grandparents can watch the children", e: "Grandparents provide excellent childcare support in joint settings."},
+                {q: "What do we learn from our family traditions?", a: ["Our culture and values", "How to run very fast", "How to skip class", "Nothing useful"], c: "Our culture and values", e: "Traditions link us to our ancestral history and values."},
+                {q: "Who is the main head of a traditional joint family?", a: ["Usually the oldest grandparent", "The youngest infant", "The pet puppy", "The neighbor next door"], c: "Usually the oldest grandparent", e: "The oldest elders usually guide family decisions."},
+                {q: "When a new baby is born, what happens to the family?", a: ["The family size grows", "The family size shrinks", "The family disappears", "Nothing changes"], c: "The family size grows", e: "A newborn baby increases the count of family members."},
+                {q: "True or False: Celebrating festivals together creates distance between relatives.", a: ["False", "True"], c: "False", e: "Festivals bring relatives closer together through joy."},
+                {q: "What should you do when an uncle visits your home?", a: ["Greet him warmly", "Hide under the bed", "Demand gifts immediately", "Lock him outside"], c: "Greet him warmly", e: "Welcoming guests is a vital social habit taught in families."},
+                {q: "What does 'Surname' mean?", a: ["The shared family name at the end", "Your first name", "Your nickname at school", "Your best friend's name"], c: "The shared family name at the end", e: "A surname links all members of the same family group together."},
+                {q: "Why do we keep old family photo albums?", a: ["To remember happy memories", "To clear space", "To throw them away later", "To practice drawing"], c: "To remember happy memories", e: "Photo albums preserve visual timelines of family growth."},
+                {q: "How should you talk to an elderly family member?", a: ["Softly and respectfully", "Screaming loudly", "Using rude words", "Impatiently"], c: "Softly and respectfully", e: "A gentle voice shows honor and love to our elders."},
+                {q: "If your sibling is studying for a school test, you should...", a: ["Keep the room quiet", "Play loud music", "Shout near them", "Turn off the lights"], c: "Keep the room quiet", e: "Supporting siblings means respecting their study timelines."},
+                {q: "Who is your paternal grandfather?", a: ["Your father's father", "Your mother's father", "Your uncle's friend", "Your cousin's brother"], c: "Your father's father", e: "Paternal refers to your father's side of the family branch."},
+                {q: "Who is your maternal grandmother?", a: ["Your mother's mother", "Your father's mother", "Your aunt's sister", "Your neighbor"], c: "Your mother's mother", e: "Maternal relates directly to your mother's lineage."},
+                {q: "Complete: Family values teach us to be ______ citizens.", a: ["Good and kind", "Selfish and mean", "Lazy", "Angry"], c: "Good and kind", e: "Family core values establish foundations for civic behavior."}
+            ],
+            hard: [
+                {q: "Why is family considered the primary institution of society?", a: ["It provides our basic security and initial life values", "It builds the roads we drive on", "It pays our school tuition directly", "It is where we buy food items"], c: "It provides our basic security and initial life values", e: "Families shape human development before any other social network."},
+                {q: "Why should we speak politely and calmly at home?", a: ["To maintain a peaceful environment", "To save our throat muscles", "Because talking loud is illegal", "To help us sleep better"], c: "To maintain a peaceful environment", e: "Kind language prevents unnecessary emotional friction at home."},
+                {q: "How can children show high responsibility at home?", a: ["By keeping their own room clean and tidy", "By driving the family car", "By managing family bank accounts", "By staying up all night long"], c: "By keeping their own room clean and tidy", e: "Personal neatness reduces overall burden on working parents."},
+                {q: "Why should we listen carefully to our parents' guidance?", a: ["They have life experience to protect us from harm", "They know everything about computers", "They are always angry", "Because they pay us rewards"], c: "They have life experience to protect us from harm", e: "Parental wisdom helps guide younger people away from dangerous choices."},
+                {q: "Why do families celebrate ancestral festivals together?", a: ["To preserve culture and bond with extended relatives", "To show off new clothes to the public", "To save money on cooking meals", "Because schools stay closed"], c: "To preserve culture and bond with extended relatives", e: "Cultural celebrations reinforce community bonds across far-away relatives."},
+                {q: "How do family members help each other face financial or health crises?", a: ["By providing emotional and physical support together", "By ignoring the problem entirely", "By leaving the house immediately", "By fighting about who caused it"], c: "By providing emotional and physical support together", e: "Unity during hardship makes families strong crises survivors."},
+                {q: "Why should we respect every individual in a home regardless of age?", a: ["Every person has human rights and feelings", "Only older people matter", "Only babies matter", "Because it is a game rule"], c: "Every person has human rights and feelings", e: "Mutual respect ensures everyone feels accepted within the family circle."},
+                {q: "How does a stable family make a child feel safe?", a: ["By providing unconditional love, shelter, and care", "By buying every single toy in the store", "By letting them do whatever they want", "By locked security doors only"], c: "By providing unconditional love, shelter, and care", e: "Emotional certainty creates developmental safety for young minds."},
+                {q: "What is an extended family structure?", a: ["Nuclear family plus relatives like aunts, uncles, and cousins", "A single parent with one child", "A group of school friends staying at camp", "Two neighbors sharing a garden space"], c: "Nuclear family plus relatives like aunts, uncles, and cousins", e: "Extended families map wide kinship networks beyond simple house limits."},
+                {q: "When family members disagree, what is the best path to solve the problem?", a: ["Sitting together and talking calmly", "Shouting until one side stops", "Not speaking for many months", "Leaving the home permanently"], c: "Sitting together and talking calmly", e: "Calm communication resolves issues without breaking relationships."},
+                {q: "What is the social value of sharing household chores equally?", a: ["It teaches gender equality and shared responsibility", "It saves electrical power usage", "It completes homework faster", "It increases total family income"], c: "It teaches gender equality and shared responsibility", e: "Shared housework proves that chores belong to everyone, not just one gender."},
+                {q: "Which of the following is an example of a family tradition?", a: ["Eating a special meal together every Sunday", "Going to sleep at different times", "Buying a random book online", "Missing school due to illness"], c: "Eating a special meal together every Sunday", e: "Traditions are repeated, structured events that hold warm meaning."},
+                {q: "How do grandparents pass down history?", a: ["Through oral storytelling and personal memories", "Through coding computer programs", "Through commercial television broadcasts", "They cannot pass down history"], c: "Through oral storytelling and personal memories", e: "Oral histories from elders preserve priceless ancestral data."},
+                {q: "What does 'unconditional love' mean in a family?", a: ["Loving a family member no matter what mistakes happen", "Loving someone only when they get full marks", "Loving someone only when they buy gifts", "Loving someone for a short time"], c: "Loving a family member no matter what mistakes happen", e: "True family love remains stable through mistakes and corrections."},
+                {q: "True or False: Adopted children are fully part of a real family.", a: ["True", "False"], c: "True", e: "Adoption builds legally and emotionally complete families full of love."},
+                {q: "Why is it important to visit extended relatives who live far away?", a: ["To maintain emotional links and family history", "To avoid doing school work", "To travel to new tourist cities", "To collect extra traveling luggage"], c: "To maintain emotional links and family history", e: "Visits keep distant branches of family trees connected."},
+                {q: "What role does empathy play in a family?", a: ["It helps us understand and feel another member's sadness", "It helps us finish mathematical tasks", "It makes us rich and wealthy", "It creates arguments"], c: "It helps us understand and feel another member's sadness", e: "Empathy means sharing feelings to support a sad family member."},
+                {q: "How should a family handle care for an elderly bedridden relative?", a: ["By dividing care duties patiently among adult members", "By leaving them alone in an empty room", "By complaining constantly about them", "By ignoring their nutritional needs"], c: "By dividing care duties patiently among adult members", e: "Shared caregiving honors our elders with comfort and dignity."},
+                {q: "What is the primary cause of family trees changing over time?", a: ["Marriages, births, and deaths", "Changes in world weather", "Moving to new school grades", "Buying a new house property"], c: "Marriages, births, and deaths", e: "Vital life events continuously shift branches on family trees."},
+                {q: "How do family customs form our personal identity?", a: ["They give us our early belief structures and cultural habits", "They change our biological eye color", "They teach us how to run fast", "They choose our favorite computer video game"], c: "They give us our early belief structures and cultural habits", e: "Early childhood environments form deep core values for adulthood."},
+                {q: "Why is a foster family important?", a: ["It provides temporary safe homes for children in transition", "It trains children for sports matches", "It is an online internet group", "It lasts for exactly one day only"], c: "It provides temporary safe homes for children in transition", e: "Foster care delivers critical safety and shield systems during crises."},
+                {q: "True or False: Every family must have a father, mother, brother, and sister to be valid.", a: ["False", "True"], c: "False", e: "Families are defined by love and care; configurations vary greatly around the world."},
+                {q: "How does listening to family rules prepare children for the future?", a: ["It trains them to follow laws and social structures", "It helps them become professional cooks", "It teaches them how to drive safely instantly", "It guarantees wealth"], c: "It trains them to follow laws and social structures", e: "Following simple home boundaries builds essential civic discipline."},
+                {q: "What is a major benefit of growing up in a joint family?", a: ["Learning adjustment, patience, and sharing automatically", "Never having to study books", "Getting separate houses to live in", "Having zero rules to follow"], c: "Learning adjustment, patience, and sharing automatically", e: "Living with many relatives teaches continuous communication and social sharing."},
+                {q: "Why should we avoid shouting during arguments with parents?", a: ["It creates anger and blocks true understanding", "It uses up electrical room power", "It makes the pets fall asleep", "It changes the subject entirely"], c: "It creates anger and blocks true understanding", e: "Shouting stops effective listening and damages emotional safety."},
+                {q: "What is a modern challenge for family bonding?", a: ["Spending too much individual screen time on mobile phones", "Eating healthy home meals together", "Reading storybooks aloud", "Helping wash dirty dinner plates"], c: "Spending too much individual screen time on mobile phones", e: "Excessive personal devices can reduce face-to-face family conversations."},
+                {q: "What does it mean to respect a family member's privacy?", a: ["Knocking before opening their bedroom door", "Reading their private notebook secretively", "Listening to their telephone calls", "Following them around the house"], c: "Knocking before opening their bedroom door", e: "Privacy limits show personal dignity and trust boundaries."},
+                {q: "Why do families create emergency plans together?", a: ["To ensure safety during fires or natural hazards", "To plan secret birthday parties", "To win neighborhood competitions", "To save on weekly food shopping"], c: "To ensure safety during fires or natural hazards", e: "Coordinated emergency plans save lives during unexpected disasters."},
+                {q: "How can children show gratitude to working parents?", a: ["By expressing verbal thanks and doing small helpful tasks", "By requesting expensive new gadgets", "By ignoring parents' work tiredness", "By crying for more attention"], c: "By expressing verbal thanks and doing small helpful tasks", e: "Appreciation keeps parents motivated and emotionally valued."},
+                {q: "Complete: The ultimate bond holding a strong family together is ______.", a: ["Mutual love and commitment", "Living in a giant mansion", "Having identical physical features", "Owning expensive personal cars"], c: "Mutual love and commitment", e: "Affection and loyalty keep families unified through all phases of life."}
+            ]
+        };
+
+        /* --- STATE VARIABLES --- */
+        let currentLevel = 'easy';
+        let currentQuestions = [];
+        let currentIndex = 0;
+        let score = 0;
+        let answeredState = []; // Track history of answers selected by user
+        let startTime = null;
+
+        /* --- WEB AUDIO API ENGINE --- */
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioCtx();
+        }
+
+        function playSound(freq, type, duration) {
+            try {
+                initAudio();
+                if (!audioCtx) return;
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) { console.log("Audio play error", e); }
+        }
+
+        function triggerClickSound() { playSound(400, 'sine', 0.1); }
+        function triggerCorrectSound() { playSound(600, 'triangle', 0.2); setTimeout(() => playSound(900, 'triangle', 0.25), 100); }
+        function triggerWrongSound() { playSound(180, 'sawtooth', 0.4); }
+        function triggerCompleteSound() { 
+            playSound(440, 'sine', 0.2); 
+            setTimeout(() => playSound(554, 'sine', 0.2), 150);
+            setTimeout(() => playSound(659, 'sine', 0.2), 300);
+            setTimeout(() => playSound(880, 'sine', 0.5), 450);
+        }
+
+        /* --- UTILITY METHODS --- */
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        /* --- CONFETTI ENGINE (NO CANVAS/IMAGES REQ) --- */
+        function triggerConfetti() {
+            const holder = document.getElementById('confetti-holder');
+            holder.innerHTML = '';
+            const colors = ['#ff7675', '#74b9ff', '#a29bfe', '#55efc4', '#f1c40f'];
+            for(let i=0; i<40; i++) {
+                let div = document.createElement('div');
+                div.className = 'confetti';
+                div.style.left = Math.random() * 100 + '%';
+                div.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                div.style.animationDelay = Math.random() * 2 + 's';
+                div.style.width = (Math.random() * 8 + 6) + 'px';
+                div.style.height = div.style.width;
+                holder.appendChild(div);
+            }
+            setTimeout(() => { holder.innerHTML = ''; }, 4000);
+        }
+
+        /* --- ENGINE CORE FLOW --- */
+        window.onload = function() {
+            loadLocalHistory();
+        };
+
+        function loadLocalHistory() {
+            let historyStr = localStorage.getItem('family_quiz_progress');
+            if(historyStr) {
+                let history = JSON.parse(historyStr);
+                document.getElementById('progress-history-text').innerText = 
+                    `Last Played: ${history.level.toUpperCase()} Level with Score: ${history.score}/30 (${history.accuracy})`;
+            }
+        }
+
+        function startQuiz(level) {
+            triggerClickSound();
+            currentLevel = level;
+            
+            // Deep copy and Shuffle questions
+            let rawData = JSON.parse(JSON.stringify(questionBank[level]));
+            currentQuestions = shuffle(rawData).slice(0, 30); // Exactly 30 questions
+            
+            // Shuffle answers option internal array
+            currentQuestions.forEach(item => {
+                item.a = shuffle(item.a);
+            });
+
+            currentIndex = 0;
+            score = 0;
+            answeredState = new Array(30).fill(null);
+            startTime = new Date();
+
+            document.getElementById('lbl-level').innerText = level;
+            showScreen('screen-quiz');
+            renderQuestion();
+        }
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(scr => scr.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function renderQuestion() {
+            // Update UI status counters
+            document.getElementById('lbl-counter').innerText = `${currentIndex + 1} / 30`;
+            document.getElementById('lbl-score').innerText = score;
+            
+            let percentageWidth = ((currentIndex + 1) / 30) * 100;
+            document.getElementById('progress-bar').style.width = percentageWidth + '%';
+
+            let qData = currentQuestions[currentIndex];
+            document.getElementById('question-text').innerText = qData.q;
+            
+            const optionsBox = document.getElementById('options-box');
+            optionsBox.innerHTML = '';
+
+            const explanationBox = document.getElementById('explanation-box');
+            explanationBox.style.display = 'none';
+
+            // Establish current history tracking logic
+            let historicAnswer = answeredState[currentIndex];
+
+            qData.a.forEach(opt => {
+                let btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = opt;
+                
+                if (historicAnswer !== null) {
+                    // Question was already answered in past timeline path navigation
+                    btn.disabled = true;
+                    if(opt === qData.c) btn.classList.add('correct');
+                    if(opt === historicAnswer && historicAnswer !== qData.c) btn.classList.add('wrong');
+                } else {
+                    // Question is active and waiting for selection input
+                    btn.onclick = function() { selectOption(opt, btn); };
+                }
+                optionsBox.appendChild(btn);
+            });
+
+            if (historicAnswer !== null) {
+                explanationBox.innerText = qData.e;
+                explanationBox.style.display = 'block';
+            }
+
+            // Standard navigation boundaries configuration
+            document.getElementById('btn-prev').disabled = (currentIndex === 0);
+            document.getElementById('btn-next').disabled = (historicAnswer === null);
+        }
+
+        function selectOption(selectedVal, clickedBtn) {
+            let qData = currentQuestions[currentIndex];
+            answeredState[currentIndex] = selectedVal;
+
+            const optionsBox = document.getElementById('options-box');
+            const btns = optionsBox.getElementsByTagName('button');
+            
+            // Lock inputs instantly
+            for(let b of btns) { b.disabled = true; }
+
+            const explanationBox = document.getElementById('explanation-box');
+            explanationBox.innerText = qData.e;
+            explanationBox.style.display = 'block';
+
+            if(selectedVal === qData.c) {
+                clickedBtn.classList.add('correct');
+                score++;
+                document.getElementById('lbl-score').innerText = score;
+                triggerCorrectSound();
+            } else {
+                clickedBtn.classList.add('wrong');
+                // Color correct variant line to aid student
+                for(let b of btns) {
+                    if(b.innerText === qData.c) b.classList.add('correct');
+                }
+                triggerWrongSound();
+            }
+
+            document.getElementById('btn-next').disabled = false;
+        }
+
+        /* --- NAVIGATION SYSTEM API --- */
+        function navigatePrev() {
+            if(currentIndex > 0) {
+                triggerClickSound();
+                currentIndex--;
+                renderQuestion();
+            }
+        }
+
+        function navigateNext() {
+            if(currentIndex < 29) {
+                triggerClickSound();
+                currentIndex++;
+                renderQuestion();
+            } else {
+                completeQuizSession();
+            }
+        }
+
+        function returnToHome() {
+            triggerClickSound();
+            loadLocalHistory();
+            showScreen('screen-start');
+        }
+
+        function restartQuiz() {
+            startQuiz(currentLevel);
+        }
+
+        /* --- COMPLETION PROCESSING --- */
+        function completeQuizSession() {
+            triggerCompleteSound();
+            let totalTimeSec = Math.floor((new Date() - startTime) / 1000);
+            let mins = Math.floor(totalTimeSec / 60);
+            let secs = totalTimeSec % 60;
+            let timeStr = `${mins}m ${secs}s`;
+
+            let pct = Math.round((score / 30) * 100);
+            
+            // Badge calculation formula array assignment
+            let badge = "📚 Keep Learning";
+            if (pct >= 90) { badge = "🏆 Family Star"; triggerConfetti(); }
+            else if (pct >= 70) { badge = "🌟 Caring Child"; }
+            else if (pct >= 50) { badge = "👍 Good Learner"; }
+
+            // Write stats fields inside summary page
+            document.getElementById('stat-level').innerText = currentLevel;
+            document.getElementById('stat-score').innerText = `${score} / 30`;
+            document.getElementById('stat-accuracy').innerText = `${pct}%`;
+            document.getElementById('stat-time').innerText = timeStr;
+            document.getElementById('badge-title').innerText = badge;
+
+            // Prepare background printable values template fields
+            document.getElementById('cert-level').innerText = currentLevel;
+            document.getElementById('cert-score').innerText = `${score}/30 (${pct}%)`;
+            document.getElementById('cert-badge').innerText = badge;
+
+            // Commit results record into LocalStorage persistence database
+            let progressRecord = {
+                level: currentLevel,
+                score: score,
+                accuracy: `${pct}%`,
+                timestamp: new Date().toLocaleDateString()
+            };
+            localStorage.setItem('family_quiz_progress', JSON.stringify(progressRecord));
+
+            showScreen('screen-summary');
+        }
+    </script>
+</body>
+</html>

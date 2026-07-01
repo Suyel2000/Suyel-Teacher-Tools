@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🦁 Wild Animals Quiz</title>
+    <style>
+        :root {
+            --primary-bg: linear-gradient(135deg, #e8f5e9 0%, #fffde7 50%, #fff3e0 100%);
+            --glass-bg: rgba(255, 255, 255, 0.92);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --text-dark: #1e293b;
+            --text-muted: #475569;
+            --easy-color: #2e7d32;
+            --medium-color: #f59e0b;
+            --hard-color: #d32f2f;
+            --correct-bg: #e8f5e9;
+            --correct-border: #2e7d32;
+            --wrong-bg: #ffebee;
+            --wrong-border: #c62828;
+            --btn-hover: #f1f5f9;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--primary-bg);
+            background-size: 400% 400%;
+            animation: gradientAnim 16s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientAnim {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 740px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+            transition: all 0.3s ease;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            text-align: center;
+            margin-bottom: 6px;
+            color: var(--text-dark);
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 1.05rem;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+            animation: fadeIn 0.40s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Start Screen Layouts */
+        .level-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .btn-lvl {
+            padding: 18px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            color: white;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        .btn-lvl:active { transform: scale(0.98); }
+        .btn-lvl-easy { background-color: var(--easy-color); }
+        .btn-lvl-medium { background-color: var(--medium-color); }
+        .btn-lvl-hard { background-color: var(--hard-color); }
+
+        .btn-lvl:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+        }
+
+        /* Quiz Main Interface Sub-modules */
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: rgba(255,255,255,0.5);
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background-color: rgba(0,0,0,0.05);
+            border-radius: 6px;
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #2e7d32, #0284c7);
+            border-radius: 6px;
+            transition: width 0.3s ease;
+        }
+
+        .question-card {
+            background: rgba(255, 255, 255, 0.5);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.4);
+            margin-bottom: 20px;
+            animation: questionSwap 0.3s ease-out;
+        }
+
+        @keyframes questionSwap {
+            from { opacity: 0; transform: translateX(5px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .question-box {
+            font-size: 1.3rem;
+            font-weight: 600;
+            line-height: 1.4;
+            color: var(--text-dark);
+        }
+
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .option-btn {
+            padding: 16px;
+            font-size: 1.1rem;
+            text-align: left;
+            background: white;
+            border: 2px solid rgba(0,0,0,0.03);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            color: var(--text-dark);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.01);
+        }
+
+        .option-btn:hover:not([disabled]) {
+            background: var(--btn-hover);
+            border-color: rgba(0,0,0,0.1);
+            transform: translateX(4px);
+        }
+
+        .option-btn.correct {
+            background-color: var(--correct-bg) !important;
+            border-color: var(--correct-border) !important;
+            color: #1b5e20 !important;
+            font-weight: 600;
+        }
+
+        .option-btn.wrong {
+            background-color: var(--wrong-bg) !important;
+            border-color: var(--wrong-border) !important;
+            color: #b71c1c !important;
+        }
+
+        .explanation-box {
+            display: none;
+            padding: 16px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            font-size: 1.05rem;
+            line-height: 1.45;
+        }
+
+        /* ⚙️ Exact Navigation Requirements Ordering (Prev, Home, Next) */
+        .nav-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .nav-btn {
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            background: white;
+            color: var(--text-dark);
+            border: 1px solid rgba(0,0,0,0.08);
+            transition: all 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .nav-btn:hover:not([disabled]) {
+            background: #f8fafc;
+            transform: translateY(-1px);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .nav-btn-home {
+            background: #e2e8f0;
+            border-color: rgba(0,0,0,0.05);
+        }
+
+        /* Dashboard Summary Views */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .summary-card {
+            background: rgba(255,255,255,0.7);
+            padding: 14px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+
+        .summary-card .val {
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+
+        .badge-box {
+            text-align: center;
+            background: linear-gradient(135deg, #fffde7, #fff3e0);
+            border: 2px dashed #f59e0b;
+            padding: 20px;
+            border-radius: 16px;
+            margin: 20px 0;
+        }
+
+        .badge-icon {
+            font-size: 3rem;
+            margin-bottom: 4px;
+        }
+
+        .badge-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #78350f;
+        }
+
+        .action-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .action-btn {
+            padding: 15px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-secondary { background: #475569; color: white; }
+        .btn-success { background: #16a34a; color: white; }
+        .action-btn:hover { opacity: 0.92; transform: translateY(-1px); }
+
+        /* Performance Particle System Layer */
+        .confetti-container {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 9999; overflow: hidden;
+            display: none;
+        }
+
+        .confetti {
+            position: absolute; width: 10px; height: 10px;
+            animation: drop linear forwards;
+        }
+
+        @keyframes drop {
+            0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(105vh) rotate(360deg); opacity: 0.4; }
+        }
+
+        /* Certificate Print Formats */
+        #certificate-print-area {
+            display: none;
+        }
+
+        @media print {
+            body { background: white; color: black; }
+            .container { display: none !important; }
+            #certificate-print-area {
+                display: block !important;
+                width: 100%;
+                max-width: 800px;
+                margin: 40px auto;
+                padding: 40px;
+                border: 10px double #f59e0b;
+                background: white;
+                text-align: center;
+                box-sizing: border-box;
+            }
+            .cert-title { font-size: 3rem; font-weight: bold; margin-bottom: 20px; color: #78350f; }
+            .cert-sub { font-size: 1.4rem; margin-bottom: 40px; text-transform: uppercase; letter-spacing: 2px; }
+            .cert-body { font-size: 1.3rem; line-height: 1.8; margin-bottom: 40px; }
+            .cert-name { font-size: 2.2rem; font-weight: bold; text-decoration: underline; margin: 20px 0; }
+            .cert-badge { font-size: 4rem; margin: 20px 0; }
+            .cert-footer { display: flex; justify-content: space-between; margin-top: 60px; font-size: 1.1rem; border-top: 2px solid #eee; padding-top: 15px; }
+        }
+
+        @media(max-width: 600px) {
+            body { padding: 10px; }
+            .container { padding: 20px; border-radius: 16px; }
+            h1 { font-size: 1.7rem; }
+            .question-box { font-size: 1.15rem; }
+            .option-btn { padding: 14px; font-size: 1rem; }
+            .nav-btn { padding: 12px; font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="confetti-container" id="confetti-holder"></div>
+
+    <div class="container">
+        <h1>🦁 Wild Animals Quiz</h1>
+        <p class="subtitle">Observe • Identify • Explore • Learn</p>
+
+        <div id="start-screen" class="screen active">
+            <p style="text-align: center; font-size: 1.15rem; margin-bottom: 20px; font-weight: 500; color: var(--text-muted);">Select a level to start your educational adventure:</p>
+            <div class="level-container">
+                <button class="btn-lvl btn-lvl-easy" onclick="initiateQuiz('easy')">🟢 Easy Level</button>
+                <button class="btn-lvl btn-lvl-medium" onclick="initiateQuiz('medium')">🟡 Medium Level</button>
+                <button class="btn-lvl btn-lvl-hard" onclick="initiateQuiz('hard')">🔴 Hard Level</button>
+            </div>
+        </div>
+
+        <div id="quiz-screen" class="screen">
+            <div class="quiz-header">
+                <div>Level: <span id="header-level" style="text-transform: capitalize; font-weight:700; color:var(--text-dark);">-</span></div>
+                <div>Question: <span id="header-count">-</span>/30</div>
+                <div>Score: <span id="header-score">-</span></div>
+                <div>⏱️ <span id="header-timer">00:00</span></div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-indicator"></div>
+            </div>
+
+            <div class="question-card">
+                <div class="question-box" id="question-text"></div>
+            </div>
+            
+            <div class="options-container" id="options-box"></div>
+            <div class="explanation-box" id="explanation-card"></div>
+
+            <div class="nav-container">
+                <button class="nav-btn" id="btn-prev" onclick="handleNavigation(-1)">⬅️ Previous</button>
+                <button class="nav-btn nav-btn-home" id="btn-home" onclick="goHome()">🏠 Home</button>
+                <button class="nav-btn" id="btn-next" onclick="handleNavigation(1)">➡️ Next</button>
+            </div>
+        </div>
+
+        <div id="summary-screen" class="screen">
+            <h2 style="text-align: center; margin-bottom: 16px;">🏁 Quiz Completed!</h2>
+            <div class="summary-grid">
+                <div class="summary-card"><div>Difficulty Level</div><div class="val" id="sum-level" style="text-transform: capitalize;">-</div></div>
+                <div class="summary-card"><div>Time Taken</div><div class="val" id="sum-time">-</div></div>
+                <div class="summary-card"><div>Final Score</div><div class="val" id="sum-score">-</div></div>
+                <div class="summary-card"><div>Accuracy Rate</div><div class="val" id="sum-pct">-</div></div>
+                <div class="summary-card" style="background-color: var(--correct-bg);"><div>Correct Answers</div><div class="val" id="sum-correct" style="color: #1b5e20;">-</div></div>
+                <div class="summary-card" style="background-color: var(--wrong-bg);"><div>Wrong Answers</div><div class="val" id="sum-wrong" style="color: #b71c1c;">-</div></div>
+            </div>
+
+            <div class="badge-box">
+                <div class="badge-icon" id="sum-badge-icon">🏆</div>
+                <div class="badge-title" id="sum-badge-title">Wildlife Expert</div>
+                <p id="sum-badge-desc" style="font-size: 0.95rem; margin-top: 6px; color: #78350f;"></p>
+            </div>
+
+            <div class="action-container">
+                <button class="action-btn btn-primary" onclick="restartLevel()">🔄 Play Again</button>
+                <button class="action-btn btn-secondary" onclick="goHome()">🗺️ Choose Another Level</button>
+                <button class="action-btn btn-success" id="btn-print-cert" onclick="window.print()">🖨️ Print Certificate</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="certificate-print-area">
+        <div class="cert-title">Certificate of Achievement</div>
+        <div class="cert-sub">Wild Animals Quiz Mastery</div>
+        <div class="cert-body">
+            This certificate is proudly awarded to an exceptional young explorer for completing the 
+            <strong><span id="cert-lvl"></span> Level</strong> of the interactive EVS Wild Animals Quiz application.
+            <br><br>
+            They demonstrated beautiful knowledge about nature and wildlife preservation, scoring an outstanding
+            <strong><span id="cert-score"></span></strong> correct answers with an accuracy profile of <strong><span id="cert-pct"></span></strong>!
+        </div>
+        <div class="cert-badge" id="cert-badge-icon">🏆</div>
+        <div class="badge-title" id="cert-badge-title">Wildlife Expert</div>
+        <div class="cert-footer">
+            <div>Date Issued: <span id="cert-date"></span></div>
+            <div>Authorized By: Elementary EVS Department</div>
+        </div>
+    </div>
+
+    <script>
+        // 📚 Comprehensive Question Array Storage (90 Custom High-Quality Text Questions)
+        const wildAnimalBank = {
+            easy: [
+                { q: "Which animal is commonly called the King of the Jungle?", o: ["Lion", "Fox", "Bear", "Deer"], a: "Lion", e: "✅ Correct! The lion is called the King of the Jungle because of its big roar, raw power, and majestic appearance." },
+                { q: "Which wild animal has a long, flexible nose called a trunk?", o: ["Elephant", "Tiger", "Zebra", "Giraffe"], a: "Elephant", e: "✅ Correct! Elephants use their long trunks to breathe, pick up food, and splash water." },
+                { q: "Which wild animal has beautiful black and white stripes all over its body?", o: ["Zebra", "Leopard", "Lion", "Monkey"], a: "Zebra", e: "✅ Correct! Zebra stripes are unique patterns that work as natural cover in tall grass." },
+                { q: "Which wild animal is the largest living land animal?", o: ["Elephant", "Giraffe", "Hippopotamus", "Rhinoceros"], a: "Elephant", e: "✅ Correct! Elephants are huge, heavy, and are the largest land animals in the world." },
+                { q: "Which wild animal has an extremely long neck to reach high leaves?", o: ["Giraffe", "Tiger", "Fox", "Bear"], a: "Giraffe", e: "✅ Correct! A giraffe uses its extra long neck to comfortably chew leaves from tall treetops." },
+                { q: "Where do most wild animals live naturally?", o: ["Forest", "Our house", "The city playground", "A local school"], a: "Forest", e: "✅ Correct! Wild animals live freely in forests, woodlands, deserts, and nature landscapes." },
+                { q: "Which wild animal is famous for making a very loud roar?", o: ["Lion", "Rabbit", "Deer", "Squirrel"], a: "Lion", e: "✅ Correct! A lion's strong roar is loud enough to be heard from far away." },
+                { q: "Which animal has a thick ring of hair around its head called a mane?", o: ["Male Lion", "Tiger", "Cheetah", "Leopard"], a: "Male Lion", e: "✅ Correct! Adult male lions grow a big, proud ring of hair around their necks to protect them." },
+                { q: "What is the true meaning of a wild animal?", o: ["An animal that lives freely in nature away from humans", "An animal that works on our farms", "An animal that lives inside our living room", "An animal we take out on walks"], a: "An animal that lives freely in nature away from humans", e: "✅ Correct! Wild animals take care of themselves out in nature without human help." },
+                { q: "Which wild animal can jump and hop high across wide open fields?", o: ["Kangaroo", "Lion", "Elephant", "Giraffe"], a: "Kangaroo", e: "✅ Correct! Kangaroos are wild animals that move very fast by hopping on long back legs." },
+                { q: "Which big wild cat has bright orange fur with dark black stripes?", o: ["Tiger", "Cheetah", "Leopard", "Fox"], a: "Tiger", e: "✅ Correct! Tigers have beautiful orange coats covered in dark stripe patterns." },
+                { q: "True or False: Wild animals are usually kept as indoor house pets.", o: ["False", "True"], a: "False", e: "✅ Correct! Wild animals belong out in nature and are not safe to keep as household pets." },
+                { q: "Which wild animal loves to climb trees and swing easily between branches?", o: ["Monkey", "Bear", "Zebra", "Rhinoceros"], a: "Monkey", e: "✅ Correct! Monkeys use their strong arms and handy tails to hold onto forest trees." },
+                { q: "Which smart forest animal is famous for having a big, fluffy tail?", o: ["Fox", "Elephant", "Giraffe", "Hippopotamus"], a: "Fox", e: "✅ Correct! Foxes are small, clever wild animals with thick, beautiful fur tails." },
+                { q: "Which wild animal is big, furry, walks on four legs, and can stand up on its hind feet?", o: ["Bear", "Zebra", "Monkey", "Kangaroo"], a: "Bear", e: "✅ Correct! Bears are heavy forest creatures that stand up high to look around for food." },
+                { q: "Where can children safely go in a city to see real living wild animals?", o: ["The Zoo", "The supermarket", "The library", "The toy shop"], a: "The Zoo", e: "✅ Correct! Zoos build special natural areas so people can see wild animals up close safely." },
+                { q: "Which big wild cat has a golden coat covered in dark spots?", o: ["Leopard", "Zebra", "Bear", "Elephant"], a: "Leopard", e: "✅ Correct! Leopards have circular dark spot patterns all over their fur coat." },
+                { q: "True or False: A wild lion is capable of finding its own food in nature.", o: ["True", "False"], a: "True", e: "✅ Correct! Wild lions are independent predators that hunt for meals in open fields." },
+                { q: "Which wild animal looks a bit like a horse but wears black and white stripes?", o: ["Zebra", "Monkey", "Tiger", "Fox"], a: "Zebra", e: "✅ Correct! Zebras belong to the same animal group as horses but are completely striped." },
+                { q: "Complete this sentence: Wild animals look after themselves by finding their own ___.", o: ["food and water", "shoes and hats", "toys and games", "tables and chairs"], a: "food and water", e: "✅ Correct! Nature gives wild creatures everything they need to drink, eat, and live healthy." },
+                { q: "Which massive wild animal has two long, white pointed teeth called tusks?", o: ["Elephant", "Fox", "Deer", "Monkey"], a: "Elephant", e: "✅ Correct! Elephant tusks are actually extra long teeth used for digging and self defense." },
+                { q: "Which small wild animal has a ringed tail and a dark mask around its eyes?", o: ["Raccoon", "Lion", "Giraffe", "Zebra"], a: "Raccoon", e: "✅ Correct! Raccoons are clever nocturnal wild animals that look like they wear tiny masks." },
+                { q: "True or False: It is a good idea to trap a wild forest tiger to keep it in a garden.", o: ["False", "True"], a: "False", e: "✅ Correct! Tigers need expansive wild forest lands to survive and remain happy." },
+                { q: "Which wild animal uses its long arms to reach fresh forest fruits high up?", o: ["Monkey", "Rhinoceros", "Hippopotamus", "Zebra"], a: "Monkey", e: "✅ Correct! Monkeys gather wild fruits, nuts, and leaves directly from forest canopies." },
+                { q: "Which gentle wild animal is brown, has slender legs, and bounds quickly through woods?", o: ["Deer", "Bear", "Elephant", "Hippopotamus"], a: "Deer", e: "✅ Correct! Deer are highly alert wild animals that leap away quickly when startled." },
+                { q: "Complete this sentence: A large green forest acts as a natural ___ for wildlife.", o: ["home", "classroom", "kitchen", "store"], a: "home", e: "✅ Correct! Forests provide shelter, shade, protection, and space for wild animals." },
+                { q: "Which animal holds the title of the absolute tallest land mammal?", o: ["Giraffe", "Elephant", "Bear", "Lion"], a: "Giraffe", e: "✅ Correct! Giraffes stand taller than any other animal thanks to their extremely long legs and necks." },
+                { q: "True or False: Wild bears can be found living in cold mountain forests.", o: ["True", "False"], a: "True", e: "✅ Correct! Mountain ranges covered in trees are great spaces for wild bears." },
+                { q: "Identify the wild animal from the list below:", o: ["Tiger", "Cow", "Sheep", "Pet Dog"], a: "Tiger", e: "✅ Correct! Tigers are independent wild animals, while cows, sheep, and dogs are domestic animals." },
+                { q: "Which animal makes a high chattering sound while playing up in tree branches?", o: ["Monkey", "Fox", "Zebra", "Lion"], a: "Monkey", e: "✅ Correct! Monkeys call out loudly to communicate with their families across the forest." }
+            ],
+            medium: [
+                { q: "What is the official national animal of India?", o: ["Bengal Tiger", "Lion", "Elephant", "Leopard"], a: "Bengal Tiger", e: "✅ Correct! The majestic Bengal Tiger is proud to be the national animal of India." },
+                { q: "Which beautiful black-and-white wild bear eats mostly green bamboo?", o: ["Giant Panda", "Zebra", "Sloth Bear", "Fox"], a: "Giant Panda", e: "✅ Correct! Giant Pandas spend many hours eating fresh bamboo leaves in remote forests." },
+                { q: "What powerful tools on a tiger's paws help it climb and hold onto items?", o: ["Sharp claws", "Flat hooves", "Long trunks", "Soft feathers"], a: "Sharp claws", e: "✅ Correct! Tigers use sharp, curved claws for gripping terrain and self-defense." },
+                { q: "Why should human beings make sure to protect wild animals?", o: ["To keep the balance of nature healthy", "To teach them how to speak", "To put them into street shows", "To build cities over them"], a: "To keep the balance of nature healthy", e: "✅ Correct! Every wild animal plays a key role that keeps our Earth balanced and functioning." },
+                { q: "Where is the best, healthier place for a wild animal to live?", o: ["In its own natural habitat", "In a tiny traveling cage", "Tied up near a town road", "Inside an empty room"], a: "In its own natural habitat", e: "✅ Correct! Wild animals are happiest and healthiest when they remain in their natural habitats." },
+                { q: "What do we call a large group of wild deer that live and travel together?", o: ["A herd", "A pack", "A crowd", "A team"], a: "A herd", e: "✅ Correct! Deer live together in a herd so they can look out for danger as a team." },
+                { q: "Why do wild animals absolutely require big forests to live?", o: ["Forests provide natural food, water, and shelter", "Forests give them electricity", "Forests have neat paved sidewalks", "Forests have shops for them"], a: "Forests provide natural food, water, and shelter", e: "✅ Correct! Forests contain all the essential elements a wild creature needs to live safely." },
+                { q: "True or False: Wild animals require people to feed them breakfast every day.", o: ["False", "True"], a: "False", e: "✅ Correct! Wild animals hunt or gather natural forest food completely on their own." },
+                { q: "What name do we give to wild animals that feed only on the meat of other animals?", o: ["Flesh-eating animals", "Plant-eating animals", "Fruit-eating animals", "Grass-eating animals"], a: "Flesh-eating animals", e: "✅ Correct! Animals that eat other animals for sustenance are carnivores or flesh-eaters." },
+                { q: "What is a designated wildlife sanctuary?", o: ["A safe, protected forest where animals cannot be hurt", "A big market for buying pets", "A circus training center", "An animal clothes factory"], a: "A safe, protected forest where animals cannot be hurt", e: "✅ Correct! Sanctuaries are safe havens where hunting and logging are strictly forbidden." },
+                { q: "Which bear has distinct dark circles around its eyes and loves mountain forests?", o: ["Giant Panda", "Fox", "Lion", "Leopard"], a: "Giant Panda", e: "✅ Correct! The unique black eye patches help identify the lovable wild Giant Panda." },
+                { q: "Why do wild animals sometimes wander near human villages?", o: ["Because their forest trees were cut down", "To watch city television", "To borrow human books", "To play with human toys"], a: "Because their forest trees were cut down", e: "✅ Correct! Deforestation leaves animals without homes or food, forcing them to search elsewhere." },
+                { q: "True or False: We should yell and make loud noises at animals when we go to a zoo.", o: ["False", "True"], a: "False", e: "✅ Correct! We must be quiet and respectful to keep zoo animals calm and stress-free." },
+                { q: "Which large, grey wild animal has a very hard horn growing on its snout?", o: ["Rhinoceros", "Elephant", "Zebra", "Deer"], a: "Rhinoceros", e: "✅ Correct! Rhinoceroses are famous for the strong keratin horn on their nose." },
+                { q: "Complete this sentence: Wild animals help the woods stay healthy by eating ___.", o: ["natural plants and prey", "plastic wrappers and papers", "candy bars and sweet biscuits", "cooked meals from cities"], a: "natural plants and prey", e: "✅ Correct! Their natural eating habits stop any one plant or animal type from overpopulating." },
+                { q: "Which big spotted wild cat is celebrated as the fastest land runner?", o: ["Cheetah", "Lion", "Bear", "Monkey"], a: "Cheetah", e: "✅ Correct! The cheetah has a sleek body built to sprint incredibly fast across flat lands." },
+                { q: "Why do wild deer look up frequently while eating grass in fields?", o: ["To scan the area for predators like tigers", "To check the color of the clouds", "To see if it is going to snow", "To find missing toys"], a: "To scan the area for predators like tigers", e: "✅ Correct! Staying alert helps deer run away before a predator can reach them." },
+                { q: "True or False: Hunters are allowed to chase wild animals inside a sanctuary.", o: ["False", "True"], a: "False", e: "✅ Correct! Hunting is completely illegal inside a sanctuary to protect animal safety." },
+                { q: "Which physical attribute allows a giraffe to dine on high acacia branches?", o: ["Its very long neck", "Its tiny ears", "Its small fluffy tail", "Its short front legs"], a: "Its very long neck", e: "✅ Correct! The giraffe's long neck helps it reach high food spaces that other animals can't touch." },
+                { q: "Complete this sentence: By grazing on wild grass, deer help keep fields ___.", o: ["neat and tidy", "bright blue", "full of plastic", "completely rocky"], a: "neat and tidy", e: "✅ Correct! Plant-eating wild animals manage forest growth naturally by grazing." },
+                { q: "What should you do if you spot a wild animal on a forest nature path?", o: ["Stay far back and leave it alone completely", "Run right up to pet its fur", "Throw small stones to frighten it", "Shout out loud at it"], a: "Stay far back and leave it alone completely", e: "✅ Correct! We should observe from a safe distance and never disturb wild animals." },
+                { q: "Which wild creature is covered in sharp, pointed needles called quills?", o: ["Porcupine", "Fox", "Bear", "Zebra"], a: "Porcupine", e: "✅ Correct! Porcupines raise their stiff, sharp quills to protect themselves from harm." },
+                { q: "True or False: Leaving hot campfires burning inside a forest is fine for wild animals.", o: ["False", "True"], a: "False", e: "✅ Correct! Unattended fires cause terrible forest fires that burn down animal habitats." },
+                { q: "Why do wild animals need clean streams and rivers inside forests?", o: ["To drink safe water and stay healthy", "To wash their muddy clothes", "To practice swimming with boards", "To clean out glass bottles"], a: "To drink safe water and stay healthy", e: "✅ Correct! Just like humans, wild animals require clean, unpolluted water to stay alive." },
+                { q: "Which large wild bear has a thick white fur coat to live in snow?", o: ["Polar Bear", "Grizzly Bear", "Black Bear", "Sloth Bear"], a: "Polar Bear", e: "✅ Correct! Polar bears use thick white fur coats for insulation and blending into snowy fields." },
+                { q: "Complete this sentence: To save forest animals, humans must never throw away ___ in the woods.", o: ["garbage and plastic waste", "green leaves and pinecones", "natural soil and stones", "clean rain water"], a: "garbage and plastic waste", e: "✅ Correct! Wild animals can mistake plastic trash for food, which makes them very ill." },
+                { q: "How do dark camouflage stripes help a wild tiger survive?", o: ["They help it blend into tall forest shadows", "They keep it warm during heavy rain", "They help it run much faster", "They make it look shiny"], a: "They help it blend into tall forest shadows", e: "✅ Correct! Vertical stripes mimic tall grasses, letting tigers approach prey unseen." },
+                { q: "True or False: Every single wild animal has an important job to do in nature.", o: ["True", "False"], a: "True", e: "✅ Correct! From tiny foxes to giant elephants, every creature helps maintain our planet's balance." },
+                { q: "Which animal has thick skin armor and wallows in cool forest mud to beat the heat?", o: ["Rhinoceros", "Monkey", "Fox", "Kangaroo"], a: "Rhinoceros", e: "✅ Correct! Rhinos use mud coats to shield their sensitive skin from harsh sun rays and biting bugs." },
+                { q: "Why do governments set up protected zones for wild animals?", o: ["To keep animal families and forest spaces safe", "To teach animals how to play games", "To build highways through tree lines", "To turn wild animals into house pets"], a: "To keep animal families and forest spaces safe", e: "✅ Correct! Safe wild spaces ensure that endangered animal groups do not go extinct." }
+            ],
+            hard: [
+                { q: "Why is it absolutely critical for humans to protect our remaining wild forests?", o: ["To save the natural habitats of wild animals", "To construct more stone highways", "To set up giant smoke factories", "To cut down all lumber instantly"], a: "To save the natural habitats of wild animals", e: "✅ Correct! When we protect forests, we save the essential homes, food sources, and shelters of wild animals." },
+                { q: "What is the critical threat to wild animals if their natural forests are completely cleared?", o: ["They can become endangered or extinct", "They will learn to work in city offices", "They will automatically become friendly house pets", "They will grow longer tails"], a: "They can become endangered or extinct", e: "✅ Correct! Without their natural ecosystems, wild populations drop until they disappear forever." },
+                { q: "Why do strict global laws make hunting wild forest animals illegal?", o: ["It hurts wild populations and causes animal suffering", "It makes the forest too quiet for visitors", "It slows down the growth of trees", "It modifies cloud patterns"], a: "It hurts wild populations and causes animal suffering", e: "✅ Correct! Banning hunting preserves rare species and allows them to live safely in nature." },
+                { q: "Who walks through national parks to keep wild animals safe from bad actors?", o: ["Forest rangers", "Town traffic controllers", "School teachers", "Shopkeepers"], a: "Forest rangers", e: "✅ Correct! Forest rangers patrol protected lands to defend wild animals from illegal hunting." },
+                { q: "How do apex wild predators like tigers help maintain a healthy forest ecosystem?", o: ["They balance the population of plant-eating animals", "They plant fresh seeds in the dirt", "They build bridges across rivers", "They sweep up dead tree leaves"], a: "They balance the population of plant-eating animals", e: "✅ Correct! By hunting deer, they prevent plant-eaters from growing too numerous and eating all the forest greenery." },
+                { q: "What makes a protected National Park different from a standard neighborhood park?", o: ["It is a large wild area protected by laws for animals", "It features plastic slides and swings", "It has race tracks for vehicles", "It has zero trees or natural grass"], a: "It is a large wild area protected by laws for animals", e: "✅ Correct! National Parks preserve entire habitats so wild animals can live safely without human interference." },
+                { q: "What is a practical action we can take to protect global wildlife populations?", o: ["Refuse to buy things made from wild animal skins or bones", "Keep wild animals inside cages at home", "Cut down local woods to clear space", "Feed wild animals human packaged snacks"], a: "Refuse to buy things made from wild animal skins or bones", e: "✅ Correct! Avoiding wildlife products stops illegal hunting by removing the financial incentive." },
+                { q: "Why is discarding plastic trash in wild areas a major danger to forest animals?", o: ["Animals might eat it and become severely ill", "It changes the color of river water", "It causes all the tree leaves to fall", "It makes a loud noise in the forest"], a: "Animals might eat it and become severely ill", e: "✅ Correct! Plastic cannot break down in an animal's stomach, which can lead to blockages and starvation." },
+                { q: "What does it mean when a specific wild animal is listed as 'endangered'?", o: ["There are very few of its kind left alive on Earth", "The animal has changed its fur color", "The animal was relocated to a school", "The animal is completely safe from harm"], a: "There are very few of its kind left alive on Earth", e: "✅ Correct! Endangered species face a high risk of extinction and require immediate protection." },
+                { q: "True or False: Cutting down wild forests creates a better world for wild animals.", o: ["False", "True"], a: "False", e: "✅ Correct! Tree clearing removes the natural shelter and food that wild animals rely on." },
+                { q: "Look at this simple food chain: Grass is eaten by a deer. Who eats the deer?", o: ["Tiger", "Giant Panda", "Rabbit", "Giraffe"], a: "Tiger", e: "✅ Correct! In this wild chain, the carnivorous tiger acts as the predator that balances the deer population." },
+                { q: "What exactly makes up a complex forest ecosystem?", o: ["Plants, wild animals, and nature working together", "A long line of wooden chairs", "A group of modern tourist buses", "A grid of concrete streets"], a: "Plants, wild animals, and nature working together", e: "✅ Correct! Every living plant, animal, and stream interacts together to keep the environment stable." },
+                { q: "Why are fierce carnivores like lions actually useful to forest plants?", o: ["They stop plant-eaters from eating up all the green bushes", "They water the forest floors", "They dig deep holes for tree roots", "They block out harsh solar rays"], a: "They stop plant-eaters from eating up all the green bushes", e: "✅ Correct! Without lions, too many deer would gather and strip the forest completely bare." },
+                { q: "True or False: Official National Parks are established and defended by government laws.", o: ["True", "False"], a: "True", e: "✅ Correct! Legal protection keeps commercial companies from building or logging inside animal homes." },
+                { q: "What is the primary factor driving many rare wild species toward extinction?", o: ["Human activities destroying their natural habitats", "Animals forgetting how to drink stream water", "Changes in the color of tree bark", "Animals moving out into busy cities"], a: "Human activities destroying their natural habitats", e: "✅ Correct! Expanding towns, farms, and roads into wild zones leaves animals without homes." },
+                { q: "Complete this sentence: Wildlife conservation means ___ wild creatures and their homes.", o: ["saving and protecting", "trapping and selling", "dressing and training", "chasing and hiding"], a: "saving and protecting", e: "✅ Correct! Conservation focuses on keeping the natural world safe for the future." },
+                { q: "Why is trading items made from wild leopard skins or elephant tusks strictly illegal?", o: ["It stops the harmful hunting of protected wildlife", "It makes items look less attractive", "It uses up too much city shop space", "It modifies the weight of travel luggage"], a: "It stops the harmful hunting of protected wildlife", e: "✅ Correct! Banning these items removes the financial incentive for poachers to hunt rare animals." },
+                { q: "True or False: The loss of just one wild animal species can impact many other living things.", o: ["True", "False"], a: "True", e: "✅ Correct! Nature is interconnected like a web; removing one link alters the chain for others." },
+                { q: "What would happen if all the plant-eating deer and zebras disappeared from a forest?", o: ["Meat-eating animals would run out of natural food", "The forest trees would stop growing entirely", "The river systems would dry up instantly", "More wild tigers would suddenly appear"], a: "Meat-eating animals would run out of natural food", e: "✅ Correct! Carnivores depend directly on healthy herbivore populations for food." },
+                { q: "How do dedicated forest rangers stop illegal hunting practices?", o: ["By patrolling protected zones and enforcing safety rules", "By giving animals packaged food every morning", "By building brick homes inside the dense woods", "By cutting down the brush lines"], a: "By patrolling protected zones and enforcing safety rules", e: "✅ Correct! Active monitoring keeps poachers from invading safe wild sanctuaries." },
+                { q: "Complete this sentence: Protecting wild species keeps our entire ___ safe and beautiful.", o: ["Planet Earth", "School house", "Train station", "Shopping center"], a: "Planet Earth", e: "✅ Correct! Healthy wildlife populations maintain the global natural systems that support all life." },
+                { q: "Why are wild Giant Pandas vulnerable to extinction in mountain areas?", o: ["Human development has cut down their bamboo forests", "They cannot run fast on open ground", "They refuse to drink clean water", "They fight constantly with other bears"], a: "Human development has cut down their bamboo forests", e: "✅ Correct! Pandas rely almost entirely on bamboo, so losing these forests means they cannot survive." },
+                { q: "True or False: Pumping chemicals into local rivers can poison forest wildlife.", o: ["True", "False"], a: "True", e: "✅ Correct! Chemical pollution taints the vital drinking water and food sources that wild animals rely on." },
+                { q: "What is an easy way school children can participate in wildlife conservation?", o: ["Learn about nature and share its importance with friends", "Bring real wild monkeys into classrooms", "Buy souvenirs made from protected animal skins", "Keep quiet about nature protection rules"], a: "Learn about nature and share its importance with friends", e: "✅ Correct! Spreading knowledge encourages families and communities to value and protect nature." },
+                { q: "Why do herds of wild elephants sometimes travel extra long distances?", o: ["To search for water and fresh food during dry seasons", "To visit different human zoos", "To run away from tiny forest birds", "To change their skin color"], a: "To search for water and fresh food during dry seasons", e: "✅ Correct! Seasonal migration allows large animals to find resources when their local water holes dry up." },
+                { q: "Complete this sentence: By eating undergrowth bushes, wild deer help reduce massive ___.", o: ["forest fires from spreading fast", "floods from filling up streams", "snowstorms from occurring in winter", "boulders from rolling down hills"], a: "forest fires from spreading fast", e: "✅ Correct! Grazing animals clear dry brush, naturally lowering the intensity of forest fires." },
+                { q: "True or False: Plastic waste left behind by tourists can stay inside an animal's stomach forever.", o: ["True", "False"], a: "True", e: "✅ Correct! Wild animals cannot digest synthetic trash, which blockages their system and can be fatal." },
+                { q: "Why do wildlife researchers study wild animals using safe electronic tracking collars?", o: ["To understand their migration paths and protect them better", "To teach them how to navigate across city roads", "To amplify the sound of their roars", "To make them look stylish"], a: "To understand their migration paths and protect them better", e: "✅ Correct! Tracking data shows conservationists which wilderness corridors need legal protection." },
+                { q: "What would happen to a forest if all wild animals were completely removed?", o: ["It would become an unhealthy, unbalanced ecosystem", "It would turn into a clean city park instantly", "It would become a better playground for kids", "It would stay exactly the same as before"], a: "It would become an unhealthy, unbalanced ecosystem", e: "✅ Correct! Without wild animals to spread seeds and balance growth, the plant life would degrade." },
+                { q: "Identify the best approach to guarantee long-term survival for wild animals:", o: ["Set up strict laws that protect large natural forest spaces", "Construct tall walls around all human cities", "Move all remaining wild animals into steel cages", "Stop planting trees near human neighborhoods"], a: "Set up strict laws that protect large natural forest spaces", e: "✅ Correct! Protecting natural habitats ensures wild animals have the space, food, and security to thrive." }
+            ]
+        };
+
+        // Quiz Centralized State Variables
+        let selectedLvl = '';
+        let currentQuestionSet = [];
+        let cursorIdx = 0;
+        let responseMap = {}; 
+        let totalElapsedSeconds = 0;
+        let countdownTimerId = null;
+
+        // 🔊 Lazy-Loaded Web Audio API Audio Engine Instance
+        let audioCtx = null;
+        
+        function soundTrigger(type) {
+            try {
+                // Instantiate only on interaction to bypass modern browser blocking policies
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                const now = audioCtx.currentTime;
+                
+                if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(500, now);
+                    gain.gain.setValueAtTime(0.06, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                } else if (type === 'correct') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.07); // E5
+                    osc.frequency.setValueAtTime(783.99, now + 0.14); // G5
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.linearRampToValueAtTime(80, now + 0.2);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
+                    osc.start(now);
+                    osc.stop(now + 0.22);
+                } else if (type === 'complete') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.setValueAtTime(659.25, now + 0.08);
+                    osc.frequency.setValueAtTime(783.99, now + 0.16);
+                    osc.frequency.setValueAtTime(1046.50, now + 0.24);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                    osc.start(now);
+                    osc.stop(now + 0.5);
+                } else if (type === 'badge') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.setValueAtTime(554.37, now + 0.06);
+                    osc.frequency.setValueAtTime(659.25, now + 0.12);
+                    osc.frequency.setValueAtTime(880, now + 0.18);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                }
+            } catch (err) {
+                console.log("Audio contextual playback blocked or unsupported:", err);
+            }
+        }
+
+        // Fisher-Yates Randomization Core Engine
+        function shuffleArray(src) {
+            let res = [...src];
+            for (let i = res.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [res[i], res[j]] = [res[j], res[i]];
+            }
+            return res;
+        }
+
+        // Initiation Routing Controls
+        function initiateQuiz(lvl) {
+            soundTrigger('click');
+            selectedLvl = lvl;
+            
+            // Randomize questions selection pool sequence completely
+            let rawQuestions = wildAnimalBank[lvl];
+            let randomizedPool = shuffleArray(rawQuestions);
+            
+            currentQuestionSet = randomizedPool.map(item => {
+                return {
+                    q: item.q,
+                    o: shuffleArray(item.o), 
+                    a: item.a,
+                    e: item.e
+                };
+            });
+
+            cursorIdx = 0;
+            responseMap = {};
+            totalElapsedSeconds = 0;
+            
+            clearInterval(countdownTimerId);
+            countdownTimerId = setInterval(() => {
+                totalElapsedSeconds++;
+                document.getElementById('header-timer').innerText = formatTimeMetrics(totalElapsedSeconds);
+            }, 1000);
+
+            switchActiveView('quiz-screen');
+            displayCurrentQuestion();
+        }
+
+        function formatTimeMetrics(sec) {
+            let mins = Math.floor(sec / 60);
+            let secs = sec % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function switchActiveView(viewId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+        }
+
+        // Display current target card questions elements
+        function displayCurrentQuestion() {
+            const currentItem = currentQuestionSet[cursorIdx];
+            
+            // Sync status header fields
+            document.getElementById('header-level').innerText = selectedLvl;
+            document.getElementById('header-count').innerText = cursorIdx + 1;
+            document.getElementById('header-score').innerText = computeScore();
+            
+            let barPct = ((cursorIdx + 1) / 30) * 100;
+            document.getElementById('progress-indicator').style.width = `${barPct}%`;
+
+            // Reset and trigger question text view model animation
+            const qBox = document.getElementById('question-text');
+            qBox.innerText = currentItem.q;
+            qBox.parentElement.style.animation = 'none';
+            qBox.parentElement.offsetHeight; // Trigger reflow layout engine mechanics
+            qBox.parentElement.style.animation = 'questionSwap 0.25s ease-out';
+
+            const optionsContainer = document.getElementById('options-box');
+            optionsContainer.innerHTML = '';
+
+            const feedbackCard = document.getElementById('explanation-card');
+            feedbackCard.style.display = 'none';
+
+            let isAnswered = responseMap.hasOwnProperty(cursorIdx);
+
+            currentItem.o.forEach(choice => {
+                const optBtn = document.createElement('button');
+                optBtn.className = 'option-btn';
+                optBtn.innerText = choice;
+
+                if (isAnswered) {
+                    optBtn.disabled = true;
+                    let selectedAnswer = responseMap[cursorIdx];
+                    if (choice === currentItem.a) {
+                        optBtn.classList.add('correct');
+                    } else if (choice === selectedAnswer) {
+                        optBtn.classList.add('wrong');
+                    }
+                } else {
+                    optBtn.onclick = () => handleAnswerClick(choice, optBtn);
+                }
+                optionsContainer.appendChild(optBtn);
+            });
+
+            if (isAnswered) {
+                renderExplanation(currentItem.e, responseMap[cursorIdx] === currentItem.a);
+            }
+
+            // ⚙️ Navigation Requirements Array Structural Integrity Logic
+            document.getElementById('btn-prev').disabled = (cursorIdx === 0);
+            
+            const nextBtn = document.getElementById('btn-next');
+            if (cursorIdx === 29) {
+                nextBtn.innerText = '🏁 Finish';
+                nextBtn.disabled = !isAnswered;
+            } else {
+                nextBtn.innerText = '➡️ Next';
+                nextBtn.disabled = !isAnswered;
+            }
+        }
+
+        // Process Choice Input Operations
+        function handleAnswerClick(selected, element) {
+            const currentItem = currentQuestionSet[cursorIdx];
+            responseMap[cursorIdx] = selected;
+
+            let isCorrect = (selected === currentItem.a);
+            soundTrigger(isCorrect ? 'correct' : 'wrong');
+
+            const options = document.querySelectorAll('#options-box .option-btn');
+            options.forEach(btn => {
+                btn.disabled = true;
+                if (btn.innerText === currentItem.a) {
+                    btn.classList.add('correct');
+                } else if (btn.innerText === selected && !isCorrect) {
+                    btn.classList.add('wrong');
+                }
+            });
+
+            renderExplanation(currentItem.e, isCorrect);
+            document.getElementById('header-score').innerText = computeScore();
+            document.getElementById('btn-next').disabled = false;
+        }
+
+        function renderExplanation(text, status) {
+            const box = document.getElementById('explanation-card');
+            box.innerText = text;
+            box.style.background = status ? 'var(--correct-bg)' : 'var(--wrong-bg)';
+            box.style.border = `1px solid ${status ? 'var(--correct-border)' : 'var(--wrong-border)'}`;
+            box.style.color = status ? '#1b5e20' : '#b71c1c';
+            box.style.display = 'block';
+        }
+
+        function computeScore() {
+            let points = 0;
+            for (let k in responseMap) {
+                if (responseMap[k] === currentQuestionSet[k].a) {
+                    points++;
+                }
+            }
+            return points;
+        }
+
+        // Navigation controls handler
+        function handleNavigation(direction) {
+            soundTrigger('click');
+            let nextIndex = cursorIdx + direction;
+            
+            if (nextIndex >= 0 && nextIndex < 30) {
+                cursorIdx = nextIndex;
+                displayCurrentQuestion();
+            } else if (nextIndex === 30) {
+                buildSummaryDashboard();
+            }
+        }
+
+        // Build summary calculation reports
+        function buildSummaryDashboard() {
+            clearInterval(countdownTimerId);
+            soundTrigger('complete');
+
+            let matches = computeScore();
+            let missed = 30 - matches;
+            let ratio = Math.round((matches / 30) * 100);
+            
+            // Achievement badges configurations mappings
+            let icon = '📚';
+            let title = 'Keep Learning';
+            let message = 'Keep studying nature to learn why forest environments matter for wild animals!';
+
+            if (ratio >= 90) {
+                icon = '🏆';
+                title = 'Wildlife Expert';
+                message = 'Incredible! You possess advanced mastery regarding wild animal systems and wilderness conservation protection rules.';
+            } else if (ratio >= 70) {
+                icon = '🌟';
+                title = 'Wildlife Explorer';
+                message = 'Excellent job! You have acquired wonderful insights concerning forest safety habitats and food traits.';
+            } else if (ratio >= 50) {
+                icon = '👍';
+                title = 'Nature Learner';
+                message = 'Good attempt! You are establishing a very neat foundation about identifying wild land species.';
+            }
+
+            // Save performance progress to localStorage
+            localStorage.setItem(`wild_animals_score_${selectedLvl}`, `${matches}/30`);
+            localStorage.setItem(`wild_animals_badge_${selectedLvl}`, title);
+
+            // Populate dashboard nodes
+            document.getElementById('sum-level').innerText = selectedLvl;
+            document.getElementById('sum-time').innerText = formatTimeMetrics(totalElapsedSeconds);
+            document.getElementById('sum-score').innerText = `${matches} / 30`;
+            document.getElementById('sum-pct').innerText = `${ratio}%`;
+            document.getElementById('sum-correct').innerText = matches;
+            document.getElementById('sum-wrong').innerText = missed;
+            
+            document.getElementById('sum-badge-icon').innerText = icon;
+            document.getElementById('sum-badge-title').innerText = title;
+            document.getElementById('sum-badge-desc').innerText = message;
+
+            // Prepare local signature printing nodes parameters
+            document.getElementById('cert-lvl').innerText = selectedLvl;
+            document.getElementById('cert-score').innerText = `${matches}/30`;
+            document.getElementById('cert-pct').innerText = `${ratio}%`;
+            document.getElementById('cert-badge-icon').innerText = icon;
+            document.getElementById('cert-badge-title').innerText = title;
+            document.getElementById('cert-date').innerText = new Date().toLocaleDateString();
+
+            switchActiveView('summary-screen');
+            
+            if (ratio >= 70) {
+                triggerConfettiShower();
+            }
+        }
+
+        // Particle configuration generation engine 
+        function triggerConfettiShower() {
+            soundTrigger('badge');
+            const box = document.getElementById('confetti-holder');
+            box.innerHTML = '';
+            box.style.display = 'block';
+
+            const palette = ['#2e7d32', '#2563eb', '#f59e0b', '#d32f2f', '#8b5cf6', '#06b6d4'];
+
+            for (let i = 0; i < 120; i++) {
+                const el = document.createElement('div');
+                el.className = 'confetti';
+                el.style.left = `${Math.random() * 100}vw`;
+                el.style.backgroundColor = palette[Math.floor(Math.random() * palette.length)];
+                el.style.top = `-${Math.random() * 40}px`;
+                
+                let size = Math.random() * 8 + 6;
+                el.style.width = `${size}px`;
+                el.style.height = `${size}px`;
+                
+                let dur = Math.random() * 2 + 1.5;
+                el.style.animationDuration = `${dur}s`;
+                el.style.animationDelay = `${Math.random() * 0.3}s`;
+                
+                box.appendChild(el);
+            }
+
+            setTimeout(() => {
+                box.style.display = 'none';
+                box.innerHTML = '';
+            }, 3500);
+        }
+
+        function goHome() {
+            soundTrigger('click');
+            clearInterval(countdownTimerId);
+            switchActiveView('start-screen');
+        }
+
+        function restartLevel() {
+            initiateQuiz(selectedLvl);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🚦 Road Safety Quiz</title>
+    <style>
+        /* CSS RESET & VARIABLES */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        :root {
+            --bg-gradient: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+            --easy-color: #2ecc71;
+            --medium-color: #f1c40f;
+            --hard-color: #e74c3c;
+            --primary-accent: #3498db;
+            --text-dark: #2c3e50;
+            --text-light: #ffffff;
+            --card-bg: rgba(255, 255, 255, 0.88);
+            --card-border: rgba(255, 255, 255, 0.4);
+            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.12);
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradientBG 20s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-dark);
+            padding: 15px;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* CONTAINER & GLASSMORPHISM CARD */
+        .container {
+            width: 100%;
+            max-width: 700px;
+            perspective: 1000px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            transform-style: preserve-3d;
+            animation: cardAppear 0.5s ease-out;
+        }
+
+        @keyframes cardAppear {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* SCREENS MANAGEMENT */
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        /* HEADER & TITLES */
+        .app-title {
+            font-size: 2.2rem;
+            text-align: center;
+            margin-bottom: 5px;
+            font-weight: 800;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .app-subtitle {
+            font-size: 1rem;
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+        }
+
+        /* BUTTONS */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 16px 24px;
+            margin-bottom: 15px;
+            border: none;
+            border-radius: 16px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn-level-easy { background-color: var(--easy-color); color: var(--text-light); }
+        .btn-level-medium { background-color: var(--medium-color); color: var(--text-dark); }
+        .btn-level-hard { background-color: var(--hard-color); color: var(--text-light); }
+
+        .btn-option {
+            background-color: #ffffff;
+            color: var(--text-dark);
+            border: 2px solid #e0e0e0;
+            text-align: left;
+        }
+
+        .btn-option:hover {
+            background-color: #f8f9fa;
+            border-color: var(--primary-accent);
+        }
+
+        /* QUIZ PROGRESS & STATS */
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-weight: 700;
+            font-size: 1rem;
+            background: rgba(0,0,0,0.04);
+            padding: 10px 15px;
+            border-radius: 12px;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 12px;
+            background-color: #e0e0e0;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: var(--primary-accent);
+            border-radius: 6px;
+            transition: width 0.4s ease;
+        }
+
+        /* QUESTION CONTAINER */
+        .question-text {
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        /* FEEDBACK & EXPLANATION */
+        .feedback-box {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 14px;
+            font-weight: 600;
+            display: none;
+            animation: fadeIn 0.3s ease;
+            line-height: 1.4;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .feedback-correct {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .feedback-wrong {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* RIGID NAVIGATION REQUIREMENT */
+        .navigation-grid {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            gap: 15px;
+            margin-top: 25px;
+            border-top: 2px solid #e0e0e0;
+            padding-top: 20px;
+        }
+
+        .nav-btn {
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            background-color: #34495e;
+            color: white;
+            transition: var(--transition);
+            text-align: center;
+        }
+
+        .nav-btn:hover { background-color: #2c3e50; }
+        .nav-btn:disabled { background-color: #bdc3c7; cursor: not-allowed; opacity: 0.6; }
+        .nav-home { background-color: #7f8c8d; }
+        .nav-home:hover { background-color: #95a5a6; }
+
+        /* SCORE SUMMARY SCREEN */
+        .summary-title {
+            font-size: 1.8rem;
+            text-align: center;
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .stat-item {
+            background: rgba(0,0,0,0.03);
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-val { font-size: 1.2rem; font-weight: 700; color: var(--text-dark); }
+        .stat-lbl { font-size: 0.8rem; color: #7f8c8d; text-transform: uppercase; margin-top: 3px; }
+
+        .badge-box {
+            text-align: center;
+            background: linear-gradient(135deg, #fff 0%, #f9f9f9 100%);
+            border: 2px dashed #3498db;
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 25px;
+        }
+
+        .badge-icon { font-size: 3rem; margin-bottom: 5px; display: block; }
+        .badge-title { font-size: 1.3rem; font-weight: 700; color: #2c3e50; }
+
+        .action-btn {
+            background-color: var(--primary-accent);
+            color: white;
+            text-align: center;
+        }
+
+        /* CONFETTI SYSTEM */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            position: absolute;
+            top: -10px;
+            z-index: 999;
+            border-radius: 50%;
+            animation: fall linear forwards;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(105vh) rotate(360deg);
+            }
+        }
+
+        /* PRINTABLE CERTIFICATE VIEW */
+        #certificate-print-view {
+            display: none;
+            background: white;
+            color: black;
+            padding: 40px;
+            border: 10px double #2c3e50;
+            max-width: 800px;
+            margin: 20px auto;
+            text-align: center;
+            font-family: 'Georgia', serif;
+            position: relative;
+        }
+
+        .cert-header { font-size: 2.5rem; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; }
+        .cert-sub { font-size: 1.2rem; font-style: italic; margin-bottom: 30px; }
+        .cert-body { font-size: 1.4rem; margin-bottom: 40px; line-height: 1.6; }
+        .cert-name { font-size: 2rem; font-weight: bold; border-bottom: 2px solid #000; display: inline-block; padding: 0 30px; margin: 15px 0; }
+        .cert-footer { display: flex; justify-content: space-between; margin-top: 60px; font-size: 1rem; border-top: 1px dashed #ccc; padding-top: 20px; }
+
+        @media print {
+            body { background: white !important; padding: 0; margin: 0; }
+            .container { display: none !important; }
+            #certificate-print-view { display: block !important; border: 10px double #000; }
+        }
+
+        /* SMARTBOARDS & RESPONSIVE TWEAKS */
+        @media(max-width: 500px) {
+            .card { padding: 20px; }
+            .app-title { font-size: 1.7rem; }
+            .question-text { font-size: 1.15rem; }
+            .btn { padding: 14px 18px; font-size: 1rem; }
+            .navigation-grid { gap: 8px; }
+            .nav-btn { padding: 10px 14px; font-size: 0.9rem; }
+        }
+
+        @media(min-width: 1200px) {
+            /* High resolution optimization / Smartboards */
+            .card { padding: 40px; border-radius: 32px; }
+            .question-text { font-size: 1.6rem; }
+            .btn { padding: 20px 28px; font-size: 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="card">
+            
+            <div id="start-screen" class="screen active">
+                <h1 class="app-title">🚦 Road Safety Quiz</h1>
+                <p class="app-subtitle">Be Alert • Be Safe • Learn</p>
+                <p style="text-align: center; margin-bottom: 25px; font-weight: 600; color: #57606f;">Select your learning level to begin:</p>
+                
+                <button class="btn btn-level-easy" onclick="startQuiz('easy')">🟢 Easy Level</button>
+                <button class="btn btn-level-medium" onclick="startQuiz('medium')">🟡 Medium Level</button>
+                <button class="btn btn-level-hard" onclick="startQuiz('hard')">🔴 Hard Level</button>
+                
+                <div style="margin-top: 25px; text-align: center; font-size: 0.9rem; color: #7f8c8d;" id="high-scores-dashboard">
+                    </div>
+            </div>
+
+            <div id="quiz-screen" class="screen">
+                <div class="quiz-header">
+                    <div>Level: <span id="display-level" style="text-transform: capitalize; font-weight:800;">-</span></div>
+                    <div>Question: <span id="current-q-num">0</span>/30</div>
+                    <div>Score: <span id="current-score">0</span></div>
+                </div>
+
+                <div class="progress-bar-container">
+                    <div id="quiz-progress-bar" class="progress-bar"></div>
+                </div>
+
+                <div id="question-box">
+                    <div id="question-text" class="question-text"></div>
+                    <div id="options-container"></div>
+                </div>
+
+                <div id="feedback-box" class="feedback-box"></div>
+
+                <div class="navigation-grid">
+                    <button id="prev-btn" class="nav-btn" onclick="navigatePrev()">⬅️ Previous</button>
+                    <button id="home-btn" class="nav-btn nav-home" onclick="navigateHome()">🏠 Home</button>
+                    <button id="next-btn" class="nav-btn" onclick="navigateNext()">➡️ Next</button>
+                </div>
+            </div>
+
+            <div id="summary-screen" class="screen">
+                <h2 class="summary-title">🎉 Quiz Completed!</h2>
+                
+                <div class="badge-box">
+                    <span id="summary-badge-icon" class="badge-icon">🏆</span>
+                    <div id="summary-badge-title" class="badge-title">Road Safety Champion</div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-item"><div id="stat-score" class="stat-val">-</div><div class="stat-lbl">Final Score</div></div>
+                    <div class="stat-item"><div id="stat-percent" class="stat-val">-</div><div class="stat-lbl">Percentage</div></div>
+                    <div class="stat-item"><div id="stat-correct" class="stat-val" style="color:var(--easy-color);">-</div><div class="stat-lbl">Correct</div></div>
+                    <div class="stat-item"><div id="stat-wrong" class="stat-val" style="color:var(--hard-color);">-</div><div class="stat-lbl">Wrong</div></div>
+                    <div class="stat-item"><div id="stat-time" class="stat-val">-</div><div class="stat-lbl">Time Taken</div></div>
+                    <div class="stat-item"><div id="stat-level" class="stat-val" style="text-transform: capitalize;">-</div><div class="stat-lbl">Level Selected</div></div>
+                </div>
+
+                <button class="btn action-btn" onclick="restartCurrentLevel()">🔄 Play Again</button>
+                <button class="btn action-btn" style="background-color:#9b59b6;" onclick="navigateHome()">📋 Choose Another Level</button>
+                <button id="print-cert-btn" class="btn action-btn" style="background-color:#2ecc71;" onclick="window.print()">🖨️ Print Certificate</button>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="certificate-print-view">
+        <div class="cert-header">Certificate of Achievement</div>
+        <div class="cert-sub">Presented for outstanding awareness in Road Safety Education</div>
+        <div class="cert-body">
+            This is to certify that a safety conscious learner has successfully completed the <br>
+            <strong><span id="cert-level-name">-</span> Level Road Safety Quiz</strong><br>
+            with a magnificent score of <strong><span id="cert-score-val">-</span>%</strong>!
+        </div>
+        <div>
+            Rank Earned:<br>
+            <span id="cert-badge-title" style="font-size: 1.6rem; font-weight: bold; color: #2c3e50;">-</span>
+        </div>
+        <div class="cert-footer">
+            <div>Date: <span id="cert-date">-</span></div>
+            <div>Program: 🚦 Road Safety Interactive App</div>
+            <div>Status: Verifiably Safe Citizen ✅</div>
+        </div>
+    </div>
+
+    <script>
+        // WEB AUDIO API SYSTEM
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            try {
+                initAudio();
+                if (!audioCtx) return;
+                
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                let now = audioCtx.currentTime;
+
+                if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                } else if (type === 'correct') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now); // A3
+                    osc.frequency.linearRampToValueAtTime(130, now + 0.2);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'complete' || type === 'badge') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.setValueAtTime(659.25, now + 0.1);
+                    osc.frequency.setValueAtTime(783.99, now + 0.2);
+                    osc.frequency.setValueAtTime(1046.50, now + 0.3);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.02, now + 0.5);
+                    osc.start(now);
+                    osc.stop(now + 0.5);
+                }
+            } catch(e) { console.log("Audio playback deferred or unsupported context setup."); }
+        }
+
+        // COMPLETE 90 QUESTION ARRAY DATABASE (EXACTLY 30 PER LEVEL REQUIRED)
+        const questionBank = {
+            easy: [
+                { q: "Where should we cross the road safely?", o: ["Everywhere on the road", "At a zebra crossing", "Between parked cars"], a: 1, e: "Always cross the road at a zebra crossing where drivers know to look for you!" },
+                { q: "What does a red traffic light mean?", o: ["Go as fast as you can", "Slow down", "Stop immediately"], a: 2, e: "Red means Stop! It keeps vehicles and pedestrians from colliding." },
+                { q: "What does a green traffic light mean?", o: ["Go safely", "Stop and wait", "Sleep on the road"], a: 0, e: "Green means Go! You can proceed safely if the path is clear." },
+                { q: "Where should people walk when there is a footpath?", o: ["In the middle of the street", "On the footpath", "On the drainage lines"], a: 1, e: "Always walk on the footpath to stay safely separated from moving cars." },
+                { q: "Should we look both ways before crossing the road?", o: ["Yes, always look right and left", "No, just run across", "Only if we hear a very loud horn"], a: 0, e: "Always look right, left, and right again to ensure no vehicles are heading your way." },
+                { q: "Is the road a safe place to play with your friends?", o: ["Yes, it has lots of space", "No, it is highly dangerous", "Only during the late evenings"], a: 1, e: "Never play on the road because moving vehicles cannot stop instantly." },
+                { q: "Who helps us safely cross the road near schools?", o: ["A doctor", "A construction worker", "A traffic police officer"], a: 2, e: "Traffic police officers work hard to manage vehicles and keep pedestrians safe." },
+                { q: "What color tells walkers it is safe to cross at a crosswalk?", o: ["The green walking person signal", "A bright flashing blue light", "A solid red hand signal"], a: 0, e: "The green walking icon shows it is safe for pedestrians to begin crossing." },
+                { q: "Complete the safety sentence: Green means go, and Red means ____.", o: ["Run", "Stop", "Fly"], a: 1, e: "Red means stop. It is one of the most vital rules of the road." },
+                { q: "True or False: It is safe to run across the street without looking if you are in a big hurry.", o: ["True", "False"], a: 1, e: "False! Speeding up without checking traffic leads to dangerous accidents." },
+                { q: "What is the best thing to do before stepping off the curb?", o: ["Close your eyes", "Stop, look, and listen", "Shout loudly"], a: 1, e: "Stop, look, and listen for any oncoming vehicles before stepping out." },
+                { q: "Is the road a good place to ride a skateboard or roller skates?", o: ["No, it is unsafe", "Yes, anywhere you want", "Only when traffic is fast"], a: 0, e: "Keep skateboards and roller skates safely on parks and sidewalks, never open roads." },
+                { q: "When walking near roads, who should young children hold hands with?", o: ["Nobody", "Their favorite toy", "A safe adult"], a: 2, e: "Holding hands with an adult keeps small children secure next to traffic elements." },
+                { q: "What does a yellow traffic light tell drivers?", o: ["Drive super fast", "Slow down and prepare to stop", "Turn off your headlights"], a: 1, e: "Yellow means slow down because the light is about to turn red." },
+                { q: "True or False: We can cross the street even when the walking signal shows a steady red hand.", o: ["True", "False"], a: 1, e: "False! A red hand means stay on the safety curb and wait." },
+                { q: "If there is no footpath, which side of the road should you walk on?", o: ["Facing oncoming traffic", "With your back to traffic", "Directly down the middle lane"], a: 0, e: "Walking facing oncoming traffic lets you see vehicles coming towards you." },
+                { q: "Complete the sentence: We must always walk across roads, never ____.", o: ["Look", "Run", "Smile"], a: 1, e: "Never run! If you trip and fall, drivers might not see you in time." },
+                { q: "What should you do if your favorite ball rolls out into the road?", o: ["Run out quickly to catch it", "Ask an adult to help retrieve it", "Leave it and cry out loud"], a: 1, e: "Always ask an adult. Never chase a toy or ball onto an active street." },
+                { q: "True or False: A zebra crossing is named because it has black and white painted stripes.", o: ["True", "False"], a: 0, e: "True! The white stripes look just like a zebra pattern so everyone notices them." },
+                { q: "Choose the correct safety rule from these options:", o: ["Always walk on the footpath", "Play football on the highway", "Cross roads behind big trucks"], a: 0, e: "Walking on footpaths keeps you far away from vehicular traffic zones." },
+                { q: "What should you do when you see a school bus stopped with its lights flashing?", o: ["Throw stones at it", "Wait patiently for children to cross safely", "Run around the wheels"], a: 1, e: "Flashing lights mean children are getting on or off. Be highly alert!" },
+                { q: "Why shouldn't you cross the road right between parked cars?", o: ["Drivers cannot see you hidden there", "The cars will get messy", "It takes too much time"], a: 0, e: "Parked cars block you from the view of moving drivers, creating high risk." },
+                { q: "True or False: It is completely safe to wear thick headphones while walking across a main road.", o: ["True", "False"], a: 1, e: "False! Your ears help you hear sirens, horns, or approaching motors." },
+                { q: "Who needs to follow road safety guidelines?", o: ["Only truck drivers", "Only small children", "Everyone using the roads"], a: 2, e: "Safety rules protect every single person: drivers, passengers, and walkers alike." },
+                { q: "When crossing at a clear street, how should you walk?", o: ["Straight across cleanly", "In a zig-zag pattern", "Slowly crawling"], a: 0, e: "Crossing straight is the shortest and safest route to the other side." },
+                { q: "Complete the sentence: Traffic rules and lights keep everybody ____.", o: ["Safe", "Angry", "Confused"], a: 0, e: "They organize traffic to prevent accidents and keep everyone safe." },
+                { q: "True or False: We can stand on the edge of the road to play tag games.", o: ["True", "False"], a: 1, e: "False! Keep play activities safely inside school yards, parks, or home gardens." },
+                { q: "What should you do if a traffic signal changes to red as you approach the curb?", o: ["Run across fast", "Stop and wait for the next green walk sign", "Crawl under the car"], a: 1, e: "Wait patiently. Safety is always worth a brief moment of delay." },
+                { q: "You want to cross the road to reach your friend. What is the smartest choice?", o: ["Run out immediately", "Look right, left, right and walk calmly when safe", "Shout across to them"], a: 1, e: "Look carefully in all directions, ensuring all cars have completely stopped." },
+                { q: "True or False: We must listen to the spoken instructions of crossing guards and traffic police officers.", o: ["True", "False"], a: 0, e: "True! They are specifically trained professionals guiding us to avoid hazards." }
+            ],
+            medium: [
+                { q: "Why should we wear a certified helmet while riding a bicycle?", o: ["To look cool", "To protect our head from injuries", "To speed up"], a: 1, e: "Helmets absorb impact energy to protect your brain and skull during falls." },
+                { q: "Why should every passenger wear a seat belt inside a car?", o: ["To keep safe if the car stops suddenly", "To keep clothes clean", "To prevent looking out windows"], a: 0, e: "Seat belts stop your body from flying forward during sudden emergency braking." },
+                { q: "What is the correct time to get off a transit or school bus?", o: ["While the bus is slowing down", "Only after the bus stops completely", "When the driver is speeding up"], a: 1, e: "Exiting a moving vehicle is incredibly risky. Wait until it stands still." },
+                { q: "Should you stick your hands or head out of a moving bus window?", o: ["Yes, to feel the cool wind", "No, passing objects can hurt you severely", "Only if the bus is slow"], a: 1, e: "Keep all body parts inside! Passing poles, trees, or trucks can cause major injuries." },
+                { q: "What does a steady yellow traffic light indicate to an approaching vehicle driver?", o: ["Accelerate to pass quickly", "Prepare to stop safely before red", "Turn off the engine"], a: 1, e: "Yellow warns that the clear window has ended and red is imminent." },
+                { q: "Who directs vehicles when electricity fails and traffic lights go dark?", o: ["The fastest driver", "A trained traffic police officer", "No one, everyone goes at once"], a: 1, e: "Traffic officers use hand signals to coordinate safe moving lines manually." },
+                { q: "Why must we stand in an orderly queue while boarding a bus?", o: ["To see who is tallest", "To enter safely without pushing or falling", "To block others"], a: 1, e: "Queues avoid chaotic crowding, reducing tripping hazards near heavy bus tires." },
+                { q: "Should we run across an open highway to catch a departing public bus?", o: ["No, it is highly dangerous", "Yes, missing the bus makes us late", "Only if we wave our hands"], a: 0, e: "Never risk your life for a bus. Wait for the next ride in a safe zone." },
+                { q: "True or False: Bicycle riders do not have to follow traffic lights because bicycles have no engines.", o: ["True", "False"], a: 1, e: "False! Cyclists share public roads and must obey identical stop-and-go signals." },
+                { q: "Complete the statement: Passengers must never distract the ____.", o: ["Radio stations", "Vehicle driver", "Side mirrors"], a: 1, e: "Drivers need maximum concentration on the road environment to keep everyone safe." },
+                { q: "What is the safest side of the vehicle to step out from?", o: ["The side facing the active traffic road", "The pavement or sidewalk side", "Through the front trunk"], a: 1, e: "Exiting onto the sidewalk keeps you fully clear from passing vehicles." },
+                { q: "Why should a bicycle have functional bright lights and reflectors at night?", o: ["To illuminate the stars", "So motorists can spot the cyclist easily", "To save battery power"], a: 1, e: "Reflectors bouncing light make bicycles visible from long distances in the dark." },
+                { q: "Which habit is correct while traveling inside a moving car?", o: ["Sitting quietly with your seat belt clicked", "Standing up to dance on the seats", "Throwing trash out the windows"], a: 0, e: "Sitting securely prevents injuries and lets the driver concentrate on navigation." },
+                { q: "True or False: It is completely fine to ride a kid's bicycle on a main highway alongside fast trucks.", o: ["True", "False"], a: 1, e: "False! Children should stick to designated bike paths or quiet local paths." },
+                { q: "What does a circular road sign with a bright red outer border usually convey?", o: ["An absolute order or prohibition", "A friendly design tip", "A location landmark"], a: 0, e: "Red borders indicate regulatory commands or things you are strictly forbidden from doing." },
+                { q: "Complete the sentence: Always maintain both hands firmly on the bicycle ____.", o: ["Pedals", "Handlebars", "Tires"], a: 1, e: "Keeping hands on handlebars ensures you retain steering steering control at all moments." },
+                { q: "Your friend wants you to ride on their bicycle handlebars. What do you say?", o: ["Sure, let's accelerate", "No, it is dangerous and blocks the driver's view", "Only if we ride backward"], a: 1, e: "Doubling up on handlebars compromises balance and blocks visibility. Say no!" },
+                { q: "True or False: We should open vehicle doors without looking backward for passing cyclists.", o: ["True", "False"], a: 1, e: "False! Always check mirrors or look back to avoid hitting an approaching bike." },
+                { q: "What must a car driver do if a person steps onto a marked zebra crossing?", o: ["Honk loudly and speed past", "Stop completely and let them cross safely", "Weave around them"], a: 1, e: "Pedestrians possess the legal right of way at marked crosswalks." },
+                { q: "Choose the proper safety rule regarding a transit bus:", o: ["Never stand on the open steps of a moving bus", "Shout loudly at passing cars", "Jump off before the bus stops"], a: 0, e: "Standing on stepwells causes accidental slips right under wheels. Stay inside." },
+                { q: "What does a roadside sign showing silhouettes of children carrying school bags mean?", o: ["A playground is closed", "School zone ahead, drivers must slow down", "Toy shop nearby"], a: 1, e: "It alerts drivers to reduce speeds because children walk nearby." },
+                { q: "True or False: It is safe to text or play games on a smartphone while actively riding a bicycle.", o: ["True", "False"], a: 1, e: "False! Distracted riding causes serious crashes. Keep eyes up!" },
+                { q: "What should your vehicle do if a loud emergency siren is blaring right behind?", o: ["Race the emergency vehicle", "Safely pull over to the side to clear a path", "Stop in the dead center"], a: 1, e: "Pulling over allows lifesaving personnel to reach emergencies without delays." },
+                { q: "Complete the phrase: A smart cyclist wears ____ clothing to be visible at dusk.", o: ["Dark black", "Bright or reflective", "Invisible camouflage"], a: 1, e: "Bright neon colors assist drivers in noticing your presence from afar." },
+                { q: "Why should we avoid walking directly behind a large vehicle with its reverse lights activated?", o: ["The driver has massive blind spots and cannot see us", "The vehicle smells funny", "It moves too slowly"], a: 0, e: "Trucks and large cars cannot easily view objects directly behind their rear bumper." },
+                { q: "True or False: Small children under the age of 12 are safest riding in the rear seats of passenger cars.", o: ["True", "False"], a: 0, e: "True! Rear seats keep young kids protected from intense front airbag deployments." },
+                { q: "What is the primary purpose of a 'No Horn' sign posted near hospitals or schools?", o: ["To conserve car electricity", "To prevent noise disruption for patients and students", "Because horns are broken"], a: 1, e: "Quiet zones protect patients' peace and enhance student concentration levels." },
+                { q: "Identify the safe driving or riding habit from these choices:", o: ["Changing lanes suddenly without checking", "Checking blind spots carefully before turning", "Speeding up at blind intersections"], a: 1, e: "Always check blind spots to confirm the lane is fully vacant before shifting." },
+                { q: "You notice an adult driver trying to look at a phone map while steering. What can you say?", o: ["Let me hold the phone or read directions for you safely", "Drive faster to look later", "Ignore it"], a: 0, e: "Offering assistance keeps the driver's absolute focus directed purely onto steering." },
+                { q: "True or False: Zebra crossings are useful exclusively during daylight hours.", o: ["True", "False"], a: 1, e: "False! They function round-the-clock, often paired with reflective paint or lighting." }
+            ],
+            hard: [
+                { q: "Why must we follow traffic rules even if the road appears totally abandoned?", o: ["To avoid automated camera fines only", "To cultivate safe habits and prevent unpredictable risks", "Because it is an amusing game"], a: 1, e: "Consistent habits preserve safety. Hazards appear suddenly when least expected." },
+                { q: "Why should pedestrians completely avoid checking mobile screens while crossing intersections?", o: ["It drains the device battery rapidly", "It completely distracts attention from oncoming split-second hazards", "It makes walking slow"], a: 1, e: "Distraction robs you of situational awareness when you need it most." },
+                { q: "Why must all motorists immediately yield the absolute right-of-way to a rushing ambulance?", o: ["It is larger than standard compact passenger cars", "It carries critically ill or injured people needing immediate hospital care", "It makes a pretty sound"], a: 1, e: "Seconds save human lives in severe medical emergencies. Clear the path!" },
+                { q: "Why are speed limits restricted strictly near school perimeter zones?", o: ["To conserve gasoline fuel supplies", "Children can act unpredictably and vehicles require shorter stopping distances", "To reduce tire wear"], a: 1, e: "Lower speeds provide drivers crucial reaction time if a child accidentally darts out." },
+                { q: "How can walkers stay safe walking home during dense fog or torrential downpours?", o: ["By running full speed through puddles", "By wearing highly reflective items and walking with heightened caution", "By moving down center lanes"], a: 1, e: "Adverse weather severely degrades driver visibility. Reflective wear acts as a beacon." },
+                { q: "Why is crossing between massive parked shipping containers or commercial trucks highly dangerous?", o: ["Drivers cannot perceive you and the heavy vehicle might shift or roll unexpectedly", "It looks unclean", "It ruins the trucks"], a: 0, e: "Large vehicles block visibility completely. If they reverse suddenly, you could be crushed." },
+                { q: "What primary benefit does comprehensive road safety compliance deliver to our community?", o: ["It optimizes retail store sales", "It minimizes accidents, saves human lives, and optimizes transit flow", "It decorates streets"], a: 1, e: "Safety keeps people alive, reduces healthcare strains, and ensures seamless travel." },
+                { q: "How can every individual best contribute to achieving safer neighborhood streets?", o: ["By driving maximally fast", "By remaining patient, alert, and entirely law-abiding", "By never going outdoors"], a: 1, e: "Shared safety is a collective community responsibility built on mutual respect." },
+                { q: "True or False: Defensive driving means constantly anticipating potential hazards and preparing ahead to avoid them.", o: ["True", "False"], a: 0, e: "True! Defensive drivers stay alert to other people's mistakes to avoid crashes." },
+                { q: "Complete the sentence: Statutory road regulations apply equally to drivers, cyclists, and ____.", o: ["Wild animals", "Pedestrians", "Airplanes"], a: 1, e: "Pedestrians are an integral part of traffic and must respect the same structural laws." },
+                { q: "What does the automotive term 'blind spot' accurately describe?", o: ["An area around a vehicle hidden from direct mirror view", "A broken broken headlight bulb", "Driving during a total eclipse"], a: 0, e: "Mirrors don't show everything. Drivers must turn their heads to check blind spots." },
+                { q: "Why must pedestrians never bypass lowered safety gates at a railway crossing?", o: ["An oncoming train moves with massive momentum and cannot stop quickly", "The gate might smudge clothing", "It is private property"], a: 0, e: "Trains take over a kilometer to stop. Trespassing closed tracks is fatal." },
+                { q: "What is the proper reaction when encountering a flashing yellow traffic light at an intersection?", o: ["Accelerate to clear the zone immediately", "Slow down, check for cross-traffic, and proceed cautiously", "Park the car"], a: 1, e: "Flashing yellow signals instruct you to proceed with deep awareness and caution." },
+                { q: "True or False: Tailgating (following the vehicle ahead very closely) is safe if you possess elite reflexes.", o: ["True", "False"], a: 1, e: "False! Sudden stops leave zero physical space to prevent a rear-end collision." },
+                { q: "Why does driving during nighttime present elevated statistical risks compared to daytime?", o: ["Visibility is drastically reduced and driver fatigue levels rise sharply", "Road surfaces narrow", "Lights turn off completely"], a: 0, e: "Darkness shortens reaction windows, compounded by nighttime tiredness." },
+                { q: "Complete the sentence: An upright triangular warning sign with its tip pointing upward alerts you to ____.", o: ["A regulatory command", "An upcoming hazard or changing road condition", "A tourist location"], a: 1, e: "Triangles act as standard caution indicators warning about upcoming changes." },
+                { q: "You observe peers organizing a bicycle speed race on an open public road. What is the right response?", o: ["Join them immediately", "Advise them to move to an authorized closed racing track or park area", "Stand in the middle to film"], a: 1, e: "Public roads have active traffic. Racing belongs exclusively in controlled environments." },
+                { q: "True or False: Under-age driving without a license is perfectly acceptable if you stay on quiet backstreets.", o: ["True", "False"], a: 1, e: "False! Unlicensed driving is completely illegal and endangers neighborhood lives." },
+                { q: "What is the specific engineering purpose of asphalt speed humps placed in residential sectors?", o: ["To make driving exciting", "To mechanically compel drivers to lower speeds for child safety", "To collect rainwater"], a: 1, e: "Speed humps physical force vehicles to slow down, protecting localized walkers." },
+                { q: "Select the action that demonstrates exemplary and responsible road behavior:", o: ["Yielding to pedestrians across all intersections and crosswalks", "Honking at slow pedestrians", "Weaving rapidly between narrow lanes"], a: 0, e: "Protecting vulnerable road users like walkers is the hallmark of safety." },
+                { q: "Why is walking or cycling while heavily fatigued or highly distracted majorly hazardous?", o: ["It speeds up shoe wear", "Reaction speeds, balance, and spatial judgment become severely impaired", "It causes minor rain"], a: 1, e: "Impairment causes poor choices, slow reactions, and high chances of a crash." },
+                { q: "True or False: Rear-seat passengers don't need seat belts if the car features front airbags.", o: ["True", "False"], a: 1, e: "False! Unbelted rear occupants can fly forward, injuring themselves and the driver." },
+                { q: "What proactive step should a cyclist perform prior to initiating a turn on an open road?", o: ["Turn abruptly without checking", "Extend clear, universally understood hand signals early", "Dismount in mid-motion"], a: 1, e: "Hand signaling informs surrounding motorists of your planned path well ahead." },
+                { q: "Complete the legal reality: Habitually violating traffic statutes can result in heavy fines or loss of your ____.", o: ["Vehicle keys", "Driving license privileges", "School points"], a: 1, e: "Authorities revoke licenses from dangerous operators to keep the public safe." },
+                { q: "Why must you unconditionally yield the way to a roaring emergency fire engine?", o: ["It is a massive truck", "It is sprinting to preserve human lives and suppress destructive blazes", "It looks pretty"], a: 1, e: "Emergency crews respond to life-or-death situations. Every single second matters." },
+                { q: "True or False: Donning dark black outfits when walking along unlit roads at night helps motorists see you.", o: ["True", "False"], a: 1, e: "False! Dark clothing blends into the night. Wear white or high-visibility colors." },
+                { q: "What does the defensive 'three-second rule' help establish on roads?", o: ["A safe following cushion distance behind the preceding vehicle", "Waiting time at green lights", "Holding breath time"], a: 0, e: "A three-second gap offers ample space to brake safely if the front car stops dead." },
+                { q: "Identify the vital precaution required when navigating through a severe thunderstorm:", o: ["Double your speed to escape rain", "Reduce vehicle velocity and substantially increase following distance", "Brake abruptly every minute"], a: 1, e: "Wet roads lower tire grip and extend your total stopping distance significantly." },
+                { q: "You locate a massive heavy tree limb completely blocking a neighborhood bicycle path. What should you do?", o: ["Bypass it safely and immediately report the hazard to an adult or official", "Ignore it entirely", "Kick it into the car lane"], a: 0, e: "Reporting physical hazards helps clear paths before someone gets hurt." },
+                { q: "True or False: Continuous road safety public awareness campaigns serve zero value for veteran drivers.", o: ["True", "False"], a: 1, e: "False! Continuous reinforcement breaks bad habits even for experienced drivers." }
+            ]
+        };
+
+        // RUNTIME APPS VARIABLE STATE
+        let activeLevel = '';
+        let dynamicQuestions = [];
+        let currentQuestionIdx = 0;
+        let scoreTracker = 0;
+        let answeredRegistry = []; // Tracks historical choice indices for the 30 loaded questions
+        let timerStartTimestamp = null;
+
+        // LOCAL STORAGE DASHBOARD SYNC
+        function updateDashboardHighScores() {
+            let easyBest = localStorage.getItem('safetyscore_easy') || 0;
+            let medBest = localStorage.getItem('safetyscore_medium') || 0;
+            let hardBest = localStorage.getItem('safetyscore_hard') || 0;
+            
+            document.getElementById('high-scores-dashboard').innerHTML = `
+                <strong>🌟 Your Personal Best Scores:</strong><br>
+                🟢 Easy: ${easyBest}/30 | 🟡 Medium: ${medBest}/30 | 🔴 Hard: ${hardBest}/30
+            `;
+        }
+        updateDashboardHighScores();
+
+        // ARRAY RANDOMIZER (FISHER-YATES SHUFFLE)
+        function shuffleArray(targetArray) {
+            let array = [...targetArray];
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // INITIALIZE AND START SELECTED LEVEL QUIZ
+        function startQuiz(chosenLevel) {
+            playSound('click');
+            activeLevel = chosenLevel;
+            
+            // Deep copy base questions then completely randomize the 30 questions group
+            let baseQuestions = questionBank[chosenLevel];
+            dynamicQuestions = shuffleArray(baseQuestions).map(item => {
+                // To fulfill requirement "Randomize Answer options", store options with an index mapping
+                let originalOptions = item.o.map((opt, idx) => ({ text: opt, originalIndex: idx }));
+                let shuffledOpts = shuffleArray(originalOptions);
+                // Find where the correct answer ended up after shuffling
+                let correctIdxInShuffled = shuffledOpts.findIndex(o => o.originalIndex === item.a);
+                
+                return {
+                    questionText: item.q,
+                    options: shuffledOpts.map(o => o.text),
+                    correctAnswerIndex: correctIdxInShuffled,
+                    explanationText: item.e
+                };
+            });
+
+            // Reset operational state vars
+            currentQuestionIdx = 0;
+            scoreTracker = 0;
+            answeredRegistry = new Array(30).fill(null);
+            timerStartTimestamp = new Date();
+
+            // Setup UI Elements
+            document.getElementById('display-level').innerText = chosenLevel + (chosenLevel==='easy'?' 🟢':chosenLevel==='medium'?' 🟡':' 🔴');
+            document.getElementById('current-score').innerText = scoreTracker;
+
+            // Shift Screen Display States
+            document.getElementById('start-screen').classList.remove('active');
+            document.getElementById('summary-screen').classList.remove('active');
+            document.getElementById('quiz-screen').classList.add('active');
+
+            renderCurrentQuestion();
+        }
+
+        // DISPLAY ACTIVE INDEX QUESTION TO SCREEN
+        function renderCurrentQuestion() {
+            // Document counters update
+            document.getElementById('current-q-num').innerText = currentQuestionIdx + 1;
+            let progressPercentage = ((currentQuestionIdx) / 30) * 100;
+            document.getElementById('quiz-progress-bar').style.width = progressPercentage + '%';
+
+            let qData = dynamicQuestions[currentQuestionIdx];
+            document.getElementById('question-text').innerText = qData.questionText;
+
+            let optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+
+            let feedbackBox = document.getElementById('feedback-box');
+            feedbackBox.style.display = 'none';
+
+            // Generate option elements
+            qData.options.forEach((optionText, idx) => {
+                let btn = document.createElement('button');
+                btn.className = 'btn btn-option';
+                btn.innerText = optionText;
+                btn.onclick = () => selectOption(idx);
+                optionsContainer.appendChild(btn);
+            });
+
+            // Adjust navigation control buttons availability statuses
+            document.getElementById('prev-btn').disabled = (currentQuestionIdx === 0);
+            
+            // If question was previously submitted, freeze options and show past feedback state immediately
+            if (answeredRegistry[currentQuestionIdx] !== null) {
+                applyVisualFeedback(answeredRegistry[currentQuestionIdx]);
+                document.getElementById('next-btn').disabled = false;
+            } else {
+                document.getElementById('next-btn').disabled = true; // Force answering before manually leaping forward
+            }
+        }
+
+        // EVALUATE USER OPTION SELECTION CLICK
+        function selectOption(selectedIdx) {
+            // Block clicking if question is already locked in
+            if (answeredRegistry[currentQuestionIdx] !== null) return;
+
+            answeredRegistry[currentQuestionIdx] = selectedIdx;
+            let qData = dynamicQuestions[currentQuestionIdx];
+
+            if (selectedIdx === qData.correctAnswerIndex) {
+                scoreTracker++;
+                document.getElementById('current-score').innerText = scoreTracker;
+                playSound('correct');
+            } else {
+                playSound('wrong');
+            }
+
+            applyVisualFeedback(selectedIdx);
+            document.getElementById('next-btn').disabled = false; // Enable next movement now that feedback is viewed
+        }
+
+        // LOCK OPTIONS AND REVEAL EXPLANATION VIEW CARDS
+        function applyVisualFeedback(chosenIdx) {
+            let qData = dynamicQuestions[currentQuestionIdx];
+            let optionsContainer = document.getElementById('options-container');
+            let feedbackBox = document.getElementById('feedback-box');
+
+            // Iterate over generated children buttons to assign color states
+            Array.from(optionsContainer.children).forEach((btn, idx) => {
+                if (idx === qData.correctAnswerIndex) {
+                    btn.style.backgroundColor = 'var(--easy-color)';
+                    btn.style.color = 'white';
+                    btn.style.borderColor = 'var(--easy-color)';
+                } else if (idx === chosenIdx) {
+                    btn.style.backgroundColor = 'var(--hard-color)';
+                    btn.style.color = 'white';
+                    btn.style.borderColor = 'var(--hard-color)';
+                }
+                // Add disabled visual feel
+                btn.style.cursor = 'default';
+            });
+
+            // Populate text feedback data
+            if (chosenIdx === qData.correctAnswerIndex) {
+                feedbackBox.className = "feedback-box feedback-correct";
+                feedbackBox.innerText = "✅ Correct! " + qData.explanationText;
+            } else {
+                feedbackBox.className = "feedback-box feedback-wrong";
+                feedbackBox.innerText = "❌ Not Quite! " + qData.explanationText;
+            }
+            feedbackBox.style.display = 'block';
+        }
+
+        // NAVIGATION ACTIONS HANDLERS
+        function navigatePrev() {
+            playSound('click');
+            if (currentQuestionIdx > 0) {
+                currentQuestionIdx--;
+                renderCurrentQuestion();
+            }
+        }
+
+        function navigateNext() {
+            playSound('click');
+            if (currentQuestionIdx < 29) {
+                currentQuestionIdx++;
+                renderCurrentQuestion();
+            } else {
+                processQuizCompletion();
+            }
+        }
+
+        function navigateHome() {
+            playSound('click');
+            // Clean up state and return cleanly without destructive browser refresh reload loops
+            activeLevel = '';
+            dynamicQuestions = [];
+            document.getElementById('quiz-screen').classList.remove('active');
+            document.getElementById('summary-screen').classList.remove('active');
+            document.getElementById('start-screen').classList.add('active');
+            updateDashboardHighScores();
+        }
+
+        function restartCurrentLevel() {
+            playSound('click');
+            if (activeLevel) {
+                startQuiz(activeLevel);
+            }
+        }
+
+        // QUIZ WRAP UP, SCORING METRICS, AND BADGES ASSIGNMENT
+        function processQuizCompletion() {
+            let timeDeltaSecs = Math.floor((new Date() - timerStartTimestamp) / 1000);
+            let minutesStr = Math.floor(timeDeltaSecs / 60);
+            let secondsStr = timeDeltaSecs % 60;
+            let structuredTimeText = `${minutesStr}m ${secondsStr}s`;
+
+            let finalPercentage = Math.round((scoreTracker / 30) * 100);
+
+            // Calculate exact metrics
+            let correctCount = scoreTracker;
+            let wrongCount = 30 - scoreTracker;
+
+            // Save Progress locally if superior score discovered
+            let existingBest = parseInt(localStorage.getItem(`safetyscore_${activeLevel}`) || "0");
+            if (scoreTracker > existingBest) {
+                localStorage.setItem(`safetyscore_${activeLevel}`, scoreTracker);
+            }
+
+            // Determine badge categories assignment
+            let badgeIcon = "📚";
+            let badgeTitle = "Keep Learning";
+            
+            if (finalPercentage >= 90) {
+                badgeIcon = "🏆";
+                badgeTitle = "Road Safety Champion";
+            } else if (finalPercentage >= 70) {
+                badgeIcon = "🌟";
+                badgeTitle = "Safe Traveller";
+            } else if (finalPercentage >= 50) {
+                badgeIcon = "👍";
+                badgeTitle = "Careful Learner";
+            }
+
+            // Bind values directly into application summary screen
+            document.getElementById('stat-score').innerText = `${scoreTracker} / 30`;
+            document.getElementById('stat-percent').innerText = `${finalPercentage}%`;
+            document.getElementById('stat-correct').innerText = correctCount;
+            document.getElementById('stat-wrong').innerText = wrongCount;
+            document.getElementById('stat-time').innerText = structuredTimeText;
+            document.getElementById('stat-level').innerText = activeLevel;
+            
+            document.getElementById('summary-badge-icon').innerText = badgeIcon;
+            document.getElementById('summary-badge-title').innerText = badgeTitle;
+
+            // Bind certificate print variables data fields
+            document.getElementById('cert-level-name').innerText = activeLevel;
+            document.getElementById('cert-score-val').innerText = finalPercentage;
+            document.getElementById('cert-badge-title').innerText = badgeIcon + " " + badgeTitle;
+            document.getElementById('cert-date').innerText = new Date().toLocaleDateString();
+
+            // Toggle active screen views
+            document.getElementById('quiz-screen').classList.remove('active');
+            document.getElementById('summary-screen').classList.add('active');
+
+            // Trigger sounds and interactive celebrations elements
+            if (finalPercentage >= 70) {
+                playSound('complete');
+                triggerPureCSSConfetti();
+            } else {
+                playSound('badge');
+            }
+        }
+
+        // PURE CSS ANIMATION LIGHTWEIGHT CONFETTI SYSTEM ENGINE
+        function triggerPureCSSConfetti() {
+            let containerElement = document.body;
+            let colorPalette = ['#2ecc71', '#3498db', '#e74c3c', '#f1c40f', '#9b59b6', '#e67e22'];
+            
+            for (let i = 0; i < 60; i++) {
+                let conf = document.createElement('div');
+                conf.className = 'confetti';
+                
+                // Randomize positions, colors, speed scales
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.backgroundColor = colorPalette[Math.floor(Math.random() * colorPalette.length)];
+                conf.style.transform = `scale(${Math.random() * 1.2 + 0.5})`;
+                
+                let duration = Math.random() * 2 + 2; // 2s to 4s speed
+                conf.style.animationDuration = duration + 's';
+                conf.style.animationDelay = Math.random() * 0.5 + 's';
+                
+                containerElement.appendChild(conf);
+
+                // Auto sweep debris nodes from runtime DOM tree loops safely
+                setTimeout(() => {
+                    conf.remove();
+                }, (duration + 1) * 1000);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍎 Animal Food Quiz</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 50%, #98EC2A 100%);
+            --primary: #4CAF50;
+            --primary-dark: #388E3C;
+            --secondary: #FF9800;
+            --easy-color: #2ECC71;
+            --medium-color: #F1C40F;
+            --hard-color: #E74C3C;
+            --text-main: #2C3E50;
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --card-border: rgba(255, 255, 255, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            min-height: 100vh;
+            background: var(--bg-gradient);
+            background-size: 400% 400%;
+            animation: gradientBG 20s ease infinite;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            color: var(--text-main);
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 750px;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 2px solid var(--card-border);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+            text-align: center;
+            transition: all 0.4s ease;
+        }
+
+        /* Typography */
+        h1 {
+            font-size: 2.5rem;
+            color: #2C3E50;
+            margin-bottom: 5px;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #7F8C8D;
+            margin-bottom: 25px;
+            letter-spacing: 1px;
+        }
+
+        /* Screens */
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Buttons */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 16px 24px;
+            margin: 15px 0;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        @media (hover: hover) {
+            .btn:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+            }
+        }
+
+        .btn-easy { background-color: var(--easy-color); color: white; }
+        .btn-medium { background-color: var(--medium-color); color: #2C3E50; }
+        .btn-hard { background-color: var(--hard-color); color: white; }
+
+        .btn-option {
+            background-color: #FFFFFF;
+            border: 2px solid #BDC3C7;
+            color: var(--text-main);
+            text-align: left;
+            font-size: 1.1rem;
+        }
+
+        .btn-option.correct {
+            background-color: #2ECC71 !important;
+            border-color: #27AE60 !important;
+            color: white !important;
+        }
+
+        .btn-option.wrong {
+            background-color: #E74C3C !important;
+            border-color: #C0392B !important;
+            color: white !important;
+        }
+
+        .btn-option.selected-wrong {
+            background-color: #E74C3C !important;
+            border-color: #C0392B !important;
+            color: white !important;
+        }
+
+        /* Progress Header */
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-size: 1.05rem;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: #E0E0E0;
+            border-radius: 10px;
+            height: 14px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Questions */
+        .question-box {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+            line-height: 1.4;
+            color: #2C3E50;
+        }
+
+        /* Match Question Layout */
+        .match-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .match-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #FFFFFF;
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: 2px solid #E0E0E0;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .match-select {
+            padding: 8px 12px;
+            font-size: 1rem;
+            border-radius: 8px;
+            border: 2px solid #BDC3C7;
+            background-color: #FAFAFA;
+            font-weight: bold;
+            color: var(--text-main);
+            outline: none;
+            cursor: pointer;
+            width: 50%;
+            max-width: 200px;
+        }
+
+        /* Feedback Area */
+        .feedback-box {
+            margin-top: 20px;
+            padding: 15px 20px;
+            border-radius: 14px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: none;
+            animation: fadeIn 0.3s ease;
+            line-height: 1.4;
+        }
+
+        .feedback-box.correct {
+            display: block;
+            background-color: #E8F8F5;
+            border: 2px solid #2ECC71;
+            color: #27AE60;
+        }
+
+        .feedback-box.wrong {
+            display: block;
+            background-color: #FCE4D6;
+            border: 2px solid #E74C3C;
+            color: #C0392B;
+        }
+
+        /* Navigation Buttons Bottom */
+        .nav-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 30px;
+            gap: 10px;
+        }
+
+        .btn-nav {
+            flex: 1;
+            padding: 12px 15px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            background-color: #34495E;
+            color: white;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            transition: opacity 0.2s, background-color 0.2s;
+        }
+
+        .btn-nav:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .btn-nav-home {
+            background-color: #2980B9;
+        }
+
+        /* Summary Dashboard */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid #E0E0E0;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #7F8C8D;
+            margin-bottom: 5px;
+        }
+
+        .stat-val {
+            font-size: 1.3rem;
+            color: var(--text-main);
+        }
+
+        .badge-box {
+            background: linear-gradient(135deg, #FFF2CC 0%, #FFF 100%);
+            border: 2px dashed #F1C40F;
+            border-radius: 16px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+
+        .badge-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #D35400;
+            margin-top: 5px;
+        }
+
+        /* Certificate View */
+        #certificate-view {
+            display: none;
+            background: white;
+            padding: 40px;
+            border: 10px double #27AE60;
+            border-radius: 4px;
+            color: #2C3E50;
+            text-align: center;
+            margin-top: 20px;
+            position: relative;
+        }
+
+        #certificate-view h2 {
+            font-family: 'Georgia', serif;
+            font-size: 2.2rem;
+            color: #27AE60;
+            margin-bottom: 20px;
+        }
+
+        #certificate-view p {
+            font-size: 1.1rem;
+            margin: 12px 0;
+            line-height: 1.5;
+        }
+
+        .cert-name {
+            font-size: 1.6rem;
+            font-weight: bold;
+            text-decoration: underline;
+            color: #2980B9;
+        }
+
+        .cert-footer {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: #7F8C8D;
+            border-top: 1px solid #E0E0E0;
+            padding-top: 15px;
+        }
+
+        /* Confetti Overlay Canvas/Simulation elements */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            position: absolute;
+            z-index: 999;
+            animation: fall 3s linear infinite;
+            top: -10px;
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* Responsive Tweaks */
+        @media (max-width: 500px) {
+            h1 { font-size: 1.8rem; }
+            .question-box { font-size: 1.15rem; }
+            .btn { padding: 12px 18px; font-size: 1rem; }
+            .match-row { flex-direction: column; gap: 8px; text-align: center; }
+            .match-select { width: 100%; max-width: none; }
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            #certificate-view, #certificate-view * { visibility: visible; }
+            #certificate-view {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                border: 10px double #27AE60 !important;
+                padding: 50px !important;
+                box-shadow: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🍎 Animal Food Quiz</h1>
+    <div class="subtitle">Observe • Match • Explore • Learn</div>
+
+    <!-- START SCREEN -->
+    <div id="start-screen" class="screen active">
+        <p style="font-size: 1.2rem; font-weight: 600; margin-bottom: 20px; color: #5D6D7E;">
+            Welcome! Choose a difficulty level to start your learning journey:
+        </p>
+        <button class="btn btn-easy" onclick="startQuiz('easy')">🟢 Easy Level</button>
+        <button class="btn btn-medium" onclick="startQuiz('medium')">🟡 Medium Level</button>
+        <button class="btn btn-hard" onclick="startQuiz('hard')">🔴 Hard Level</button>
+        
+        <div id="saved-progress-banner" style="margin-top: 25px; font-size: 0.95rem; color: #2980B9; display: none; font-weight: bold;">
+            🔄 Continuous Learning Active: Previous score saved.
+        </div>
+    </div>
+
+    <!-- QUIZ INTERFACE SCREEN -->
+    <div id="quiz-screen" class="screen">
+        <div class="quiz-header">
+            <div>Level: <span id="display-level" style="text-transform: capitalize;">-</span></div>
+            <div>Question: <span id="current-q-num">1</span> / 30</div>
+            <div>Score: <span id="live-score">0</span></div>
+        </div>
+
+        <div class="progress-container">
+            <div id="progress-bar" class="progress-bar"></div>
+        </div>
+
+        <!-- Question Text Block -->
+        <div id="question-text" class="question-box"></div>
+
+        <!-- Dynamic Answer Area -->
+        <div id="options-container"></div>
+
+        <!-- Instant Feedback Box -->
+        <div id="feedback-box" class="feedback-box"></div>
+
+        <!-- Interactive Navigation Requirements Footer -->
+        <div class="nav-controls">
+            <button id="btn-prev" class="btn-nav" onclick="navigateQuestion(-1)">⬅️ Previous</button>
+            <button id="btn-home" class="btn-nav btn-nav-home" onclick="goToHome()">🏠 Home</button>
+            <button id="btn-next" class="btn-nav" onclick="navigateQuestion(1)">➡️ Next</button>
+        </div>
+    </div>
+
+    <!-- QUIZ SUMMARY SCREEN -->
+    <div id="summary-screen" class="screen">
+        <h2 style="font-size: 2rem; color: #2C3E50; margin-bottom: 10px;">🎉 Quiz Completed!</h2>
+        <p style="font-weight: 600; color: #7F8C8D; margin-bottom: 15px;">Here is how well you did today:</p>
+
+        <div class="badge-box">
+            <div style="font-size: 0.95rem; font-weight: bold; color: #7F8C8D; text-transform: uppercase;">Your Badge</div>
+            <div id="badge-title" class="badge-title">Food Explorer</div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card"><div class="stat-label">Level Selected</div><div id="stat-level" class="stat-val">-</div></div>
+            <div class="stat-card"><div class="stat-label">Final Score</div><div id="stat-score" class="stat-val">0 / 30</div></div>
+            <div class="stat-card"><div class="stat-label">Percentage</div><div id="stat-percent" class="stat-val">0%</div></div>
+            <div class="stat-card"><div class="stat-label">Time Taken</div><div id="stat-time" class="stat-val">0s</div></div>
+            <div class="stat-card"><div class="stat-label">Correct Answers</div><div id="stat-correct" class="stat-val" style="color:#2ECC71;">0</div></div>
+            <div class="stat-card"><div class="stat-label">Wrong Answers</div><div id="stat-wrong" class="stat-val" style="color:#E74C3C;">0</div></div>
+        </div>
+
+        <button class="btn btn-easy" onclick="restartCurrentQuiz()">🔄 Play Again</button>
+        <button class="btn btn-nav-home btn" style="background-color: #2980B9; color: white;" onclick="goToHome()">🏫 Choose Another Level</button>
+        <button class="btn" style="background-color: #8E44AD; color: white;" onclick="showCertificate()">📜 Print Certificate</button>
+
+        <!-- Printable Certificate Area Inside Summary -->
+        <div id="certificate-view">
+            <h2>CERTIFICATE OF ACHIEVEMENT</h2>
+            <p>This is proud declaration that</p>
+            <p class="cert-name">Super Star Learner</p>
+            <p>has fully completed the <strong>Animal Food Quiz</strong></p>
+            <p>Difficulty Level: <strong id="cert-level" style="text-transform: capitalize;">Easy</strong></p>
+            <p>Achieving a high score of <strong id="cert-score">0%</strong> and earning the honor of:</p>
+            <div id="cert-badge" style="font-size: 1.4rem; font-weight: bold; color: #D35400; margin: 15px 0;">-</div>
+            <p>Keep exploring and caring for nature's amazing animals!</p>
+            <div class="cert-footer">
+                <div>Date: Verified Online</div>
+                <div>Signed: Animal Food Science Committee</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    /* Web Audio API Sound Generator Block */
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playSound(type) {
+        if (!audioCtx) return;
+        // Resume context if suspended (browser security)
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+
+        if (type === 'click') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(400, now);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            osc.start(now);
+            osc.stop(now + 0.1);
+        } else if (type === 'correct') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(523.25, now); // C5
+            osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            osc.start(now);
+            osc.stop(now + 0.3);
+        } else if (type === 'wrong') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(180, now);
+            osc.frequency.linearRampToValueAtTime(100, now + 0.25);
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+            osc.start(now);
+            osc.stop(now + 0.25);
+        } else if (type === 'complete' || type === 'badge') {
+            // Little triumphal fanfare
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(523.25, now); // C5
+            osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+            osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+            osc.frequency.setValueAtTime(1046.50, now + 0.3); // C6
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.02, now + 0.5);
+            osc.start(now);
+            osc.stop(now + 0.5);
+        }
+    }
+
+    /* Complete 90 High-Quality Questions Database Array */
+    const questionBank = {
+        easy: [
+            { type: 'mcq', q: 'What does a cow eat to stay healthy and give milk?', o: ['Fresh green grass', 'Fish and meat', 'Insects and bugs', 'Seeds and eggs'], a: 'Fresh green grass', e: 'Cows eat grass and other plants.' },
+            { type: 'mcq', q: 'What food does a happy rabbit like to chew on most?', o: ['Carrots and leafy vegetables', 'Meat bones', 'Insects', 'Cheese'], a: 'Carrots and leafy vegetables', e: 'Rabbits like to eat carrots, grass and leafy vegetables.' },
+            { type: 'mcq', q: 'What does a little pet cat love to drink?', o: ['Warm milk and fresh water', 'Fruit juice', 'Muddy water', 'Soda drink'], a: 'Warm milk and fresh water', e: 'Cats usually drink fresh water and like sweet warm milk!' },
+            { type: 'mcq', q: 'What treat does a pet dog enjoy chewing on most?', o: ['A juicy bone', 'Green grass', 'Tree bark', 'A sweet banana'], a: 'A juicy bone', e: 'Dogs love chewing on meat bones or dry dog food.' },
+            { type: 'mcq', q: 'What does a giant wild elephant like to eat in the forest?', o: ['Sugarcane and tree branches', 'Small birds', 'River fish', 'Insects'], a: 'Sugarcane and tree branches', e: 'Elephants are heavy plant-eaters that love sugarcane!' },
+            { type: 'mcq', q: 'What does a busy farm hen love to pick and peck from the ground?', o: ['Grains and small seeds', 'Big frogs', 'Green grass', 'Fish'], a: 'Grains and small seeds', e: 'Hens peck at small grains, corn seeds, and worms.' },
+            { type: 'mcq', q: 'What does a strong horse eat to run fast?', o: ['Hay and fresh grass', 'Insects', 'Bones and meat', 'Bread slices'], a: 'Hay and fresh grass', e: 'Horses eat grass, oats, and dried hay to stay strong.' },
+            { type: 'mcq', q: 'What does a farm goat love to nibble and munch on?', o: ['Green leaves and bushes', 'Small birds', 'River fish', 'Insects'], a: 'Green leaves and bushes', e: 'Goats enjoy eating green leaves, twigs, and wild bushes.' },
+            { type: 'mcq', q: 'What does a clever little monkey look for to eat?', o: ['Sweet yellow bananas', 'River water fish', 'Dry grass hay', 'Meat bones'], a: 'Sweet yellow bananas', e: 'Monkeys love sweet fruits like bananas and wild berries.' },
+            { type: 'mcq', q: 'What do little birds love to eat to get energy?', o: ['Small seeds and worms', 'Bones from animals', 'Big green leaves', 'Grass'], a: 'Small seeds and worms', e: 'Little birds fly around to find small seeds and yummy worms.' },
+            { type: 'tf', q: 'True or False: A domestic sheep eats small fish from the river.', o: ['True', 'False'], a: 'False', e: 'Sheep do not eat fish. They only munch on soft green grass.' },
+            { type: 'tf', q: 'True or False: A little pet puppy loves to drink clean water to stay healthy.', o: ['True', 'False'], a: 'True', e: 'All pets need fresh and clean water every single day.' },
+            { type: 'tf', q: 'True or False: Wild lions love to eat sweet yellow bananas from trees.', o: ['True', 'False'], a: 'False', e: 'Lions do not eat fruits. They are meat-eaters.' },
+            { type: 'tf', q: 'True or False: A farm pig can eat different kinds of vegetables and grains.', o: ['True', 'False'], a: 'True', e: 'Pigs eat many kinds of foods like vegetables, grains, and fruits.' },
+            { type: 'tf', q: 'True or False: An elephant uses its long trunk to put plant food into its mouth.', o: ['True', 'False'], a: 'True', e: 'The trunk helps an elephant reach high leaves and pull up grass.' },
+            { type: 'match', q: 'Match these 3 easy animals with the food they love best:', keys: ['Cow', 'Dog', 'Rabbit'], values: ['Green Grass', 'Juicy Bone', 'Sweet Carrot'], e: 'Cows eat grass, dogs love bones, and rabbits love carrots!' },
+            { type: 'match', q: 'Match these 3 farm birds and animals with their food:', keys: ['Hen', 'Horse', 'Cat'], values: ['Grains and Seeds', 'Dried Hay', 'Milk and Fish'], e: 'Hens eat grains, horses eat hay, and cats like milk.' },
+            { type: 'match', q: 'Match these friendly animals with what they pick to eat:', keys: ['Monkey', 'Goat', 'Little Bird'], values: ['Yellow Banana', 'Bushes and Leaves', 'Tiny Worms'], e: 'Monkeys pick bananas, goats eat bushes, birds eat worms.' },
+            { type: 'sentence', q: 'Complete the sentence: A cute little squirrel likes to find and hide _____.', o: ['crunchy nuts', 'river fish', 'meat bones', 'green grass'], a: 'crunchy nuts', e: 'Squirrels love to munch on nuts and seeds.' },
+            { type: 'sentence', q: 'Complete the sentence: A tiny garden mouse loves to nibble on a piece of _____.', o: ['tasty cheese', 'tree wood', 'dry mud', 'raw meat'], a: 'tasty cheese', e: 'Mice like grains, seeds, and scraps of cheese.' },
+            { type: 'sentence', q: 'Complete the sentence: A giant panda bear spends all day eating green _____.', o: ['bamboo leaves', 'sweet honey', 'small insects', 'fish bones'], a: 'bamboo leaves', e: 'Pandas love to eat bamboo plants almost all day long!' },
+            { type: 'choice', q: 'Choose the correct food for a wild giraffe living in the safari:', o: ['Leaves from high tree tops', 'Small insects from mud', 'Fish from deep water', 'Bones from a lion'], a: 'Leaves from high tree tops', e: 'Giraffes have very long necks to reach high tree leaves.' },
+            { type: 'choice', q: 'Choose the best breakfast for your pet dog:', o: ['Clean dog food and water', 'Spicy human food', 'Chocolates and candies', 'Dry leaves'], a: 'Clean dog food and water', e: 'Pet dogs stay healthy with clean dog food. Chocolate is bad for them.' },
+            { type: 'choice', q: 'Choose the food that a farm duck loves to find in the pond:', o: ['Small water plants and bugs', 'Dry tree bark', 'Large meat bones', 'Bananas'], a: 'Small water plants and bugs', e: 'Ducks swim to catch water bugs and tiny plants.' },
+            { type: 'life', q: 'Your friend wants to feed bread to a horse. What does a horse naturally eat?', o: ['Fresh grass and hay', 'Insects and bugs', 'Cooked meat', 'Fried fish'], a: 'Fresh grass and hay', e: 'Horses naturally thrive on fresh grass and dried hay.' },
+            { type: 'life', q: 'If you see a little bird looking for food in your yard, what can you safely put out?', o: ['Some grains or bird seeds', 'Spicy potato chips', 'Pieces of fried meat', 'Candy wrapper'], a: 'Some grains or bird seeds', e: 'Bird seeds or grains are perfect for local birds.' },
+            { type: 'life', q: 'Why do we see a farm cow chewing food for a long time?', o: ['It is slowly grinding grass plants', 'It is playing with a toy', 'It is trying to drink water', 'It has nothing else to do'], a: 'It is slowly grinding grass plants', e: 'Cows chew grass thoroughly to digest it well.' },
+            { type: 'reasoning', q: 'Why do we need to clean our pet animal’s food bowl every day?', o: ['To keep their food clean and safe', 'To make the bowl look shiny', 'Animals do not like dirty colors', 'To help the animal run faster'], a: 'To keep their food clean and safe', e: 'Clean food bowls stop germs from making our pets sick.' },
+            { type: 'reasoning', q: 'Why does an elephant need to eat a very large amount of plants every day?', o: ['Because it has a huge body', 'Because it wants to sleep all day', 'Because plants taste like candy', 'Because it wants to play tricks'], a: 'Because it has a huge body', e: 'Big bodies require lots of food energy to move and stay warm.' },
+            { type: 'reasoning', q: 'Why can a rabbit chew on hard carrots so easily?', o: ['It has sharp front teeth for chewing', 'It swallows them whole', 'Carrots are soft like water', 'It uses its long ears'], a: 'It has sharp front teeth for chewing', e: 'Rabbits have specialized front teeth to bite hard plant foods.' }
+        ],
+        medium: [
+            { type: 'mcq', q: 'What is the special name for animals that eat ONLY plants?', o: ['Herbivores', 'Carnivores', 'Omnivores', 'Insectivores'], a: 'Herbivores', e: 'Herbivores are animals that eat only plants, fruits, and leaves.' },
+            { type: 'mcq', q: 'What do we call a wild animal, like a tiger, that eats ONLY meat?', o: ['Carnivore', 'Herbivore', 'Omnivore', 'Frugivore'], a: 'Carnivore', e: 'Carnivores are living things that hunt and eat other animals.' },
+            { type: 'mcq', q: 'What do we call animals, like bears and humans, that eat BOTH plants and meat?', o: ['Omnivores', 'Herbivores', 'Carnivores', 'Detritivores'], a: 'Omnivores', e: 'Omnivores eat a mix of both plant food and animal food.' },
+            { type: 'mcq', q: 'What sweet food does a beautiful butterfly drink from garden flowers?', o: ['Nectar juice', 'Rain water', 'Muddy water', 'Plant sap'], a: 'Nectar juice', e: 'Butterflies use a straw-like tongue to drink sweet nectar.' },
+            { type: 'mcq', q: 'What does a wild frog catch with its long, sticky tongue?', o: ['Flying insects and bugs', 'Small river fish', 'Green plant leaves', 'Sweet fruits'], a: 'Flying insects and bugs', e: 'Frogs catch moving insects quickly using sticky tongues.' },
+            { type: 'mcq', q: 'What does a wild deer find to eat in the thick forest?', o: ['Grass, leaves and twigs', 'Small forest birds', 'Dead animal bones', 'Fish from lakes'], a: 'Grass, leaves and twigs', e: 'Deer are gentle herbivores that eat forest plants.' },
+            { type: 'mcq', q: 'What animal does a fierce wild lion look to hunt for food?', o: ['Plant-eating animals like zebras', 'Monkeys high in trees', 'Sharks in the sea', 'Other giant lions'], a: 'Plant-eating animals like zebras', e: 'Lions hunt herbivores like zebras and deer for meat energy.' },
+            { type: 'mcq', q: 'What is the primary scientific reason why all living animals need food?', o: ['To get energy to grow and move', 'To sleep longer hours', 'To change their skin color', 'To make loud noises'], a: 'To get energy to grow and move', e: 'Food provides nutrients that give bodies energy to stay alive.' },
+            { type: 'mcq', q: 'What do woodpecker birds look for inside tree bark?', o: ['Hidden bugs and insects', 'Sweet flower nectar', 'Small river fish', 'Grains left by farmers'], a: 'Hidden bugs and insects', e: 'Woodpeckers peck holes to pull out wood-boring insects.' },
+            { type: 'mcq', q: 'What do small fish in a garden pond usually eat?', o: ['Tiny water plants and flakes', 'Big water birds', 'Tree branches', 'Mud cubes'], a: 'Tiny water plants and flakes', e: 'Small fish live on microscopic water plants or fish food flakes.' },
+            { type: 'tf', q: 'True or False: A fierce crocodile is an example of a herbivore animal.', o: ['True', 'False'], a: 'False', e: 'Crocodiles are carnivores. They eat fish and meat.' },
+            { type: 'tf', q: 'True or False: A forest bear is an omnivore because it eats sweet berries and fresh fish.', o: ['True', 'False'], a: 'True', e: 'Bears enjoy both plant berries and meat from fish.' },
+            { type: 'tf', q: 'True or False: Birds have heavy, sharp teeth to chew up hard grain seeds.', o: ['True', 'False'], a: 'False', e: 'Birds have no teeth! They use their hard beaks to crush food.' },
+            { type: 'tf', q: 'True or False: Earthworms swallow dirt to digest tiny bits of old rotten plants.', o: ['True', 'False'], a: 'True', e: 'Earthworms clean the soil by eating decaying plant matter.' },
+            { type: 'tf', q: 'True or False: A large owl hunts at night to find small mice for food.', o: ['True', 'False'], a: 'True', e: 'Owls are nocturnal carnivores that hunt small rodents at night.' },
+            { type: 'match', q: 'Match the animal classification name with its definition:', keys: ['Herbivore', 'Carnivore', 'Omnivore'], values: ['Eats only plants', 'Eats only meat', 'Eats plants and meat'], e: 'Herbivores eat plants, carnivores eat meat, omnivores eat both!' },
+            { type: 'match', q: 'Match these specific animals to their correct grouping:', keys: ['Deer', 'Tiger', 'Bear'], values: ['Herbivore Group', 'Carnivore Group', 'Omnivore Group'], e: 'Deer eat leaves (herb), tigers eat meat (carn), bears eat both (omn).' },
+            { type: 'match', q: 'Match these small creatures with how they look for food:', keys: ['Butterfly', 'Frog', 'Woodpecker'], values: ['Drinks sweet flower nectar', 'Catches bugs with sticky tongue', 'Pecks tree bark for insects'], e: 'Each creature has special body parts to collect its favorite food.' },
+            { type: 'sentence', q: 'Complete the sentence: A honeybee visits bright garden flowers to collect _____.', o: ['sweet nectar and pollen', 'small green leaves', 'insects for its babies', 'dry twigs'], a: 'sweet nectar and pollen', e: 'Bees turn nectar into sweet honey inside their hives.' },
+            { type: 'sentence', q: 'Complete the sentence: Large eagles have very sharp eyesight to spot _____.', o: ['small animals on the ground', 'sweet fruits on trees', 'flower nectar', 'grass fields'], a: 'small animals on the ground', e: 'Eagles fly high and use strong eyes to hunt small prey.' },
+            { type: 'sentence', q: 'Complete the sentence: A pond turtle loves to feed on underwater _____.', o: ['plants, insects, and small fish', 'dry land sand', 'high tree leaves', 'plastic wrappers'], a: 'plants, insects, and small fish', e: 'Pond turtles find plants and small water insects to eat.' },
+            { type: 'choice', q: 'Choose the animal that can be safely grouped as a pure Herbivore:', o: ['A forest deer', 'A wild wolf', 'A midnight owl', 'A house cat'], a: 'A forest deer', e: 'Deer consume leaves, plants, and grass exclusively.' },
+            { type: 'choice', q: 'Choose the animal that belongs to the Carnivore group:', o: ['A mountain leopard', 'A farm goat', 'A pet rabbit', 'A giant elephant'], a: 'A mountain leopard', e: 'Leopards are big wild cats that hunt other animals for meat.' },
+            { type: 'choice', q: 'Choose the creature that is an Omnivore just like a human:', o: ['A black crow bird', 'A pasture cow', 'A grasshopper bug', 'A tiger'], a: 'A black crow bird', e: 'Crows eat seeds, grains, fruits, insects, and small scraps.' },
+            { type: 'life', q: 'You see a bird with a short, strong, cone-shaped beak. What food is it built to crack open?', o: ['Hard grain seeds', 'Fish from deep water', 'Animal meat bones', 'Tree logs'], a: 'Hard grain seeds', e: 'Short, thick, strong beaks help birds crack open hard seeds easily.' },
+            { type: 'life', q: 'Why shouldn’t people feed salty chips or processed human snacks to ducks in a park pond?', o: ['It lacks proper nutrients and can harm them', 'Ducks only like yellow food', 'Chips make them grow too large', 'Ducks cannot swallow flat objects'], a: 'It lacks proper nutrients and can harm them', e: 'Human fast food is unhealthy for wild birds and ruins water quality.' },
+            { type: 'life', q: 'A house cat catches a mouse. This action shows that cats are naturally part of which group?', o: ['Carnivores/Predators', 'Plant-gatherers', 'Farming animals', 'Fruit lovers'], a: 'Carnivores/Predators', e: 'Cats retain their hunting instincts for meat because they are carnivores.' },
+            { type: 'reasoning', q: 'Why do carnivore animals like leopards have long, pointed, sharp teeth?', o: ['To tear animal meat easily', 'To chew hard green grass', 'To bite into sweet apples', 'To drink water faster'], a: 'To tear animal meat easily', e: 'Sharp canine teeth are specialized for ripping and tearing tough meat.' },
+            { type: 'reasoning', q: 'Why do cows have wide, flat back teeth?', o: ['To grind tough grass and leaves flat', 'To look pretty when smiling', 'To catch small flying insects', 'To hold onto meat bones'], a: 'To grind tough grass and leaves flat', e: 'Flat flat molars help herbivores crush fibers in leaves and grass.' },
+            { type: 'reasoning', q: 'Why are earthworms highly valued by organic vegetable farmers?', o: ['They eat dead plants and enrich the soil', 'They protect fruits from birds', 'They create rain water', 'They sing songs at night'], a: 'They eat dead plants and enrich the soil', e: 'Earthworms process dead organic waste into rich, nutrient-filled soil.' }
+        ],
+        hard: [
+            { type: 'mcq', q: 'What basic concept describes how energy passes from a plant to a deer, and then to a tiger?', o: ['A Food Chain', 'An Animal Home', 'Water Cycle', 'Weather System'], a: 'A Food Chain', e: 'A food chain shows how living things get food and pass energy.' },
+            { type: 'mcq', q: 'What role do green plants have in a food chain because they create food from sunlight?', o: ['Producers', 'Consumers', 'Decomposers', 'Hunters'], a: 'Producers', e: 'Plants are producers because they make their own food using sunlight.' },
+            { type: 'mcq', q: 'What do we call animals in a food chain because they must eat plants or other animals?', o: ['Consumers', 'Producers', 'Makers', 'Plants'], a: 'Consumers', e: 'Animals are consumers because they consume other living things.' },
+            { type: 'mcq', q: 'What happens if a disease removes all the green grass from a closed nature park?', o: ['The plant-eating herbivores will starve', 'The meat-eating animals will grow larger', 'New plants will grow without water', 'Nothing changes'], a: 'The plant-eating herbivores will starve', e: 'Without grass, herbivores have no food energy and cannot survive.' },
+            { type: 'mcq', q: 'Why must farmers give a balanced mix of grains, oil-cakes, and green fodder to milk cows?', o: ['To keep them healthy to give high-quality milk', 'To change the color of their hair', 'To train them to run fast races', 'To stop them from sleeping'], a: 'To keep them healthy to give high-quality milk', e: 'Domestic milch animals need high nutrition to stay strong and give milk.' },
+            { type: 'mcq', q: 'Why should we never give old, moldy, or spoiled food to domestic farm animals?', o: ['It contains dangerous toxins that make them sick', 'It changes their body color', 'It makes their food look ugly', 'It makes them speak loudly'], a: 'It contains dangerous toxins that make them sick', e: 'Spoiled food contains toxic mold and germs that cause severe illness.' },
+            { type: 'mcq', q: 'How do wild predators like wolves find food during cold winter months?', o: ['By using keen senses of smell, sight, and tracking', 'By waiting for farmers to feed them', 'By eating mud and snow blocks', 'By growing fruits on their tails'], a: 'By using keen senses of smell, sight, and tracking', e: 'Wild animals use fine-tuned survival senses to hunt down prey.' },
+            { type: 'mcq', q: 'What is the role of tiny bacteria and fungi that break down dead leaves and animals?', o: ['Decomposers', 'Producers', 'Predators', 'Herbivores'], a: 'Decomposers', e: 'Decomposers break down dead matter, returning nutrients back to the soil.' },
+            { type: 'mcq', q: 'Why do animals need fresh, clean drinking water besides regular food?', o: ['To digest food and clean their bodies inside', 'To look clean and shiny', 'To change their voice tone', 'To float in the air'], a: 'To digest food and clean their bodies inside', e: 'Water is essential for digestion, cooling, and blood health.' },
+            { type: 'mcq', q: 'Which animal acts as a scavenger by eating dead meat left behind by lions?', o: ['A wild hyena', 'A gentle deer', 'A farm sheep', 'A green grasshopper'], a: 'A wild hyena', e: 'Scavengers like hyenas and vultures clean the wild by eating carcass leftovers.' },
+            { type: 'tf', q: 'True or False: Every food chain on Planet Earth begins with an animal hunter.', o: ['True', 'False'], a: 'False', e: 'Food chains begin with green plant producers that capture sunlight energy.' },
+            { type: 'tf', q: 'True or False: Decomposers hurt the environment by locking up nutrients forever.', o: ['True', 'False'], a: 'False', e: 'Decomposers help recycling by releasing organic nutrients back into soil.' },
+            { type: 'tf', q: 'True or False: Domestic working animals like bullocks need energy-rich food to pull heavy carts.', o: ['True', 'False'], a: 'True', e: 'Beasts of burden need balanced carbohydrates and grains for physical labor.' },
+            { type: 'tf', q: 'True or False: If a wild animal does not eat food for weeks, its body will stay perfectly strong.', o: ['True', 'False'], a: 'False', e: 'Without food, animals lose weight, grow weak, and eventually perish.' },
+            { type: 'tf', q: 'True or False: Vultures are helpful because they clean up dead animal bodies from nature.', o: ['True', 'False'], a: 'True', e: 'Scavengers act as nature’s cleaning crew to check the spread of diseases.' },
+            { type: 'match', q: 'Match the food chain role with the correct example:', keys: ['Producer', 'Primary Consumer', 'Secondary Consumer'], values: ['Green Forest Grass', 'Plant-eating Deer', 'Meat-eating Tiger'], e: 'Grass makes food, deer eats grass, tiger eats deer!' },
+            { type: 'match', q: 'Match the specialized feeding group to its natural description:', keys: ['Scavenger', 'Decomposer', 'Apex Predator'], values: ['Eats already dead animal meat', 'Breaks down rotten organic waste', 'Sits at the top of the food chain'], e: 'These roles keep the ecosystem clean and balanced.' },
+            { type: 'match', q: 'Match the animal care issue with its healthy human action:', keys: ['Dirty water bowl', 'Hard farm work load', 'Cold winter weather'], values: ['Scrub and refill with fresh water', 'Feed extra energy grains', 'Provide extra warm dry hay straw'], e: 'Proper feeding and care protect our working and domestic animals.' },
+            { type: 'sentence', q: 'Complete the sentence: In a simple field food chain, a grasshopper eats grass, and a frog then eats the _____.', o: ['grasshopper', 'green plant', 'soil dirt', 'large snake'], a: 'grasshopper', e: 'The frog acts as a consumer by eating the herbivorous insect.' },
+            { type: 'sentence', q: 'Complete the sentence: Humans must provide working farm horses with shelter and healthy grains because they are under our _____.', o: ['care and protection', 'wild tracking systems', 'training for wild hunting', 'forest rules'], a: 'care and protection', e: 'Domesticated animals depend entirely on human care for nutrition.' },
+            { type: 'sentence', q: 'Complete the sentence: When a bird eats berries and drops seeds far away, it helps the plant with _____.', o: ['growing new baby plants elsewhere', 'making the ground colder', 'cleaning old river water', 'killing bad insects'], a: 'growing new baby plants elsewhere', e: 'Seed dispersal through animal feeding is crucial for plant reproduction.' },
+            { type: 'choice', q: 'Choose the correct sequence of a standard land-based food chain:', o: ['Green Leaves -> Caterpillar -> Little Bird', 'Tiger -> Deer -> Green Grass', 'Worm -> Soil Dirt -> Green Tree', 'Frog -> Insect -> Grass'], a: 'Green Leaves -> Caterpillar -> Little Bird', e: 'Energy flows from the plant leaf to the insect, then to the bird.' },
+            { type: 'choice', q: 'Choose the best way to help stray animals find clean water during hot summers:', o: ['Place safe, clean water bowls outside', 'Pour water directly into the dry dirt', 'Offer them sugary soda drinks', 'Do nothing because they are wild'], a: 'Place safe, clean water bowls outside', e: 'Setting out clean water containers helps community animals survive summer heat waves.' },
+            { type: 'choice', q: 'Choose what happens to energy as it moves along a natural food chain:', o: ['It transfers from one living thing to another', 'It disappears completely right away', 'It multiplies into millions of new plants', 'It turns into cold rock material'], a: 'It transfers from one living thing to another', e: 'Food chains serve as pipelines for transferring biological energy.' },
+            { type: 'life', q: 'A farmer notes his milk cows are producing less milk. What should he examine regarding their nutrition?', o: ['If they are receiving a balanced diet with clean water', 'If they have enough toys to play with', 'If the grass is painted green', 'If they can see the moon at night'], a: 'If they are receiving a balanced diet with clean water', e: 'Proper milk yield depends directly on balanced feed and plenty of hydration.' },
+            { type: 'life', q: 'You notice mold spots on the dry grains kept for your pet hamster. What should you do?', o: ['Throw it away and get fresh, dry grains', 'Wash it with cold water and feed it anyway', 'Mix it with sugar to hide the bad smell', 'Leave it there for days'], a: 'Throw it away and get fresh, dry grains', e: 'Moldy feed carries microtoxins which are fatal to small rodents.' },
+            { type: 'life', q: 'If all frogs are removed from a vegetable garden, what issue will the farmer face?', o: ['An explosion of crop-eating insects', 'The vegetables will turn blue', 'The soil will dry up instantly', 'Birds will stop flying around'], a: 'An explosion of crop-eating insects', e: 'Frogs control pest populations; their absence causes insect numbers to soar.' },
+            { type: 'reasoning', q: 'Why is a food chain shaped like a pyramid, with many plants at the very bottom?', o: ['Because lots of plant energy is needed to feed fewer predators', 'Because pyramids look neat and organized', 'Because plants like to grow on slopes', 'Because predators hate the sun'], a: 'Because lots of plant energy is needed to feed fewer predators', e: 'Energy decreases at each level up, so you need many producers at the base.' },
+            { type: 'reasoning', q: 'Why do birds have different beak shapes, like hooked beaks for owls and flat bills for ducks?', o: ['Their beaks are shaped to match the food they eat', 'To let them sing different musical notes', 'To match the color of their feathers', 'Because of accidental weather shifts'], a: 'Their beaks are shaped to match the food they eat', e: 'Beak shapes are evolutionary adaptations designed for specific feeding methods.' },
+            { type: 'reasoning', q: 'Why are scavengers like hyenas and vultures critical for preventing diseases in the wild?', o: ['They clean up rotting bodies before germs multiply', 'They wash the forest floor with clean water', 'They scare away small insects', 'They plant new trees across the plains'], a: 'They clean up rotting bodies before germs multiply', e: 'Consuming decaying carcasses eliminates breeding vectors for dangerous bacteria.' }
+        ]
+    };
+
+    /* State Management */
+    let currentLevel = 'easy';
+    let currentQuestions = [];
+    let currentQIndex = 0;
+    let userAnswers = {}; // Stores index -> response data mapping
+    let startTime = null;
+    let timerInterval = null;
+
+    // Local Storage helpers for persistence
+    function initProgress() {
+        if (localStorage.getItem('evs_quiz_has_saved')) {
+            document.getElementById('saved-progress-banner').style.display = 'block';
+        }
+    }
+
+    function saveProgress(score, pct, badge) {
+        localStorage.setItem('evs_quiz_has_saved', 'true');
+        localStorage.setItem('evs_quiz_last_score', score);
+        localStorage.setItem('evs_quiz_last_pct', pct);
+        localStorage.setItem('evs_quiz_last_badge', badge);
+    }
+
+    /* Helper: Array Shuffler (Fisher-Yates) */
+    function shuffleArray(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+    }
+
+    /* Core Flow: Start Quiz */
+    function startQuiz(level) {
+        playSound('click');
+        currentLevel = level;
+        
+        // Deep copy the questions so original bank stays unshuffled
+        let fullSet = JSON.parse(JSON.stringify(questionBank[level]));
+        shuffleArray(fullSet);
+        
+        // Take exactly 30 questions
+        currentQuestions = fullSet.slice(0, 30);
+        
+        // For each question, shuffle its options if it's an MCQ or similar
+        currentQuestions.forEach(q => {
+            if (q.o && q.o.length > 0) {
+                shuffleArray(q.o);
+            }
+        });
+
+        // Reset variables
+        currentQIndex = 0;
+        userAnswers = {};
+        startTime = new Date();
+        
+        // Setup UI
+        document.getElementById('display-level').innerText = level + " Level";
+        document.getElementById('start-screen').classList.remove('active');
+        document.getElementById('quiz-screen').classList.add('active');
+        
+        // Start live timer counter
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            // updates stats implicitly when finished
+        }, 1000);
+
+        showQuestion();
+        updateHeaderAndProgress();
+    }
+
+    /* Render Question Screen */
+    function showQuestion() {
+        const qData = currentQuestions[currentQIndex];
+        const textContainer = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackBox = document.getElementById('feedback-box');
+
+        // Reset state
+        textContainer.innerText = qData.q;
+        optionsContainer.innerHTML = '';
+        feedbackBox.className = 'feedback-box';
+        feedbackBox.style.display = 'none';
+
+        // Check if user already answered this index
+        const historicalAnswer = userAnswers[currentQIndex];
+
+        if (qData.type === 'match') {
+            // Render a matching-style UI layout using select menus
+            const containerDiv = document.createElement('div');
+            containerDiv.className = 'match-container';
+            
+            // Create selection pools
+            let pool = [...qData.values];
+            // Sort or keep constant? We can leave them so students match correctly
+            
+            qData.keys.forEach((keyName, idx) => {
+                const row = document.createElement('div');
+                row.className = 'match-row';
+                row.innerHTML = `<span>${keyName}</span>`;
+                
+                const sel = document.createElement('select');
+                sel.className = 'match-select';
+                sel.id = `match-sel-${idx}`;
+                
+                // Add default placeholder option
+                const optDefault = document.createElement('option');
+                optDefault.value = '';
+                optDefault.innerText = '-- Select Food --';
+                sel.appendChild(optDefault);
+                
+                pool.forEach(valText => {
+                    const opt = document.createElement('option');
+                    opt.value = valText;
+                    opt.innerText = valText;
+                    sel.appendChild(opt);
+                });
+
+                // Lock if historical
+                if (historicalAnswer) {
+                    sel.value = historicalAnswer.userSelections[idx];
+                    sel.disabled = true;
+                } else {
+                    sel.addEventListener('change', checkMatchAnswers);
+                }
+
+                row.appendChild(sel);
+                containerDiv.appendChild(row);
+            });
+            
+            optionsContainer.appendChild(containerDiv);
+
+            if (historicalAnswer) {
+                showFeedback(historicalAnswer.isCorrect, qData.e);
+            }
+
+        } else {
+            // Standard Multiple Choice / TF / Choice list buttons layout
+            qData.o.forEach(optionText => {
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-option';
+                btn.innerText = optionText;
+                
+                if (historicalAnswer) {
+                    btn.disabled = true;
+                    // Highlight correct and wrongs
+                    if (optionText === qData.a) {
+                        btn.classList.add('correct');
+                    }
+                    if (historicalAnswer.chosenText === optionText && !historicalAnswer.isCorrect) {
+                        btn.classList.add('wrong');
+                    }
+                } else {
+                    btn.onclick = () => selectStandardAnswer(btn, optionText);
+                }
+                
+                optionsContainer.appendChild(btn);
+            });
+
+            if (historicalAnswer) {
+                showFeedback(historicalAnswer.isCorrect, qData.e);
+            }
+        }
+
+        // Handle navigation rules states
+        document.getElementById('btn-prev').disabled = (currentQIndex === 0);
+        // Next button behaves normally or states finish at 29
+        if (currentQIndex === currentQuestions.length - 1) {
+            document.getElementById('btn-next').innerText = '🏁 Finish';
+        } else {
+            document.getElementById('btn-next').innerText = '➡️ Next';
+        }
+    }
+
+    /* Process Standard MCQ / TF Option Selections */
+    function selectStandardAnswer(selectedButton, optionText) {
+        const qData = currentQuestions[currentQIndex];
+        const isCorrect = (optionText === qData.a);
+
+        // Record response state immediate
+        userAnswers[currentQIndex] = {
+            isCorrect: isCorrect,
+            chosenText: optionText
+        };
+
+        // UI Styling updates across options
+        const allButtons = document.getElementById('options-container').querySelectorAll('.btn-option');
+        allButtons.forEach(btn => {
+            btn.disabled = true; // Lock choice input
+            if (btn.innerText === qData.a) {
+                btn.classList.add('correct');
+            }
+        });
+
+        if (isCorrect) {
+            selectedButton.classList.add('correct');
+            playSound('correct');
+            showFeedback(true, qData.e);
+        } else {
+            selectedButton.classList.add('wrong');
+            playSound('wrong');
+            showFeedback(false, qData.e);
+        }
+
+        updateLiveScoreDisplay();
+    }
+
+    /* Process Interactive Match Option Dropdown Actions */
+    function checkMatchAnswers() {
+        const qData = currentQuestions[currentQIndex];
+        const totalItems = qData.keys.length;
+        let selections = [];
+        let filledCount = 0;
+
+        for (let i = 0; i < totalItems; i++) {
+            const val = document.getElementById(`match-sel-${i}`).value;
+            selections.push(val);
+            if (val !== '') filledCount++;
+        }
+
+        // Process only when all select drops are chosen
+        if (filledCount === totalItems) {
+            let matchesAll = true;
+            for (let i = 0; i < totalItems; i++) {
+                // The values list index maps exactly to keys index in master key array
+                if (selections[i] !== qData.values[i]) {
+                    matchesAll = false;
+                }
+            }
+
+            userAnswers[currentQIndex] = {
+                isCorrect: matchesAll,
+                userSelections: selections
+            };
+
+            // Lock all select components immediately
+            for (let i = 0; i < totalItems; i++) {
+                document.getElementById(`match-sel-${i}`).disabled = true;
+            }
+
+            if (matchesAll) {
+                playSound('correct');
+                showFeedback(true, qData.e);
+            } else {
+                playSound('wrong');
+                showFeedback(false, qData.e);
+            }
+            updateLiveScoreDisplay();
+        }
+    }
+
+    /* Dynamic Banner Feedback Builder */
+    function showFeedback(isCorrect, explanation) {
+        const feedbackBox = document.getElementById('feedback-box');
+        if (isCorrect) {
+            feedbackBox.className = 'feedback-box correct';
+            feedbackBox.innerHTML = `<strong>✅ Correct!</strong><br>${explanation}`;
+        } else {
+            feedbackBox.className = 'feedback-box wrong';
+            feedbackBox.innerHTML = `<strong>❌ Not Quite Right!</strong><br>${explanation}`;
+        }
+    }
+
+    /* Live Counters Updates */
+    function updateLiveScoreDisplay() {
+        let count = 0;
+        for (let key in userAnswers) {
+            if (userAnswers[key].isCorrect) count++;
+        }
+        document.getElementById('live-score').innerText = count;
+    }
+
+    function updateHeaderAndProgress() {
+        document.getElementById('current-q-num').innerText = (currentQIndex + 1);
+        const percent = ((currentQIndex + 1) / currentQuestions.length) * 100;
+        document.getElementById('progress-bar').style.width = percent + '%';
+    }
+
+    /* Navigation Button Controls */
+    function navigateQuestion(step) {
+        playSound('click');
+        
+        // Handle boundary check or finalize
+        if (step === 1 && currentQIndex === currentQuestions.length - 1) {
+            evaluateFinalQuizResults();
+            return;
+        }
+
+        currentQIndex += step;
+        if (currentQIndex < 0) currentQIndex = 0;
+        if (currentQIndex >= currentQuestions.length) currentQIndex = currentQuestions.length - 1;
+
+        showQuestion();
+        updateHeaderAndProgress();
+    }
+
+    function goToHome() {
+        playSound('click');
+        if (timerInterval) clearInterval(timerInterval);
+        document.getElementById('quiz-screen').classList.remove('active');
+        document.getElementById('summary-screen').classList.remove('active');
+        document.getElementById('start-screen').classList.add('active');
+        initProgress();
+    }
+
+    function restartCurrentQuiz() {
+        startQuiz(currentLevel);
+    }
+
+    /* Quiz Final Evaluation and Statistics Builder */
+    function evaluateFinalQuizResults() {
+        if (timerInterval) clearInterval(timerInterval);
+        
+        let correctCount = 0;
+        let wrongCount = 0;
+        
+        // Loop up to 30 items
+        for (let i = 0; i < currentQuestions.length; i++) {
+            if (userAnswers[i] && userAnswers[i].isCorrect) {
+                correctCount++;
+            } else {
+                wrongCount++; // counted as wrong if left blank or missed too
+            }
+        }
+
+        const scorePercent = Math.round((correctCount / currentQuestions.length) * 100);
+        const endTime = new Date();
+        const secondsSpent = Math.round((endTime - startTime) / 1000);
+
+        // Determine badge classification
+        let badgeText = "📚 Keep Learning";
+        if (scorePercent >= 90) {
+            badgeText = "🏆 Animal Food Expert";
+        } else if (scorePercent >= 70) {
+            badgeText = "🌟 Food Explorer";
+        } else if (scorePercent >= 50) {
+            badgeText = "👍 Good Learner";
+        }
+
+        // Save progress metric to local persistence
+        saveProgress(correctCount, scorePercent, badgeText);
+
+        // Populate summary screen fields
+        document.getElementById('stat-level').innerText = currentLevel;
+        document.getElementById('stat-score').innerText = `${correctCount} / ${currentQuestions.length}`;
+        document.getElementById('stat-percent').innerText = `${scorePercent}%`;
+        document.getElementById('stat-time').innerText = `${secondsSpent} seconds`;
+        document.getElementById('stat-correct').innerText = correctCount;
+        document.getElementById('stat-wrong').innerText = wrongCount;
+        document.getElementById('badge-title').innerText = badgeText;
+
+        // Populate certificate components hidden inside
+        document.getElementById('cert-level').innerText = currentLevel;
+        document.getElementById('cert-score').innerText = `${scorePercent}%`;
+        document.getElementById('cert-badge').innerText = badgeText;
+
+        // Transition screens
+        document.getElementById('quiz-screen').classList.remove('active');
+        document.getElementById('summary-screen').classList.add('active');
+        
+        // Trigger rewards audio & visual elements
+        playSound('complete');
+        triggerConfettiRain();
+    }
+
+    /* Visual Celebration Simulation */
+    function triggerConfettiRain() {
+        const colors = ['#FFC107', '#2ECC71', '#3498DB', '#E74C3C', '#9B59B6', '#E67E22'];
+        for (let i = 0; i < 60; i++) {
+            const confettiPiece = document.createElement('div');
+            confettiPiece.className = 'confetti';
+            confettiPiece.style.left = Math.random() * 100 + 'vw';
+            confettiPiece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            confettiPiece.style.animationDelay = Math.random() * 2 + 's';
+            confettiPiece.style.transform = `scale(${Math.random() * 1.2 + 0.5})`;
+            document.body.appendChild(confettiPiece);
+
+            // Cleanup piece after completion loop
+            setTimeout(() => {
+                confettiPiece.remove();
+            }, 3000);
+        }
+    }
+
+    /* Trigger Native Browser Print Dialog */
+    function showCertificate() {
+        playSound('click');
+        // Reveal container to browser layout engine temporarily for printing paths
+        const certBox = document.getElementById('certificate-view');
+        certBox.style.display = 'block';
+        window.print();
+    }
+
+    // Initialize state triggers on startup
+    window.onload = function() {
+        initProgress();
+    };
+</script>
+
+</body>
+</html>

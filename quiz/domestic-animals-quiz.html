@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐄 Domestic Animals Quiz</title>
+    <style>
+        :root {
+            --primary-bg: linear-gradient(135deg, #e0f2fe 0%, #dcfce7 50%, #fef9c3 100%);
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --text-dark: #1e293b;
+            --text-muted: #475569;
+            --easy-color: #22c55e;
+            --medium-color: #eab308;
+            --hard-color: #ef4444;
+            --correct-bg: #dcfce7;
+            --correct-border: #22c55e;
+            --wrong-bg: #fee2e2;
+            --wrong-border: #ef4444;
+            --btn-hover: #f1f5f9;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--primary-bg);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 700px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 10px 32px rgba(31, 38, 135, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            text-align: center;
+            margin-bottom: 10px;
+            color: var(--text-dark);
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Start Screen Level Buttons */
+        .level-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn-lvl {
+            padding: 18px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            color: white;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .btn-lvl:active { transform: scale(0.98); }
+        .btn-lvl-easy { background-color: var(--easy-color); }
+        .btn-lvl-medium { background-color: var(--medium-color); color: #2e2e00; }
+        .btn-lvl-hard { background-color: var(--hard-color); }
+
+        .btn-lvl:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        /* Top Header Stats */
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: rgba(255,255,255,0.4);
+            padding: 10px 15px;
+            border-radius: 12px;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background-color: rgba(0,0,0,0.05);
+            border-radius: 6px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            border-radius: 6px;
+            transition: width 0.3s ease;
+        }
+
+        /* Question Styles */
+        .question-box {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .option-btn {
+            padding: 16px;
+            font-size: 1.1rem;
+            text-align: left;
+            background: white;
+            border: 2px solid rgba(0,0,0,0.05);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+
+        .option-btn:hover:not([disabled]) {
+            background: var(--btn-hover);
+            border-color: rgba(0,0,0,0.15);
+            transform: translateX(4px);
+        }
+
+        .option-btn.correct {
+            background-color: var(--correct-bg) !important;
+            border-color: var(--correct-border) !important;
+            color: #166534 !important;
+            font-weight: 600;
+        }
+
+        .option-btn.wrong {
+            background-color: var(--wrong-bg) !important;
+            border-color: var(--wrong-border) !important;
+            color: #991b1b !important;
+        }
+
+        /* Explanation Box */
+        .explanation-box {
+            display: none;
+            padding: 15px;
+            border-radius: 14px;
+            margin-bottom: 25px;
+            font-size: 1.05rem;
+            line-height: 1.4;
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* Bottom Fixed Order Navigation Grid */
+        .nav-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .nav-btn {
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            background: white;
+            color: var(--text-dark);
+            border: 1px solid rgba(0,0,0,0.1);
+            transition: all 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .nav-btn:hover:not([disabled]) {
+            background: #f8fafc;
+            transform: translateY(-1px);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .nav-btn-home {
+            background: #f1f5f9;
+        }
+
+        /* Summary Dashboard */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .summary-card {
+            background: rgba(255,255,255,0.5);
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .summary-card .val {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+
+        .badge-box {
+            text-align: center;
+            background: linear-gradient(135deg, #fef08a, #fef9c3);
+            border: 2px dashed #eab308;
+            padding: 20px;
+            border-radius: 16px;
+            margin: 20px 0;
+        }
+
+        .badge-icon {
+            font-size: 3rem;
+            margin-bottom: 5px;
+        }
+
+        .badge-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #854d0e;
+        }
+
+        .action-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .action-btn {
+            padding: 14px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-secondary { background: #64748b; color: white; }
+        .btn-success { background: #10b981; color: white; }
+        .action-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        /* Confetti Canvas-less */
+        .confetti-container {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 9999; overflow: hidden;
+            display: none;
+        }
+
+        .confetti {
+            position: absolute; width: 12px; height: 12px;
+            animation: drop linear forwards;
+        }
+
+        @keyframes drop {
+            0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(105vh) rotate(720deg); opacity: 0.4; }
+        }
+
+        /* Certificate Print Layout Styles */
+        #certificate-print-area {
+            display: none;
+        }
+
+        @media print {
+            body { background: white; color: black; }
+            .container { display: none !important; }
+            #certificate-print-area {
+                display: block !important;
+                width: 100%;
+                max-width: 800px;
+                margin: 40px auto;
+                padding: 40px;
+                border: 10px double #eab308;
+                background: white;
+                text-align: center;
+                box-sizing: border-box;
+            }
+            .cert-title { font-size: 3rem; font-weight: bold; margin-bottom: 20px; color: #854d0e; }
+            .cert-sub { font-size: 1.5rem; margin-bottom: 40px; text-transform: uppercase; letter-spacing: 2px; }
+            .cert-body { font-size: 1.3rem; line-height: 1.8; margin-bottom: 40px; }
+            .cert-name { font-size: 2.2rem; font-weight: bold; text-decoration: underline; margin: 20px 0; }
+            .cert-badge { font-size: 4rem; margin: 20px 0; }
+            .cert-footer { display: flex; justify-content: space-between; margin-top: 60px; font-size: 1.1rem; border-top: 2px solid #ccc; padding-top: 10px; }
+        }
+
+        /* Responsive Breakpoints */
+        @media(max-width: 600px) {
+            body { padding: 10px; }
+            .container { padding: 20px; border-radius: 16px; }
+            h1 { font-size: 1.7rem; }
+            .question-box { font-size: 1.15rem; }
+            .option-btn { padding: 13px; font-size: 1rem; }
+            .nav-btn { padding: 12px; font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="confetti-container" id="confetti-holder"></div>
+
+    <div class="container">
+        <h1>🐄 Domestic Animals Quiz</h1>
+        <p class="subtitle">Observe • Identify • Explore • Learn</p>
+
+        <div id="start-screen" class="screen active">
+            <p style="text-align: center; font-size: 1.15rem; margin-bottom: 20px; font-weight: 500;">Select a difficulty level to start playing:</p>
+            <div class="level-container">
+                <button class="btn-lvl btn-lvl-easy" onclick="startQuiz('easy')">🟢 Easy Level</button>
+                <button class="btn-lvl btn-lvl-medium" onclick="startQuiz('medium')">🟡 Medium Level</button>
+                <button class="btn-lvl btn-lvl-hard" onclick="startQuiz('hard')">🔴 Hard Level</button>
+            </div>
+        </div>
+
+        <div id="quiz-screen" class="screen">
+            <div class="quiz-header">
+                <div>Level: <span id="header-level" style="text-transform: capitalize; font-weight:700;">-</span></div>
+                <div>Questions: <span id="header-count">-</span>/30</div>
+                <div>Score: <span id="header-score">-</span></div>
+                <div>⏱️ <span id="header-timer">00:00</span></div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-indicator"></div>
+            </div>
+
+            <div class="question-box" id="question-text"></div>
+            <div class="options-container" id="options-box"></div>
+            
+            <div class="explanation-box" id="explanation-card"></div>
+
+            <div class="nav-container">
+                <button class="nav-btn" id="btn-prev" onclick="navigateQuestion(-1)">⬅️ Previous</button>
+                <button class="nav-btn nav-btn-home" id="btn-home" onclick="returnHome()">🏠 Home</button>
+                <button class="nav-btn" id="btn-next" onclick="navigateQuestion(1)">➡️ Next</button>
+            </div>
+        </div>
+
+        <div id="summary-screen" class="screen">
+            <h2 style="text-align: center; margin-bottom: 15px;">🏁 Quiz Summary</h2>
+            <div class="summary-grid">
+                <div class="summary-card"><div>Level Selected</div><div class="val" id="sum-level" style="text-transform: capitalize;">-</div></div>
+                <div class="summary-card"><div>Time Taken</div><div class="val" id="sum-time">-</div></div>
+                <div class="summary-card"><div>Final Score</div><div class="val" id="sum-score">-</div></div>
+                <div class="summary-card"><div>Accuracy</div><div class="val" id="sum-pct">-</div></div>
+                <div class="summary-card" style="background-color: var(--correct-bg);"><div>Correct Answers</div><div class="val" id="sum-correct" style="color: #166534;">-</div></div>
+                <div class="summary-card" style="background-color: var(--wrong-bg);"><div>Wrong Answers</div><div class="val" id="sum-wrong" style="color: #991b1b;">-</div></div>
+            </div>
+
+            <div class="badge-box">
+                <div class="badge-icon" id="sum-badge-icon">🏆</div>
+                <div class="badge-title" id="sum-badge-title">Animal Expert</div>
+                <p id="sum-badge-desc" style="font-size: 0.95rem; margin-top: 5px; color: #713f12;"></p>
+            </div>
+
+            <div class="action-container">
+                <button class="action-btn btn-primary" onclick="restartQuiz()">🔄 Play Again</button>
+                <button class="action-btn btn-secondary" onclick="returnHome()">🗺️ Choose Another Level</button>
+                <button class="action-btn btn-success" id="btn-print-cert" onclick="window.print()">🖨️ Print Certificate</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="certificate-print-area">
+        <div class="cert-title">Certificate of Achievement</div>
+        <div class="cert-sub">Domestic Animals Quiz Mastery</div>
+        <div class="cert-body">
+            This is proudly certified to recognize that a super star learner has successfully completed the 
+            <strong><span id="cert-lvl"></span> Level</strong> of the interactive EVS Domestic Animals Quiz.
+            <br><br>
+            They displayed amazing knowledge about farm helpers and pet care, achieving a phenomenal score of
+            <strong><span id="cert-score"></span></strong> with an accuracy rate of <strong><span id="cert-pct"></span></strong>!
+        </div>
+        <div class="cert-badge" id="cert-badge-icon">🏆</div>
+        <div class="badge-title" id="cert-badge-title">Animal Expert</div>
+        <div class="cert-footer">
+            <div>Date: <span id="cert-date"></span></div>
+            <div>Signature: EVS Quiz Committee</div>
+        </div>
+    </div>
+
+    <script>
+        // 📚 Question Arrays Generation (90 Complete Random Questions)
+        const questionBank = {
+            easy: [
+                { q: "Which animal gives us milk?", o: ["Cow", "Lion", "Tiger", "Bear"], a: "Cow", e: "✅ Correct! A cow gives us healthy milk to drink." },
+                { q: "Which animal says 'Moo'?", o: ["Cow", "Cat", "Dog", "Sheep"], a: "Cow", e: "✅ Correct! Cows make a beautiful 'Moo' sound on the farm." },
+                { q: "Which animal is often called man's best friend?", o: ["Dog", "Horse", "Pig", "Rabbit"], a: "Dog", e: "✅ Correct! Dogs are loyal and love humans very much." },
+                { q: "Which animal says 'Meow'?", o: ["Cat", "Cow", "Horse", "Goat"], a: "Cat", e: "✅ Correct! Cats love to say 'Meow' when they want love or attention." },
+                { q: "Which animal helps carry heavy loads on its back?", o: ["Donkey", "Cat", "Rabbit", "Dog"], a: "Donkey", e: "✅ Correct! Donkeys are strong and carry loads on farms." },
+                { q: "Which animal gives us wool?", o: ["Sheep", "Dog", "Cat", "Horse"], a: "Sheep", e: "✅ Correct! Sheep give us soft wool to make warm clothes." },
+                { q: "Which animal is often kept as a small household pet?", o: ["Dog", "Fox", "Wolf", "Leopard"], a: "Dog", e: "✅ Correct! Dogs make very friendly pets for families." },
+                { q: "Which animal lives peacefully with humans on a farm?", o: ["Cow", "Shark", "Eagle", "Lion"], a: "Cow", e: "✅ Correct! Cows are classic domestic animals kept on farms." },
+                { q: "Domestic animals are animals that live with ___.", o: ["People", "Wild lions", "Deep oceans", "The stars"], a: "People", e: "✅ Correct! Domestic animals live close to people." },
+                { q: "Which animal wags its tail when it is happy?", o: ["Dog", "Cat", "Cow", "Horse"], a: "Dog", e: "✅ Correct! Dogs wag their tails to show love and excitement." },
+                { q: "Choose the domestic animal from the list below:", o: ["Goat", "Tiger", "Zebra", "Giraffe"], a: "Goat", e: "✅ Correct! Goats are domestic animals kept for milk and wool." },
+                { q: "True or False: Domestic animals live safely with us or on farms.", o: ["True", "False"], a: "True", e: "✅ Correct! Yes! They are our friendly helpers and companions." },
+                { q: "Complete the sentence: A ___ guards our house from strangers.", o: ["Dog", "Cat", "Rabbit", "Horse"], a: "Dog", e: "✅ Correct! A faithful dog guards our home." },
+                { q: "Which animal can live inside our home as a sweet pet?", o: ["Cat", "Giraffe", "Hippopotamus", "Crocodile"], a: "Cat", e: "✅ Correct! Cats love living inside cozy homes with us." },
+                { q: "Which animal says 'Baa Baa'?", o: ["Sheep", "Cow", "Dog", "Cat"], a: "Sheep", e: "✅ Correct! Sheep say 'Baa Baa' out in the green fields." },
+                { q: "Which large animal can help pull heavy carts in villages?", o: ["Bullock", "Squirrel", "Fox", "Frog"], a: "Bullock", e: "✅ Correct! Bullocks are very strong working farm animals." },
+                { q: "Identify the domestic animal that gives us milk:", o: ["Goat", "Monkey", "Leopard", "Owl"], a: "Goat", e: "✅ Correct! Goats give nutritious milk." },
+                { q: "True or False: Cows are wild animals that live in deep jungles.", o: ["False", "True"], a: "False", e: "✅ Correct! Cows are safe domestic animals, not wild jungle animals." },
+                { q: "Complete the sentence: We see domestic animals living all ___ us.", o: ["around", "far away from"], a: "around", e: "✅ Correct! Domestic animals live right around our neighborhoods." },
+                { q: "Which animal has long ears and hops around as a friendly pet?", o: ["Rabbit", "Cow", "Horse", "Donkey"], a: "Rabbit", e: "✅ Correct! Rabbits are soft, hopping pets." },
+                { q: "Which animal makes a proud 'Neigh' sound?", o: ["Horse", "Cat", "Dog", "Sheep"], a: "Horse", e: "✅ Correct! Horses make a proud 'Neigh' sound." },
+                { q: "Which large domestic animal is often dark grey and gives milk?", o: ["Buffalo", "Rabbit", "Mouse", "Fox"], a: "Buffalo", e: "✅ Correct! Buffaloes give rich milk used for dairy items." },
+                { q: "True or False: Cats and dogs are common domestic pets.", o: ["True", "False"], a: "True", e: "✅ Correct! Cats and dogs love living with human families." },
+                { q: "Complete the sentence: Sheep give us ___ to make warm sweaters.", o: ["wool", "paper", "wood", "leaves"], a: "wool", e: "✅ Correct! Wool keeps us warm during winter." },
+                { q: "Which domestic animal is used for riding and running fast?", o: ["Horse", "Cat", "Rabbit", "Pig"], a: "Horse", e: "✅ Correct! Horses are famous for running and riding." },
+                { q: "Choose the animal that lives peacefully on a farm:", o: ["Cow", "Cheetah", "Wolf", "Hyena"], a: "Cow", e: "✅ Correct! Cows live on quiet, safe farms." },
+                { q: "True or False: Domestic animals are very useful to humans.", o: ["True", "False"], a: "True", e: "✅ Correct! They help us get food, materials, and do work." },
+                { q: "Which of these is a small, gentle pet animal?", o: ["Rabbit", "Bear", "Fox", "Coyote"], a: "Rabbit", e: "✅ Correct! Rabbits are safe, small pets." },
+                { q: "Complete the sentence: A donkey helps us by carrying heavy ___.", o: ["loads", "backpacks", "pencils", "balloons"], a: "loads", e: "✅ Correct! Donkeys have strong backs for farm loads." },
+                { q: "Which animal says 'Oink Oink' on the farm?", o: ["Pig", "Cat", "Dog", "Cow"], a: "Pig", e: "✅ Correct! Pigs make a fun 'Oink Oink' sound on the farm." }
+            ],
+            medium: [
+                { q: "Why do people keep cows on farms?", o: ["For milk", "For guarding", "For catching mice", "For entertainment"], a: "For milk", e: "✅ Correct! Cows are kept mostly for healthy dairy milk." },
+                { q: "Which animal helps guard our house from strangers?", o: ["Dog", "Cat", "Sheep", "Rabbit"], a: "Dog", e: "✅ Correct! A dog protects our home with loud barks." },
+                { q: "Which animal gives us soft wool for making winter clothes?", o: ["Sheep", "Horse", "Donkey", "Pig"], a: "Sheep", e: "✅ Correct! Sheep wool is sheared safely to create clothes." },
+                { q: "Why should we give clean water to domestic animals?", o: ["To keep them healthy", "To change their colors", "To make them fly", "To make them sleep"], a: "To keep them healthy", e: "✅ Correct! Clean water protects animals from getting sick." },
+                { q: "Which animal helps farmers in some villages to plough fields?", o: ["Ox", "Cat", "Rabbit", "Squirrel"], a: "Ox", e: "✅ Correct! Oxen are powerful helpers in traditional farming." },
+                { q: "Which domestic animal can pull a wooden cart or carriage?", o: ["Horse", "Cat", "Rabbit", "Hamster"], a: "Horse", e: "✅ Correct! Horses can easily pull carriages and carts." },
+                { q: "Why should we always be kind to domestic animals?", o: ["They are living things that help us", "They can talk like humans", "They are scary", "They give us gold"], a: "They are living things that help us", e: "✅ Correct! Kindness makes domestic animals feel safe and happy." },
+                { q: "What common product do we get from cows and goats?", o: ["Milk", "Cotton", "Paper", "Glass"], a: "Milk", e: "✅ Correct! Milk is used to make butter, cheese, and yogurt." },
+                { q: "Where should a domestic pet dog sleep?", o: ["In a clean, dry shelter", "In the wet mud", "In a tiny dark box", "On top of the roof"], a: "In a clean, dry shelter", e: "✅ Correct! Dogs need a cozy, hygienic space to stay healthy." },
+                { q: "True or False: We should feed our domestic animals every single day.", o: ["True", "False"], a: "True", e: "✅ Correct! Regular food keeps them strong and energetic." },
+                { q: "Which domestic animal helps catch mice inside a house?", o: ["Cat", "Horse", "Sheep", "Goat"], a: "Cat", e: "✅ Correct! Cats have natural skills to keep homes free of pests." },
+                { q: "How should we clean our pet animals?", o: ["Give them a proper bath with pet soap", "Spray them with perfume", "Use dirty river mud", "Never clean them"], a: "Give them a proper bath with pet soap", e: "✅ Correct! Proper bathing keeps their fur clean and free of bugs." },
+                { q: "Complete the sentence: Domestic animals need a ___ place to rest.", o: ["clean and safe", "dirty and wet", "dark and freezing", "small and tight"], a: "clean and safe", e: "✅ Correct! A safe shelter prevents stress and illness." },
+                { q: "Which animal is commonly used to travel across hot, sandy deserts?", o: ["Camel", "Pig", "Rabbit", "Cat"], a: "Camel", e: "✅ Correct! Camels can store water and travel across hot sand." },
+                { q: "True or False: Goats give us milk and are helpful farm animals.", o: ["True", "False"], a: "True", e: "✅ Correct! Goats are versatile domestic animals." },
+                { q: "Why do farmers take good care of their horses?", o: ["Horses help them work and travel", "Horses build fences", "Horses produce wool", "Horses catch mice"], a: "Horses help them work and travel", e: "✅ Correct! Horses are essential transportation and work assets." },
+                { q: "Complete the sentence: Leather from some dead farm animals can be used to make ___.", o: ["shoes and belts", "books and paper", "windows and mirrors", "plastic toys"], a: "shoes and belts", e: "✅ Correct! Animal hides have historically been used for durable leather goods." },
+                { q: "Which animal helps people living in cold, snowy mountains carry things?", o: ["Yak", "Cat", "Pig", "Rabbit"], a: "Yak", e: "✅ Correct! Yaks have thick coats and thrive in snowy mountains." },
+                { q: "True or False: Domestic animals feel happy when we show them affection.", o: ["True", "False"], a: "True", e: "✅ Correct! Animals respond positively to love and care." },
+                { q: "What is a good habit when dealing with farm animals?", o: ["Staying calm and moving gently", "Shouting loudly at them", "Chasing them with sticks", "Throwing rocks"], a: "Staying calm and moving gently", e: "✅ Correct! Loud noises and sudden movements scare animals." },
+                { q: "Complete the sentence: A horse carriage used for fun rides is often called a ___.", o: ["tonga or cart", "rocket", "submarine", "skateboard"], a: "tonga or cart", e: "✅ Correct! Tongas are traditional horse-drawn carriages." },
+                { q: "Which domestic animal provides cashmere wool?", o: ["Goat", "Dog", "Cat", "Pig"], a: "Goat", e: "✅ Correct! Certain breeds of goats produce high-quality cashmere wool." },
+                { q: "True or False: Healthy farm animals produce better quality food for us.", o: ["True", "False"], a: "True", e: "✅ Correct! Good health means good production." },
+                { q: "Why do people keep rabbits as pets?", o: ["They are gentle and quiet companions", "They guard the front gate", "They pull heavy trucks", "They hunt mice"], a: "They are gentle and quiet companions", e: "✅ Correct! Rabbits are soft, peaceful indoor or outdoor pets." },
+                { q: "How often should we check if our farm animals have clean drinking water?", o: ["Multiple times every day", "Once a month", "Only when it rains", "Never"], a: "Multiple times every day", e: "✅ Correct! Animals get thirsty often, especially when working." },
+                { q: "Which animal is useful for carrying bags of grains to markets?", o: ["Donkey", "Cat", "Rabbit", "Mongoose"], a: "Donkey", e: "✅ Correct! Donkeys are excellent beast of burden helpers." },
+                { q: "True or False: Pet animals should be kept in the freezing cold all night.", o: ["False", "True"], a: "False", e: "✅ Correct! Cold weather can make domestic animals severely sick." },
+                { q: "Complete the sentence: A healthy, well-fed cow gives ___ milk.", o: ["more", "less", "no", "sour"], a: "more", e: "✅ Correct! Proper nutrition directly increases milk output." },
+                { q: "Which of these items is made from domestic animal milk?", o: ["Cheese", "Plastic bag", "Steel spoon", "Cardboard box"], a: "Cheese", e: "✅ Correct! Cheese is a healthy dairy product made from milk." },
+                { q: "Why do people brush a horse's coat?", o: ["To keep its skin clean and healthy", "To change its natural color", "To make it sleep instantly", "To make it heavy"], a: "To keep its skin clean and healthy", e: "✅ Correct! Brushing removes dirt and keeps the coat smooth." }
+            ],
+            hard: [
+                { q: "Why should pets get clean water every day?", o: ["To prevent hydration diseases and stay healthy", "To turn their fur blue", "To help them grow wings", "To make them transparent"], a: "To prevent hydration diseases and stay healthy", e: "✅ Correct! Stagnant water carries dangerous bacteria that infect pets." },
+                { q: "Who treats sick or injured domestic animals?", o: ["A veterinarian", "A dentist", "A carpenter", "An astronaut"], a: "A veterinarian", e: "✅ Correct! A veterinarian (or vet) is a specialized animal doctor." },
+                { q: "Why are domestic animals important to human history?", o: ["They provided food, transport, and labor", "They taught humans how to write", "They built stone castles", "They designed computers"], a: "They provided food, transport, and labor", e: "✅ Correct! Civilizations grew because domestic animals shared our heavy workloads." },
+                { q: "How should we care for old or sick pet animals?", o: ["Take them to a vet and give proper medication", "Leave them out on the street", "Ignore their pain", "Take them to a wild forest"], a: "Take them to a vet and give proper medication", e: "✅ Correct! Responsible owners provide lifelong medical care to pets." },
+                { q: "Which working animal is famously called the 'Ship of the Desert'?", o: ["Camel", "Horse", "Donkey", "Mule"], a: "Camel", e: "✅ Correct! Camels can travel days across desert sands without water." },
+                { q: "Why should we never hurt or tease animals?", o: ["They experience physical pain and emotional distress", "They will turn into wild lions", "They will stop growing", "Because the law requires teasing"], a: "They experience physical pain and emotional distress", e: "✅ Correct! Animals have nervous systems and feelings just like humans." },
+                { q: "How do domestic animals help farmers earn a living?", o: ["By yielding products like milk and helping plough", "By driving automatic tractors", "By selling goods at the local market", "By printing money"], a: "By yielding products like milk and helping plough", e: "✅ Correct! Farmers sell dairy and use animal labor to cultivate crops." },
+                { q: "Why should animal shelters have good ventilation (fresh air)?", o: ["To stop dangerous germs and bad smells", "To allow wild animals to visit", "To keep it completely dark", "To save building costs"], a: "To stop dangerous germs and bad smells", e: "✅ Correct! Fresh air prevents respiratory illnesses in livestock." },
+                { q: "What does responsible pet ownership include?", o: ["Providing proper nutrition, healthcare, and love", "Letting the pet run away", "Feeding the pet junk food only", "Keeping the pet tied up constantly"], a: "Providing proper nutrition, healthcare, and love", e: "✅ Correct! Pets rely fully on human choices for their entire survival." },
+                { q: "True or False: Animal welfare ensures domestic animals are free from suffering.", o: ["True", "False"], a: "True", e: "✅ Correct! Welfare ensures animals are treated humanely throughout life." },
+                { q: "What should you do if you find an injured animal?", o: ["Tell an adult or call an animal helpline", "Throw small pebbles at it", "Walk away and forget it", "Pick it up roughly"], a: "Tell an adult or call an animal helpline", e: "✅ Correct! Professionals can handle injured animals safely without hurting them further." },
+                { q: "Complete the sentence: Animals trained to assist with transportation or farm labor are called ___ animals.", o: ["working", "wild", "lazy", "mystical"], a: "working", e: "✅ Correct! Working animals perform crucial physical duties for society." },
+                { q: "Why is it vital to vaccinate domestic pets?", o: ["To shield them from deadly infectious diseases", "To make them grow larger fur", "To modify their vocal cords", "To extend their sleeping hours"], a: "To shield them from deadly infectious diseases", e: "✅ Correct! Vaccines protect animals and prevent dangerous diseases from spreading." },
+                { q: "Which domestic animal can be trained to guide visually impaired individuals?", o: ["Dog", "Cat", "Goat", "Pig"], a: "Dog", e: "✅ Correct! Guide dogs act as eyes for blind handlers." },
+                { q: "True or False: Working animals should be given regular breaks and realistic load weights.", o: ["True", "False"], a: "True", e: "✅ Correct! Overworking animals causes permanent injury and exhaustion." },
+                { q: "What is part of a veterinarian's job during an evaluation?", o: ["Checking vital signs and administering vaccines", "Teaching dogs how to sing", "Dressing animals in suits", "Cooking gourmet food for them"], a: "Checking vital signs and administering vaccines", e: "✅ Correct! Vets run medical tests to preserve animal wellness." },
+                { q: "Complete the sentence: Sturdy shelters protect farm animals from extreme ___.", o: ["weather elements", "indoor lights", "soft music", "educational books"], a: "weather elements", e: "✅ Correct! Shelters protect against freezing winters and blazing summers." },
+                { q: "Why do shepherds use specific guard dogs?", o: ["To protect livestock herds from predators", "To drive the farm trucks", "To water the crop fields", "To catch flying birds"], a: "To protect livestock herds from predators", e: "✅ Correct! Guard dogs keep wild predators away from vulnerable farm herds." },
+                { q: "True or False: Intentionally neglecting or harming a domestic animal is illegal.", o: ["True", "False"], a: "True", e: "✅ Correct! Laws protect animals from mistreatment and cruelty." },
+                { q: "What is a primary environmental benefit of animal manure?", o: ["It serves as an organic fertilizer for the soil", "It clears out harmful weeds instantly", "It filters the groundwater", "It creates clean plastic"], a: "It serves as an organic fertilizer for the soil", e: "✅ Correct! Manure recycles nutrients back into the ground naturally." },
+                { q: "Complete the sentence: Regular physical exercise helps domestic dogs maintain a healthy ___.", o: ["weight and mental state", "furball size", "barking volume", "sleeping position"], a: "weight and mental state", e: "✅ Correct! Exercise keeps canine muscles strong and lowers behavioral anxiety." },
+                { q: "Which working animal is a cross between a male donkey and female horse?", o: ["Mule", "Yak", "Buffalo", "Pig"], a: "Mule", e: "✅ Correct! Mules are famously sure-footed and sturdy on mountain paths." },
+                { q: "True or False: Science shows domestic animals experience fear, pain, and comfort.", o: ["True", "False"], a: "True", e: "✅ Correct! Mammals have advanced nervous structures that feel emotions." },
+                { q: "Why shouldn't animals be left in cars on hot days?", o: ["They can rapidly overheat and suffer fatal heatstroke", "They will turn on the engine", "They will change the radio channel", "They will escape through the air vents"], a: "They can rapidly overheat and suffer fatal heatstroke", e: "✅ Correct! Car interiors act like greenhouses and reach high temperatures quickly." },
+                { q: "Complete the sentence: Animal waste can be decomposed to generate clean ___.", o: ["biogas fuel", "mineral oil", "drinking water", "rocket steel"], a: "biogas fuel", e: "✅ Correct! Biogas setups turn organic waste into clean cooking energy." },
+                { q: "Why do domestic sheep require shearing?", o: ["To harvest wool and prevent summer overheating", "To double their running speed", "To modify their appearance", "To make them look like goats"], a: "To harvest wool and prevent summer overheating", e: "✅ Correct! Domestic sheep do not shed wool naturally; shearing prevents heat exhaustion." },
+                { q: "True or False: Adopting an animal means committing to its care for its entire lifespan.", o: ["True", "False"], a: "True", e: "✅ Correct! Pets are lifelong commitments, not temporary toys." },
+                { q: "Complete the sentence: When we establish safe environments for domestic animals, we improve human ___.", o: ["agriculture and well-being", "deep-sea travel", "outer-space engineering", "digital coding"], a: "agriculture and well-being", e: "✅ Correct! Healthy animals ensure sustainable and safe food systems." },
+                { q: "What is required for long-haired pets like certain cats?", o: ["Regular grooming to avoid painful fur matting", "Weekly fur coloring sessions", "Shaving off all hair completely", "Zero attention to their coats"], a: "Regular grooming to avoid painful fur matting", e: "✅ Correct! Tangled fur pulls on the skin and can harbor skin infections." },
+                { q: "Why is human-animal cooperation useful on a farm?", o: ["It creates high efficiency and sustainable work production", "It enables animals to comprehend human speech", "It means animals never need food again", "It magically transforms farm animals into wild ones"], a: "It creates high efficiency and sustainable work production", e: "✅ Correct! Mutual cooperation leverages the strength of animals and management of humans." }
+            ]
+        };
+
+        // Quiz Engine State Variables
+        let activeLevel = '';
+        let activeQuestions = [];
+        let currentIdx = 0;
+        let userResponses = {}; // keys: index, value: selected options text string
+        let startTime = null;
+        let elapsedSecs = 0;
+        let clockTimer = null;
+
+        // 🔊 Web Audio API sound generator
+        const soundCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function emitAudio(variant) {
+            if (!soundCtx) return;
+            // Resume context if suspended by browser security configurations
+            if (soundCtx.state === 'suspended') {
+                soundCtx.resume();
+            }
+            
+            const osc = soundCtx.createOscillator();
+            const amp = soundCtx.createGain();
+            osc.connect(amp);
+            amp.connect(soundCtx.destination);
+            
+            const timestamp = soundCtx.currentTime;
+            
+            if (variant === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(450, timestamp);
+                amp.gain.setValueAtTime(0.1, timestamp);
+                amp.gain.exponentialRampToValueAtTime(0.01, timestamp + 0.08);
+                osc.start(timestamp);
+                osc.stop(timestamp + 0.08);
+            } else if (variant === 'correct') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, timestamp); // C5
+                osc.frequency.setValueAtTime(659.25, timestamp + 0.1); // E5
+                osc.frequency.setValueAtTime(783.99, timestamp + 0.2); // G5
+                amp.gain.setValueAtTime(0.15, timestamp);
+                amp.gain.exponentialRampToValueAtTime(0.01, timestamp + 0.35);
+                osc.start(timestamp);
+                osc.stop(timestamp + 0.35);
+            } else if (variant === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, timestamp); // A3
+                osc.frequency.linearRampToValueAtTime(130, timestamp + 0.25);
+                amp.gain.setValueAtTime(0.15, timestamp);
+                amp.gain.exponentialRampToValueAtTime(0.01, timestamp + 0.28);
+                osc.start(timestamp);
+                osc.stop(timestamp + 0.28);
+            } else if (variant === 'complete') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, timestamp);
+                osc.frequency.setValueAtTime(659.25, timestamp + 0.12);
+                osc.frequency.setValueAtTime(783.99, timestamp + 0.24);
+                osc.frequency.setValueAtTime(1046.50, timestamp + 0.36);
+                amp.gain.setValueAtTime(0.2, timestamp);
+                amp.gain.exponentialRampToValueAtTime(0.01, timestamp + 0.6);
+                osc.start(timestamp);
+                osc.stop(timestamp + 0.6);
+            } else if (variant === 'badge') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(587.33, timestamp);
+                osc.frequency.setValueAtTime(880, timestamp + 0.1);
+                osc.frequency.setValueAtTime(1174.66, timestamp + 0.2);
+                amp.gain.setValueAtTime(0.2, timestamp);
+                amp.gain.exponentialRampToValueAtTime(0.01, timestamp + 0.5);
+                osc.start(timestamp);
+                osc.stop(timestamp + 0.5);
+            }
+        }
+
+        // Helper: Random Array Shuffling (Fisher-Yates)
+        function shuffle(arr) {
+            let output = [...arr];
+            for (let i = output.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [output[i], output[j]] = [output[j], output[i]];
+            }
+            return output;
+        }
+
+        // Initialize and Start Quiz
+        function startQuiz(lvl) {
+            emitAudio('click');
+            activeLevel = lvl;
+            
+            // Randomize and select exactly 30 questions
+            let sourceQuestions = questionBank[lvl];
+            let randomizedPool = shuffle(sourceQuestions);
+            
+            activeQuestions = randomizedPool.map(item => {
+                return {
+                    q: item.q,
+                    o: shuffle(item.o), // Randomize answer options layout
+                    a: item.a,
+                    e: item.e
+                };
+            });
+
+            currentIdx = 0;
+            userResponses = {};
+            elapsedSecs = 0;
+            startTime = new Date();
+            
+            // Start Clock Interval
+            clearInterval(clockTimer);
+            clockTimer = setInterval(() => {
+                elapsedSecs++;
+                document.getElementById('header-timer').innerText = formatTime(elapsedSecs);
+            }, 1000);
+
+            switchScreen('quiz-screen');
+            renderQuestion();
+        }
+
+        // Format Seconds into MM:SS format
+        function formatTime(totalSeconds) {
+            let mins = Math.floor(totalSeconds / 60);
+            let secs = totalSeconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // View Navigator Controller
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(scr => scr.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        // Render Current Question View
+        function renderQuestion() {
+            const data = activeQuestions[currentIdx];
+            
+            // Update Header Stats elements
+            document.getElementById('header-level').innerText = activeLevel;
+            document.getElementById('header-count').innerText = currentIdx + 1;
+            document.getElementById('header-score').innerText = calculateCurrentScore();
+            
+            // Update UI Progress Bar
+            let progressPercentage = ((currentIdx + 1) / 30) * 100;
+            document.getElementById('progress-indicator').style.width = `${progressPercentage}%`;
+
+            // Display Question Text
+            document.getElementById('question-text').innerText = data.q;
+
+            // Generate Options Container Layout
+            const optionsBox = document.getElementById('options-box');
+            optionsBox.innerHTML = '';
+
+            const explanationCard = document.getElementById('explanation-card');
+            explanationCard.style.display = 'none';
+
+            let isAnswered = userResponses.hasOwnProperty(currentIdx);
+
+            data.o.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = opt;
+
+                if (isAnswered) {
+                    btn.disabled = true;
+                    let historicalSelection = userResponses[currentIdx];
+                    if (opt === data.a) {
+                        btn.classList.add('correct');
+                    } else if (opt === historicalSelection) {
+                        btn.classList.add('wrong');
+                    }
+                } else {
+                    btn.onclick = () => selectOption(opt, btn);
+                }
+                optionsBox.appendChild(btn);
+            });
+
+            if (isAnswered) {
+                displayExplanation(data.e, userResponses[currentIdx] === data.a);
+            }
+
+            // Evaluation of Navigation Control States (Previous/Home/Next Order)
+            document.getElementById('btn-prev').disabled = (currentIdx === 0);
+            
+            // Dynamic evaluation of Next vs Finish layout state
+            const nextBtn = document.getElementById('btn-next');
+            if (currentIdx === 29) {
+                nextBtn.innerText = '🏁 Finish';
+                // Only enable complete triggers if answered
+                nextBtn.disabled = !isAnswered;
+            } else {
+                nextBtn.innerText = '➡️ Next';
+                nextBtn.disabled = !isAnswered;
+            }
+        }
+
+        // Process Selected Answer Option
+        function selectOption(selectedOpt, selectedBtn) {
+            const data = activeQuestions[currentIdx];
+            userResponses[currentIdx] = selectedOpt;
+
+            let isCorrect = (selectedOpt === data.a);
+            emitAudio(isCorrect ? 'correct' : 'wrong');
+
+            // Freeze choices and render correct/incorrect configurations immediately
+            const buttons = document.querySelectorAll('#options-box .option-btn');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                if (btn.innerText === data.a) {
+                    btn.classList.add('correct');
+                } else if (btn.innerText === selectedOpt && !isCorrect) {
+                    btn.classList.add('wrong');
+                }
+            });
+
+            displayExplanation(data.e, isCorrect);
+            document.getElementById('header-score').innerText = calculateCurrentScore();
+            
+            // Unlock Next/Finish navigation button capability instantly
+            document.getElementById('btn-next').disabled = false;
+        }
+
+        // Display Explanation Box Elements
+        function displayExplanation(text, isCorrect) {
+            const card = document.getElementById('explanation-card');
+            card.innerText = text;
+            card.style.background = isCorrect ? 'var(--correct-bg)' : 'var(--wrong-bg)';
+            card.style.border = `1px solid ${isCorrect ? 'var(--correct-border)' : 'var(--wrong-border)'}`;
+            card.style.color = isCorrect ? '#166534' : '#991b1b';
+            card.style.display = 'block';
+        }
+
+        // Live Dynamic Score Counter Helper
+        function calculateCurrentScore() {
+            let total = 0;
+            for (let i in userResponses) {
+                if (userResponses[i] === activeQuestions[i].a) {
+                    total++;
+                }
+            }
+            return total;
+        }
+
+        // Question Control Navigation Map Handler
+        function navigateQuestion(step) {
+            emitAudio('click');
+            let targetIdx = currentIdx + step;
+            
+            if (targetIdx >= 0 && targetIdx < 30) {
+                currentIdx = targetIdx;
+                renderQuestion();
+            } else if (targetIdx === 30) {
+                completeQuizSession();
+            }
+        }
+
+        // Terminate and display Summary Dashboard metrics
+        function completeQuizSession() {
+            clearInterval(clockTimer);
+            emitAudio('complete');
+
+            let totalCorrect = calculateCurrentScore();
+            let totalWrong = 30 - totalCorrect;
+            let finalPercentage = Math.round((totalCorrect / 30) * 100);
+            
+            // Achievement Badges Calculations Mapping
+            let badgeIcon = '📚';
+            let badgeTitle = 'Keep Learning';
+            let badgeDesc = 'Keep exploring around you to learn more about helpful domestic animals!';
+
+            if (finalPercentage >= 90) {
+                badgeIcon = '🏆';
+                badgeTitle = 'Animal Expert';
+                badgeDesc = 'Outstanding! You have master level comprehension of useful domestic animals.';
+            } else if (finalPercentage >= 70) {
+                badgeIcon = '🌟';
+                badgeTitle = 'Animal Explorer';
+                badgeDesc = 'Wonderful job! You know so much about our lovely farm and pet animal friends.';
+            } else if (finalPercentage >= 50) {
+                badgeIcon = '👍';
+                badgeTitle = 'Good Learner';
+                badgeDesc = 'Good job! You are well on your way to discovering all domestic animal actions.';
+            }
+
+            // Save metrics parameters down into localStorage tracking
+            let bestBadgeKey = `badge_evs_${activeLevel}`;
+            localStorage.setItem(`score_evs_${activeLevel}`, `${totalCorrect}/30`);
+            localStorage.setItem(bestBadgeKey, badgeTitle);
+
+            // Populate Analytics View Template
+            document.getElementById('sum-level').innerText = activeLevel;
+            document.getElementById('sum-time').innerText = formatTime(elapsedSecs);
+            document.getElementById('sum-score').innerText = `${totalCorrect} / 30`;
+            document.getElementById('sum-pct').innerText = `${finalPercentage}%`;
+            document.getElementById('sum-correct').innerText = totalCorrect;
+            document.getElementById('sum-wrong').innerText = totalWrong;
+            
+            document.getElementById('sum-badge-icon').innerText = badgeIcon;
+            document.getElementById('sum-badge-title').innerText = badgeTitle;
+            document.getElementById('sum-badge-desc').innerText = badgeDesc;
+
+            // Populate Printing View Model Data structures safely
+            document.getElementById('cert-lvl').innerText = activeLevel;
+            document.getElementById('cert-score').innerText = `${totalCorrect}/30`;
+            document.getElementById('cert-pct').innerText = `${finalPercentage}%`;
+            document.getElementById('cert-badge-icon').innerText = badgeIcon;
+            document.getElementById('cert-badge-title').innerText = badgeTitle;
+            document.getElementById('cert-date').innerText = new Date().toLocaleDateString();
+
+            switchScreen('summary-screen');
+            
+            // Trigger customized confetti fallback explosion safely if scores are optimal
+            if (finalPercentage >= 70) {
+                triggerConfettiCascade();
+            }
+        }
+
+        // Pure CSS/JS Confetti Simulation System Engine
+        function triggerConfettiCascade() {
+            emitAudio('badge');
+            const holder = document.getElementById('confetti-holder');
+            holder.innerHTML = '';
+            holder.style.display = 'block';
+
+            const dynamicPalette = ['#22c55e', '#3b82f6', '#eab308', '#ef4444', '#a855f7', '#f43f5e'];
+
+            for (let i = 0; i < 110; i++) {
+                const flake = document.createElement('div');
+                flake.className = 'confetti';
+                flake.style.left = `${Math.random() * 100}vw`;
+                flake.style.backgroundColor = dynamicPalette[Math.floor(Math.random() * dynamicPalette.length)];
+                flake.style.top = `-${Math.random() * 40}px`;
+                
+                // Randomize scales and animation tracking parameters
+                let scaleSize = Math.random() * 8 + 6;
+                flake.style.width = `${scaleSize}px`;
+                flake.style.height = `${scaleSize}px`;
+                
+                let lifespan = Math.random() * 2.5 + 1.5;
+                flake.style.animationDuration = `${lifespan}s`;
+                flake.style.animationDelay = `${Math.random() * 0.5}s`;
+                
+                holder.appendChild(flake);
+            }
+
+            // Terminate container display visibility when dropping processes complete
+            setTimeout(() => {
+                holder.style.display = 'none';
+                holder.innerHTML = '';
+            }, 3500);
+        }
+
+        // Return back to Main Difficulty Launcher Area cleanly
+        function returnHome() {
+            emitAudio('click');
+            clearInterval(clockTimer);
+            switchScreen('start-screen');
+        }
+
+        // Replay Session Level Trigger Shortcut
+        function restartQuiz() {
+            startQuiz(activeLevel);
+        }
+    </script>
+</body>
+</html>

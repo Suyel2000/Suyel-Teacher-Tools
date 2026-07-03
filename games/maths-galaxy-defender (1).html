@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🚀 Maths Galaxy Defender</title>
+    <style>
+        :root {
+            --space-blue: #0a0a28;
+            --galaxy-purple: #240046;
+            --neon-green: #39ff14;
+            --neon-orange: #ff6700;
+            --neon-blue: #00f0ff;
+            --gold-star: #ffd700;
+            --glass-bg: rgba(255, 255, 255, 0.07);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --glass-glow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--space-blue);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: #fff;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, var(--galaxy-purple) 0%, var(--space-blue) 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            display: block;
+            background: transparent;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        /* Glassmorphism UI Screens */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+            z-index: 10;
+            background: rgba(10, 10, 40, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: opacity 0.4s ease, visibility 0.4s;
+        }
+
+        .hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .panel {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 24px;
+            padding: 35px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: var(--glass-glow), inset 0 0 20px rgba(255,255,255,0.05);
+            animation: panelFade 0.5s ease-out;
+        }
+
+        @keyframes panelFade {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, var(--neon-blue), #ff007f, var(--gold-star));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(0, 240, 255, 0.3);
+            font-weight: 900;
+            letter-spacing: 2px;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            color: #ccc;
+            margin-bottom: 30px;
+            font-weight: 300;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .menu-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 14px 24px;
+            font-size: 1rem;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background: var(--neon-blue);
+            color: var(--space-blue);
+            box-shadow: 0 0 20px var(--neon-blue);
+            transform: scale(1.04);
+        }
+
+        button.active {
+            background: var(--neon-green);
+            color: var(--space-blue);
+            box-shadow: 0 0 20px var(--neon-green);
+            border-color: var(--neon-green);
+        }
+
+        .btn-large {
+            width: 100%;
+            padding: 18px;
+            font-size: 1.4rem;
+            background: linear-gradient(45deg, #ff007f, var(--neon-orange));
+            border: none;
+            box-shadow: 0 0 25px rgba(255, 0, 127, 0.4);
+            animation: pulse 2000ms infinite;
+        }
+
+        .btn-large:hover {
+            background: linear-gradient(45deg, var(--neon-green), var(--neon-blue));
+            box-shadow: 0 0 25px var(--neon-green);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); box-shadow: 0 0 35px rgba(255, 0, 127, 0.6); }
+            100% { transform: scale(1); }
+        }
+
+        /* HUD Overlay styling */
+        #hud-top {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            z-index: 5;
+            font-family: monospace;
+            font-size: 1.2rem;
+            text-shadow: 0 0 8px #000;
+        }
+
+        .hud-item {
+            background: rgba(10,10,30,0.6);
+            padding: 8px 16px;
+            border-radius: 10px;
+            border: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #math-display-container {
+            position: absolute;
+            bottom: 110px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10, 10, 40, 0.85);
+            border: 2px solid var(--neon-blue);
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.4);
+            padding: 15px 40px;
+            border-radius: 20px;
+            font-size: 2.2rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-align: center;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        /* On-screen Mobile Controls */
+        #mobile-controls {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            justify-content: space-between;
+            z-index: 6;
+        }
+
+        .ctrl-btn {
+            width: 75px;
+            height: 75px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid var(--glass-border);
+            font-size: 2rem;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+        }
+
+        .ctrl-btn:active {
+            background: var(--neon-blue);
+            color: black;
+            box-shadow: 0 0 20px var(--neon-blue);
+        }
+
+        /* Achievement Popup */
+        #achievement-popup {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: linear-gradient(45deg, #ffd700, #ff6700);
+            color: #000;
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-weight: bold;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+        }
+
+        #achievement-popup.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* Footer info */
+        .footer {
+            margin-top: 25px;
+            font-size: 0.8rem;
+            color: #667;
+        }
+
+        .stats-list {
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding-right: 5px;
+        }
+
+        .stats-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+    </style>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JSVKBDWEV5"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-JSVKBDWEV5');
+</script>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="hud-top">
+        <div class="hud-item" id="hud-score">⭐ Score: 0</div>
+        <div class="hud-item" id="hud-world">🌍 Moon - Stage 1</div>
+        <div class="hud-item" id="hud-lives">❤️❤️❤️❤️❤️</div>
+    </div>
+
+    <div id="math-display-container">
+        <span id="math-question">Loading...</span>
+    </div>
+
+    <div id="achievement-popup">🏆 Achievement Unlocked!</div>
+
+    <div id="mobile-controls">
+        <button class="ctrl-btn" id="btn-left">⬅️</button>
+        <button class="ctrl-btn" id="btn-shoot">🚀</button>
+        <button class="ctrl-btn" id="btn-right">➡️</button>
+    </div>
+
+    <div id="screen-home" class="screen">
+        <div class="panel">
+            <h1>🚀 Maths Galaxy Defender</h1>
+            <h2>Save the Galaxy by Solving Maths!</h2>
+            
+            <h3 style="margin-bottom:10px; text-align:left; font-size: 0.9rem; color:var(--neon-blue);">1. CHOOSE OPERATION</h3>
+            <div class="menu-grid">
+                <button class="mode-btn active" data-mode="add">➕ Addition</button>
+                <button class="mode-btn" data-mode="sub">➖ Subtraction</button>
+                <button class="mode-btn" data-mode="mul">✖ Multiplication</button>
+                <button class="mode-btn" data-mode="mixed">🎯 Mixed Maths</button>
+            </div>
+
+            <h3 style="margin-bottom:10px; text-align:left; font-size: 0.9rem; color:var(--neon-orange);">2. SELECT DIFFICULTY</h3>
+            <div class="menu-row">
+                <button class="diff-btn active" data-diff="1">🟢 1-Digit</button>
+                <button class="diff-btn" data-diff="2">🔵 2-Digit</button>
+                <button class="diff-btn" data-diff="3">🟣 3-Digit</button>
+                <button class="diff-btn" data-diff="4">🟠 4-Digit</button>
+            </div>
+
+            <button id="btn-start" class="btn-large">▶ START MISSION</button>
+
+            <div style="margin-top: 15px; display:flex; gap:10px; justify-content:center;">
+                <button onclick="ui.showScreen('screen-stats')">📊 Statistics</button>
+                <button onclick="ui.showScreen('screen-ships')">🎨 Customize Ship</button>
+            </div>
+
+            <div class="footer">Maths Galaxy Defender &bull; Play &bull; Learn &bull; Defend</div>
+        </div>
+    </div>
+
+    <div id="screen-ships" class="screen hidden">
+        <div class="panel">
+            <h1>🎨 Ship Hangar</h1>
+            <h2>Select Your Interstellar Fighter</h2>
+            <div class="menu-grid" id="ship-selector-grid">
+                </div>
+            <button onclick="ui.showScreen('screen-home')" style="width:100%; margin-top:15px;">🏠 Return to Main Menu</button>
+        </div>
+    </div>
+
+    <div id="screen-stats" class="screen hidden">
+        <div class="panel">
+            <h1>📊 Flight Logs & Stats</h1>
+            <div class="stats-list" id="stats-render-container">
+                </div>
+            <button onclick="gameStorage.resetStats(); ui.renderStats();" style="background:rgba(255,0,0,0.2); font-size:0.8rem; margin-bottom:10px;">Reset Progress</button>
+            <button id="btn-stats-close" onclick="ui.showScreen('screen-home')" class="btn-large" style="animation:none;">🏠 Return Home</button>
+        </div>
+    </div>
+
+    <div id="screen-gameover" class="screen hidden">
+        <div class="panel">
+            <h1 id="gameover-title" style="background:linear-gradient(45deg, #ff0000, #ff6700);">💥 Mission Terminated</h1>
+            <h2 id="gameover-subtitle">Your ship was completely destroyed!</h2>
+            
+            <div class="menu-grid" style="grid-template-columns: repeat(2, 1fr); margin-top:20px;">
+                <div class="hud-item" id="go-score">⭐ Score: 0</div>
+                <div class="hud-item" id="go-accuracy">🎯 Accuracy: 0%</div>
+                <div class="hud-item" id="go-level">🌍 Max Level: 1</div>
+                <div class="hud-item" id="go-coins">🪙 Coins Won: 0</div>
+            </div>
+
+            <button id="btn-restart" class="btn-large" style="margin-top:25px;">🔄 Fly Again (Retry)</button>
+            <button onclick="ui.showScreen('screen-home')" style="width:100%; margin-top:10px;">🏠 Main Menu</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    /**
+     * AUDIO ENGINE - Using Modern Web Audio API Synthetic Waveform Generators
+     */
+    const AudioEngine = {
+        ctx: null,
+        init() {
+            if (!this.ctx) {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        },
+        playLaser() {
+            this.init(); if(!this.ctx) return;
+            let osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+            osc.connect(gain); gain.connect(this.ctx.destination);
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(880, this.ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(110, this.ctx.currentTime + 0.15);
+            gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+            osc.start(); osc.stop(this.ctx.currentTime + 0.15);
+        },
+        playExplosion() {
+            this.init(); if(!this.ctx) return;
+            let osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+            osc.connect(gain); gain.connect(this.ctx.destination);
+            osc.type = 'triangle'; osc.frequency.setValueAtTime(160, this.ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.4);
+            gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
+            osc.start(); osc.stop(this.ctx.currentTime + 0.4);
+        },
+        playCorrect() {
+            this.init(); if(!this.ctx) return;
+            let osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+            osc.connect(gain); gain.connect(this.ctx.destination);
+            osc.type = 'sine'; osc.frequency.setValueAtTime(587.33, this.ctx.currentTime); // D5
+            osc.frequency.setValueAtTime(880, this.ctx.currentTime + 0.08); // A5
+            gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
+            osc.start(); osc.stop(this.ctx.currentTime + 0.25);
+        },
+        playWrong() {
+            this.init(); if(!this.ctx) return;
+            let osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+            osc.connect(gain); gain.connect(this.ctx.destination);
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(180, this.ctx.currentTime);
+            osc.frequency.linearRampToValueAtTime(90, this.ctx.currentTime + 0.3);
+            gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+            osc.start(); osc.stop(this.ctx.currentTime + 0.3);
+        },
+        playPowerup() {
+            this.init(); if(!this.ctx) return;
+            let osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+            osc.connect(gain); gain.connect(this.ctx.destination);
+            osc.type = 'sine'; osc.frequency.setValueAtTime(330, this.ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1320, this.ctx.currentTime + 0.3);
+            gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+            osc.start(); osc.stop(this.ctx.currentTime + 0.3);
+        }
+    };
+
+    /**
+     * LOCALSTORAGE STORAGE DATA MANAGEMENT
+     */
+    const gameStorage = {
+        data: {
+            score: 0, highestScore: 0, totalPlayed: 0, correctAnswers: 0,
+            wrongAnswers: 0, coins: 0, highestLevel: 1, currentShip: "rocket",
+            unlockedShips: ["rocket"]
+        },
+        load() {
+            const saved = localStorage.getItem("maths_galaxy_defender_v1");
+            if (saved) {
+                try { this.data = {...this.data, ...JSON.parse(saved)}; } catch(e){}
+            }
+        },
+        save() {
+            localStorage.setItem("maths_galaxy_defender_v1", JSON.stringify(this.data));
+        },
+        resetStats() {
+            this.data = {
+                score: 0, highestScore: this.data.highestScore, totalPlayed: 0,
+                correctAnswers: 0, wrongAnswers: 0, coins: this.data.coins,
+                highestLevel: 1, currentShip: "rocket", unlockedShips: ["rocket"]
+            };
+            this.save();
+        }
+    };
+
+    /**
+     * WORLD CONFIGURATIONS & MATEMATICAL LOGIC ENGINE
+     */
+    const Worlds = [
+        { id: 1, name: "Moon", emoji: "🌑" },
+        { id: 2, name: "Mars", emoji: "🔴" },
+        { id: 3, name: "Jupiter", emoji: "🪐" },
+        { id: 4, name: "Saturn", emoji: "🪐" },
+        { id: 5, name: "Galaxy Prime", emoji: "🌌" },
+        { id: 6, name: "The Black Hole", emoji: "🕳️" }
+    ];
+
+    const Ships = [
+        { id: "rocket", name: "🚀 Star Rocket", cost: 0 },
+        { id: "fighter", name: "🛸 Plasma Fighter", cost: 50 },
+        { id: "cruiser", name: "⭐ Star Cruiser", cost: 150 },
+        { id: "alien", name: "👽 Alien Destroyer", cost: 300 }
+    ];
+
+    const MathEngine = {
+        generate(mode, difficulty) {
+            let maxNum = Math.pow(10, parseInt(difficulty));
+            let minNum = difficulty == 1 ? 1 : Math.pow(10, parseInt(difficulty) - 1);
+            
+            let a = Math.floor(Math.random() * (maxNum - minNum)) + minNum;
+            let b = Math.floor(Math.random() * (maxNum - minNum)) + minNum;
+            
+            let currentMode = mode;
+            if (mode === 'mixed') {
+                const modes = ['add', 'sub', 'mul'];
+                currentMode = modes[Math.floor(Math.random() * modes.length)];
+            }
+
+            // Adjust values for multiplication to keep it reasonably playable on smartboards
+            if (currentMode === 'mul') {
+                a = Math.floor(Math.random() * (difficulty == 1 ? 9 : 12)) + 2;
+                b = Math.floor(Math.random() * (difficulty == 1 ? 9 : 10)) + 2;
+            }
+
+            // Subtraction: prevent negative answers for younger players
+            if (currentMode === 'sub' && b > a) {
+                let temp = a; a = b; b = temp;
+            }
+
+            let questionText = "";
+            let correctAnswer = 0;
+
+            switch(currentMode) {
+                case 'add': questionText = `${a} + ${b} = ?`; correctAnswer = a + b; break;
+                case 'sub': questionText = `${a} - ${b} = ?`; correctAnswer = a - b; break;
+                case 'mul': questionText = `${a} × ${b} = ?`; correctAnswer = a * b; break;
+            }
+
+            // Generate distractors
+            let answers = [correctAnswer];
+            while (answers.length < 4) {
+                let offset = Math.floor(Math.random() * 15) + 1;
+                let fake = Math.random() > 0.5 ? correctAnswer + offset : correctAnswer - offset;
+                if (fake >= 0 && !answers.includes(fake)) {
+                    answers.push(fake);
+                }
+            }
+            // Shuffle array
+            answers.sort(() => Math.random() - 0.5);
+
+            return { question: questionText, correct: correctAnswer, options: answers };
+        }
+    };
+
+    /**
+     * CORE CANVAS & CANVAS RENDERING CORE
+     */
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let gameState = {
+        running: false, score: 0, lives: 5, combo: 0,
+        worldIndex: 0, stage: 1, currentQuestion: null,
+        selectedMode: 'add', selectedDiff: '1',
+        correctThisSession: 0, totalThisSession: 0, coinsEarned: 0
+    };
+
+    // Game Objects Arrays
+    let player = { x: 0, y: 0, w: 60, h: 60, targetX: 0, speed: 10, shield: 0 };
+    let stars = [];
+    let enemies = [];
+    let lasers = [];
+    let particles = [];
+    let powerups = [];
+
+    // Keys state
+    let keys = {};
+
+    function initCanvasSize() {
+        canvas.width = window.innerWidth > 800 ? 800 : window.innerWidth;
+        canvas.height = window.innerHeight;
+        player.y = canvas.height - 210;
+        if (!gameState.running) player.x = canvas.width / 2 - player.w / 2;
+    }
+    window.addEventListener('resize', initCanvasSize);
+
+    // Dynamic Starfield setup
+    function setupStarfield() {
+        stars = [];
+        for(let i=0; i<60; i++) {
+            stars.push({
+                x: Math.random() * 800,
+                y: Math.random() * window.innerHeight,
+                size: Math.random() * 2 + 1,
+                speed: Math.random() * 1.5 + 0.5
+            });
+        }
+    }
+
+    /**
+     * ENEMY GENERATION AND BEHAVIORS
+     */
+    const EnemyTypes = ["☄️", "👾", "🛸", "🤖", "🔥", "🪐"];
+
+    function spawnWave() {
+        enemies = [];
+        if (!gameState.currentQuestion) return;
+        
+        let opts = gameState.currentQuestion.options;
+        let numOptions = opts.length;
+        let laneWidth = canvas.width / numOptions;
+
+        // Check if it's boss level (Every 10th Stage)
+        let isBossLevel = (gameState.stage % 10 === 0);
+
+        if (isBossLevel) {
+            // Boss setup (centered giant threat)
+            enemies.push({
+                isBoss: true,
+                x: canvas.width / 2 - 60,
+                y: -100,
+                w: 120,
+                h: 120,
+                hp: 3,
+                maxHp: 3,
+                speed: 1,
+                text: "BOSS",
+                val: gameState.currentQuestion.correct,
+                emoji: "👹"
+            });
+            // Also generate options floating down separately or mapped
+            for (let i = 0; i < numOptions; i++) {
+                enemies.push({
+                    isBossOption: true,
+                    x: i * laneWidth + (laneWidth / 2) - 25,
+                    y: -220 - (Math.random() * 40),
+                    w: 50,
+                    h: 50,
+                    speed: 1.2,
+                    val: opts[i],
+                    emoji: "🔮"
+                });
+            }
+        } else {
+            // Regular wave setup
+            for (let i = 0; i < numOptions; i++) {
+                let typeEmoji = EnemyTypes[Math.min(gameState.worldIndex, EnemyTypes.length - 1)];
+                enemies.push({
+                    x: i * laneWidth + (laneWidth / 2) - 30,
+                    y: -80 - (Math.random() * 100),
+                    w: 60,
+                    h: 60,
+                    speed: 1.2 + (gameState.worldIndex * 0.3) + (Math.random() * 0.5),
+                    val: opts[i],
+                    emoji: typeEmoji,
+                    isBoss: false
+                });
+            }
+        }
+    }
+
+    function createExplosion(x, y, color) {
+        for(let i=0; i<15; i++) {
+            particles.push({
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * 8,
+                vy: (Math.random() - 0.5) * 8,
+                radius: Math.random() * 4 + 1,
+                alpha: 1,
+                color: color || '#00f0ff'
+            });
+        }
+    }
+
+    function nextQuestion() {
+        gameState.currentQuestion = MathEngine.generate(gameState.selectedMode, gameState.selectedDiff);
+        document.getElementById("math-question").innerText = gameState.currentQuestion.question;
+        spawnWave();
+    }
+
+    /**
+     * SIMULATION CORE GAME LOOP (60FPS)
+     */
+    function update() {
+        if (!gameState.running) return;
+
+        // Background Starfield Move
+        stars.forEach(s => {
+            s.y += s.speed;
+            if (s.y > canvas.height) { s.y = 0; s.x = Math.random() * canvas.width; }
+        });
+
+        // Controls Processing
+        if (keys["ArrowLeft"] || keys["a"]) player.x -= player.speed;
+        if (keys["ArrowRight"] || keys["d"]) player.x += player.speed;
+        
+        // Boundaries
+        if (player.x < 0) player.x = 0;
+        if (player.x > canvas.width - player.w) player.x = canvas.width - player.w;
+
+        // Lasers update
+        for (let i = lasers.length - 1; i >= 0; i--) {
+            lasers[i].y -= 12;
+            if (lasers[i].y < 0) { lasers.splice(i, 1); continue; }
+
+            // Collision check lasers with enemies
+            let hitIndex = -1;
+            for(let j=0; j<enemies.length; j++) {
+                let e = enemies[j];
+                if (lasers[i].x > e.x && lasers[i].x < e.x + e.w && lasers[i].y > e.y && lasers[i].y < e.y + e.h) {
+                    hitIndex = j;
+                    break;
+                }
+            }
+
+            if (hitIndex !== -1) {
+                let hitEnemy = enemies[hitIndex];
+                lasers.splice(i, 1);
+
+                // Handle logic check answer
+                if (hitEnemy.val === gameState.currentQuestion.correct) {
+                    AudioEngine.playCorrect();
+                    createExplosion(hitEnemy.x + hitEnemy.w/2, hitEnemy.y + hitEnemy.h/2, '#39ff14');
+                    
+                    gameState.score += 10;
+                    gameState.correctThisSession++;
+                    gameState.totalThisSession++;
+                    gameState.coinsEarned += 2;
+                    
+                    // Progress calculations
+                    gameState.stage++;
+                    if(gameState.stage > 10) {
+                        gameState.stage = 1;
+                        gameState.worldIndex = Math.min(gameState.worldIndex + 1, Worlds.length - 1);
+                    }
+                    
+                    ui.updateHUD();
+                    nextQuestion();
+                } else {
+                    // Punish wrong shot choice
+                    AudioEngine.playWrong();
+                    createExplosion(hitEnemy.x + hitEnemy.w/2, hitEnemy.y + hitEnemy.h/2, '#ff0055');
+                    enemies.splice(hitIndex, 1);
+                    gameState.lives--;
+                    gameState.totalThisSession++;
+                    ui.updateHUD();
+                    if(gameState.lives <= 0) triggerGameOver();
+                }
+                break;
+            }
+        }
+
+        // Enemies updates & bounds execution
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            enemies[i].y += enemies[i].speed;
+            
+            // If enemy passes screen untouched
+            if (enemies[i].y > canvas.height - 180) {
+                // If it was the correct one passing by, trigger damage penalty safely
+                if (enemies[i].val === gameState.currentQuestion.correct) {
+                    gameState.lives--;
+                    ui.updateHUD();
+                    AudioEngine.playWrong();
+                    if (gameState.lives <= 0) triggerGameOver();
+                }
+                enemies.splice(i, 1);
+                if (enemies.length === 0) nextQuestion();
+            }
+        }
+
+        // Particle dynamics handling
+        for (let i = particles.length - 1; i >= 0; i--) {
+            let p = particles[i];
+            p.x += p.vx; p.y += p.vy;
+            p.alpha -= 0.03;
+            if (p.alpha <= 0) particles.splice(i, 1);
+        }
+    }
+
+    /**
+     * INTERACTIVE RE-RENDERING ENGINE
+     */
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Stars drawing
+        ctx.fillStyle = "rgba(255,255,255,0.7)";
+        stars.forEach(s => {
+            ctx.fillRect(s.x, s.y, s.size, s.size);
+        });
+
+        // Laser beam lines
+        lasers.forEach(l => {
+            ctx.strokeStyle = varColor('--neon-blue');
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(l.x, l.y);
+            ctx.lineTo(l.x, l.y - 15);
+            ctx.stroke();
+        });
+
+        // Enemy space threats rendering
+        enemies.forEach(e => {
+            // Drawing object emoji
+            ctx.font = `${e.w * 0.7}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(e.emoji, e.x + e.w/2, e.y + e.h/3);
+
+            // Answer Bubble Box styling
+            ctx.fillStyle = "rgba(10, 10, 30, 0.85)";
+            ctx.strokeStyle = varColor('--glass-border');
+            ctx.lineWidth = 2;
+            let bubbleY = e.y + e.h - 10;
+            ctx.beginPath();
+            ctx.roundRect(e.x - 5, bubbleY - 12, e.w + 10, 24, 6);
+            ctx.fill();
+            ctx.stroke();
+
+            // Answer values string texts
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 14px monospace";
+            ctx.fillText(e.val, e.x + e.w/2, bubbleY);
+        });
+
+        // Particles rendering
+        particles.forEach(p => {
+            ctx.save();
+            ctx.globalAlpha = p.alpha;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        });
+
+        // Player asset render
+        let activeShipEmoji = "🚀";
+        if (gameStorage.data.currentShip === "fighter") activeShipEmoji = "🛸";
+        if (gameStorage.data.currentShip === "cruiser") activeShipEmoji = "⭐";
+        if (gameStorage.data.currentShip === "alien") activeShipEmoji = "👽";
+
+        ctx.font = "50px Arial";
+        ctx.textAlign = 'center';
+        ctx.fillText(activeShipEmoji, player.x + player.w/2, player.y + player.h/2);
+    }
+
+    function varColor(variableName) {
+        return getComputedStyle(document.documentElement).getPropertyValue(variableName).trim();
+    }
+
+    function loop() {
+        update();
+        draw();
+        if (gameState.running) requestAnimationFrame(loop);
+    }
+
+    /**
+     * SYSTEMS RUN AND EVENT ACTIONS
+     */
+    function fireLaser() {
+        if(!gameState.running) return;
+        lasers.push({ x: player.x + player.w / 2, y: player.y });
+        AudioEngine.playLaser();
+    }
+
+    function triggerGameOver() {
+        gameState.running = false;
+        AudioEngine.playExplosion();
+
+        // Update persistent statistics metrics
+        gameStorage.data.totalPlayed++;
+        gameStorage.data.correctAnswers += gameState.correctThisSession;
+        gameStorage.data.wrongAnswers += (gameState.totalThisSession - gameState.correctThisSession);
+        gameStorage.data.coins += gameState.coinsEarned;
+        if (gameState.score > gameStorage.data.highestScore) gameStorage.data.highestScore = gameState.score;
+        if ((gameState.worldIndex + 1) > gameStorage.data.highestLevel) gameStorage.data.highestLevel = (gameState.worldIndex + 1);
+        gameStorage.save();
+
+        // Render fields out to UI elements
+        document.getElementById("go-score").innerText = `⭐ Score: ${gameState.score}`;
+        let acc = gameState.totalThisSession > 0 ? Math.round((gameState.correctThisSession / gameState.totalThisSession) * 100) : 100;
+        document.getElementById("go-accuracy").innerText = `🎯 Accuracy: ${acc}%`;
+        document.getElementById("go-level").innerText = `🌍 Max World: ${Worlds[gameState.worldIndex].name}`;
+        document.getElementById("go-coins").innerText = `🪙 Coins Won: ${gameState.coinsEarned}`;
+
+        ui.showScreen('screen-gameover');
+    }
+
+    // Input Control hooks listeners
+    window.addEventListener('keydown', e => {
+        keys[e.key] = true;
+        if (e.key === " " || e.key === "Spacebar") { e.preventDefault(); fireLaser(); }
+    });
+    window.addEventListener('keyup', e => { keys[e.key] = false; });
+
+    // Canvas click tracking to support smartboards & standard desktop clicks
+    canvas.addEventListener('click', e => {
+        if (!gameState.running) return;
+        let rect = canvas.getBoundingClientRect();
+        let clickX = e.clientX - rect.left;
+        player.x = clickX - player.w / 2;
+        fireLaser();
+    });
+
+    // Touch screen layout mappings
+    document.getElementById("btn-left").addEventListener('touchstart', (e) => { e.preventDefault(); keys["ArrowLeft"] = true; });
+    document.getElementById("btn-left").addEventListener('touchend', () => { keys["ArrowLeft"] = false; });
+    document.getElementById("btn-right").addEventListener('touchstart', (e) => { e.preventDefault(); keys["ArrowRight"] = true; });
+    document.getElementById("btn-right").addEventListener('touchend', () => { keys["ArrowRight"] = false; });
+    document.getElementById("btn-shoot").addEventListener('touchstart', (e) => { e.preventDefault(); fireLaser(); });
+
+    /**
+     * UI MANAGING CONTROLLER INTERFACES
+     */
+    const ui = {
+        showScreen(id) {
+            document.querySelectorAll(".screen").forEach(s => s.classList.add("hidden"));
+            if(id) document.getElementById(id).classList.remove("hidden");
+        },
+        updateHUD() {
+            document.getElementById("hud-score").innerText = `⭐ Score: ${gameState.score}`;
+            document.getElementById("hud-world").innerText = `${Worlds[gameState.worldIndex].emoji} ${Worlds[gameState.worldIndex].name} - Stage ${gameState.stage}`;
+            document.getElementById("hud-lives").innerText = "❤️".repeat(Math.max(0, gameState.lives));
+        },
+        renderStats() {
+            let d = gameStorage.data;
+            let accuracy = (d.correctAnswers + d.wrongAnswers) > 0 ? Math.round((d.correctAnswers / (d.correctAnswers + d.wrongAnswers)) * 100) : 100;
+            let html = `
+                <div class="stats-item"><span>Total Space Missions:</span><span>${d.totalPlayed}</span></div>
+                <div class="stats-item"><span>Correct Solutions:</span><span style="color:var(--neon-green)">${d.correctAnswers}</span></div>
+                <div class="stats-item"><span>Failed Interceptions:</span><span style="color:var(--neon-orange)">${d.wrongAnswers}</span></div>
+                <div class="stats-item"><span>Targeting Accuracy:</span><span>${accuracy}%</span></div>
+                <div class="stats-item"><span>All-Time High Score:</span><span>${d.highestScore}</span></div>
+                <div class="stats-item"><span>Highest Galaxy Unlocked:</span><span>World ${d.highestLevel}</span></div>
+                <div class="stats-item"><span>Total Galactic Coins:</span><span style="color:var(--gold-star)">🪙 ${d.coins}</span></div>
+            `;
+            document.getElementById("stats-render-container").innerHTML = html;
+        },
+        renderHangar() {
+            let container = document.getElementById("ship-selector-grid");
+            container.innerHTML = "";
+            Ships.forEach(s => {
+                let unlocked = gameStorage.data.unlockedShips.includes(s.id);
+                let current = gameStorage.data.currentShip === s.id;
+                let btnText = current ? "Active" : (unlocked ? "Equip" : `Buy (🪙${s.cost})`);
+                let btnClass = current ? "active" : "";
+                
+                let box = document.createElement("div");
+                box.className = "hud-item";
+                box.style.flexDirection = "column";
+                box.style.padding = "15px";
+                box.innerHTML = `
+                    <div style="font-size:1.1rem; margin-bottom:10px;">${s.name}</div>
+                    <button class="${btnClass}" onclick="ui.selectShip('${s.id}', ${s.cost})">${btnText}</button>
+                `;
+                container.appendChild(box);
+            });
+        },
+        selectShip(id, cost) {
+            if (gameStorage.data.unlockedShips.includes(id)) {
+                gameStorage.data.currentShip = id;
+            } else {
+                if (gameStorage.data.coins >= cost) {
+                    gameStorage.data.coins -= cost;
+                    gameStorage.data.unlockedShips.push(id);
+                    gameStorage.data.currentShip = id;
+                } else {
+                    alert("Not enough coins! Solve more equations to win rewards.");
+                    return;
+                }
+            }
+            gameStorage.save();
+            this.renderHangar();
+        },
+        setupMenuHandlers() {
+            // Operation mode choice selections
+            document.querySelectorAll(".mode-btn").forEach(b => {
+                b.addEventListener('click', () => {
+                    document.querySelectorAll(".mode-btn").forEach(x => x.classList.remove("active"));
+                    b.classList.add("active");
+                    gameState.selectedMode = b.getAttribute("data-mode");
+                });
+            });
+            // Difficulty steps selectors
+            document.querySelectorAll(".diff-btn").forEach(b => {
+                b.addEventListener('click', () => {
+                    document.querySelectorAll(".diff-btn").forEach(x => x.classList.remove("active"));
+                    b.classList.add("active");
+                    gameState.selectedDiff = b.getAttribute("data-diff");
+                });
+            });
+        }
+    };
+
+    // System Launch Initialization Trigger
+    document.getElementById("btn-start").addEventListener('click', startGame);
+    document.getElementById("btn-restart").addEventListener('click', startGame);
+
+    function startGame() {
+        AudioEngine.init();
+        gameState.running = true;
+        gameState.score = 0;
+        gameState.lives = 5;
+        gameState.combo = 0;
+        gameState.stage = 1;
+        gameState.worldIndex = 0;
+        gameState.correctThisSession = 0;
+        gameState.totalThisSession = 0;
+        gameState.coinsEarned = 0;
+
+        enemies = [];
+        lasers = [];
+        particles = [];
+
+        ui.updateHUD();
+        ui.showScreen(null); // Clear screens overlaying
+        nextQuestion();
+        loop();
+    }
+
+    // App Initialization Bootstrapping Load
+    gameStorage.load();
+    setupStarfield();
+    initCanvasSize();
+    ui.setupMenuHandlers();
+    ui.renderStats();
+    ui.renderHangar();
+    ui.showScreen('screen-home');
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Interactive English Word Builder Manipulative</title>
+    <meta name="description" content="A tactile digital letter-tile manipulative for primary classrooms. Supports phonics, vocabulary acquisition, and word formation across grades 1-5.">
+    <meta name="keywords" content="interactive word builder, English manipulative, spelling game, phonics word builder, CVC word builder, digital letter tiles, word formation game">
+    
+    <style>
+        :root {
+            --bg-canvas: #f0f4f8;
+            --bg-surface: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --color-vowel: #e11d48;
+            --color-consonant: #0284c7;
+            --color-rime: #7c3aed;
+            --color-success: #16a34a;
+            --color-warning: #ea580c;
+            --color-accent: #2563eb;
+            --tile-shadow: 0 5px 0 #94a3b8, 0 6px 10px rgba(0,0,0,0.08);
+            --tile-shadow-active: 0 1px 0 #94a3b8, 0 2px 4px rgba(0,0,0,0.1);
+            --font-primary: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: var(--font-primary);
+            background-color: var(--bg-canvas);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 12px;
+        }
+
+        header {
+            background-color: var(--bg-surface);
+            padding: 12px 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .brand h1 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--color-accent);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .mode-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .mode-btn {
+            font-family: var(--font-primary);
+            font-weight: 700;
+            font-size: 0.85rem;
+            padding: 8px 16px;
+            border: 2px solid transparent;
+            background-color: #f1f5f9;
+            color: var(--text-secondary);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .mode-btn:hover {
+            background-color: #e2e8f0;
+        }
+
+        .mode-btn.active {
+            background-color: var(--color-accent);
+            color: white;
+        }
+
+        .system-toggles {
+            display: flex;
+            gap: 8px;
+        }
+
+        .sys-btn {
+            background-color: var(--bg-surface);
+            border: 2px solid #e2e8f0;
+            font-weight: 700;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        .sys-btn:hover {
+            background-color: #f8fafc;
+            color: var(--text-primary);
+        }
+
+        .stats-dashboard {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .stat-badge {
+            font-weight: 700;
+            font-size: 0.9rem;
+            letter-spacing: 0.5px;
+        }
+
+        .progress-wrapper {
+            flex-grow: 1;
+            max-width: 300px;
+            background-color: #334155;
+            height: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background-color: var(--color-success);
+            transition: width 0.3s ease;
+        }
+
+        main {
+            flex-grow: 1;
+            display: grid;
+            grid-template-rows: auto auto 1fr;
+            gap: 12px;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .prompt-card {
+            background-color: var(--bg-surface);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .prompt-meta {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--color-accent);
+        }
+
+        .prompt-text {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .family-selector-dock {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            background-color: #e2e8f0;
+            padding: 8px;
+            border-radius: 12px;
+        }
+
+        .family-pick-btn {
+            font-family: var(--font-primary);
+            font-weight: 700;
+            font-size: 0.8rem;
+            padding: 6px 12px;
+            background-color: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .family-pick-btn.active {
+            background-color: var(--color-rime);
+            color: white;
+            border-color: var(--color-rime);
+        }
+
+        .interaction-mat {
+            background-color: var(--bg-surface);
+            border: 3px dashed #cbd5e1;
+            border-radius: 16px;
+            padding: 24px 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            min-height: 180px;
+            transition: all 0.2s ease;
+        }
+
+        .interaction-mat.success-glow {
+            border-color: var(--color-success);
+            background-color: #f0fdf4;
+        }
+
+        .interaction-mat.fail-glow {
+            border-color: var(--color-vowel);
+            background-color: #fef2f2;
+        }
+
+        .mat-slot {
+            width: 70px;
+            height: 80px;
+            border: 2px dashed #cbd5e1;
+            background-color: #f8fafc;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .mat-slot.slot-highlight {
+            border-color: var(--color-warning);
+            background-color: #fff7ed;
+        }
+
+        .mat-slot.locked-static {
+            background-color: #e2e8f0;
+            border: 2px solid #cbd5e1;
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .alphabet-tile {
+            width: 64px;
+            height: 74px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            font-weight: 800;
+            color: white;
+            cursor: grab;
+            box-shadow: var(--tile-shadow);
+            transition: transform 0.05s ease, box-shadow 0.05s ease;
+            position: relative;
+            touch-action: none;
+        }
+
+        .alphabet-tile:active {
+            cursor: grabbing;
+            transform: translateY(3px);
+            box-shadow: var(--tile-shadow-active);
+        }
+
+        .tile-vowel-style {
+            background: linear-gradient(135deg, #f43f5e, var(--color-vowel));
+            border: 1px solid #fda4af;
+        }
+
+        .tile-consonant-style {
+            background: linear-gradient(135deg, #0ea5e9, var(--color-consonant));
+            border: 1px solid #bae6fd;
+        }
+
+        .tile-rime-style {
+            background: linear-gradient(135deg, #8b5cf6, var(--color-rime));
+            border: 1px solid #ddd6fe;
+            font-size: 1.6rem;
+            width: auto;
+            min-width: 80px;
+            padding: 0 8px;
+        }
+
+        .control-palette {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .action-utility-btn {
+            font-family: var(--font-primary);
+            font-weight: 700;
+            font-size: 0.9rem;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            color: white;
+            transition: all 0.15s ease;
+        }
+
+        .action-utility-btn:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.05);
+        }
+
+        .btn-verify { background-color: var(--color-success); }
+        .btn-assist { background-color: var(--color-warning); }
+        .btn-mix { background-color: var(--text-secondary); }
+        .btn-wipe { background-color: #64748b; }
+
+        .storage-tray-dock {
+            background-color: #e2e8f0;
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .tray-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tray-viewport {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            min-height: 90px;
+        }
+
+        .shake-impact {
+            animation: structuralShake 0.3s ease-in-out;
+        }
+
+        @keyframes structuralShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+
+        .toast-system-feed {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            padding: 12px 24px;
+            border-radius: 30px;
+            color: white;
+            font-weight: 700;
+            font-size: 1rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 9999;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .toast-system-feed.visible { transform: translateX(-50%) translateY(0); }
+        .toast-status-pass { background-color: var(--color-success); }
+        .toast-status-fail { background-color: var(--color-vowel); }
+
+        @media (max-width: 768px) {
+            .mat-slot { width: 52px; height: 62px; }
+            .mat-slot.locked-static { font-size: 1.5rem; }
+            .alphabet-tile { width: 48px; height: 58px; font-size: 1.5rem; box-shadow: 0 3px 0 #94a3b8; }
+            .tile-rime-style { min-width: 64px; font-size: 1.2rem; }
+            .action-utility-btn { padding: 8px 14px; font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="toastFeed" class="toast-system-feed" role="alert"></div>
+
+    <header>
+        <div class="brand">
+            <h1>Word Builder</h1>
+        </div>
+        <nav class="mode-nav" role="tablist">
+            <button class="mode-btn active" onclick="changeAppMode('free')">Free Build</button>
+            <button class="mode-btn" onclick="changeAppMode('missing')">Missing Letter</button>
+            <button class="mode-btn" onclick="changeAppMode('jumbled')">Jumbled Word</button>
+            <button class="mode-btn" onclick="changeAppMode('family')">Word Family</button>
+            <button class="mode-btn" onclick="changeAppMode('challenge')">Challenge Mode</button>
+        </nav>
+        <div class="system-toggles">
+            <button class="sys-btn" id="audioToggle" onclick="toggleAudioSystem()">Voice: ON</button>
+            <button class="sys-btn" onclick="toggleLetterCaseType()">Aa</button>
+        </div>
+    </header>
+
+    <div class="stats-dashboard" id="gameDashboard" style="display: none;">
+        <div class="stat-badge" id="dashTier">Grade Level</div>
+        <div class="stat-badge" id="dashCount">Activity: 1/50</div>
+        <div class="progress-wrapper">
+            <div class="progress-fill" id="dashProgress"></div>
+        </div>
+        <div class="stat-badge" id="dashStreak">Streak: 0</div>
+        <div class="stat-badge" id="dashScore">Score: 0</div>
+    </div>
+
+    <main>
+        <div class="prompt-card" id="taskCard">
+            <div class="prompt-meta" id="taskMeta">Mode Focus</div>
+            <div class="prompt-text" id="taskInstruction">Loading configuration...</div>
+        </div>
+
+        <div class="family-selector-dock" id="familyDock" style="display: none;"></div>
+
+        <section class="interaction-mat" id="buildMat">
+            </section>
+
+        <div class="control-palette">
+            <button class="action-utility-btn btn-verify" onclick="evaluateStudentAnswer()">Check Word</button>
+            <button class="action-utility-btn btn-assist" id="assistBtn" onclick="triggerSmartHintSystem()">Hint</button>
+            <button class="action-utility-btn btn-mix" id="shuffleBtn" onclick="mixAvailableTrayLetters()">Shuffle</button>
+            <button class="action-utility-btn btn-wipe" onclick="wipeMatLayoutClean()">Clear</button>
+        </div>
+
+        <div class="storage-tray-dock">
+            <div class="tray-meta">
+                <span>Letter Supply Desk</span>
+                <span id="trayInteractionHint">Click or drag tiles</span>
+            </div>
+            <section class="tray-viewport" id="trayArea">
+                </section>
+        </div>
+    </main>
+
+    <script>
+        /*************************************************************
+         * 400 COMPLETELY UNIQUE GRADE-LEVEL ENGLISH WORDS DICTIONARY
+         *************************************************************/
+        const COMPREHENSIVE_ARCHIVE = {
+            missingLetterWords: [
+                {w: "cat", m: [1], h: "Domestic pet that purrs"}, {w: "dog", m: [1], h: "Canine pet that barks"}, {w: "sun", m: [1], h: "The star center of our solar system"}, {w: "pig", m: [2], h: "Pink farm animal with a curly tail"}, {w: "fox", m: [0], h: "Wild clever canine with a bushy tail"},
+                {w: "hen", m: [1], h: "Female chicken on a farm"}, {w: "bus", m: [2], h: "Large vehicle used for school transport"}, {w: "bug", m: [1], h: "Small crawling insect"}, {w: "pen", m: [0], h: "Writing tool using liquid ink"}, {w: "map", m: [1], h: "Visual drawing of geography or roads"},
+                {w: "frog", m: [1,2], h: "Amphibian that hops and croaks"}, {w: "tree", m: [2,3], h: "Tall plant with a woody trunk and leaves"}, {w: "fish", m: [2,3], h: "Aquatic animal with scales and gills"}, {w: "book", m: [1,2], h: "Bound pages read for a story or facts"}, {w: "duck", m: [0], h: "Waterbird with webbed feet"},
+                {w: "lamp", m: [3], h: "Household object providing light"}, {w: "flag", m: [0], h: "Fabric symbol of a country or state"}, {w: "drum", m: [1], h: "Percussion instrument struck with sticks"}, {w: "nest", m: [2], h: "Home built by a bird for eggs"}, {w: "crab", m: [3], h: "Sideways-walking sea animal with claws"},
+                {w: "ship", m: [0,1], h: "Very large vessel for ocean travel"}, {w: "star", m: [1,2], h: "Twinkling light visible in the night sky"}, {w: "tent", m: [2], h: "Portable canvas shelter for camping"}, {w: "milk", m: [2], h: "White calcium-rich drink from cows"}, {w: "hand", m: [3], h: "Part of the body attached to the arm"},
+                {w: "ring", m: [2,3], h: "Circular jewelry worn on a finger"}, {w: "king", m: [0], h: "Male royal ruler of a country"}, {w: "sock", m: [2,3], h: "Foot garment worn inside a shoe"}, {w: "boat", m: [1,2], h: "Small water vessel used on lakes"}, {w: "cake", m: [3], h: "Sweet baked dessert for celebrations"},
+                {w: "desk", m: [2], h: "School workspace furniture item"}, {w: "gift", m: [3], h: "Present given during a celebration"}, {w: "mask", m: [2,3], h: "Face covering used for protection or costume"}, {w: "plum", m: [0], h: "Sweet purple fruit with a smooth skin"}, {w: "vamp", m: [0], h: "To patch up or revise a musical section"},
+                {w: "clock", m: [3,4], h: "Device showing the hours and minutes"}, {w: "plant", m: [2], h: "Living thing growing in soil from seed"}, {w: "train", m: [1,2], h: "Linked rail vehicles on tracks"}, {w: "shell", m: [0,1], h: "Hard protective layer of a clay or snail"}, {w: "brush", m: [3,4], h: "Tool with bristles for hair or painting"},
+                {w: "apple", m: [1,2], h: "Crisp round orchard fruit"}, {w: "grape", m: [4], h: "Small juicy berry growing in bunches"}, {w: "shark", m: [0,1], h: "Large predatory ocean fish with sharp teeth"}, {w: "whale", m: [1,2], h: "Massive marine mammal that breathes air"}, {w: "chair", m: [0,1], h: "Furniture item designed for sitting"},
+                {w: "spoon", m: [2,3], h: "Utensil used for eating soup or cereal"}, {w: "mouse", m: [2,3], h: "Tiny rodent with a long tail"}, {w: "house", m: [0], h: "Building where people live"}, {w: "bench", m: [3,4], h: "Long wooden or stone seat in a park"}, {w: "truck", m: [3,4], h: "Heavy vehicle for carrying cargo loads"}
+            ],
+            jumbledWords: [
+                {w: "bat", h: "Tool used to hit a baseball"}, {w: "cup", h: "Small vessel used for drinking"}, {w: "log", h: "Cut piece of a tree trunk"}, {w: "mop", h: "Floor cleaning tool"}, {w: "nut", h: "Hard-shelled seed like a walnut"},
+                {w: "pin", h: "Sharp metal point used to pin paper"}, {w: "pot", h: "Deep metal vessel used for cooking soup"}, {w: "run", h: "To move quickly on foot"}, {w: "sit", h: "To rest on a chair or bench"}, {w: "van", h: "Medium sized family vehicle"},
+                {w: "duck", h: "Quacking bird swimming in a pond"}, {w: "lion", h: "Large wild cat known as king of beasts"}, {w: "bear", h: "Large heavy wild animal with thick fur"}, {w: "bird", h: "Feathered animal capable of flight"}, {w: "deer", h: "Hoofed forest animal with antlers"},
+                {w: "frog", h: "Green jumping amphibian near water"}, {w: "leaf", h: "Green structures attached to tree twigs"}, {w: "moon", h: "Natural satellite orbiting the Earth"}, {w: "shoe", h: "Footwear worn outside over socks"}, {w: "wind", h: "Moving air current outside"},
+                {w: "apple", h: "Round crisp red or green fruit"}, {w: "beach", h: "Sandy shoreline edge next to an ocean"}, {w: "cloud", h: "Visible condensed moisture floating in air"}, {w: "green", h: "The color of standard summer grass"}, {w: "lemon", h: "Sour yellow citrus fruit"},
+                {w: "melon", h: "Large sweet summer fruit with seeds"}, {w: "onion", h: "Layered root vegetable with strong flavor"}, {w: "smile", h: "Facial expression showing joy or happiness"}, {w: "train", h: "Locomotive pulling cars on tracks"}, {w: "water", h: "Clear liquid essential for life"},
+                {w: "banana", h: "Curved yellow tropical fruit"}, {w: "carrot", h: "Orange root vegetable loved by rabbits"}, {w: "monkey", h: "Primate with a long tail that climbs trees"}, {w: "orange", h: "Round citrus fruit and also a color name"}, {w: "pencil", h: "Graphite tool used for writing and sketching"},
+                {w: "potato", h: "Starchy tuber vegetable grown underground"}, {w: "rabbit", h: "Long-eared small mammal that hops swiftly"}, {w: "school", h: "Institution where students learn"}, {w: "spider", h: "Eight-legged arachnid that weaves webs"}, {w: "tomato", h: "Red juicy fruit treated as a salad vegetable"},
+                {w: "chicken", h: "Domesticated farm fowls kept for eggs"}, {w: "dolphin", h: "Intelligent aquatic mammal that leaps from waves"}, {w: "octopus", h: "Eight-armed sea creature with no bones"}, {w: "pumpkin", h: "Large orange autumn squash carved for holidays"}, {w: "rainbow", h: "Multi-colored arc appearing in skies after rain"},
+                {w: "sandbox", h: "Classroom container box filled with play sand"}, {w: "tractor", h: "Engine vehicle used by farmers to pull plows"}, {w: "volcano", h: "Mountain opening erupting ash and lava"}, {w: "whisper", h: "Speaking quietly using breath breath instead of voice"}, {w: "whistle", h: "High pitch sound produced by blowing through lips"}
+            ],
+            wordFamilies: [
+                {r: "at", o: ["c","b","h","m","r","s","p","f"]}, {r: "an", o: ["c","f","m","p","v","r","b","t"]},
+                {r: "ap", o: ["c","m","t","l","n","z","g","s"]}, {r: "ad", o: ["b","h","m","s","p","l","g","d"]},
+                {r: "ag", o: ["b","r","t","w","l","n","s","f"]}, {r: "am", o: ["j","h","r","s","y","d","c","g"]},
+                {r: "et", o: ["n","p","w","g","j","l","m","s"]}, {r: "en", o: ["h","p","t","m","d","b","f","g"]},
+                {r: "ed", o: ["b","r","w","f","l","t","s","v"]}, {r: "in", o: ["b","f","p","w","t","f","c","s"]},
+                {r: "it", o: ["b","f","h","s","p","k","l","w"]}, {r: "ip", o: ["d","l","r","s","t","z","c","h"]},
+                {r: "ig", o: ["b","d","f","p","w","j","r","t"]}, {r: "op", o: ["h","m","t","p","c","l","d","f"]},
+                {r: "ot", o: ["c","d","h","n","p","r","g","l"]}, {r: "og", o: ["d","f","l","j","c","b","h","g"]},
+                {r: "un", o: ["s","b","f","r","n","g","p","m"]}, {r: "ut", o: ["c","h","n","r","b","g","s","m"]},
+                {r: "ug", o: ["b","m","r","t","h","j","p","d"]}, {r: "ake", o: ["b","c","m","r","l","t","w","f"]},
+                {r: "ame", o: ["c","g","f","n","s","t","l","b"]}, {r: "ine", o: ["l","m","n","p","f","v","s","t"]},
+                {r: "ight", o: ["l","n","m","r","f","s","t","b"]}, {r: "ook", o: ["b","c","h","l","r","t","f","s"]},
+                {r: "all", o: ["b","c","f","h","t","w","m","g"]}
+            ],
+            challengeLevel1: [
+                {w: "cat", h: "CVC Short A pet"}, {w: "dog", h: "CVC Short O pet"}, {w: "pig", h: "CVC Short I animal"}, {w: "fox", h: "CVC Short O wild animal"}, {w: "cow", h: "Farm animal"},
+                {w: "bat", h: "Flying mammal"}, {w: "rat", h: "Long tailed rodent"}, {w: "hen", h: "Egg laying farm bird"}, {w: "bus", h: "Large school transit vehicle"}, {w: "bug", h: "Small crawling insect"},
+                {w: "pen", h: "Ink writing tool"}, {w: "map", h: "Paper layout of places"}, {w: "sun", h: "Daytime center star"}, {w: "log", h: "Thick fallen branch"}, {w: "mop", h: "Floor washing tool"},
+                {w: "nut", h: "Squirrel food seed"}, {w: "pin", h: "Sharp paper fastener"}, {w: "pot", h: "Metal cooking container"}, {w: "run", h: "Move very fast on feet"}, {w: "sit", h: "Take place on a seat"},
+                {w: "van", h: "Boxy delivery automobile"}, {w: "bag", h: "Container carrying school supplies"}, {w: "bed", h: "Furniture item slept on"}, {w: "cup", h: "Vessel holding warm milk"}, {w: "box", h: "Square cardboard carton"},
+                {w: "rug", h: "Floor woven covering"}, {w: "hat", h: "Garment worn on head"}, {w: "net", h: "Mesh weave catching fish"}, {w: "mug", h: "Handle cup for cocoa"}, {w: "tub", h: "Large bathing water basin"},
+                {w: "cap", h: "Brimmed sun hat style"}, {w: "lip", h: "Edge of physical mouth"}, {w: "zip", h: "Fasten jacket tracks"}, {w: "sad", h: "Feeling down or tearful"}, {w: "mad", h: "Feeling angry or frustrated"},
+                {w: "red", h: "Color of ripe apples"}, {w: "hop", h: "Jump upwards on one foot"}, {w: "dig", h: "Move earth using tools"}, {w: "cut", h: "Separate with edge tools"}, {w: "hot", h: "High temperature indicator"},
+                {w: "let", h: "Allow entry or leave open"}, {w: "big", h: "Huge structural sizing scale"}, {w: "ten", h: "Double hand finger count"}, {w: "six", h: "Number counting following five"}, {w: "fin", h: "Fish balance steering body limb"},
+                {w: "bin", h: "Trash sorting waste container"}, {w: "can", h: "Metal preserving food cylinder"}, {w: "fan", h: "Device generating cool breeze"}, {w: "pan", h: "Flat shallow frying cookware"}, {w: "man", h: "Grown male human adult"}
+            ],
+            challengeLevel2: [
+                {w: "lion", h: "Maned predatory desert cat"}, {w: "bear", h: "Heavy furry forest mammal"}, {w: "deer", h: "Antlered wild forest grazer"}, {w: "bird", h: "Feathered winged flight creature"}, {w: "duck", h: "Flat billed aquatic bird"},
+                {w: "moon", h: "Night orbit luminary orb"}, {w: "star", h: "Twinkling distant celestial point"}, {w: "tree", h: "Trunked tall forest plant"}, {w: "rain", h: "Liquid condensation falling from gray skies"}, {w: "snow", h: "Frozen white crystalline winter precipitation"},
+                {w: "leaf", h: "Flat dynamic solar collectors on branches"}, {w: "rose", h: "Thorny stemmed sweet smelling flower bloom"}, {w: "seed", h: "Tiny plant embryo placed in potting soil"}, {w: "hill", h: "Elevated earth slope lower than mountains"}, {w: "fire", h: "Combustion flame releasing light and heat energy"},
+                {w: "book", h: "Bound printed sheets compiled for reading text"}, {w: "desk", h: "Writing surface table unit for students"}, {w: "lamp", h: "Device focusing electric light emissions"}, {w: "door", h: "Hinged portal barrier granting room access"}, {w: "shoe", h: "Foot protection shield with leather or rubber base"},
+                {w: "coat", h: "Heavy long sleeved outerwear protecting against cold"}, {w: "ring", h: "Circlet ornamental precious metal for fingers"}, {w: "hand", h: "Five fingered gripping organ ending arm systems"}, {w: "foot", h: "Grounded weight balancing pedal anatomical termination"}, {w: "leg", h: "Support locomotive lower limb frame pillars"},
+                {w: "boat", h: "Small standard hull water crossing vessel"}, {w: "bike", h: "Two wheeled pedal driven transport vehicle"}, {w: "farm", h: "Agricultural production plot raising plants or livestock"}, {w: "park", h: "Public green leisure ground tracking pathways"}, {w: "home", h: "Personal dwelling structure family sanctuary"},
+                {w: "shop", h: "Commercial establishment trading goods items"}, {w: "cake", h: "Sweet layered oven baked birthday pastry item"}, {w: "kiwi", h: "Fuzzy brown skinned emerald interior dessert fruit"}, {w: "pear", h: "Bell shaped sweet tree orchard fruit variety"}, {w: "corn", h: "Yellow kernel cob crop plant variety"},
+                {w: "soap", h: "Surfactant compound cleansing blocks applied under water"}, {w: "keys", h: "Notched metal profiles activating lock tumblers"}, {w: "frog", h: "Webbed footed hopping stream amphibian creature"}, {w: "fish", h: "Gilled aquatic vertebrate moving with balance fins"}, {w: "crab", h: "Pincer wielding sand digging shoreline crustacean"},
+                {w: "wolf", h: "Pack hunting predatory wild timberland canine"}, {w: "milk", h: "Nutritious white mammary fluid storage drink"}, {w: "gift", h: "Decorative wrapped present transfer item"}, {w: "tent", h: "Collapsible structured shelter skin canvas assembly"}, {w: "kite", h: "Light frame tethered wing flying in wind drafts"},
+                {w: "gate", h: "Exterior perimeter fence swinging latch closure portal"}, {w: "nest", h: "Twig woven cup structure nurturing bird hatchlings"}, {w: "sand", h: "Granular weathered mineral quartz rock particles"}, {w: "wind", h: "Atmospheric thermal pressure gradient current motion"}, {w: "bark", h: "Rough exterior protective skin wrapping tree wood layers"}
+            ],
+            challengeLevel3: [
+                {w: "frog", h: "FR blend jumping stream creature"}, {w: "crab", h: "CR blend ocean beach crawler creature"}, {w: "wolf", h: "LF terminal blend pack hunting wilderness canine"}, {w: "plum", h: "PL blend stone pit violet fruit tree variety"}, {w: "flag", h: "FL blend national identity banner cloth textile"},
+                {w: "drum", h: "DR blend rhythmic membrane musical instrument shell"}, {w: "nest", h: "ST terminal blend twig woven nursery pocket"}, {w: "tent", h: "NT terminal blend canvas exploration shelter system"}, {w: "stop", h: "ST initial blend octagon profile halt command sign"}, {w: "swim", h: "SW initial blend self propelled movement through waters"},
+                {w: "skip", h: "SK initial blend rhythmic bound skipping alternative step"}, {w: "blue", h: "BL initial blend solar spectrum atmospheric clear color"}, {w: "pink", h: "NK terminal blend pale tint of spectrum red hue"}, {w: "desk", h: "SK terminal blend classroom wood layout platform"}, {w: "lamp", h: "MP terminal blend glowing filament desk fixture"},
+                {w: "star", h: "ST initial blend shining cosmic plasma sphere body"}, {w: "tree", h: "TR initial blend deep root perennial plant form"}, {w: "train", h: "TR initial blend heavy locomotive transport rail line"}, {w: "pond", h: "ND terminal blend small stagnant freshwater environment body"}, {w: "cloud", h: "CL initial blend mist moisture aggregate floating high"},
+                {w: "plant", h: "PL initial and NT terminal blend vegetation species organism"}, {w: "smile", h: "SM initial blend curved positive mouth facial muscle set"}, {w: "green", h: "GR initial blend primary chlorophyll spectrum color"}, {w: "black", h: "BL initial and CK terminal blend complete light absorption hue"}, {w: "spoon", h: "SP initial blend concave structural food loading soup utensil"},
+                {w: "clock", h: "CL initial and CK terminal blend chronometer timing counter dialing unit"}, {w: "brush", h: "BR initial blend bristle styling array implement"}, {w: "slide", h: "SL initial blend smooth low friction incline playground ramp"}, {w: "glass", h: "GL initial blend transparent fused silica drinking container"}, {w: "block", h: "BL initial and CK terminal blend modular building brick component"},
+                {w: "glove", h: "GL initial blend five slot insulation hand garment"}, {w: "grape", h: "GR initial blend climbing vine bunch wine fruit item"}, {w: "snail", h: "SN initial blend calcium house slow moving slime mollusk"}, {w: "snake", h: "SN initial blend legless scaling predatory reptile family"}, {w: "spider", h: "SP initial blend eight leg silk weaving architecture creature"},
+                {w: "swing", h: "SW initial blend suspended back and forth pendulum playground seat"}, {w: "truck", h: "TR initial and CK terminal blend high power flatbed carriage auto"}, {w: "brick", h: "BR initial and CK terminal blend baked clay structural masonry block"}, {w: "flute", h: "FL initial blend side blown metallic air column pipe reed instrument"}, {w: "plane", h: "PL initial blend fixed wing jet propulsion aerodynamic transit"},
+                {w: "stamp", h: "ST initial and MP terminal blend gummed post paper verification tile"}, {w: "skate", h: "SK initial blend wheeled shoe tracking platform frame asset"}, {w: "blank", h: "BL initial and NK terminal blend clear surface devoid of text entry"}, {w: "flock", h: "FL initial and CK terminal blend sheep or avian gather group pack"}, {w: "grand", h: "GR initial and ND terminal blend high scale majestic or generational index"},
+                {w: "clown", h: "CL initial blend theatrical circus entertainer comedy agent style"}, {w: "crown", h: "CR initial blend golden sovereign skull cap jewelry set adornment"}, {w: "toast", h: "TR initial and ST terminal blend crisped dry grain bread loaf slice"}, {w: "creek", h: "CR initial blend minor natural freshwater distribution runoff lane"}, {w: "skirt", h: "SK initial blend single piece lower waist hemlined apparel garment"}
+            ],
+            challengeLevel4: [
+                {w: "duck", h: "CK terminal digraph webbed farm fowl creature"}, {w: "fish", h: "SH terminal digraph scaling aquatic gill breather animal"}, {w: "shark", h: "SH initial digraph predatory ocean cartilaginous predator fish"}, {w: "whale", h: "WH initial digraph massive blowhole marine ocean mammal group"}, {w: "sheep", h: "SH initial digraph woolly grazing field ruminant mammal asset"},
+                {w: "peach", h: "CH terminal digraph velvety pink stone core orchard fruit crop"}, {w: "ship", h: "SH initial digraph heavy displacement sea navigation vessel unit"}, {w: "shop", h: "SH initial digraph mercantile depot transacting inventory purchases"}, {w: "rock", h: "CK terminal digraph solid mineral mass stone element matrix"}, {w: "clock", h: "CK terminal digraph cyclical timing dial counter frame face"},
+                {w: "dish", h: "SH terminal digraph concave tableware placement ceramic dining bowl"}, {w: "chair", h: "CH initial digraph structured back rest four legged sit post"}, {w: "mouth", h: "TH terminal digraph speech vocalization cavity intake entry borders"}, {w: "sock", h: "CK terminal digraph soft knit foot ankle cushion layer liner"}, {w: "shoe", h: "SH initial digraph durable exterior tread out step wrap protective foot gear"},
+                {w: "ring", h: "NG terminal digraph concentric metal hoop signature digit band"}, {w: "king", h: "NG terminal digraph supreme royal state ruler crown bearer"}, {w: "wing", h: "NG terminal digraph aerodynamic flight lift appendage surface structures"}, {w: "sing", h: "NG terminal digraph translate poetry text into melodic pitch vocal lines"}, {w: "bench", h: "CH terminal digraph multi person outdoor elongated baseline park timber seat"},
+                {w: "shell", h: "SH initial digraph calcium carbonate marine mollusk protective mantle armor"}, {w: "brush", h: "SH terminal digraph handle aligned bristle distribution cleanup comb tool"}, {w: "chick", h: "CH initial and CK terminal digraph juvenile yellow down feathered poultry fowl"}, {w: "photo", h: "PH initial digraph image snapshot recorded via optical camera sensor matrices"}, {w: "graph", h: "PH terminal digraph coordinate tracking network path grid math illustration data chart"},
+                {w: "chain", h: "CH initial digraph interlocking metal tension link connector line systems"}, {w: "torch", h: "CH terminal digraph handheld combustion fire stick or high power flashlight beam"}, {w: "match", h: "CH terminal digraph chemical tipping friction ignition small timber fire stick"}, {w: "watch", h: "CH terminal digraph wrist band personal chronometer tracking hours minutes"}, {w: "witch", h: "CH terminal digraph folkloric spell casting cauldron stirring fable persona figure"},
+                {w: "patch", h: "CH terminal digraph targeted repair fabric patch overlay piece block"}, {w: "cloth", h: "TH terminal digraph woven organic thread spun textile sheet element material"}, {w: "teeth", h: "TH terminal digraph enamel calcium chewing grinders set into jaw bone frames"}, {w: "thief", h: "TH initial digraph stealth property taking criminal extraction operative stealth agent"}, {w: "wheel", h: "WH initial digraph circular rolling vehicle pivot wheel hub assemblies"},
+                {w: "white", h: "WH initial digraph zero color saturation complete light reflective base tint"}, {w: "whip", h: "WH initial digraph flexible lash cord tool generating rapid acceleration sound snap"}, {w: "phone", h: "PH initial digraph wireless communication handheld audio receiver device terminal grid"}, {w: "chest", h: "CH initial digraph thoracic ribs physical frame cage enclosing heart systems"}, {w: "beach", h: "CH terminal digraph maritime shoreline sand gravel aggregate boundary strip zone"},
+                {w: "coach", h: "CH terminal digraph strategic athletic team athletic drill instructor director manager"}, {w: "shelf", h: "SH initial digraph flat horizontal storage ledge tier anchored to support wall brackets"}, {w: "shirt", h: "SH initial digraph upper torso buttoned or collar knit fiber fashion apparel apparel"}, {w: "shout", h: "SH initial digraph high vocal power projection cry venting emotional exclamation stress"}, {w: "thorn", h: "TH initial digraph rigid sharp plant defense needle projecting from stem bark skins"},
+                {w: "thumb", h: "TH initial digraph opposable first manual claw control digit structural lever thumb anchor"}, {w: "thick", h: "TH initial and CK terminal digraph high cross section measurement distance gap alternative thin flat"}, {w: "thing", h: "TH initial and NG terminal digraph unspecified material entity item target matter focus condition"}, {w: "think", h: "TH initial digraph mentally evaluate concept processes logic calculations inside cognitive thought brain"}, {w: "thank", h: "TH initial digraph deliver gratitude acknowledgement appreciation to helpful supportive peer workers"}
+            ],
+            challengeLevel5: [
+                {w: "apple", h: "Orchard pomaceous tree fruit core entity"}, {w: "grape", h: "Juicy bunch vine berry fruit element variety"}, {w: "melon", h: "Heavy vine gourd large summer interior sweet pulp"}, {w: "lemon", h: "Acidic sharp taste yellow oval rind juice crop"}, {w: "peach", h: "Velvety stone core orchard drupe delicacy fruit tree"},
+                {w: "mango", h: "Tropical sweet orange pulp stone central seed crop type"}, {w: "berry", h: "Small juicy round seed plant aggregate food group"}, {w: "banana", h: "Elongated herbaceous yellow sheath wrap starch seedless treat"}, {w: "carrot", h: "Beta carotene orange root underground taproot edible stalk crop"}, {w: "onion", h: "Pungent layers bulb vegetable standard flavor spice food anchor"},
+                {w: "school", h: "Academic learning compound hosting teachers and youth classes"}, {w: "monkey", h: "Arboreal agile prehensile tail intelligence primate tracking wild forests"}, {w: "orange", h: "Citrus skin orb juice rich category asset tint shade color"}, {w: "pencil", h: "Graphite writing cylinder casing encased inside wood core material"}, {w: "potato", h: "Underground starchy nightshade root tuber staple food solid item"},
+                {w: "rabbit", h: "Long eared quick bounding burrowing small fur herbivore animal"}, {w: "spider", h: "Silk spinner venom weaver insect predator arachnid bug form"}, {w: "tomato", h: "Red juicy vine fruit classified as culinary salad vegetable compound"}, {w: "chicken", h: "Domestic poultry gallinaceous bird source of eggs food products"}, {w: "dolphin", h: "Pod traveling smart maritime warm blooded cetacean mammal air breather"},
+                {w: "octopus", h: "Cephalopod ocean creature tracking eight flexible suction tentacles skin"}, {w: "pumpkin", h: "Thick field orange autumn vine squash processing seed pies decorations"}, {w: "rainbow", h: "Atmospheric spectrum refraction array arc visibility tracing post storm vapor skies"}, {w: "sandbox", h: "Playground enclosure container box loaded with beach sand granular layer"}, {w: "tractor", h: "High torque farm motor vehicle pulling harvesting implements trailers plows"},
+                {w: "volcano", h: "Tectonic crust breach venting magmatic molten lava gas stone heat eruptions"}, {w: "whisper", h: "Low amplitude vocalization technique dropping vocal cords sound activation profiles"}, {w: "whistle", h: "Raucous acoustic channel pipe device emitting sharp clean audio frequencies signal"}, {w: "garden", h: "Managed botany plot cultivation flora plant array layout landscape zones"}, {w: "market", h: "Commercial center square bazaar trading inventory consumer products goods assets"},
+                {w: "animal", h: "Multi cellular sentient living organism consumer class mobile breathing fauna creature"}, {w: "doctor", h: "Licensed clinical health physician handling physical injuries therapy diagnostics surgery"}, {w: "window", h: "Transparent silicon glazing layer set into building frame wall boundaries to trace daylight"}, {w: "yellow", h: "Bright solar spectrum primary color wavelength tracking gold primary light rays"}, {w: "purple", h: "Secondary color formulation uniting red spectrum wavelengths with deep blue frequencies"},
+                {w: "flower", h: "Reproductive blossom platform of seed flora bearing colorful petals and nectar sweet pollen"}, {w: "father", h: "Male biological family parent line anchor lineage guide leader role"}, {w: "mother", h: "Female biological nurturing family system parent home coordinator matrix base"}, {w: "sister", h: "Immediate female sibling blood relative peer generation daughter family branch"}, {w: "crayon", h: "Pigmented paraffin wax crayon stick used by kindergarten youth art drawing sketches"},
+                {w: "eraser", h: "Friction scrubbing rubber synthetic tool removing graphite pencil error markings from paper sheets"}, {w: "castle", h: "Fortified stone medieval compound tracking defense towers battlements moats keeps fort construction"}, {w: "rocket", h: "Chemical reaction combustion expansion tube missile driving payload objects past planetary orbit space"}, {w: "guitar", h: "Fretted multi string acoustic hollow soundboard body musical instrument chord layout tool"}, {w: "pillow", h: "Soft cushioned down fiber head rest platform aligned onto beds to improve sleep relaxation comfort"},
+                {w: "candle", h: "Solid wax fuel column centering cotton wick thread to glow emergency flame illumination lights"}, {w: "jacket", h: "Waist length cold insulation overlay sleeve apparel garment shell protecting torso chest systems"}, {w: "cookie", h: "Sweet chocolate chip oven baked round biscuit snack treat dessert delicate component food item"}, {w: "lizard", h: "Scaling quadruped cold blooded reptile tracker moving swiftly over rocky hot wall ground surfaces"}, {w: "blanket", h: "Broad thick woven insulation textile fabric sheet covering sleeping bodies trapped under cold night drafts"}
+            ]
+        };
+
+        /*************************************************************
+         * APP CONTROL GLOBAL COEFFICIENT DATA CONFIGS
+         *************************************************************/
+        let appState = {
+            currentMode: 'free',
+            isUppercase: true,
+            audioEnabled: true,
+            score: 0,
+            streak: 0,
+            challengeLevel: 1,
+            activeQuestionIndex: 1,
+            maxQuestionsPerSession: 50,
+            currentWordData: null,
+            currentFamilyData: null,
+            placedTilesArray: [],
+            recentHistoryPool: [],
+            hintStage: 0,
+            masterValidationSet: new Set()
+        };
+
+        const CONSONANT_SET = "bcdfghjklmnpqrstvwxyz";
+
+        function runMasterDictionaryCompilation() {
+            Object.keys(COMPREHENSIVE_ARCHIVE).forEach(sectionKey => {
+                COMPREHENSIVE_ARCHIVE[sectionKey].forEach(item => {
+                    if (item.w) appState.masterValidationSet.add(item.w.toLowerCase());
+                    if (item.o && item.r) {
+                        item.o.forEach(onset => {
+                            appState.masterValidationSet.add((onset + item.r).toLowerCase());
+                        });
+                    }
+                });
+            });
+            const seedWords = ["an", "am", "at", "it", "in", "is", "go", "to", "me", "my", "we", "he", "she", "the", "and", "you", "are", "was", "for", "on", "as", "with", "his", "they", "i", "at", "be", "this", "have", "from", "or", "one", "had", "by", "word", "but", "not", "what", "all", "were", "we", "when", "your", "can", "said", "there", "use", "an", "each", "which"];
+            seedWords.forEach(w => appState.masterValidationSet.add(w.toLowerCase()));
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            runMasterDictionaryCompilation();
+            initAppManipulative();
+            setupGlobalTrayDropZone();
+        });
+
+        function initAppManipulative() {
+            changeAppMode('free');
+        }
+
+        /*************************************************************
+         * APPLICATION ROUTER SYSTEM CONTROL
+         *************************************************************/
+        function changeAppMode(selectedMode) {
+            appState.currentMode = selectedMode;
+            appState.hintStage = 0;
+            
+            document.querySelectorAll('.mode-nav .mode-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if(btn.textContent.toLowerCase().trim() === selectedMode || (selectedMode==='family' && btn.textContent.toLowerCase().includes('family'))) {
+                    btn.classList.add('active');
+                }
+            });
+
+            const dashboard = document.getElementById('gameDashboard');
+            const familyDock = document.getElementById('familyDock');
+            const assistBtn = document.getElementById('assistBtn');
+            const shuffleBtn = document.getElementById('shuffleBtn');
+            const trayHint = document.getElementById('trayInteractionHint');
+
+            if(selectedMode === 'free') {
+                dashboard.style.display = 'none';
+                familyDock.style.display = 'none';
+                assistBtn.style.display = 'none';
+                shuffleBtn.style.display = 'inline-block';
+                trayHint.textContent = "Infinite supply desk. Click tiles to build words.";
+                setupFreeBuildWorkspace();
+            } else if(selectedMode === 'family') {
+                dashboard.style.display = 'flex';
+                familyDock.style.display = 'flex';
+                assistBtn.style.display = 'inline-block';
+                shuffleBtn.style.display = 'none';
+                trayHint.textContent = "Click targeted structural onset tiles.";
+                resetGamificationCounters();
+                buildWordFamilyDockUI();
+                loadGuidedSessionChallenge();
+            } else {
+                dashboard.style.display = 'flex';
+                familyDock.style.display = 'none';
+                assistBtn.style.display = 'inline-block';
+                shuffleBtn.style.display = 'inline-block';
+                trayHint.textContent = "Arrange letters correctly.";
+                resetGamificationCounters();
+                loadGuidedSessionChallenge();
+            }
+        }
+
+        function resetGamificationCounters() {
+            appState.score = 0;
+            appState.streak = 0;
+            appState.activeQuestionIndex = 1;
+            if(appState.currentMode === 'challenge') appState.challengeLevel = 1;
+            appState.recentHistoryPool = [];
+            syncDashboardUI();
+        }
+
+        function syncDashboardUI() {
+            document.getElementById('dashScore').textContent = `Score: ${appState.score}`;
+            document.getElementById('dashStreak').textContent = `Streak: ${appState.streak}`;
+            document.getElementById('dashCount').textContent = `Activity: ${appState.activeQuestionIndex}/${appState.maxQuestionsPerSession}`;
+            
+            if(appState.currentMode === 'challenge') {
+                document.getElementById('dashTier').textContent = `Challenge Level: ${appState.challengeLevel}/5`;
+            } else {
+                document.getElementById('dashTier').textContent = `Guided Learning Mode`;
+            }
+
+            const percentage = ((appState.activeQuestionIndex - 1) / appState.maxQuestionsPerSession) * 100;
+            document.getElementById('dashProgress').style.width = `${percentage}%`;
+        }
+
+        /*************************************************************
+         * WORKSPACE GENERATION MANAGEMENT
+         *************************************************************/
+        function setupFreeBuildWorkspace() {
+            document.getElementById('taskMeta').textContent = "Free Build Exploration";
+            document.getElementById('taskInstruction').textContent = "Build any length word. Letters can be reused infinitely. Click/drag mat tiles to remove.";
+            generateMatSlotsLayout(12, true);
+            const standardAlphabet = "abcdefghijklmnopqrstuvwxyz".split("");
+            populateResourceTray(standardAlphabet, true); 
+        }
+
+        function loadGuidedSessionChallenge() {
+            wipeMatLayoutClean();
+            appState.hintStage = 0;
+            let sourcePool = [];
+
+            switch(appState.currentMode) {
+                case 'missing': sourcePool = COMPREHENSIVE_ARCHIVE.missingLetterWords; break;
+                case 'jumbled': sourcePool = COMPREHENSIVE_ARCHIVE.jumbledWords; break;
+                case 'family':
+                    if(!appState.currentFamilyData) appState.currentFamilyData = COMPREHENSIVE_ARCHIVE.wordFamilies[0];
+                    generateWordFamilyWorkspace();
+                    return;
+                case 'challenge': sourcePool = COMPREHENSIVE_ARCHIVE[`challengeLevel${appState.challengeLevel}`]; break;
+            }
+
+            let availableWords = sourcePool.filter(item => !appState.recentHistoryPool.includes(item.w));
+            if(availableWords.length === 0) {
+                appState.recentHistoryPool = [];
+                availableWords = sourcePool;
+            }
+
+            const challengeItem = availableWords[Math.floor(Math.random() * availableWords.length)];
+            appState.currentWordData = challengeItem;
+            appState.recentHistoryPool.push(challengeItem.w);
+
+            document.getElementById('taskMeta').textContent = `Target Clue Challenge`;
+            document.getElementById('taskInstruction').textContent = challengeItem.h;
+
+            if(appState.currentMode === 'missing') {
+                generateMatSlotsLayout(challengeItem.w.length, false);
+                const targetSlots = document.querySelectorAll('.mat-slot');
+                let trayLetters = [];
+
+                for(let i = 0; i < challengeItem.w.length; i++) {
+                    if(challengeItem.m.includes(i)) {
+                        targetSlots[i].setAttribute('data-missing-gap-target', challengeItem.w[i]);
+                        if(!trayLetters.includes(challengeItem.w[i])) trayLetters.push(challengeItem.w[i]);
+                    } else {
+                        targetSlots[i].classList.add('locked-static');
+                        targetSlots[i].textContent = parseCaseText(challengeItem.w[i]);
+                    }
+                }
+
+                const alpha = "abcdefghijklmnopqrstuvwxyz";
+                while(trayLetters.length < 6) {
+                    let randomChar = alpha[Math.floor(Math.random() * 26)];
+                    if(!challengeItem.w.includes(randomChar) && !trayLetters.includes(randomChar)) trayLetters.push(randomChar);
+                }
+                populateResourceTray(shuffleArrayArray(trayLetters), false);
+
+            } else if(appState.currentMode === 'jumbled') {
+                generateMatSlotsLayout(challengeItem.w.length, false);
+                let jumbledArr = challengeItem.w.split("");
+                while(jumbledArr.join("") === challengeItem.w) {
+                    jumbledArr = shuffleArrayArray(jumbledArr);
+                }
+                populateResourceTray(jumbledArr, false);
+
+            } else if(appState.currentMode === 'challenge') {
+                generateMatSlotsLayout(challengeItem.w.length, false);
+                let combinedLetters = challengeItem.w.split("");
+                const alpha = "abcdefghijklmnopqrstuvwxyz";
+                while(combinedLetters.length < challengeItem.w.length + 3) {
+                    let randChar = alpha[Math.floor(Math.random() * 26)];
+                    if(!combinedLetters.includes(randChar)) combinedLetters.push(randChar);
+                }
+                populateResourceTray(shuffleArrayArray(combinedLetters), false);
+            }
+
+            syncDashboardUI();
+        }
+
+        function buildWordFamilyDockUI() {
+            const dock = document.getElementById('familyDock');
+            dock.innerHTML = '';
+            COMPREHENSIVE_ARCHIVE.wordFamilies.forEach((fam) => {
+                const btn = document.createElement('button');
+                btn.className = 'family-pick-btn';
+                if(appState.currentFamilyData && appState.currentFamilyData.r === fam.r) btn.classList.add('active');
+                btn.textContent = `-${fam.r.toUpperCase()}`;
+                btn.onclick = () => {
+                    document.querySelectorAll('.family-pick-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    appState.currentFamilyData = fam;
+                    loadGuidedSessionChallenge();
+                };
+                dock.appendChild(btn);
+            });
+        }
+
+        function generateWordFamilyWorkspace() {
+            const fam = appState.currentFamilyData;
+            document.getElementById('taskMeta').textContent = "Word Family Integration Matrix";
+            document.getElementById('taskInstruction').textContent = `Select an onset letter from below to fuse onto the -${fam.r.toUpperCase()} family block!`;
+
+            const mat = document.getElementById('buildMat');
+            mat.innerHTML = '';
+            appState.placedTilesArray = new Array(2).fill(null);
+
+            const onsetSlot = document.createElement('div');
+            onsetSlot.className = 'mat-slot';
+            onsetSlot.setAttribute('data-index', 0);
+            onsetSlot.setAttribute('data-family-onset', 'true');
+            onsetSlot.addEventListener('click', () => removeTileFromMatSlot(0));
+            onsetSlot.addEventListener('dragover', onDragOverTileEvent);
+            onsetSlot.addEventListener('drop', onDropTileEvent);
+            mat.appendChild(onsetSlot);
+
+            const rimeSlot = document.createElement('div');
+            rimeSlot.className = 'mat-slot locked-static';
+            rimeSlot.style.width = '90px';
+            rimeSlot.textContent = parseCaseText(fam.r);
+            mat.appendChild(rimeSlot);
+
+            let onsetTrayOptions = [...fam.o];
+            const alpha = "abcdefghijklmnopqrstuvwxyz";
+            while(onsetTrayOptions.length < 8) {
+                let letter = alpha[Math.floor(Math.random() * 26)];
+                if(!onsetTrayOptions.includes(letter)) onsetTrayOptions.push(letter);
+            }
+
+            populateResourceTray(shuffleArrayArray(onsetTrayOptions), false);
+            syncDashboardUI();
+        }
+
+        /*************************************************************
+         * DOM NODE COMPONENT GENERATOR RUNTIME
+         *************************************************************/
+        function generateMatSlotsLayout(count, isInfiniteMode) {
+            const mat = document.getElementById('buildMat');
+            mat.innerHTML = '';
+            appState.placedTilesArray = new Array(count).fill(null);
+
+            for(let i = 0; i < count; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'mat-slot';
+                slot.setAttribute('data-index', i);
+                slot.addEventListener('click', () => removeTileFromMatSlot(i));
+                slot.addEventListener('dragover', onDragOverTileEvent);
+                slot.addEventListener('drop', onDropTileEvent);
+                mat.appendChild(slot);
+            }
+        }
+
+        function populateResourceTray(lettersList, isInfiniteSupply) {
+            const tray = document.getElementById('trayArea');
+            tray.innerHTML = '';
+
+            lettersList.forEach((char, index) => {
+                const tile = document.createElement('div');
+                let typeStyleClass = !CONSONANT_SET.includes(char.toLowerCase()) ? 'tile-vowel-style' : 'tile-consonant-style';
+                
+                tile.className = `alphabet-tile ${typeStyleClass}`;
+                tile.textContent = parseCaseText(char);
+                tile.setAttribute('draggable', 'true');
+                tile.setAttribute('data-letter', char);
+                
+                const dynamicId = isInfiniteSupply ? `infinite-base-${char}` : `tray-fixed-element-${index}-${char}`;
+                tile.setAttribute('id', dynamicId);
+
+                tile.addEventListener('click', () => handleAlphabetTileClick(tile, isInfiniteSupply));
+                tile.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', tile.id);
+                    speakLetterAudio(char);
+                });
+
+                tray.appendChild(tile);
+            });
+        }
+
+        function parseCaseText(text) {
+            return appState.isUppercase ? text.toUpperCase() : text.toLowerCase();
+        }
+
+        /*************************************************************
+         * TILE POSITIONING INTERACTION ENGINE
+         *************************************************************/
+        function handleAlphabetTileClick(tileElement, isInfiniteMode) {
+            const letter = tileElement.getAttribute('data-letter');
+            speakLetterAudio(letter);
+
+            let targetSlotIndex = -1;
+
+            if(appState.currentMode === 'missing') {
+                const gaps = document.querySelectorAll('.mat-slot[data-missing-gap-target]');
+                for (let i = 0; i < gaps.length; i++) {
+                    if (!gaps[i].firstChild) {
+                        targetSlotIndex = parseInt(gaps[i].getAttribute('data-index'));
+                        break;
+                    }
+                }
+            } else if(appState.currentMode === 'family') {
+                const onsetSlot = document.querySelector('.mat-slot[data-family-onset]');
+                if(onsetSlot && !onsetSlot.firstChild) targetSlotIndex = 0;
+            } else {
+                const slots = document.querySelectorAll('.mat-slot');
+                for(let i = 0; i < slots.length; i++) {
+                    if(!slots[i].classList.contains('locked-static') && !slots[i].firstChild) {
+                        targetSlotIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            if(targetSlotIndex !== -1) {
+                deployTileToMatSlot(tileElement, targetSlotIndex, isInfiniteMode);
+            } else {
+                tileElement.classList.add('shake-impact');
+                setTimeout(() => tileElement.classList.remove('shake-impact'), 300);
+            }
+        }
+
+        function deployTileToMatSlot(sourceTile, targetSlotIndex, isInfiniteMode) {
+            const slots = document.querySelectorAll('.mat-slot');
+            const targetSlot = slots[targetSlotIndex];
+
+            if(targetSlot.firstChild) {
+                removeTileFromMatSlot(targetSlotIndex);
+            }
+
+            const letter = sourceTile.getAttribute('data-letter');
+            
+            if(!isInfiniteMode) {
+                sourceTile.style.visibility = 'hidden';
+            }
+
+            const activeClone = document.createElement('div');
+            let typeStyleClass = !CONSONANT_SET.includes(letter.toLowerCase()) ? 'tile-vowel-style' : 'tile-consonant-style';
+            activeClone.className = `alphabet-tile ${typeStyleClass}`;
+            activeClone.style.width = '100%';
+            activeClone.style.height = '100%';
+            activeClone.textContent = parseCaseText(letter);
+            activeClone.setAttribute('id', `mat-active-clone-${Date.now()}-${letter}`);
+            activeClone.setAttribute('data-letter', letter);
+            activeClone.setAttribute('draggable', 'true');
+
+            activeClone.addEventListener('click', (e) => {
+                e.stopPropagation();
+                removeTileFromMatSlot(targetSlotIndex);
+            });
+
+            activeClone.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', activeClone.id);
+            });
+
+            targetSlot.appendChild(activeClone);
+            
+            appState.placedTilesArray[targetSlotIndex] = {
+                letter: letter,
+                sourceId: sourceTile.id,
+                isInfiniteSource: isInfiniteMode
+            };
+        }
+
+        function removeTileFromMatSlot(slotIndex) {
+            const slots = document.querySelectorAll('.mat-slot');
+            const targetSlot = slots[slotIndex];
+
+            if(!targetSlot || targetSlot.classList.contains('locked-static') || !targetSlot.firstChild) return;
+
+            const trackingMap = appState.placedTilesArray[slotIndex];
+            if(trackingMap && !trackingMap.isInfiniteSource) {
+                const originalTrayElement = document.getElementById(trackingMap.sourceId);
+                if(originalTrayElement) originalTrayElement.style.visibility = 'visible';
+            }
+
+            targetSlot.innerHTML = '';
+            appState.placedTilesArray[slotIndex] = null;
+        }
+
+        function wipeMatLayoutClean() {
+            const slots = document.querySelectorAll('.mat-slot');
+            slots.forEach((slot, index) => {
+                if(!slot.classList.contains('locked-static')) removeTileFromMatSlot(index);
+            });
+        }
+
+        function mixAvailableTrayLetters() {
+            if(appState.currentMode === 'free') return;
+            const tray = document.getElementById('trayArea');
+            const tiles = Array.from(tray.children);
+            const scrambled = shuffleArrayArray(tiles);
+            tray.innerHTML = '';
+            scrambled.forEach(tile => tray.appendChild(tile));
+        }
+
+        /*************************************************************
+         * DRAG AND DROP HANDLERS
+         *************************************************************/
+        function setupGlobalTrayDropZone() {
+            const trayDock = document.querySelector('.storage-tray-dock');
+            trayDock.addEventListener('dragover', (e) => e.preventDefault());
+            trayDock.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const id = e.dataTransfer.getData('text/plain');
+                if(id.startsWith('mat-active-clone-')) {
+                    const clone = document.getElementById(id);
+                    if(clone && clone.parentElement) {
+                        const idx = parseInt(clone.parentElement.getAttribute('data-index'));
+                        removeTileFromMatSlot(idx);
+                    }
+                }
+            });
+        }
+
+        function onDragOverTileEvent(e) {
+            e.preventDefault();
+        }
+
+        function onDropTileEvent(e) {
+            e.preventDefault();
+            const id = e.dataTransfer.getData('text/plain');
+            let sourceElement = document.getElementById(id);
+            if(!sourceElement) return;
+
+            const targetSlot = e.currentTarget;
+            const targetIndex = parseInt(targetSlot.getAttribute('data-index'));
+            if(targetSlot.classList.contains('locked-static')) return;
+
+            const isInfiniteMode = id.startsWith('infinite-base-') || (appState.currentMode === 'free');
+
+            if(id.startsWith('mat-active-clone-')) {
+                const sourceSlotIdx = parseInt(sourceElement.parentElement.getAttribute('data-index'));
+                const letter = sourceElement.getAttribute('data-letter');
+                const backupTracking = appState.placedTilesArray[sourceSlotIdx];
+                
+                removeTileFromMatSlot(sourceSlotIdx);
+                
+                const dummyTrayRef = { id: backupTracking.sourceId };
+                deployTileToMatSlot(dummyTrayRef, targetIndex, backupTracking.isInfiniteSource);
+                
+                const newlyPlacedClone = targetSlot.firstChild;
+                if(newlyPlacedClone) newlyPlacedClone.setAttribute('data-letter', letter);
+                appState.placedTilesArray[targetIndex].letter = letter;
+            } else {
+                deployTileToMatSlot(sourceElement, targetIndex, isInfiniteMode);
+            }
+        }
+
+        /*************************************************************
+         * STRATEGIC SPELLING VALIDATION SUBSYSTEM ENGINE
+         *************************************************************/
+        function compilationWordString() {
+            const slots = document.querySelectorAll('.mat-slot');
+            let compositeString = "";
+
+            slots.forEach((slot, idx) => {
+                if(slot.classList.contains('locked-static')) {
+                    compositeString += slot.textContent.trim().toLowerCase();
+                } else if(slot.firstChild) {
+                    const map = appState.placedTilesArray[idx];
+                    if(map) compositeString += map.letter.toLowerCase();
+                }
+            });
+
+            return compositeString;
+        }
+
+        async function isValidEnglishWord(word) {
+            const cleanWord = word.toLowerCase().trim();
+            if (appState.masterValidationSet.has(cleanWord)) {
+                return true;
+            }
+            try {
+                const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${cleanWord}`);
+                if (response.ok) {
+                    return true;
+                }
+            } catch (error) {
+                console.log("Dictionary API lookup offline or omitted:", error);
+            }
+            return false;
+        }
+
+        async function evaluateStudentAnswer() {
+            const builtWord = compilationWordString();
+
+            if(!builtWord || builtWord.length === 0) {
+                triggerToastAlertBanner("Build a word onto the mat first!", "fail");
+                shakeMatWorkspaceContainer();
+                flashMatWorkspaceFailure();
+                return;
+            }
+
+            if(appState.currentMode === 'free') {
+                const isValid = await isValidEnglishWord(builtWord);
+                if(isValid) {
+                    triggerToastAlertBanner(`Correct! You built a meaningful word: ${builtWord.toUpperCase()}`, "pass");
+                    speakTargetWord(builtWord);
+                    flashMatWorkspaceSuccess();
+                } else {
+                    triggerToastAlertBanner(`"${builtWord.toUpperCase()}" is not a recognized word. Try again!`, "fail");
+                    shakeMatWorkspaceContainer();
+                    flashMatWorkspaceFailure();
+                }
+            } 
+            
+            else if(appState.currentMode === 'family') {
+                const currentFamily = appState.currentFamilyData;
+                const isValidFamilyWord = await isValidEnglishWord(builtWord);
+                
+                if(isValidFamilyWord && builtWord.endsWith(currentFamily.r.toLowerCase())) {
+                    executeChallengeSuccessSequence(`Excellent! ${builtWord.toUpperCase()} belongs to the -${currentFamily.r.toUpperCase()} family!`);
+                } else {
+                    triggerToastAlertBanner("That combination is not a recognized word in this family.", "fail");
+                    shakeMatWorkspaceContainer();
+                    flashMatWorkspaceFailure();
+                    resetStreakTracker();
+                }
+            } 
+            
+            else if(appState.currentMode === 'jumbled') {
+                if(builtWord === appState.currentWordData.w) {
+                    executeChallengeSuccessSequence("Correct spelling! Well done!");
+                } else {
+                    const sortedBuilt = builtWord.split("").sort().join("");
+                    const sortedTarget = appState.currentWordData.w.split("").sort().join("");
+                    const isValidAnagram = (sortedBuilt === sortedTarget) && await isValidEnglishWord(builtWord);
+                    
+                    if (isValidAnagram) {
+                        executeChallengeSuccessSequence(`Great! You found an alternative valid word: ${builtWord.toUpperCase()}!`);
+                    } else {
+                        triggerToastAlertBanner("Spelling incorrect. Rearrange your tiles to try again!", "fail");
+                        shakeMatWorkspaceContainer();
+                        flashMatWorkspaceFailure();
+                        resetStreakTracker();
+                    }
+                }
+            }
+            
+            else {
+                if(builtWord === appState.currentWordData.w) {
+                    executeChallengeSuccessSequence("Correct spelling! Well done!");
+                } else {
+                    triggerToastAlertBanner("Spelling incorrect. Rearrange your tiles to try again!", "fail");
+                    shakeMatWorkspaceContainer();
+                    flashMatWorkspaceFailure();
+                    resetStreakTracker();
+                }
+            }
+        }
+
+        function executeChallengeSuccessSequence(successMessage) {
+            triggerToastAlertBanner(successMessage, "pass");
+            speakTargetWord(compilationWordString());
+            flashMatWorkspaceSuccess();
+
+            appState.score += 20 + (appState.streak * 5);
+            appState.streak += 1;
+
+            setTimeout(() => {
+                if(appState.activeQuestionIndex >= appState.maxQuestionsPerSession) {
+                    if(appState.currentMode === 'challenge' && appState.challengeLevel < 5) {
+                        appState.challengeLevel += 1;
+                        triggerToastAlertBanner(`Advancing to Challenge Level ${appState.challengeLevel}!`, "pass");
+                    } else {
+                        triggerToastAlertBanner("Session completed! Excellent effort!", "pass");
+                    }
+                    resetGamificationCounters();
+                } else {
+                    appState.activeQuestionIndex += 1;
+                }
+                loadGuidedSessionChallenge();
+            }, 2200);
+        }
+
+        function resetStreakTracker() {
+            appState.streak = 0;
+            syncDashboardUI();
+        }
+
+        /*************************************************************
+         * STEPWISE HINT LOGIC SYSTEM
+         *************************************************************/
+        function triggerSmartHintSystem() {
+            if(appState.currentMode === 'free') return;
+
+            let correctWordTarget = (appState.currentMode === 'family') 
+                ? (appState.currentFamilyData.o[0] + appState.currentFamilyData.r) 
+                : appState.currentWordData.w;
+
+            const slots = document.querySelectorAll('.mat-slot');
+
+            if(appState.hintStage === 0) {
+                for(let i = 0; i < slots.length; i++) {
+                    if(slots[i].classList.contains('locked-static')) continue;
+                    let activeChar = appState.placedTilesArray[i] ? appState.placedTilesArray[i].letter.toLowerCase() : "";
+                    if(activeChar !== correctWordTarget[i]) {
+                        slots[i].classList.add('slot-highlight');
+                        setTimeout(() => slots[i].classList.remove('slot-highlight'), 1500);
+                        triggerToastAlertBanner("Check the highlighted mat slot space!", "pass");
+                        appState.hintStage = 1;
+                        break;
+                    }
+                }
+            } else if(appState.hintStage === 1) {
+                for(let i = 0; i < slots.length; i++) {
+                    if(slots[i].classList.contains('locked-static')) continue;
+                    let activeChar = appState.placedTilesArray[i] ? appState.placedTilesArray[i].letter.toLowerCase() : "";
+                    if(activeChar !== correctWordTarget[i]) {
+                        const targetLetter = correctWordTarget[i];
+                        const trayTiles = document.querySelectorAll('.alphabet-tile');
+                        for(let tile of trayTiles) {
+                            if(tile.getAttribute('data-letter').toLowerCase() === targetLetter && tile.style.visibility !== 'hidden') {
+                                tile.style.transform = 'scale(1.2) translateY(-4px)';
+                                setTimeout(() => tile.style.transform = 'none', 1800);
+                                triggerToastAlertBanner(`Find and place the letter: ${targetLetter.toUpperCase()}`, "pass");
+                                appState.hintStage = 2;
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                }
+            } else {
+                triggerToastAlertBanner("Listen to the phonic sounds blend together.", "pass");
+                speakSegmentedPhonicsAudio(correctWordTarget);
+                appState.hintStage = 0;
+            }
+        }
+
+        /*************************************************************
+         * AUDIO MANAGEMENT SYSTEM
+         *************************************************************/
+        function speakLetterAudio(letter) {
+            if(!appState.audioEnabled || !('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(letter);
+            utterance.rate = 0.65;
+            utterance.lang = 'en-US';
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function speakTargetWord(word) {
+            if(!appState.audioEnabled || !('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(word);
+            utterance.rate = 0.75;
+            utterance.lang = 'en-US';
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function speakSegmentedPhonicsAudio(word) {
+            if(!appState.audioEnabled || !('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            const segmentedChars = word.split("").join("... ");
+            const utterance = new SpeechSynthesisUtterance(`${segmentedChars}... ${word}`);
+            utterance.rate = 0.5;
+            utterance.lang = 'en-US';
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function toggleAudioSystem() {
+            appState.audioEnabled = !appState.audioEnabled;
+            document.getElementById('audioToggle').textContent = appState.audioEnabled ? "Voice: ON" : "Voice: OFF";
+        }
+
+        function toggleLetterCaseType() {
+            appState.isUppercase = !appState.isUppercase;
+            document.querySelectorAll('.alphabet-tile').forEach(tile => {
+                tile.textContent = parseCaseText(tile.getAttribute('data-letter'));
+            });
+            document.querySelectorAll('.mat-slot.locked-static').forEach(slot => {
+                slot.textContent = parseCaseText(slot.textContent);
+            });
+        }
+
+        /*************************************************************
+         * UTILITY HELPERS
+         *************************************************************/
+        function shakeMatWorkspaceContainer() {
+            const mat = document.getElementById('buildMat');
+            mat.classList.add('shake-impact');
+            setTimeout(() => mat.classList.remove('shake-impact'), 300);
+        }
+
+        function flashMatWorkspaceSuccess() {
+            const mat = document.getElementById('buildMat');
+            mat.classList.add('success-glow');
+            setTimeout(() => mat.classList.remove('success-glow'), 1200);
+        }
+
+        function flashMatWorkspaceFailure() {
+            const mat = document.getElementById('buildMat');
+            mat.classList.add('fail-glow');
+            setTimeout(() => mat.classList.remove('fail-glow'), 1200);
+        }
+
+        function triggerToastAlertBanner(message, statusClass) {
+            const feed = document.getElementById('toastFeed');
+            feed.className = `toast-system-feed toast-status-${statusClass} visible`;
+            feed.textContent = message;
+            setTimeout(() => feed.classList.remove('visible'), 2400);
+        }
+
+        // Fisher-Yates array shuffling
+        function shuffleArrayArray(array) {
+            let currentIndex = array.length, temporaryValue, randomIndex;
+            const newArray = [...array];
+            while (currentIndex !== 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex -= 1;
+                temporaryValue = newArray[currentIndex];
+                newArray[currentIndex] = newArray[randomIndex];
+                newArray[randomIndex] = temporaryValue;
+            }
+            return newArray;
+        }
+    </script>
+</body>
+</html>

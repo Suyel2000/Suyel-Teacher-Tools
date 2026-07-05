@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Alphabet Tiles Manipulative</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-main: #f0f4f8;
+            --mat-bg: #ffffff;
+            --tray-bg: #e2e8f0;
+            --text-dark: #1e293b;
+            --tile-consonant-bg: #e0f2fe;
+            --tile-consonant-border: #bae6fd;
+            --tile-consonant-text: #0369a1;
+            --tile-vowel-bg: #ffedd5;
+            --tile-vowel-border: #fed7aa;
+            --tile-vowel-text: #c2410c;
+            --accent-blue: #0284c7;
+            --accent-red: #ef4444;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --font-primary: 'Fredoka', system-ui, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: var(--font-primary);
+            background-color: var(--bg-main);
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 12px;
+            overflow: hidden;
+        }
+
+        /* Top Layout / Teacher Input */
+        .top-banner {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #ffffff;
+            padding: 10px 16px;
+            border-radius: var(--radius-md);
+            margin-bottom: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .prompt-label {
+            font-weight: 700;
+            color: #64748b;
+        }
+
+        .prompt-input {
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-family: var(--font-primary);
+            font-size: 1.1rem;
+            color: var(--text-dark);
+            flex-grow: 1;
+        }
+
+        /* Controls Layout */
+        .control-bar {
+            background: #ffffff;
+            border-radius: var(--radius-md);
+            padding: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .control-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            font-family: var(--font-primary);
+            font-weight: 700;
+            font-size: 0.95rem;
+            padding: 10px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: #f8fafc;
+            cursor: pointer;
+            color: var(--text-dark);
+            transition: all 0.15s ease;
+        }
+
+        .btn:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+
+        .btn.active {
+            background-color: var(--accent-blue);
+            color: #ffffff;
+            border-color: var(--accent-blue);
+        }
+
+        .btn-danger {
+            color: var(--accent-red);
+            border-color: #fee2e2;
+        }
+
+        .btn-danger:hover {
+            background-color: var(--accent-red);
+            color: white;
+            border-color: var(--accent-red);
+        }
+
+        /* Tray */
+        .tray-container {
+            background: var(--tray-bg);
+            border-radius: var(--radius-lg);
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .tile-tray {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        /* Workspace Mat */
+        .work-mat {
+            background: var(--mat-bg);
+            border: 3px dashed #cbd5e1;
+            border-radius: var(--radius-lg);
+            flex-grow: 1;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.02);
+            background-image: radial-gradient(#e2e8f0 2px, transparent 2px);
+            background-size: 32px 32px;
+        }
+
+        /* Tile Master Styling */
+        .tile {
+            width: 60px;
+            height: 60px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 700;
+            cursor: grab;
+            position: relative;
+            border: 3px solid var(--tile-consonant-border);
+            background-color: var(--tile-consonant-bg);
+            color: var(--tile-consonant-text);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.06);
+            touch-action: none; 
+        }
+
+        .tile.is-vowel {
+            background-color: var(--tile-vowel-bg);
+            border-color: var(--tile-vowel-border);
+            color: var(--tile-vowel-text);
+        }
+
+        /* Accessibility/Visual Vowel Highlight Mode */
+        .tile.highlighted-vowel {
+            box-shadow: 0 0 0 4px #f97316, 0 4px 6px rgba(0,0,0,0.06);
+            border-style: double;
+        }
+        .tile.highlighted-vowel::after {
+            content: "•";
+            position: absolute;
+            bottom: 1px;
+            font-size: 0.75rem;
+            color: var(--tile-vowel-text);
+        }
+
+        .mat-tile {
+            position: absolute;
+            z-index: 10;
+        }
+
+        .mat-tile.dragging .tile {
+            cursor: grabbing;
+            transform: scale(1.1);
+            box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .mat-tile.selected .tile {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.4);
+        }
+
+        /* Micro Context Action Bar */
+        .tile-actions {
+            position: absolute;
+            top: -42px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            border-radius: 6px;
+            padding: 3px;
+            display: flex;
+            gap: 2px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 2000;
+        }
+
+        .action-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            width: 26px;
+            height: 26px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+        }
+
+        .action-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .action-btn.del:hover {
+            background: var(--accent-red);
+        }
+
+        .smooth-move {
+            transition: left 0.3s cubic-bezier(0.25, 1, 0.5, 1), top 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        @media (max-width: 600px) {
+            .tile { width: 48px; height: 48px; font-size: 1.6rem; border-width: 2px; }
+            .control-bar { justify-content: center; }
+            .tile-actions { top: -38px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-banner">
+        <span class="prompt-label">Prompt:</span>
+        <input type="text" id="teacherPrompt" class="prompt-input" placeholder="Type classroom task here..." value="Make a word.">
+    </div>
+
+    <div class="control-bar">
+        <div class="control-group">
+            <button id="toggleCase" class="btn active">ABC / abc</button>
+            <button id="toggleVowels" class="btn">Highlight Vowels</button>
+        </div>
+        <div class="control-group">
+            <button id="btnArrange" class="btn">Arrange A–Z</button>
+            <button id="btnShuffle" class="btn">Shuffle</button>
+            <button id="btnMute" class="btn">🔊 Sound On</button>
+        </div>
+        <div class="control-group">
+            <button id="btnClearMat" class="btn btn-danger">Clear Mat</button>
+            <button id="btnReset" class="btn btn-danger">Reset All</button>
+        </div>
+    </div>
+
+    <div class="tray-container">
+        <div id="tileTray" class="tile-tray"></div>
+    </div>
+
+    <div id="workMat" class="work-mat"></div>
+
+    <script>
+        (function() {
+            const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+            const VOWELS = new Set(["A", "E", "I", "O", "U"]);
+            
+            let state = { isUppercase: true, highlightVowels: false, isMuted: false, trayOrder: [...ALPHABET], selectedTile: null };
+            let dragInfo = { element: null, offsetX: 0, offsetY: 0, isDragging: false };
+
+            const tileTray = document.getElementById("tileTray");
+            const workMat = document.getElementById("workMat");
+            const toggleCaseBtn = document.getElementById("toggleCase");
+            const toggleVowelsBtn = document.getElementById("toggleVowels");
+            
+            function init() {
+                renderTray();
+                setupListeners();
+            }
+
+            // Generates a basic visual tile component cleanly with NO hardcoded events
+            function createTile(letter) {
+                const tile = document.createElement("div");
+                tile.classList.add("tile");
+                tile.dataset.letter = letter.toUpperCase();
+                
+                if (VOWELS.has(tile.dataset.letter)) {
+                    tile.classList.add("is-vowel");
+                    if (state.highlightVowels) tile.classList.add("highlighted-vowel");
+                }
+
+                tile.textContent = state.isUppercase ? letter.toUpperCase() : letter.toLowerCase();
+                return tile;
+            }
+
+            // Explicitly renders the tray and maps the duplication listener ONLY to tray items
+            function renderTray() {
+                tileTray.innerHTML = "";
+                state.trayOrder.forEach(letter => {
+                    const tile = createTile(letter);
+                    tile.addEventListener("pointerdown", handleTrayPointerDown);
+                    tileTray.appendChild(tile);
+                });
+            }
+
+            function updateAllTiles() {
+                document.querySelectorAll(".tile").forEach(tile => {
+                    const l = tile.dataset.letter;
+                    tile.textContent = state.isUppercase ? l.toUpperCase() : l.toLowerCase();
+                    tile.classList.toggle("highlighted-vowel", state.highlightVowels && VOWELS.has(l));
+                });
+            }
+
+            function speak(letter) {
+                if (!state.isMuted && 'speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                    const u = new SpeechSynthesisUtterance(letter.toLowerCase());
+                    u.rate = 0.9;
+                    window.speechSynthesis.speak(u);
+                }
+            }
+
+            function spawnTile(letter, clientX, clientY, isInitialDrag = false) {
+                const wrapper = document.createElement("div");
+                wrapper.classList.add("mat-tile");
+                
+                const tile = createTile(letter);
+                wrapper.appendChild(tile);
+                workMat.appendChild(wrapper);
+
+                const matRect = workMat.getBoundingClientRect();
+                const size = 60; // Standard layout tile width
+
+                let x = clientX - matRect.left - (size / 2);
+                let topY = clientY - matRect.top - (size / 2);
+
+                x = Math.max(0, Math.min(x, matRect.width - size));
+                topY = Math.max(0, Math.min(topY, matRect.height - size));
+
+                wrapper.style.left = `${x}px`;
+                wrapper.style.top = `${topY}px`;
+
+                // Placed workspace tile event assignment (no tray trigger duplication loops)
+                wrapper.addEventListener("pointerdown", (e) => startDrag(e, wrapper));
+                selectTile(wrapper);
+
+                if (isInitialDrag) {
+                    dragInfo.element = wrapper;
+                    dragInfo.offsetX = size / 2;
+                    dragInfo.offsetY = size / 2;
+                    dragInfo.isDragging = true;
+                    wrapper.classList.add("dragging");
+                    document.addEventListener("pointermove", handleDragMove);
+                    document.addEventListener("pointerup", handleDragUp);
+                }
+            }
+
+            function selectTile(wrapper) {
+                if (state.selectedTile) {
+                    state.selectedTile.classList.remove("selected");
+                    const bar = state.selectedTile.querySelector(".tile-actions");
+                    if (bar) bar.remove();
+                }
+                
+                state.selectedTile = wrapper;
+                wrapper.classList.add("selected");
+
+                const actions = document.createElement("div");
+                actions.className = "tile-actions";
+
+                const audioBtn = document.createElement("button");
+                audioBtn.className = "action-btn";
+                audioBtn.innerHTML = "🔊";
+                audioBtn.onclick = (e) => { e.stopPropagation(); speak(wrapper.querySelector(".tile").dataset.letter); };
+
+                const cloneBtn = document.createElement("button");
+                cloneBtn.className = "action-btn";
+                cloneBtn.innerHTML = "➕";
+                cloneBtn.onclick = (e) => { 
+                    e.stopPropagation(); 
+                    const r = wrapper.getBoundingClientRect();
+                    spawnTile(wrapper.querySelector(".tile").dataset.letter, r.left + 35, r.top + 35); 
+                };
+
+                const delBtn = document.createElement("button");
+                delBtn.className = "action-btn del";
+                delBtn.innerHTML = "🗑️";
+                delBtn.onclick = (e) => { e.stopPropagation(); wrapper.remove(); state.selectedTile = null; };
+
+                actions.appendChild(audioBtn);
+                actions.appendChild(cloneBtn);
+                actions.appendChild(delBtn);
+                wrapper.appendChild(actions);
+            }
+
+            function handleTrayPointerDown(e) {
+                e.preventDefault();
+                spawnTile(e.currentTarget.dataset.letter, e.clientX, e.clientY, true);
+            }
+
+            function startDrag(e, wrapper) {
+                e.preventDefault();
+                e.stopPropagation();
+                selectTile(wrapper);
+
+                const rect = wrapper.getBoundingClientRect();
+                dragInfo.element = wrapper;
+                dragInfo.offsetX = e.clientX - rect.left;
+                dragInfo.offsetY = e.clientY - rect.top;
+                dragInfo.isDragging = true;
+
+                wrapper.classList.add("dragging");
+                document.addEventListener("pointermove", handleDragMove);
+                document.addEventListener("pointerup", handleDragUp);
+            }
+
+            function handleDragMove(e) {
+                if (!dragInfo.isDragging || !dragInfo.element) return;
+                const wrapper = dragInfo.element;
+                const matRect = workMat.getBoundingClientRect();
+                const size = 60;
+
+                let x = e.clientX - matRect.left - dragInfo.offsetX;
+                let y = e.clientY - matRect.top - dragInfo.offsetY;
+
+                x = Math.max(0, Math.min(x, matRect.width - size));
+                y = Math.max(0, Math.min(y, matRect.height - size));
+
+                x = Math.round(x / 4) * 4;
+                y = Math.round(y / 4) * 4;
+
+                wrapper.style.left = `${x}px`;
+                wrapper.style.top = `${y}px`;
+            }
+
+            function handleDragUp() {
+                if (dragInfo.element) dragInfo.element.classList.remove("dragging");
+                dragInfo.isDragging = false;
+                dragInfo.element = null;
+                document.removeEventListener("pointermove", handleDragMove);
+                document.removeEventListener("pointerup", handleDragUp);
+            }
+
+            function setupListeners() {
+                workMat.addEventListener("pointerdown", (e) => {
+                    if (e.target === workMat) {
+                        if (state.selectedTile) {
+                            state.selectedTile.classList.remove("selected");
+                            const bar = state.selectedTile.querySelector(".tile-actions");
+                            if (bar) bar.remove();
+                            state.selectedTile = null;
+                        }
+                    }
+                });
+
+                toggleCaseBtn.onclick = () => { state.isUppercase = !state.isUppercase; toggleCaseBtn.classList.toggle("active", state.isUppercase); updateAllTiles(); };
+                toggleVowelsBtn.onclick = () => { state.highlightVowels = !state.highlightVowels; toggleVowelsBtn.classList.toggle("active", state.highlightVowels); updateAllTiles(); };
+                
+                document.getElementById("btnMute").onclick = (e) => {
+                    state.isMuted = !state.isMuted;
+                    e.target.textContent = state.isMuted ? "🔇 Muted" : "🔊 Sound On";
+                    e.target.classList.toggle("active", !state.isMuted);
+                };
+
+                document.getElementById("btnClearMat").onclick = () => { workMat.innerHTML = ""; state.selectedTile = null; };
+
+                document.getElementById("btnReset").onclick = () => {
+                    workMat.innerHTML = "";
+                    state = { isUppercase: true, highlightVowels: false, isMuted: false, trayOrder: [...ALPHABET], selectedTile: null };
+                    toggleCaseBtn.classList.add("active");
+                    toggleVowelsBtn.classList.remove("active");
+                    document.getElementById("btnMute").textContent = "🔊 Sound On";
+                    document.getElementById("btnMute").classList.remove("active");
+                    document.getElementById("teacherPrompt").value = "Make a word.";
+                    renderTray();
+                };
+
+                document.getElementById("btnShuffle").onclick = () => {
+                    for (let i = state.trayOrder.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [state.trayOrder[i], state.trayOrder[j]] = [state.trayOrder[j], state.trayOrder[i]];
+                    }
+                    renderTray();
+                };
+
+                document.getElementById("btnArrange").onclick = () => {
+                    workMat.innerHTML = "";
+                    state.selectedTile = null;
+                    const matRect = workMat.getBoundingClientRect();
+                    let cx = 16, cy = 20, size = 60, gap = 12;
+
+                    ALPHABET.forEach(letter => {
+                        if (cx + size > matRect.width - 16) {
+                            cx = 16;
+                            cy += size + gap;
+                        }
+                        
+                        const wrapper = document.createElement("div");
+                        wrapper.classList.add("mat-tile", "smooth-move");
+                        wrapper.appendChild(createTile(letter));
+                        workMat.appendChild(wrapper);
+                        
+                        wrapper.style.left = `${cx}px`;
+                        wrapper.style.top = `${cy}px`;
+                        
+                        wrapper.addEventListener("pointerdown", (e) => startDrag(e, wrapper));
+                        setTimeout(() => wrapper.classList.remove("smooth-move"), 300);
+                        cx += size + gap;
+                    });
+                };
+            }
+
+            init();
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Word Family Builder | Phonics Onset & Rime Manipulative</title>
+    <meta name="description" content="A simple, powerful digital word family builder for primary school students. Combine onset tiles with rime word families to practice foundational phonics.">
+    <meta name="keywords" content="interactive word family builder, word families for kids, phonics manipulative, onset and rime activity, CVC word builder, English TLM, primary English learning tool, word family activity, phonics word building, digital letter tiles, interactive phonics tool">
+    
+    <meta property="og:title" content="Word Family Builder Interactive Manipulative">
+    <meta property="og:description" content="Clean, distraction-free phonics tool to build, hear, and collect short vowel and extended word families. Optimized for smart boards and tablets.">
+    <meta property="og:type" content="website">
+    <link rel="canonical" href="">
+
+    <style>
+        :root {
+            --bg-main: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --color-onset: #e0f2fe;
+            --color-onset-text: #0369a1;
+            --color-onset-border: #bae6fd;
+            --color-rime: #fef3c7;
+            --color-rime-text: #b45309;
+            --color-rime-border: #fde68a;
+            --color-word: #dcfce7;
+            --color-word-text: #15803d;
+            --color-word-border: #bbf7d0;
+            --color-accent: #6366f1;
+            --color-accent-hover: #4f46e5;
+            --radius-tile: 16px;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 10px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 25px -5px rgba(0,0,0,0.1);
+            --transition-speed: 0.2s;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        header {
+            width: 100%;
+            max-width: 1000px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            color: var(--text-main);
+            margin-bottom: 6px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        header p {
+            font-size: 1rem;
+            color: var(--text-muted);
+        }
+
+        .manipulative-container {
+            width: 100%;
+            max-width: 1000px;
+            background: var(--bg-card);
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+        }
+
+        /* --- Row 1: Word Family Selector --- */
+        .selector-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            border-bottom: 2px dashed #f1f5f9;
+            padding-bottom: 20px;
+        }
+
+        .selector-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .label-text {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        select {
+            font-size: 1.1rem;
+            font-weight: 700;
+            padding: 10px 16px;
+            border-radius: 12px;
+            border: 2px solid #cbd5e1;
+            background-color: #ffffff;
+            color: var(--text-main);
+            cursor: pointer;
+            outline: none;
+            transition: border-color var(--transition-speed);
+        }
+
+        select:focus {
+            border-color: var(--color-accent);
+        }
+
+        .chips-container {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 4px 0;
+            scrollbar-width: thin;
+            max-width: 100%;
+        }
+
+        .chip {
+            background-color: #f1f5f9;
+            color: var(--text-main);
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all var(--transition-speed);
+            border: 2px solid transparent;
+        }
+
+        .chip:hover {
+            background-color: #e2e8f0;
+        }
+
+        .chip.active {
+            background-color: var(--color-accent);
+            color: white;
+        }
+
+        /* --- Row 2: Central Building Mat --- */
+        .building-mat {
+            background-color: #f8fafc;
+            border: 3px dashed #cbd5e1;
+            border-radius: 20px;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            position: relative;
+            min-height: 200px;
+        }
+
+        .mat-tile-slot {
+            width: 140px;
+            height: 140px;
+            border-radius: var(--radius-tile);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.3s;
+        }
+
+        .onset-slot {
+            background-color: #ffffff;
+            border: 4px dashed #cbd5e1;
+            color: var(--text-muted);
+        }
+
+        .onset-slot.occupied {
+            background-color: var(--color-onset);
+            color: var(--color-onset-text);
+            border: 4px solid var(--color-onset-border);
+            box-shadow: var(--shadow-md);
+        }
+
+        .rime-slot {
+            background-color: var(--color-rime);
+            color: var(--color-rime-text);
+            border: 4px solid var(--color-rime-border);
+            box-shadow: var(--shadow-md);
+        }
+
+        .mat-operator {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--text-muted);
+        }
+
+        .result-slot {
+            width: 240px;
+            height: 140px;
+            background-color: #ffffff;
+            border: 4px dashed #cbd5e1;
+            color: #cbd5e1;
+            border-radius: var(--radius-tile);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3.5rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .result-slot.completed {
+            background-color: var(--color-word);
+            color: var(--color-word-text);
+            border: 4px solid var(--color-word-border);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* --- Row 3: Action & Feedback Ribbon --- */
+        .mat-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-top: -16px;
+        }
+
+        .feedback-message {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--color-word-text);
+            min-height: 28px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all var(--transition-speed);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-primary {
+            background-color: var(--color-accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--color-accent-hover);
+        }
+
+        .btn-secondary {
+            background-color: #f1f5f9;
+            color: var(--text-main);
+            border: 2px solid #e2e8f0;
+        }
+
+        .btn-secondary:hover {
+            background-color: #e2e8f0;
+        }
+
+        /* --- Row 4: Tray Area --- */
+        .tray-section {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .tray-container {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            background-color: #f8fafc;
+            padding: 20px;
+            border-radius: 16px;
+            border: 2px solid #f1f5f9;
+            min-height: 100px;
+            align-items: center;
+        }
+
+        .tile {
+            background-color: var(--color-onset);
+            color: var(--color-onset-text);
+            border: 2px solid var(--color-onset-border);
+            width: 76px;
+            height: 76px;
+            border-radius: 14px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.8rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            cursor: grab;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.15s, box-shadow 0.15s;
+            touch-action: none;
+        }
+
+        .tile:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .tile:active {
+            cursor: grabbing;
+        }
+
+        .tile.dragging {
+            opacity: 0.5;
+        }
+
+        /* --- Row 5: Word Collection Area --- */
+        .collection-section {
+            background-color: #fdfdfd;
+            border-top: 2px dashed #f1f5f9;
+            padding-top: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .collection-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .collection-title {
+            font-size: 1.2rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .progress-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .progress-bar-bg {
+            width: 140px;
+            height: 8px;
+            background-color: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background-color: #10b981;
+            transition: width 0.3s ease;
+        }
+
+        .collection-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            min-height: 60px;
+            background-color: #fafafa;
+            border: 2px solid #f1f5f9;
+            border-radius: 16px;
+            padding: 16px;
+            align-items: center;
+        }
+
+        .collected-word-tile {
+            background-color: var(--color-word);
+            color: var(--color-word-text);
+            border: 2px solid var(--color-word-border);
+            padding: 8px 18px;
+            font-size: 1.3rem;
+            font-weight: 800;
+            border-radius: 12px;
+            text-transform: uppercase;
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: transform 0.15s;
+        }
+
+        .collected-word-tile:hover {
+            transform: scale(1.05);
+        }
+
+        /* --- Animation Classes --- */
+        .highlight-onset-anim {
+            animation: pulseHighlight 0.3s ease-in-out;
+            background-color: #bae6fd !important;
+        }
+
+        .highlight-rime-anim {
+            animation: pulseHighlight 0.3s ease-in-out;
+            background-color: #fde68a !important;
+        }
+
+        .highlight-word-anim {
+            animation: successPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes pulseHighlight {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); box-shadow: 0 0 15px rgba(99, 102, 241, 0.4); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes successPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.08); box-shadow: 0 0 20px rgba(16, 185, 129, 0.4); }
+            100% { transform: scale(1); }
+        }
+
+        /* --- Smart Board & Responsive Layout Adjustment --- */
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .manipulative-container { padding: 20px; gap: 24px; }
+            .building-mat { flex-direction: column; padding: 24px 16px; gap: 12px; }
+            .mat-operator { transform: rotate(90deg); margin: -4px 0; font-size: 2rem; }
+            .mat-tile-slot { width: 110px; height: 110px; font-size: 2.2rem; }
+            .result-slot { width: 100%; max-width: 240px; height: 100px; font-size: 2.8rem; }
+            .tile { width: 64px; height: 64px; font-size: 1.5rem; }
+            .selector-row { flex-direction: column; align-items: stretch; }
+            select { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Word Family Builder</h1>
+        <p>Tap or drag a letter tile to join sound patterns and build words!</p>
+    </header>
+
+    <main class="manipulative-container">
+        
+        <section class="selector-section">
+            <div class="selector-row">
+                <div class="label-text">Word Family:</div>
+                <select id="familyDropdown" aria-label="Select Word Family" onchange="handleDropdownChange(this)"></select>
+                <div class="label-text" style="font-size: 0.95rem; color: var(--text-muted)">Suggested:</div>
+                <div class="chips-container" id="suggestedChips"></div>
+            </div>
+        </section>
+
+        <section class="building-mat" id="dropZone" aria-label="Word Building Space">
+            <div id="matOnset" class="mat-tile-slot onset-slot" aria-label="Drop onset letter here">___</div>
+            
+            <div class="mat-operator">+</div>
+            
+            <div id="matRime" class="mat-tile-slot rime-slot" aria-label="Word family ending"></div>
+            
+            <div class="mat-operator">=</div>
+            
+            <div id="matResult" class="result-slot" aria-label="Completed word combination">_____</div>
+        </section>
+
+        <section class="mat-controls">
+            <div class="feedback-message" id="feedbackMessage" role="status"></div>
+            <div class="button-group">
+                <button class="btn btn-secondary" id="btnHear" onclick="hearCurrentWord()" disabled aria-label="Hear current word sound">🔊 Hear Word</button>
+                <button class="btn btn-secondary" onclick="clearCurrentFamilyProgress()" aria-label="Clear found words for this family">Clear</button>
+                <button class="btn btn-primary" onclick="loadRandomFamily()" aria-label="Switch to a new random word family">New Family</button>
+            </div>
+        </section>
+
+        <section class="tray-section">
+            <div class="label-text">Pick a Beginning Sound:</div>
+            <div class="tray-container" id="tileTray" aria-label="Available beginning letter sounds"></div>
+        </section>
+
+        <section class="collection-section">
+            <div class="collection-header">
+                <div class="collection-title">
+                    <span>My Words</span>
+                </div>
+                <div class="progress-container">
+                    <span id="progressText">Discovered: 0 of 0</span>
+                    <div class="progress-bar-bg">
+                        <div id="progressBarFill" class="progress-bar-fill"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="collection-grid" id="collectionGrid"></div>
+        </section>
+
+    </main>
+
+    <script>
+        // --- Structured Phonics Database Grouped Naturally by Progressive Difficulty ---
+        const wordFamilies = {
+            // First Progression: Core Short Vowels CVC (Each with at least 10 words)
+            "at": { ending: "at", words: [{onset: "b", word: "bat"}, {onset: "c", word: "cat"}, {onset: "f", word: "fat"}, {onset: "h", word: "hat"}, {onset: "m", word: "mat"}, {onset: "p", word: "pat"}, {onset: "r", word: "rat"}, {onset: "s", word: "sat"}, {onset: "ch", word: "chat"}, {onset: "fl", word: "flat"}, {onset: "th", word: "that"}, {onset: "br", word: "brat"}] },
+            "an": { ending: "an", words: [{onset: "b", word: "ban"}, {onset: "c", word: "can"}, {onset: "f", word: "fan"}, {onset: "m", word: "man"}, {onset: "p", word: "pan"}, {onset: "r", word: "ran"}, {onset: "t", word: "tan"}, {onset: "v", word: "van"}, {onset: "pl", word: "plan"}, {onset: "sc", word: "scan"}, {onset: "br", word: "bran"}, {onset: "th", word: "than"}] },
+            "ap": { ending: "ap", words: [{onset: "c", word: "cap"}, {onset: "g", word: "gap"}, {onset: "l", word: "lap"}, {onset: "m", word: "map"}, {onset: "n", word: "nap"}, {onset: "r", word: "rap"}, {onset: "s", word: "sap"}, {onset: "t", word: "tap"}, {onset: "cl", word: "clap"}, {onset: "fl", word: "flap"}, {onset: "sl", word: "slap"}, {onset: "sn", word: "snap"}, {onset: "tr", word: "trap"}, {onset: "wr", word: "wrap"}] },
+            "ig": { ending: "ig", words: [{onset: "b", word: "big"}, {onset: "d", word: "dig"}, {onset: "f", word: "fig"}, {onset: "p", word: "pig"}, {onset: "w", word: "wig"}, {onset: "j", word: "jig"}, {onset: "r", word: "rig"}, {onset: "tw", word: "twig"}, {onset: "g", word: "gig"}, {onset: "sw", word: "swig"}, {onset: "br", word: "brig"}] },
+            "in": { ending: "in", words: [{onset: "b", word: "bin"}, {onset: "f", word: "fin"}, {onset: "p", word: "pin"}, {onset: "t", word: "tin"}, {onset: "w", word: "win"}, {onset: "ch", word: "chin"}, {onset: "gr", word: "grin"}, {onset: "sh", word: "shin"}, {onset: "sk", word: "skin"}, {onset: "tw", word: "twin"}, {onset: "sp", word: "spin"}] },
+            "it": { ending: "it", words: [{onset: "b", word: "bit"}, {onset: "f", word: "fit"}, {onset: "h", word: "hit"}, {onset: "k", word: "kit"}, {onset: "l", word: "lit"}, {onset: "p", word: "pit"}, {onset: "s", word: "sit"}, {onset: "qu", word: "quit"}, {onset: "sp", word: "split"}, {onset: "sk", word: "skit"}, {onset: "sl", word: "slit"}, {onset: "kn", word: "knit"}] },
+            "og": { ending: "og", words: [{onset: "b", word: "bog"}, {onset: "d", word: "dog"}, {onset: "f", word: "fog"}, {onset: "h", word: "hog"}, {onset: "j", word: "jog"}, {onset: "l", word: "log"}, {onset: "cl", word: "clog"}, {onset: "fr", word: "frog"}, {onset: "sm", word: "smog"}, {onset: "bl", word: "blog"}, {onset: "sl", word: "slog"}, {onset: "fl", word: "flog"}] },
+            "op": { ending: "op", words: [{onset: "c", word: "cop"}, {onset: "h", word: "hop"}, {onset: "m", word: "mop"}, {onset: "p", word: "pop"}, {onset: "t", word: "top"}, {onset: "ch", word: "chop"}, {onset: "dr", word: "drop"}, {onset: "fl", word: "flop"}, {onset: "sh", word: "shop"}, {onset: "st", word: "stop"}, {onset: "cr", word: "crop"}, {onset: "pl", word: "plop"}] },
+            "ot": { ending: "ot", words: [{onset: "c", word: "cot"}, {onset: "d", word: "dot"}, {onset: "g", word: "got"}, {onset: "h", word: "hot"}, {onset: "l", word: "lot"}, {onset: "n", word: "not"}, {onset: "p", word: "pot"}, {onset: "r", word: "rot"}, {onset: "sh", word: "shot"}, {onset: "sp", word: "spot"}, {onset: "sl", word: "slot"}, {onset: "kn", word: "knot"}, {onset: "tr", word: "trot"}] },
+            "ug": { ending: "ug", words: [{onset: "b", word: "bug"}, {onset: "d", word: "dug"}, {onset: "h", word: "hug"}, {onset: "j", word: "jug"}, {onset: "m", word: "mug"}, {onset: "r", word: "rug"}, {onset: "t", word: "tug"}, {onset: "pl", word: "plug"}, {onset: "sl", word: "slug"}, {onset: "sn", word: "snug"}, {onset: "dr", word: "drug"}, {onset: "ch", word: "chug"}] },
+            "un": { ending: "un", words: [{onset: "b", word: "bun"}, {onset: "f", word: "fun"}, {onset: "r", word: "run"}, {onset: "s", word: "sun"}, {onset: "g", word: "gun"}, {onset: "p", word: "pun"}, {onset: "n", word: "nun"}, {onset: "sp", word: "spun"}, {onset: "st", word: "stun"}, {onset: "sh", word: "shun"}] },
+            "ut": { ending: "ut", words: [{onset: "b", word: "but"}, {onset: "c", word: "cut"}, {onset: "g", word: "gut"}, {onset: "h", word: "hut"}, {onset: "n", word: "nut"}, {onset: "r", word: "rut"}, {onset: "sh", word: "shut"}, {onset: "str", word: "strut"}, {onset: "gl", word: "glut"}, {onset: "p", word: "put"}] },
+
+            // Second Progression: Blends & Digraph Short Vowels (Each with at least 10 words)
+            "ack": { ending: "ack", words: [{onset: "b", word: "back"}, {onset: "p", word: "pack"}, {onset: "r", word: "rack"}, {onset: "s", word: "sack"}, {onset: "t", word: "tack"}, {onset: "bl", word: "black"}, {onset: "j", word: "jack"}, {onset: "qu", word: "quack"}, {onset: "sn", word: "snack"}, {onset: "st", word: "stack"}, {onset: "tr", word: "track"}, {onset: "cl", word: "clack"}] },
+            "ell": { ending: "ell", words: [{onset: "b", word: "bell"}, {onset: "f", word: "fell"}, {onset: "s", word: "sell"}, {onset: "t", word: "tell"}, {onset: "w", word: "well"}, {onset: "sh", word: "shell"}, {onset: "y", word: "yell"}, {onset: "c", word: "cell"}, {onset: "sm", word: "smell"}, {onset: "sp", word: "spell"}, {onset: "sw", word: "swell"}] },
+            "ill": { ending: "ill", words: [{onset: "b", word: "bill"}, {onset: "f", word: "fill"}, {onset: "h", word: "hill"}, {onset: "m", word: "mill"}, {onset: "p", word: "pill"}, {onset: "sp", word: "spill"}, {onset: "ch", word: "chill"}, {onset: "dr", word: "drill"}, {onset: "gr", word: "grill"}, {onset: "sk", word: "skill"}, {onset: "st", word: "still"}, {onset: "w", word: "will"}] },
+            "ock": { ending: "ock", words: [{onset: "l", word: "lock"}, {onset: "r", word: "rock"}, {onset: "s", word: "sock"}, {onset: "bl", word: "block"}, {onset: "cl", word: "clock"}, {onset: "d", word: "dock"}, {onset: "m", word: "mock"}, {onset: "kn", word: "knock"}, {onset: "sh", word: "shock"}, {onset: "st", word: "stock"}] },
+            "ump": { ending: "ump", words: [{onset: "b", word: "bump"}, {onset: "d", word: "dump"}, {onset: "h", word: "hump"}, {onset: "j", word: "jump"}, {onset: "l", word: "lump"}, {onset: "p", word: "pump"}, {onset: "cl", word: "clump"}, {onset: "pl", word: "plump"}, {onset: "st", word: "stump"}, {onset: "th", word: "thump"}, {onset: "gr", word: "grump"}] },
+            "ing": { ending: "ing", words: [{onset: "k", word: "king"}, {onset: "r", word: "ring"}, {onset: "s", word: "sing"}, {onset: "w", word: "wing"}, {onset: "br", word: "bring"}, {onset: "d", word: "ding"}, {onset: "p", word: "ping"}, {onset: "st", word: "sting"}, {onset: "sw", word: "swing"}, {onset: "th", word: "thing"}, {onset: "spr", word: "spring"}] },
+            "ink": { ending: "ink", words: [{onset: "l", word: "link"}, {onset: "p", word: "pink"}, {onset: "s", word: "sink"}, {onset: "w", word: "wink"}, {onset: "dr", word: "drink"}, {onset: "bl", word: "blink"}, {onset: "th", word: "think"}, {onset: "shr", word: "shrink"}, {onset: "st", word: "stink"}, {onset: "cl", word: "clink"}, {onset: "r", word: "rink"}] },
+
+            // Third Progression: Long Vowels & Magic E (Each with at least 10 words)
+            "ake": { ending: "ake", words: [{onset: "b", word: "bake"}, {onset: "c", word: "cake"}, {onset: "l", word: "lake"}, {onset: "m", word: "make"}, {onset: "r", word: "rake"}, {onset: "sh", word: "shake"}, {onset: "f", word: "fake"}, {onset: "w", word: "wake"}, {onset: "br", word: "brake"}, {onset: "fl", word: "flake"}, {onset: "sn", word: "snake"}, {onset: "st", word: "stake"}] },
+            "ame": { ending: "ame", words: [{onset: "c", word: "came"}, {onset: "g", word: "game"}, {onset: "n", word: "name"}, {onset: "s", word: "same"}, {onset: "t", word: "tame"}, {onset: "f", word: "fame"}, {onset: "l", word: "lame"}, {onset: "bl", word: "blame"}, {onset: "fl", word: "flame"}, {onset: "sh", word: "shame"}, {onset: "fr", word: "frame"}] },
+            "ice": { ending: "ice", words: [{onset: "d", word: "dice"}, {onset: "m", word: "mice"}, {onset: "n", word: "nice"}, {onset: "r", word: "rice"}, {onset: "pr", word: "price"}, {onset: "sl", word: "slice"}, {onset: "sp", word: "spice"}, {onset: "tw", word: "twice"}, {onset: "l", word: "lice"}, {onset: "spl", word: "splice"}] },
+            "ide": { ending: "ide", words: [{onset: "h", word: "hide"}, {onset: "r", word: "ride"}, {onset: "s", word: "side"}, {onset: "t", word: "tide"}, {onset: "sl", word: "slide"}, {onset: "w", word: "wide"}, {onset: "b", word: "bide"}, {onset: "g", word: "guide"}, {onset: "pr", word: "pride"}, {onset: "str", word: "stride"}, {onset: "br", word: "bride"}] },
+            "ine": { ending: "ine", words: [{onset: "l", word: "line"}, {onset: "m", word: "mine"}, {onset: "n", word: "nine"}, {onset: "p", word: "pine"}, {onset: "sh", word: "shine"}, {onset: "v", word: "vine"}, {onset: "d", word: "dine"}, {onset: "f", word: "fine"}, {onset: "w", word: "wine"}, {onset: "sp", word: "spine"}, {onset: "sw", word: "swine"}] },
+            "oke": { ending: "oke", words: [{onset: "j", word: "joke"}, {onset: "p", word: "poke"}, {onset: "w", word: "woke"}, {onset: "br", word: "broke"}, {onset: "ch", word: "choke"}, {onset: "sm", word: "smoke"}, {onset: "sp", word: "spoke"}, {onset: "str", word: "stroke"}, {onset: "y", word: "yoke"}, {onset: "aw", word: "awoke"}] },
+
+            // Fourth Progression: Advanced Teams & Vowel Vowels (Each with at least 10 words)
+            "ail": { ending: "ail", words: [{onset: "f", word: "fail"}, {onset: "m", word: "mail"}, {onset: "n", word: "nail"}, {onset: "p", word: "pail"}, {onset: "s", word: "sail"}, {onset: "tr", word: "trail"}, {onset: "b", word: "bail"}, {onset: "h", word: "hail"}, {onset: "j", word: "jail"}, {onset: "r", word: "rail"}, {onset: "t", word: "tail"}, {onset: "sn", word: "snail"}, {onset: "qu", word: "quail"}] },
+            "ain": { ending: "ain", words: [{onset: "g", word: "gain"}, {onset: "m", word: "main"}, {onset: "p", word: "pain"}, {onset: "r", word: "rain"}, {onset: "tr", word: "train"}, {onset: "br", word: "brain"}, {onset: "ch", word: "chain"}, {onset: "gr", word: "grain"}, {onset: "pl", word: "plain"}, {onset: "st", word: "stain"}, {onset: "sl", word: "slain"}] },
+            "ight": { ending: "ight", words: [{onset: "f", word: "fight"}, {onset: "l", word: "light"}, {onset: "m", word: "might"}, {onset: "n", word: "night"}, {onset: "r", word: "right"}, {onset: "s", word: "sight"}, {onset: "t", word: "tight"}, {onset: "br", word: "bright"}, {onset: "fl", word: "flight"}, {onset: "fr", word: "fright"}, {onset: "kn", word: "knight"}] },
+            "oon": { ending: "oon", words: [{onset: "m", word: "moon"}, {onset: "n", word: "noon"}, {onset: "sp", word: "spoon"}, {onset: "s", word: "soon"}, {onset: "b", word: "boon"}, {onset: "l", word: "loon"}, {onset: "cr", word: "croon"}, {onset: "sw", word: "swoon"}, {onset: "g", word: "goon"}, {onset: "cart", word: "cartoon"}] },
+            "ore": { ending: "ore", words: [{onset: "m", word: "more"}, {onset: "s", word: "sore"}, {onset: "t", word: "tore"}, {onset: "w", word: "wore"}, {onset: "st", word: "store"}, {onset: "b", word: "bore"}, {onset: "c", word: "core"}, {onset: "f", word: "fore"}, {onset: "p", word: "pore"}, {onset: "sh", word: "shore"}, {onset: "sn", word: "snore"}, {onset: "sc", word: "score"}, {onset: "ch", word: "chore"}] },
+            "ow": { ending: "ow", words: [{onset: "b", word: "bow"}, {onset: "c", word: "cow"}, {onset: "h", word: "how"}, {onset: "n", word: "now"}, {onset: "sh", word: "show"}, {onset: "l", word: "low"}, {onset: "m", word: "mow"}, {onset: "r", word: "row"}, {onset: "s", word: "sow"}, {onset: "t", word: "tow"}, {onset: "bl", word: "blow"}, {onset: "cr", word: "crow"}, {onset: "gl", word: "glow"}, {onset: "gr", word: "grow"}, {onset: "pl", word: "plow"}, {onset: "sl", word: "slow"}] },
+            "uck": { ending: "uck", words: [{onset: "b", word: "buck"}, {onset: "d", word: "duck"}, {onset: "l", word: "luck"}, {onset: "t", word: "tuck"}, {onset: "tr", word: "truck"}, {onset: "cl", word: "cluck"}, {onset: "m", word: "muck"}, {onset: "p", word: "puck"}, {onset: "s", word: "suck"}, {onset: "pl", word: "pluck"}, {onset: "st", word: "stuck"}] }
+        };
+
+        // UI Suggested Quick List
+        const suggestedFamilies = ["at", "an", "ig", "op", "un"];
+        
+        // Runtime Program Variables
+        let currentFamilyKey = "at";
+        let activeWordResult = "";
+        let sessionDiscoveredData = {};
+        let activeDraggedText = null;
+
+        // Initialize Runtime Configuration
+        window.addEventListener('DOMContentLoaded', () => {
+            initializeDiscoveredStorage();
+            buildSelectorInterfaces();
+            loadWordFamily("at");
+            setupTouchDragRedirection();
+        });
+
+        function initializeDiscoveredStorage() {
+            Object.keys(wordFamilies).forEach(key => {
+                sessionDiscoveredData[key] = [];
+            });
+        }
+
+        function buildSelectorInterfaces() {
+            const dropdown = document.getElementById("familyDropdown");
+            const chipsContainer = document.getElementById("suggestedChips");
+
+            dropdown.innerHTML = "";
+            chipsContainer.innerHTML = "";
+
+            // Populate Main Sequential Dropdown
+            Object.keys(wordFamilies).forEach(key => {
+                const opt = document.createElement("option");
+                opt.value = key;
+                opt.textContent = `-${wordFamilies[key].ending}`;
+                dropdown.appendChild(opt);
+            });
+
+            // Populate Quick Suggested Chips Bar
+            suggestedFamilies.forEach(key => {
+                if(wordFamilies[key]) {
+                    const chip = document.createElement("button");
+                    chip.className = "chip";
+                    chip.textContent = `-${wordFamilies[key].ending}`;
+                    chip.setAttribute("aria-label", `Select family -${wordFamilies[key].ending}`);
+                    chip.onclick = () => {
+                        dropdown.value = key;
+                        loadWordFamily(key);
+                    };
+                    chip.id = `chip-${key}`;
+                    chipsContainer.appendChild(chip);
+                }
+            });
+        }
+
+        function loadWordFamily(familyKey) {
+            if (!wordFamilies[familyKey]) return;
+            currentFamilyKey = familyKey;
+            
+            // Sync selection indicators across layouts
+            document.getElementById("familyDropdown").value = familyKey;
+            updateActiveChipHighlight(familyKey);
+
+            // Clean active construction mat
+            resetWorkspaceMat();
+
+            // Populate Rime Target Slot Label
+            document.getElementById("matRime").textContent = wordFamilies[familyKey].ending;
+
+            // Render Distinct Onset Letter Bank
+            generateTrayTiles(wordFamilies[familyKey].words);
+
+            // Synchronize Collected Display Box
+            renderCollectedWordsGrid();
+            clearFeedbackLine();
+        }
+
+        function updateActiveChipHighlight(familyKey) {
+            document.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+            const activeChip = document.getElementById(`chip-${familyKey}`);
+            if (activeChip) activeChip.classList.add("active");
+        }
+
+        function generateTrayTiles(wordObjectArray) {
+            const tray = document.getElementById("tileTray");
+            tray.innerHTML = "";
+
+            // Collect unique, validated onset elements mapping to correct structures
+            const distinctOnsets = [...new Set(wordObjectArray.map(item => item.onset))].sort();
+
+            distinctOnsets.forEach(onset => {
+                const tile = document.createElement("div");
+                tile.className = "tile";
+                tile.textContent = onset;
+                tile.setAttribute("draggable", "true");
+                tile.setAttribute("aria-label", `Letter card ${onset}. Tap or drag to combine.`);
+                
+                // Click and Tap Immediate Routing Interaction
+                tile.onclick = () => handleOnsetInteraction(onset);
+
+                // Desktop Native Drag Management
+                tile.ondragstart = (e) => {
+                    tile.classList.add("dragging");
+                    activeDraggedText = onset;
+                    e.dataTransfer.setData("text/plain", onset);
+                };
+                tile.ondragend = () => tile.classList.remove("dragging");
+
+                tray.appendChild(tile);
+            });
+        }
+
+        // --- Core Sound-First Word Assembly Logic Flow ---
+        function handleOnsetInteraction(onsetText) {
+            const currentFamily = wordFamilies[currentFamilyKey];
+            const foundMatch = currentFamily.words.find(w => w.onset.toLowerCase() === onsetText.toLowerCase());
+
+            // Build immediate text layout views
+            const onsetSlot = document.getElementById("matOnset");
+            const rimeSlot = document.getElementById("matRime");
+            const resultSlot = document.getElementById("matResult");
+
+            onsetSlot.textContent = onsetText;
+            onsetSlot.classList.add("occupied");
+
+            if (foundMatch) {
+                const validWord = foundMatch.word;
+                activeWordResult = validWord;
+                resultSlot.textContent = validWord;
+                resultSlot.classList.add("completed");
+                document.getElementById("btnHear").disabled = false;
+
+                // Fire Synchronous Sound-First Phonics Visualization Sequence
+                triggerPhonicsVisualSequence(onsetSlot, rimeSlot, resultSlot, validWord);
+            } else {
+                // If invalid combination, reset after mild delay
+                triggerInvalidFeedback(onsetSlot);
+            }
+        }
+
+        function triggerPhonicsVisualSequence(onsetEl, rimeEl, resultEl, builtWord) {
+            // Step 1: Highlight Onset
+            setTimeout(() => {
+                onsetEl.classList.add("highlight-onset-anim");
+            }, 50);
+
+            // Step 2: Highlight Rime
+            setTimeout(() => {
+                onsetEl.classList.remove("highlight-onset-anim");
+                rimeEl.classList.add("highlight-rime-anim");
+            }, 350);
+
+            // Step 3: Flash Finished Word Output Card & Pronounce Word Entirely
+            setTimeout(() => {
+                rimeEl.classList.remove("highlight-rime-anim");
+                resultEl.classList.add("highlight-word-anim");
+                
+                // Automatic Voice Engine Production call
+                speakPhonicsWord(builtWord);
+                
+                // Register into student collection vault
+                storeDiscoveredWord(builtWord);
+            }, 650);
+
+            // Step 4: Clear Construction Line state preparation for immediate next entry
+            setTimeout(() => {
+                resultEl.classList.remove("highlight-word-anim");
+                resetWorkspaceMat();
+            }, 1700);
+        }
+
+        function triggerInvalidFeedback(onsetEl) {
+            onsetEl.style.borderColor = "#ef4444";
+            onsetEl.style.backgroundColor = "#fee2e2";
+            setTimeout(() => {
+                onsetEl.textContent = "___";
+                onsetEl.classList.remove("occupied");
+                onsetEl.style.borderColor = "";
+                onsetEl.style.backgroundColor = "";
+            }, 600);
+        }
+
+        function storeDiscoveredWord(word) {
+            const collection = sessionDiscoveredData[currentFamilyKey];
+            if (!collection.includes(word)) {
+                collection.push(word);
+                renderCollectedWordsGrid();
+            }
+            evaluateFamilyCompletion();
+        }
+
+        function renderCollectedWordsGrid() {
+            const grid = document.getElementById("collectionGrid");
+            grid.innerHTML = "";
+
+            const collection = sessionDiscoveredData[currentFamilyKey] || [];
+            const targetedWords = wordFamilies[currentFamilyKey].words;
+
+            collection.forEach(word => {
+                const badge = document.createElement("button");
+                badge.className = "collected-word-tile";
+                badge.innerHTML = `🔊 ${word}`;
+                badge.setAttribute("aria-label", `Collected word ${word}. Tap to play audio.`);
+                badge.onclick = () => speakPhonicsWord(word);
+                grid.appendChild(badge);
+            });
+
+            // Update Thin Linear Progress Values
+            const totalCount = targetedWords.length;
+            const currentCount = collection.length;
+            document.getElementById("progressText").textContent = `Discovered: ${currentCount} of ${totalCount}`;
+            
+            const percentage = totalCount > 0 ? (currentCount / totalCount) * 100 : 0;
+            document.getElementById("progressBarFill").style.width = `${percentage}%`;
+        }
+
+        function evaluateFamilyCompletion() {
+            const collection = sessionDiscoveredData[currentFamilyKey] || [];
+            const totalCount = wordFamilies[currentFamilyKey].words.length;
+            const msgBox = document.getElementById("feedbackMessage");
+
+            if (collection.length === totalCount && totalCount > 0) {
+                msgBox.innerHTML = `✨ Great! You built the complete -${wordFamilies[currentFamilyKey].ending} family.`;
+            } else {
+                clearFeedbackLine();
+            }
+        }
+
+        // --- Workspace Clean Restructuring Routines ---
+        function resetWorkspaceMat() {
+            document.getElementById("matOnset").textContent = "___";
+            document.getElementById("matOnset").classList.remove("occupied");
+            document.getElementById("matResult").textContent = "_____";
+            document.getElementById("matResult").classList.remove("completed");
+            document.getElementById("btnHear").disabled = true;
+            activeWordResult = "";
+        }
+
+        function clearFeedbackLine() {
+            document.getElementById("feedbackMessage").innerHTML = "";
+        }
+
+        function handleDropdownChange(selectElement) {
+            loadWordFamily(selectElement.value);
+        }
+
+        function loadRandomFamily() {
+            const familyKeys = Object.keys(wordFamilies);
+            const remainingKeys = familyKeys.filter(k => k !== currentFamilyKey);
+            const randomKey = remainingKeys[Math.floor(Math.random() * remainingKeys.length)];
+            loadWordFamily(randomKey);
+        }
+
+        function clearCurrentFamilyProgress() {
+            const collection = sessionDiscoveredData[currentFamilyKey] || [];
+            if (collection.length > 2) {
+                if (!confirm("Do you want to clear your words for this family?")) {
+                    return;
+                }
+            }
+            sessionDiscoveredData[currentFamilyKey] = [];
+            resetWorkspaceMat();
+            renderCollectedWordsGrid();
+            clearFeedbackLine();
+        }
+
+        // --- Web Speech Synth Audio Control ---
+        function speakPhonicsWord(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // Prevent audio stacking delays
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.8; // Slightly slower, highly clear vocal cadence
+                utterance.pitch = 1.0;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function hearCurrentWord() {
+            if (activeWordResult) {
+                speakPhonicsWord(activeWordResult);
+            }
+        }
+
+        // --- Smart Board & Mobile Native Touch Tracking Integrations ---
+        function setupTouchDragRedirection() {
+            const dropZone = document.getElementById("dropZone");
+
+            // Accept Native Drag Overs for Desktop Mouse Users
+            dropZone.ondragover = (e) => e.preventDefault();
+            dropZone.ondrop = (e) => {
+                e.preventDefault();
+                const onsetData = e.dataTransfer.getData("text/plain") || activeDraggedText;
+                if (onsetData) handleOnsetInteraction(onsetData);
+            };
+
+            // Touch Drag Interception Polyfill for Mobile/Tablet Screens
+            document.addEventListener("touchstart", handleTouchStart, { passive: false });
+            document.addEventListener("touchmove", handleTouchMove, { passive: false });
+            document.addEventListener("touchend", handleTouchEnd, { passive: false });
+
+            let activeTouchTile = null;
+            let touchStartPos = { x: 0, y: 0 };
+
+            function handleTouchStart(e) {
+                const target = e.target.closest(".tile");
+                if (!target) return;
+                activeTouchTile = target;
+                const touch = e.touches[0];
+                touchStartPos = { x: touch.clientX, y: touch.clientY };
+                target.style.position = "relative";
+                target.style.zIndex = "1000";
+            }
+
+            function handleTouchMove(e) {
+                if (!activeTouchTile) return;
+                e.preventDefault(); // Lock view scrolling completely while pulling cards
+                const touch = e.touches[0];
+                const deltaX = touch.clientX - touchStartPos.x;
+                const deltaY = touch.clientY - touchStartPos.y;
+                activeTouchTile.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+            }
+
+            function handleTouchEnd(e) {
+                if (!activeTouchTile) return;
+                
+                const touch = e.changedTouches[0];
+                activeTouchTile.style.position = "";
+                activeTouchTile.style.zIndex = "";
+                activeTouchTile.style.transform = "";
+
+                // Screen coordinate collision check to match layout box drops
+                const dropRect = dropZone.getBoundingClientRect();
+                if (
+                    touch.clientX >= dropRect.left &&
+                    touch.clientX <= dropRect.right &&
+                    touch.clientY >= dropRect.top &&
+                    touch.clientY <= dropRect.bottom
+                ) {
+                    handleOnsetInteraction(activeTouchTile.textContent);
+                }
+
+                activeTouchTile = null;
+            }
+        }
+    </script>
+</body>
+</html>

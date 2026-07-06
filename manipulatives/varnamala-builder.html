@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Hindi Varnmala Builder | हिंदी वर्णमाला इंटरएक्टिव टूल</title>
+    <meta name="description" content="An interactive Hindi alphabet (वर्णमाला) manipulative tool for primary school students. Move, arrange, classify, write, and hear Hindi letters using digital alphabet tiles. Built for classroom TLM, smartboards, and tablets.">
+    <meta name="keywords" content="Hindi Varnmala Builder, हिंदी वर्णमाला, Hindi alphabet manipulative, स्वर और व्यंजन, Hindi learning tool for kids, interactive Hindi alphabet, Hindi TLM, डिजिटल वर्णमाला, अक्षर पहचान गतिविधि, primary Hindi learning tool, Hindi letter tiles">
+    
+    <meta property="og:title" content="Hindi Varnmala Builder - डिजिटल वर्णमाला">
+    <meta property="og:description" content="Explore, recognize, arrange, write, and hear Hindi letters through movable digital अक्षर tiles. Ideal for primary classrooms and interactive smart boards.">
+    <meta property="og:type" content="website">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-main: #f9f8f3;
+            --bg-mat: #ffffff;
+            --tile-swar: #fff3cd;
+            --tile-swar-border: #ffeba5;
+            --tile-vyanjan: #e2f0d9;
+            --tile-vyanjan-border: #c5e1b4;
+            --tile-sanyukt: #e6f2ff;
+            --tile-sanyukt-border: #b3d7ff;
+            --text-dark: #2c3e50;
+            --text-muted: #7f8c8d;
+            --accent-color: #4a90e2;
+            --shadow-sm: 0 4px 6px rgba(0,0,0,0.05);
+            --shadow-md: 0 8px 16px rgba(0,0,0,0.1);
+            --font-family: 'Noto Sans Devanagari', system-ui, -apple-system, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-main);
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            padding: 15px;
+        }
+
+        header {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto 10px auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .title-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: #2c3e50;
+            font-weight: 700;
+        }
+
+        /* Teacher Prompt Styling */
+        .teacher-prompt-wrap {
+            display: flex;
+            align-items: center;
+            background: #fff;
+            border: 2px dashed #cbd5e1;
+            padding: 6px 12px;
+            border-radius: 8px;
+            gap: 8px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .teacher-prompt-label {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: #e67e22;
+            white-space: nowrap;
+        }
+
+        .teacher-prompt-input {
+            border: none;
+            outline: none;
+            font-family: var(--font-family);
+            font-size: 0.95rem;
+            color: var(--text-dark);
+            width: 100%;
+            background: transparent;
+        }
+
+        /* Workspace Grid Container */
+        .workspace {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            flex: 1;
+        }
+
+        /* Category Selectors & Tray Area */
+        .tray-container {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .category-selector {
+            display: flex;
+            gap: 10px;
+            border-bottom: 2px solid #f1f2f6;
+            padding-bottom: 10px;
+        }
+
+        .category-tab {
+            font-family: var(--font-family);
+            font-size: 1.1rem;
+            font-weight: 500;
+            padding: 8px 20px;
+            border: none;
+            background: #f1f2f6;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-dark);
+        }
+
+        .category-tab.active {
+            background-color: var(--accent-color);
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        .tile-tray {
+            max-height: 220px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding-right: 5px;
+        }
+
+        .varg-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .varg-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            min-width: 70px;
+            border-right: 2px solid #f1f2f6;
+            margin-right: 5px;
+        }
+
+        /* Core Tile Design */
+        .letter-tile {
+            width: 54px;
+            height: 54px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            font-weight: 500;
+            border-radius: 10px;
+            cursor: grab;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+            border-bottom: 3px solid rgba(0,0,0,0.1);
+            transition: transform 0.15s, box-shadow 0.15s;
+            touch-action: none;
+            position: relative;
+        }
+
+        .letter-tile:active {
+            cursor: grabbing;
+        }
+
+        .letter-tile.swar-tile {
+            background-color: var(--tile-swar);
+            border-color: var(--tile-swar-border);
+        }
+
+        .letter-tile.vyanjan-tile {
+            background-color: var(--tile-vyanjan);
+            border-color: var(--tile-vyanjan-border);
+        }
+
+        .letter-tile.sanyukt-tile {
+            background-color: var(--tile-sanyukt);
+            border-color: var(--tile-sanyukt-border);
+        }
+
+        .tile-tray .letter-tile:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Free Work Mat Area */
+        .work-mat-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            position: relative;
+        }
+
+        .work-mat {
+            background-color: var(--bg-mat);
+            border: 2px solid #e2e8f0;
+            border-radius: 14px;
+            min-height: 380px;
+            height: 100%;
+            position: relative;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.02);
+            background-image: radial-gradient(#cbd5e1 1.5px, transparent 1.5px);
+            background-size: 24px 24px;
+            overflow: hidden;
+        }
+
+        /* Drawing Canvas Component overlay configuration */
+        #drawCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Active Canvas Placed Tiles */
+        .placed-tile {
+            position: absolute !important;
+            z-index: 10;
+            box-shadow: var(--shadow-sm);
+            transform: scale(1);
+            transition: transform 0.1s;
+        }
+
+        .placed-tile.dragging {
+            z-index: 100;
+            transform: scale(1.1) translateY(-4px);
+            box-shadow: var(--shadow-md);
+            cursor: grabbing;
+        }
+
+        .placed-tile.selected {
+            outline: 3px solid var(--accent-color);
+            outline-offset: 2px;
+        }
+
+        /* Dynamic Individual Delete Action button */
+        .tile-remove-btn {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 20px;
+            height: 20px;
+            background: #ff7675;
+            color: white;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            border: 1px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 110;
+        }
+
+        .placed-tile.selected .tile-remove-btn {
+            display: flex;
+        }
+
+        /* Control Menu Interface Bar */
+        .control-bar {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .control-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn {
+            font-family: var(--font-family);
+            font-size: 1rem;
+            font-weight: 500;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.2s, transform 0.1s;
+            color: white;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-audio { background-color: #2ecc71; }
+        .btn-audio:hover { background-color: #27ae60; }
+        
+        .btn-sequence { background-color: #9b59b6; }
+        .btn-sequence:hover { background-color: #8e44ad; }
+        
+        .btn-clear { background-color: #e67e22; }
+        .btn-clear:hover { background-color: #d35400; }
+        
+        .btn-reset { background-color: #95a5a6; }
+        .btn-reset:hover { background-color: #7f8c8d; }
+
+        /* Writing Mode Tool Options Buttons */
+        .btn-tool {
+            background-color: #f1f2f6;
+            color: var(--text-dark);
+            border: 1px solid #cbd5e1;
+            font-size: 1.2rem;
+            padding: 6px 14px;
+        }
+        .btn-tool:hover {
+            background-color: #e2e8f0;
+        }
+        .btn-tool.active {
+            background-color: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .shuffle-control {
+            font-size: 0.8rem;
+            background: transparent;
+            border: 1px solid #cbd5e1;
+            color: var(--text-muted);
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            align-self: flex-end;
+        }
+
+        .shuffle-control:hover {
+            background: #f1f2f6;
+            color: var(--text-dark);
+        }
+
+        /* Layout & Screen Breakpoint Responsiveness */
+        @media (min-width: 900px) {
+            body { padding: 25px; }
+            .workspace { grid-template-columns: 320px 1fr; }
+            .tile-tray { max-height: calc(100vh - 220px); }
+            .work-mat { min-height: 500px; }
+            h1 { font-size: 2.2rem; }
+        }
+
+        @media (max-width: 600px) {
+            .letter-tile { width: 46px; height: 46px; font-size: 1.3rem; }
+            .category-tab { font-size: 0.95rem; padding: 6px 14px; }
+            .btn { font-size: 0.9rem; padding: 6px 12px; }
+            .varg-label { min-width: 60px; font-size: 0.75rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="title-area">
+            <h1>हिंदी वर्णमाला बिल्डर</h1>
+            <div class="teacher-prompt-wrap">
+                <span class="teacher-prompt-label">आज का कार्य:</span>
+                <input type="text" class="teacher-prompt-input" placeholder="यहाँ बच्चों के लिए निर्देश लिखें (उदा. स्वरों को क्रम में लगाओ।)" aria-label="Teacher Task Prompt">
+            </div>
+        </div>
+    </header>
+
+    <main class="workspace">
+        
+        <section class="tray-container" aria-label="वर्णमाला ट्रे">
+            <div class="category-selector">
+                <button class="category-tab active" data-cat="all">सभी वर्ण</button>
+                <button class="category-tab" data-cat="swar">स्वर</button>
+                <button class="category-tab" data-cat="vyanjan">व्यंजन</button>
+            </div>
+            
+            <div class="tile-tray" id="tileTray">
+                </div>
+            
+            <button class="shuffle-control" id="shuffleTrayBtn" title="शिक्षक द्वारा उपयोग के लिए वर्णों का क्रम बदलें">🎲 वर्णों का क्रम बदलें</button>
+        </section>
+
+        <section class="work-mat-wrapper">
+            <div class="work-mat" id="workMat" aria-label="कार्य मैट - यहाँ अक्षरों को व्यवस्थित करें">
+                <canvas id="drawCanvas"></canvas>
+                </div>
+
+            <footer class="control-bar">
+                <div class="control-group">
+                    <button class="btn btn-tool active" id="toolSelectBtn" title="टाइल हिलाएँ">🖐️</button>
+                    <button class="btn btn-tool" id="toolPencilBtn" title="पेंसिल से लिखें">✏️</button>
+                    <button class="btn btn-tool" id="toolEraserBtn" title="रबर से मिटाएँ">🧽</button>
+                </div>
+                <div class="control-group">
+                    <button class="btn btn-audio" id="speakBtn">🔊 सुनें</button>
+                    <button class="btn btn-sequence" id="sequenceBtn">✨ क्रम में लगाएँ</button>
+                </div>
+                <div class="control-group">
+                    <button class="btn btn-clear" id="clearBtn">साफ करें</button>
+                    <button class="btn btn-reset" id="resetBtn">रीसेट</button>
+                </div>
+            </footer>
+        </section>
+
+    </main>
+
+    <script>
+        // Centralized Immutable Structural Hindi Alphabet Data Repository
+        // Fixed positioning: 'अं' and 'अः' mapped explicitly in order right after 'औ'
+        const hindiAlphabet = {
+            swar: ["अ", "आ", "इ", "ई", "उ", "ऊ", "ऋ", "ए", "ऐ", "ओ", "औ", "अं", "अः"],
+            vyanjanVarg: {
+                "क-वर्ग": ["क", "ख", "ग", "घ", "ङ"],
+                "च-वर्ग": ["च", "छ", "ज", "झ", "ञ"],
+                "ट-वर्ग": ["ट", "ठ", "ड", "ढ", "ण"],
+                "त-वर्ग": ["त", "थ", "द", "ध", "न"],
+                "प-वर्ग": ["प", "फ", "ब", "भ", "म"],
+                "अन्तस्थ": ["य", "र", "ल", "व"],
+                "ऊष्म": ["श", "ष", "स", "ह"],
+                "संयुक्ताक्षर": ["क्ष", "त्र", "ज्ञ"]
+            }
+        };
+
+        // Flatten full list systematically tracking correct sequence positions
+        const fullOrderedSequence = [
+            ...hindiAlphabet.swar,
+            ...Object.values(hindiAlphabet.vyanjanVarg).flat()
+        ];
+
+        // System State Architecture
+        let currentCategory = 'all';
+        let isTrayShuffled = false;
+        let selectedMatTile = null;
+        let placementCounter = 0; // Ensures automatic staggered overlapping grid fallbacks
+        let activeTool = 'select'; // Interaction options state: 'select', 'pencil', 'eraser'
+
+        // Pointer Drag Engine Coordinate Space tracking
+        let activePointerId = null;
+        let dragOffset = { x: 0, y: 0 };
+        let activeDraggedTile = null;
+
+        // Drawing system configuration properties
+        let isDrawing = false;
+        let ctx = null;
+
+        // DOM Anchors
+        const tileTray = document.getElementById('tileTray');
+        const workMat = document.getElementById('workMat');
+        const drawCanvas = document.getElementById('drawCanvas');
+        const categoryTabs = document.querySelectorAll('.category-tab');
+        const speakBtn = document.getElementById('speakBtn');
+        const sequenceBtn = document.getElementById('sequenceBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const shuffleTrayBtn = document.getElementById('shuffleTrayBtn');
+        const teacherInput = document.querySelector('.teacher-prompt-input');
+
+        // Drawing Mode Buttons
+        const toolSelectBtn = document.getElementById('toolSelectBtn');
+        const toolPencilBtn = document.getElementById('toolPencilBtn');
+        const toolEraserBtn = document.getElementById('toolEraserBtn');
+
+        // Application Startup Initialization Sequence
+        window.addEventListener('DOMContentLoaded', () => {
+            initCanvas();
+            renderTray();
+            setupEventListeners();
+            setupGlobalPointerListeners();
+        });
+
+        // Initialize and maintain drawing canvas sizing constraints
+        function initCanvas() {
+            ctx = drawCanvas.getContext('2d');
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+        }
+
+        function resizeCanvas() {
+            const rect = workMat.getBoundingClientRect();
+            
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = drawCanvas.width;
+            tempCanvas.height = drawCanvas.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            if (drawCanvas.width > 0 && drawCanvas.height > 0) {
+                tempCtx.drawImage(drawCanvas, 0, 0);
+            }
+
+            drawCanvas.width = rect.width;
+            drawCanvas.height = rect.height;
+
+            ctx.drawImage(tempCanvas, 0, 0);
+            setupCanvasBrush();
+        }
+
+        function setupCanvasBrush() {
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+        }
+
+        // Alphabet Rendering Controller Matrix
+        function renderTray() {
+            tileTray.innerHTML = '';
+            
+            if (currentCategory === 'swar') {
+                const row = createVargRow("स्वर", isTrayShuffled ? getShuffled(hindiAlphabet.swar) : hindiAlphabet.swar, true);
+                tileTray.appendChild(row);
+            } else if (currentCategory === 'vyanjan') {
+                if (isTrayShuffled) {
+                    const allVyanjan = Object.values(hindiAlphabet.vyanjanVarg).flat();
+                    const row = createVargRow("व्यंजन", getShuffled(allVyanjan), false);
+                    tileTray.appendChild(row);
+                } else {
+                    Object.entries(hindiAlphabet.vyanjanVarg).forEach(([vargName, letters]) => {
+                        const row = createVargRow(vargName, letters, false);
+                        tileTray.appendChild(row);
+                    });
+                }
+            } else { // 'all' Configuration option layout mapping
+                if (isTrayShuffled) {
+                    const row = createVargRow("वर्णमाला", getShuffled(fullOrderedSequence), null);
+                    tileTray.appendChild(row);
+                } else {
+                    const swarRow = createVargRow("स्वर", hindiAlphabet.swar, true);
+                    tileTray.appendChild(swarRow);
+                    Object.entries(hindiAlphabet.vyanjanVarg).forEach(([vargName, letters]) => {
+                        const row = createVargRow(vargName, letters, false);
+                        tileTray.appendChild(row);
+                    });
+                }
+            }
+        }
+
+        function createVargRow(labelName, letters, isSwar) {
+            const vargRow = document.createElement('div');
+            vargRow.className = 'varg-row';
+            
+            if (!isTrayShuffled) {
+                const label = document.createElement('span');
+                label.className = 'varg-label';
+                label.textContent = labelName;
+                vargRow.appendChild(label);
+            }
+
+            letters.forEach(char => {
+                const tile = document.createElement('div');
+                let typeClass = 'vyanjan-tile';
+                if (isSwar === true || (isSwar === null && hindiAlphabet.swar.includes(char))) {
+                    typeClass = 'swar-tile';
+                } else if (hindiAlphabet.vyanjanVarg["संयुक्ताक्षर"].includes(char)) {
+                    typeClass = 'sanyukt-tile';
+                }
+
+                tile.className = `letter-tile ${typeClass}`;
+                tile.textContent = char;
+                tile.setAttribute('role', 'button');
+                tile.setAttribute('tabindex', '0');
+                tile.setAttribute('aria-label', `${char}`);
+                
+                tile.addEventListener('pointerdown', (e) => handleTrayTilePointerDown(e, char, typeClass));
+                
+                vargRow.appendChild(tile);
+            });
+
+            return vargRow;
+        }
+
+        // Tap-to-add / Drag-to-add Controller Execution Core logic
+        function handleTrayTilePointerDown(e, char, typeClass) {
+            e.preventDefault();
+            
+            clearSelection();
+            switchToolMode('select');
+
+            const newTile = createWorkspaceTile(char, typeClass);
+            const matRect = workMat.getBoundingClientRect();
+            
+            let initialLeft = e.clientX - matRect.left - 27;
+            let initialTop = e.clientY - matRect.top - 27;
+
+            if (e.clientX === 0 && e.clientY === 0 || e.pointerType === 'touch' && e.type === 'click') {
+                initialLeft = 40 + ((placementCounter * 30) % (matRect.width - 100));
+                initialTop = 40 + ((Math.floor(placementCounter / 5) * 30) % (matRect.height - 140));
+                placementCounter++;
+            } else {
+                if (initialLeft < 0 || initialLeft > matRect.width || initialTop < 0 || initialTop > matRect.height) {
+                    initialLeft = 40 + ((placementCounter * 30) % (matRect.width - 100));
+                    initialTop = 40 + ((Math.floor(placementCounter / 5) * 30) % (matRect.height - 140));
+                    placementCounter++;
+                }
+            }
+
+            initialLeft = Math.max(10, Math.min(initialLeft, matRect.width - 64));
+            initialTop = Math.max(10, Math.min(initialTop, matRect.height - 64));
+
+            newTile.style.left = `${initialLeft}px`;
+            newTile.style.top = `${initialTop}px`;
+            
+            workMat.appendChild(newTile);
+            selectTile(newTile);
+
+            activeDraggedTile = newTile;
+            activePointerId = e.pointerId;
+            newTile.setPointerCapture(e.pointerId);
+            newTile.classList.add('dragging');
+
+            dragOffset.x = 27;
+            dragOffset.y = 27;
+        }
+
+        function createWorkspaceTile(char, typeClass) {
+            const tile = document.createElement('div');
+            tile.className = `letter-tile placed-tile ${typeClass}`;
+            tile.textContent = char;
+            tile.setAttribute('role', 'button');
+            tile.setAttribute('tabindex', '0');
+            
+            const removeBtn = document.createElement('div');
+            removeBtn.className = 'tile-remove-btn';
+            removeBtn.textContent = '×';
+            removeBtn.setAttribute('aria-label', 'हटाएं');
+            removeBtn.addEventListener('pointerdown', (e) => {
+                e.stopPropagation();
+                tile.remove();
+                if (selectedMatTile === tile) selectedMatTile = null;
+            });
+            tile.appendChild(removeBtn);
+
+            tile.addEventListener('pointerdown', (e) => {
+                if (e.target.classList.contains('tile-remove-btn')) return;
+                if (activeTool !== 'select') return;
+
+                e.preventDefault();
+                e.stopPropagation();
+                
+                selectTile(tile);
+                activeDraggedTile = tile;
+                activePointerId = e.pointerId;
+                tile.setPointerCapture(e.pointerId);
+                tile.classList.add('dragging');
+
+                const rect = tile.getBoundingClientRect();
+                dragOffset.x = e.clientX - rect.left;
+                dragOffset.y = e.clientY - rect.top;
+            });
+
+            return tile;
+        }
+
+        // Global Pointer Tracking Architecture Pipeline
+        function setupGlobalPointerListeners() {
+            workMat.addEventListener('pointerdown', (e) => {
+                if (activeTool === 'select') {
+                    if (e.target === workMat) clearSelection();
+                    return;
+                }
+
+                isDrawing = true;
+                const rect = workMat.getBoundingClientRect();
+                const currentX = e.clientX - rect.left;
+                const currentY = e.clientY - rect.top;
+
+                ctx.beginPath();
+                ctx.moveTo(currentX, currentY);
+
+                if (activeTool === 'eraser') {
+                    ctx.globalCompositeOperation = 'destination-out';
+                    ctx.lineWidth = 24;
+                } else {
+                    ctx.globalCompositeOperation = 'source-over';
+                    ctx.lineWidth = 5;
+                    ctx.strokeStyle = '#2980b9';
+                }
+
+                ctx.lineTo(currentX, currentY);
+                ctx.stroke();
+            });
+
+            window.addEventListener('pointermove', (e) => {
+                if (activeDraggedTile && e.pointerId === activePointerId && activeTool === 'select') {
+                    const matRect = workMat.getBoundingClientRect();
+                    let x = e.clientX - matRect.left - dragOffset.x;
+                    let y = e.clientY - matRect.top - dragOffset.y;
+
+                    x = Math.max(5, Math.min(x, matRect.width - 60));
+                    y = Math.max(5, Math.min(y, matRect.height - 60));
+
+                    activeDraggedTile.style.left = `${x}px`;
+                    activeDraggedTile.style.top = `${y}px`;
+                    return;
+                }
+
+                if (isDrawing && activeTool !== 'select') {
+                    const rect = workMat.getBoundingClientRect();
+                    ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+                    ctx.stroke();
+                }
+            });
+
+            window.addEventListener('pointerup', (e) => {
+                isDrawing = false;
+
+                if (!activeDraggedTile || e.pointerId !== activePointerId) return;
+                
+                const gridSpacing = 12;
+                let currentLeft = parseFloat(activeDraggedTile.style.left);
+                let currentTop = parseFloat(activeDraggedTile.style.top);
+                
+                activeDraggedTile.style.left = `${Math.round(currentLeft / gridSpacing) * gridSpacing}px`;
+                activeDraggedTile.style.top = `${Math.round(currentTop / gridSpacing) * gridSpacing}px`;
+
+                activeDraggedTile.classList.remove('dragging');
+                activeDraggedTile.releasePointerCapture(e.pointerId);
+                activeDraggedTile = null;
+                activePointerId = null;
+            });
+        }
+
+        function switchToolMode(mode) {
+            activeTool = mode;
+            toolSelectBtn.classList.remove('active');
+            toolPencilBtn.classList.remove('active');
+            toolEraserBtn.classList.remove('active');
+
+            if (mode === 'pencil') {
+                toolPencilBtn.classList.add('active');
+                clearSelection();
+                workMat.style.cursor = 'crosshair';
+            } else if (mode === 'eraser') {
+                toolEraserBtn.classList.add('active');
+                clearSelection();
+                workMat.style.cursor = 'cell';
+            } else {
+                toolSelectBtn.classList.add('active');
+                workMat.style.cursor = 'default';
+            }
+        }
+
+        // State UI updates
+        function selectTile(tile) {
+            clearSelection();
+            if (activeTool === 'select') {
+                selectedMatTile = tile;
+                tile.classList.add('selected');
+            }
+        }
+
+        function clearSelection() {
+            if (selectedMatTile) {
+                selectedMatTile.classList.remove('selected');
+                selectedMatTile = null;
+            }
+        }
+
+        // Text To Speech Execution Logic Wrapper
+        function playPronunciation(text) {
+            if (!('speechSynthesis' in window)) return;
+            
+            window.speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'hi-IN';
+            
+            const voices = window.speechSynthesis.getVoices();
+            const hindiVoice = voices.find(voice => voice.lang.includes('hi') || voice.lang.includes('IN'));
+            if (hindiVoice) utterance.voice = hindiVoice;
+            
+            utterance.rate = 0.85;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Layout Sequential Automations Engine
+        function arrangeTilesSequentially() {
+            const placedTiles = Array.from(workMat.querySelectorAll('.placed-tile'));
+            if (placedTiles.length === 0) return;
+
+            // Sort active canvas metrics targeting reference alphabet sequence index positions with exact text match (preserving anusvara/visarga)
+            placedTiles.sort((a, b) => {
+                const charA = a.textContent.replace('×', '').trim();
+                const charB = b.textContent.replace('×', '').trim();
+                const idxA = fullOrderedSequence.indexOf(charA);
+                const idxB = fullOrderedSequence.indexOf(charB);
+                return idxA - idxB;
+            });
+
+            const matRect = workMat.getBoundingClientRect();
+            const tileWidth = 54;
+            const tileHeight = 54;
+            const gap = 14;
+            const padding = 20;
+            
+            let currentX = padding;
+            let currentY = padding;
+
+            placedTiles.forEach((tile) => {
+                if (currentX + tileWidth > matRect.width - padding) {
+                    currentX = padding;
+                    currentY += tileHeight + gap;
+                }
+
+                tile.style.transition = 'left 0.4s cubic-bezier(0.25, 1, 0.5, 1), top 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
+                tile.style.left = `${currentX}px`;
+                tile.style.top = `${currentY}px`;
+
+                currentX += tileWidth + gap;
+                
+                setTimeout(() => {
+                    tile.style.transition = '';
+                }, 400);
+            });
+        }
+
+        // Utility Math Array shuffler algorithm
+        function getShuffled(array) {
+            let target = [...array];
+            for (let i = target.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [target[i], target[j]] = [target[j], target[i]];
+            }
+            return target;
+        }
+
+        // Event Listener Core Configuration Matrix
+        function setupEventListeners() {
+            // Tool Options Buttons Setup mapping
+            toolSelectBtn.addEventListener('click', () => switchToolMode('select'));
+            toolPencilBtn.addEventListener('click', () => switchToolMode('pencil'));
+            toolEraserBtn.addEventListener('click', () => switchToolMode('eraser'));
+
+            // Category Routing Configuration Setup
+            categoryTabs.forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    categoryTabs.forEach(t => t.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentCategory = e.target.getAttribute('data-cat');
+                    renderTray();
+                });
+            });
+
+            // Control Bar Actions Wiring
+            speakBtn.addEventListener('click', () => {
+                if (selectedMatTile) {
+                    const cleanChar = selectedMatTile.textContent.replace('×', '').trim();
+                    playPronunciation(cleanChar);
+                }
+            });
+
+            sequenceBtn.addEventListener('click', () => {
+                switchToolMode('select');
+                arrangeTilesSequentially();
+            });
+
+            clearBtn.addEventListener('click', () => {
+                const tiles = workMat.querySelectorAll('.placed-tile');
+                if (tiles.length > 8) {
+                    if (confirm('क्या आप कार्य मैट को साफ करना चाहते हैं?')) {
+                        workMat.innerHTML = '';
+                        workMat.appendChild(drawCanvas);
+                        ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+                        clearSelection();
+                        placementCounter = 0;
+                    }
+                } else {
+                    workMat.innerHTML = '';
+                    workMat.appendChild(drawCanvas);
+                    ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+                    clearSelection();
+                    placementCounter = 0;
+                }
+            });
+
+            resetBtn.addEventListener('click', () => {
+                workMat.innerHTML = '';
+                workMat.appendChild(drawCanvas);
+                ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+                clearSelection();
+                placementCounter = 0;
+                isTrayShuffled = false;
+                currentCategory = 'all';
+                teacherInput.value = '';
+                
+                categoryTabs.forEach(t => t.classList.remove('active'));
+                document.querySelector('[data-cat="all"]').classList.add('active');
+                
+                switchToolMode('select');
+                shuffleTrayBtn.textContent = "🎲 वर्णों का क्रम बदलें";
+                renderTray();
+            });
+
+            shuffleTrayBtn.addEventListener('click', () => {
+                isTrayShuffled = !isTrayShuffled;
+                shuffleTrayBtn.textContent = isTrayShuffled ? "📋 वर्णमाला क्रम दिखाएं" : "🎲 वर्णों का क्रम बदलें";
+                renderTray();
+            });
+
+            window.speechSynthesis?.getVoices();
+        }
+    </script>
+</body>
+</html>

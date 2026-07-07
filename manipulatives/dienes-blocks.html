@@ -197,6 +197,7 @@
             overflow: hidden;
             background-color: var(--workspace-bg);
             cursor: grab;
+            touch-action: none;
         }
         .workspace-container.drawing-mode { cursor: crosshair; }
         .workspace-container:active:not(.drawing-mode) { cursor: grabbing; }
@@ -205,8 +206,8 @@
             position: absolute;
             top: 0;
             left: 0;
-            width: 5000px;
-            height: 5000px;
+            width: 10000px;
+            height: 10000px;
             transform-origin: 0 0;
         }
 
@@ -220,8 +221,8 @@
             position: absolute;
             top: 0;
             left: 0;
-            width: 5000px;
-            height: 5000px;
+            width: 10000px;
+            height: 10000px;
             pointer-events: none;
             z-index: 5;
         }
@@ -376,7 +377,6 @@
             .workspace { transform: scale(1) !important; top:0 !important; left:0 !important; }
         }
     </style>
-<!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-JSVKBDWEV5"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -385,6 +385,7 @@
 
   gtag('config', 'G-JSVKBDWEV5');
 </script>
+</head>
 <body>
 
 <div id="app">
@@ -457,10 +458,10 @@
         </div>
     </div>
 
-    <div class="workspace-container" id="ws-container" onmousedown="handleWorkspaceMouseDown(event)" ontouchstart="handleWorkspaceTouchStart(event)">
+    <div class="workspace-container" id="ws-container" onpointerdown="handleWorkspacePointerDown(event)">
         <div class="workspace grid-overlay" id="workspace">
-            <canvas id="drawing-canvas" width="5000" height="5000"></canvas>
-            </div>
+            <canvas id="drawing-canvas" width="10000" height="10000"></canvas>
+        </div>
 
         <div class="canvas-controls">
             <button class="btn-circle btn-action" onclick="zoom(0.1)">➕</button>
@@ -482,6 +483,11 @@
     let isDrawing = false;
     let startX, startY;
     let blockIdCounter = 0;
+
+    // Smooth tracking caches
+    let panTargetX = panX;
+    let panTargetY = panY;
+    let panTicking = false;
 
     // Undo/Redo Stacks
     let undoStack = [];
@@ -514,11 +520,10 @@
             }
         });
 
-        // Global mouse and touch event registration with passive options for smooth tracking
-        window.addEventListener('mousemove', handleGlobalMouseMove);
-        window.addEventListener('mouseup', handleGlobalMouseUp);
-        window.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
-        window.addEventListener('touchend', handleGlobalTouchEnd);
+        // Unified Pointer Events for smoother Smart Board and touch responses
+        window.addEventListener('pointermove', handleGlobalPointerMove);
+        window.addEventListener('pointerup', handleGlobalPointerUp);
+        window.addEventListener('pointercancel', handleGlobalPointerUp);
     }
 
     function setupCanvasStyles() {
@@ -586,8 +591,12 @@
             el.appendChild(cell);
         }
 
-        el.addEventListener('mousedown', (e) => startDrag(e, data.id));
-        el.addEventListener('touchstart', (e) => startDrag(e, data.id), { passive: false });
+        // Use unified pointerdown for responsive dragging
+        el.addEventListener('pointerdown', (e) => {
+            if (currentMode === 'pencil') return;
+            startDrag(e, data.id);
+        });
+        
         el.addEventListener('click', (e) => {
             e.stopPropagation();
             selectBlock(data.id);
@@ -600,15 +609,14 @@
     let activeDragId = null;
     let dragStartX, dragStartY;
 
-    function handleWorkspaceMouseDown(e) {
+    function handleWorkspacePointerDown(e) {
         const target = e.target;
-        // Blocks can now move freely even if you drag on the workspace container background
         if (currentMode === 'pencil') {
             if (target !== wsContainer && target !== workspace && target !== canvas) return;
+            isDrawing = true;
             const rect = workspace.getBoundingClientRect();
             const mouseX = (e.clientX - rect.left) / scale;
             const mouseY = (e.clientY - rect.top) / scale;
-            isDrawing = true;
             ctx.beginPath();
             ctx.moveTo(mouseX, mouseY);
             ctx.strokeStyle = '#ef4444';
@@ -619,36 +627,26 @@
             startX = e.clientX - panX;
             startY = e.clientY - panY;
             deselectAll();
+            wsContainer.setPointerCapture(e.pointerId);
         }
     }
 
-    function handleWorkspaceTouchStart(e) {
-        const target = e.target;
-        if (currentMode === 'pencil') {
-            if (target !== wsContainer && target !== workspace && target !== canvas) return;
-            e.preventDefault();
-            const rect = workspace.getBoundingClientRect();
-            const touchX = (e.touches[0].clientX - rect.left) / scale;
-            const touchY = (e.touches[0].clientY - rect.top) / scale;
-            isDrawing = true;
-            ctx.beginPath();
-            ctx.moveTo(touchX, touchY);
-            ctx.strokeStyle = '#ef4444';
-            ctx.lineWidth = 4;
-        } else {
-            if (target !== wsContainer && target !== workspace && target !== canvas) return;
-            isPanning = true;
-            startX = e.touches[0].clientX - panX;
-            startY = e.touches[0].clientY - panY;
-            deselectAll();
-        }
-    }
-
-    function handleGlobalMouseMove(e) {
+    function handleGlobalPointerMove(e) {
         if (isPanning) {
-            panX = e.clientX - startX;
-            panY = e.clientY - startY;
-            updateWorkspaceTransform();
+            panTargetX = e.clientX - startX;
+            panTargetY = e.clientY - startY;
+            
+            if (!panTicking) {
+                window.requestAnimationFrame(() => {
+                    if (isPanning) {
+                        panX = panTargetX;
+                        panY = panTargetY;
+                        updateWorkspaceTransform();
+                    }
+                    panTicking = false;
+                });
+                panTicking = true;
+            }
         } else if (isDrawing && currentMode === 'pencil') {
             const rect = workspace.getBoundingClientRect();
             const mouseX = (e.clientX - rect.left) / scale;
@@ -658,31 +656,11 @@
         }
     }
 
-    function handleGlobalTouchMove(e) {
+    function handleGlobalPointerUp(e) {
         if (isPanning) {
-            panX = e.touches[0].clientX - startX;
-            panY = e.touches[0].clientY - startY;
-            updateWorkspaceTransform();
-        } else if (isDrawing && currentMode === 'pencil') {
-            e.preventDefault();
-            const rect = workspace.getBoundingClientRect();
-            const touchX = (e.touches[0].clientX - rect.left) / scale;
-            const touchY = (e.touches[0].clientY - rect.top) / scale;
-            ctx.lineTo(touchX, touchY);
-            ctx.stroke();
+            isPanning = false;
+            try { wsContainer.releasePointerCapture(e.pointerId); } catch(err) {}
         }
-    }
-
-    function handleGlobalMouseUp() {
-        if (isPanning) isPanning = false;
-        if (isDrawing) {
-            isDrawing = false;
-            saveState();
-        }
-    }
-
-    function handleGlobalTouchEnd() {
-        if (isPanning) isPanning = false;
         if (isDrawing) {
             isDrawing = false;
             saveState();
@@ -690,6 +668,7 @@
     }
 
     function startDrag(e, id) {
+        if (e.button !== 0 && e.pointerType === 'mouse') return;
         e.stopPropagation();
         selectBlock(id);
         activeDragId = id;
@@ -701,41 +680,50 @@
         blockData.zIndex = maxZ + 1;
         blockEl.style.zIndex = blockData.zIndex;
 
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        dragStartX = e.clientX - blockData.x * scale;
+        dragStartY = e.clientY - blockData.y * scale;
 
-        dragStartX = clientX - blockData.x * scale;
-        dragStartY = clientY - blockData.y * scale;
+        blockEl.setPointerCapture(e.pointerId);
+
+        let dragTargetX = blockData.x;
+        let dragTargetY = blockData.y;
+        let dragTicking = false;
 
         const moveHandler = (evt) => {
             if (activeDragId !== id) return;
-            evt.preventDefault(); // Stop native scrolling behaviors entirely on Smart Boards
-            const cX = evt.touches ? evt.touches[0].clientX : evt.clientX;
-            const cY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+            evt.stopPropagation();
 
-            // Free layout movement allowed (unbounded dragging)
-            blockData.x = (cX - dragStartX) / scale;
-            blockData.y = (cY - dragStartY) / scale;
+            dragTargetX = (evt.clientX - dragStartX) / scale;
+            dragTargetY = (evt.clientY - dragStartY) / scale;
 
-            blockEl.style.left = `${blockData.x}px`;
-            blockEl.style.top = `${blockData.y}px`;
+            if (!dragTicking) {
+                window.requestAnimationFrame(() => {
+                    if (activeDragId === id) {
+                        blockData.x = dragTargetX;
+                        blockData.y = dragTargetY;
+                        blockEl.style.left = `${blockData.x}px`;
+                        blockEl.style.top = `${blockData.y}px`;
+                    }
+                    dragTicking = false;
+                });
+                dragTicking = true;
+            }
         };
 
-        const stopHandler = () => {
-            window.removeEventListener('mousemove', moveHandler);
-            window.removeEventListener('mouseup', stopHandler);
-            window.removeEventListener('touchmove', moveHandler);
-            window.removeEventListener('touchend', stopHandler);
+        const stopHandler = (evt) => {
+            blockEl.removeEventListener('pointermove', moveHandler);
+            blockEl.removeEventListener('pointerup', stopHandler);
+            blockEl.removeEventListener('pointercancel', stopHandler);
+            try { blockEl.releasePointerCapture(evt.pointerId); } catch(err) {}
             if (activeDragId) {
                 activeDragId = null;
                 saveState();
             }
         };
 
-        window.addEventListener('mousemove', moveHandler);
-        window.addEventListener('mouseup', stopHandler);
-        window.addEventListener('touchmove', moveHandler, { passive: false });
-        window.addEventListener('touchend', stopHandler);
+        blockEl.addEventListener('pointermove', moveHandler);
+        blockEl.addEventListener('pointerup', stopHandler);
+        blockEl.addEventListener('pointercancel', stopHandler);
     }
 
     // --- CANVAS TRANSFORMS ---
@@ -751,7 +739,6 @@
         updateWorkspaceTransform();
     }
 
-    // requestAnimationFrame pattern optimization for ultra-smooth rendering on Smart Board displays
     function updateWorkspaceTransform() {
         window.requestAnimationFrame(() => {
             workspace.style.transform = `translate3d(${panX}px, ${panY}px, 0) scale(${scale})`;
@@ -784,6 +771,7 @@
         saveState();
     }
 
+    // --- CALCULATIONS ENGINE & REFLECTIONS ---
     function clearWorkspace() {
         document.querySelectorAll('.block').forEach(el => el.remove());
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -793,7 +781,6 @@
         saveState();
     }
 
-    // --- CALCULATIONS ENGINE & REFLECTIONS ---
     function updateCalculations() {
         const tallies = { thousand: 0, hundred: 0, ten: 0, unit: 0 };
         blocks.forEach(b => { if(tallies[b.type] !== undefined) tallies[b.type]++; });

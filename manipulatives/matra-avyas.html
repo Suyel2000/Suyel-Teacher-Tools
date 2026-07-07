@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>मात्रा अभ्यास - Interactive Hindi Matra Manipulative Tool</title>
+    <meta name="description" content="प्राथमिक कक्षाओं के लिए एक शक्तिशाली और सरल डिजिटल मात्रा अभ्यास बोर्ड। स्वर और व्यंजनों के मेल से हिंदी मात्राएँ सीखें।">
+    <meta name="keywords" content="Hindi Matra Abhyas, मात्रा अभ्यास, Hindi matra learning tool, Hindi मात्रा chart interactive, Hindi learning tool for kids, स्वर मात्रा अभ्यास, Hindi TLM, interactive Hindi matra tool, मात्रा वाले शब्द, primary Hindi learning tool, digital Hindi classroom tool">
+    
+    <meta property="og:title" content="मात्रा अभ्यास - Interactive Hindi Matra Manipulative">
+    <meta property="og:description" content="कक्षा में उपयोग के लिए एक आसान और प्रभावी डिजिटल मात्रा बोर्ड। व्यंजन और मात्राओं को जोड़कर नए शब्द और ध्वनियाँ सीखें।">
+    <meta property="og:type" content="website">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;700;900&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-canvas: #f8fafc;
+            --surface: #ffffff;
+            --primary: #1e3a8a;
+            --primary-light: #eff6ff;
+            --accent: #ea580c;
+            --accent-light: #fff7ed;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --border: #cbd5e1;
+            --selected-border: #2563eb;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Noto Sans Devanagari', 'Poppins', sans-serif;
+            background-color: var(--bg-canvas);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            width: 100%;
+            max-width: 1400px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .title-area h1 {
+            font-size: 2rem;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .title-area p {
+            font-size: 1rem;
+            color: var(--text-muted);
+        }
+
+        /* Teacher Instruction Prompt */
+        .teacher-prompt-container {
+            display: flex;
+            align-items: center;
+            background-color: var(--primary-light);
+            border: 1px dashed var(--selected-border);
+            padding: 8px 16px;
+            border-radius: 8px;
+            gap: 10px;
+            width: 45%;
+        }
+
+        .teacher-prompt-label {
+            font-weight: 700;
+            color: var(--primary);
+            white-space: nowrap;
+            font-size: 1.1rem;
+        }
+
+        .teacher-prompt-input {
+            width: 100%;
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: 1.2rem;
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        .teacher-prompt-input:focus {
+            outline: none;
+        }
+
+        /* Main Workspace Grid */
+        .workspace {
+            width: 100%;
+            max-width: 1400px;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 24px;
+        }
+
+        /* Left Column: Consonants */
+        .consonant-panel {
+            background-color: var(--surface);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .consonant-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .tile {
+            aspect-ratio: 1;
+            background-color: var(--bg-canvas);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .tile:hover {
+            border-color: var(--text-muted);
+            transform: translateY(-2px);
+        }
+
+        .tile.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Right Column: Central Working Zone */
+        .main-board {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Horizontal Matra Ribbon */
+        .matra-ribbon {
+            background-color: var(--surface);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .matra-tile {
+            flex: 1;
+            min-width: 75px;
+            height: 85px;
+            background-color: var(--bg-canvas);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .matra-tile .sign {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .matra-tile .vowel {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .matra-tile:hover {
+            border-color: var(--text-muted);
+        }
+
+        .matra-tile.active {
+            background-color: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            box-shadow: var(--shadow-md);
+        }
+
+        .matra-tile.active .vowel {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Central Matra Display Area */
+        .builder-card {
+            background-color: var(--surface);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: var(--shadow-lg);
+            border: 2px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            min-height: 320px;
+        }
+
+        .action-bar {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            font-family: inherit;
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding: 10px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 2px solid var(--border);
+            background-color: var(--surface);
+            transition: all 0.15s ease;
+        }
+
+        .btn:hover {
+            background-color: var(--bg-canvas);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+
+        .btn-accent {
+            background-color: var(--accent-light);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .btn-accent.active {
+            background-color: var(--accent);
+            color: white;
+        }
+
+        /* Formula Typography Alignment */
+        .display-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            width: 100%;
+        }
+
+        .display-standard {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 25px;
+        }
+
+        .display-comparison {
+            display: none;
+            width: 100%;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        .comparison-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            background-color: var(--bg-canvas);
+        }
+
+        .comparison-label {
+            font-size: 1.2rem;
+            color: var(--primary);
+            font-weight: 700;
+            margin-top: 15px;
+            background-color: var(--primary-light);
+            padding: 4px 16px;
+            border-radius: 20px;
+        }
+
+        .formula-part {
+            font-size: 4.5rem;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .formula-operator {
+            font-size: 3rem;
+            font-weight: 500;
+            color: var(--border);
+        }
+
+        .formula-result {
+            font-size: 7.5rem;
+            font-weight: 900;
+            color: var(--primary);
+            background-color: var(--primary-light);
+            padding: 10px 40px;
+            border-radius: 24px;
+            border: 2px solid rgba(30, 58, 138, 0.1);
+            min-width: 200px;
+            text-align: center;
+            line-height: 1.3;
+        }
+
+        /* Target Matra Word Block */
+        .examples-section {
+            background-color: var(--surface);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+        }
+
+        .word-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 16px;
+        }
+
+        .word-card {
+            background-color: var(--bg-canvas);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .word-card:hover {
+            transform: scale(1.05);
+            border-color: var(--primary);
+            background-color: var(--primary-light);
+        }
+
+        .word-card .highlight {
+            color: var(--accent);
+            font-weight: 900;
+        }
+
+        /* Transformation Demonstration Block */
+        .transformation-container {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            border-top: 1px solid var(--border);
+            padding-top: 16px;
+        }
+
+        .transformation-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .transformation-pair-flex {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .transform-card {
+            background: linear-gradient(135deg, var(--primary-light), #fff);
+            border: 1px solid var(--selected-border);
+            border-radius: 12px;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 1.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .transform-card span.sep {
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            font-weight: normal;
+        }
+
+        .transform-card .w1 { color: var(--text-main); }
+        .transform-card .w2 { color: var(--accent); }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 1024px) {
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+            .consonant-grid {
+                grid-template-columns: repeat(8, 1fr);
+            }
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            .teacher-prompt-container {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .consonant-grid {
+                grid-template-columns: repeat(5, 1fr);
+            }
+            .formula-result {
+                font-size: 5rem;
+                padding: 10px 20px;
+            }
+            .formula-part {
+                font-size: 3rem;
+            }
+            .display-comparison {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="title-area">
+            <h1>मात्रा अभ्यास</h1>
+            <p>प्राथमिक कक्षाओं के लिए डिजिटल मात्रा बोर्ड (Interactive Teaching Tool)</p>
+        </div>
+        <div class="teacher-prompt-container">
+            <span class="teacher-prompt-label">आज का अभ्यास:</span>
+            <input type="text" class="teacher-prompt-input" value="व्यंजन और मात्रा जोड़कर शब्द बनाओ।" placeholder="निर्देश यहाँ लिखें...">
+        </div>
+    </header>
+
+    <main class="workspace">
+        
+        <section class="consonant-panel" aria-label="व्यंजन चयन ट्रे">
+            <div class="section-title">
+                <span>व्यंजन चुनें</span>
+            </div>
+            <div class="consonant-grid" id="consonantsTray">
+                </div>
+        </section>
+
+        <section class="main-board">
+            
+            <div class="matra-ribbon" id="matraRibbon" aria-label="मात्रा पट्टी">
+                </div>
+
+            <div class="builder-card">
+                <div class="action-bar">
+                    <button class="btn btn-accent" id="toggleComparisonBtn">
+                        ⚖️ तुलना करें
+                    </button>
+                    <button class="btn" id="muteBtn">
+                        🔊 ध्वनि: चालू
+                    </button>
+                    <button class="btn" id="speakBtn">
+                        🔊 सुनें
+                    </button>
+                    <button class="btn" id="clearBtn">
+                        🔄 साफ करें
+                    </button>
+                </div>
+
+                <div class="display-container" id="standardDisplay">
+                    <div class="display-standard">
+                        <div class="formula-part" id="partConsonant">क</div>
+                        <div class="formula-operator">+</div>
+                        <div class="formula-part" id="partMatra">ा</div>
+                        <div class="formula-operator">→</div>
+                        <div class="formula-result" id="combinationResult">का</div>
+                    </div>
+                </div>
+
+                <div class="display-comparison" id="comparisonDisplay">
+                    <div class="comparison-panel">
+                        <div class="formula-result" id="compLeftResult">कि</div>
+                        <div class="comparison-label" id="compLeftLabel">छोटी इ की मात्रा</div>
+                    </div>
+                    <div class="comparison-panel">
+                        <div class="formula-result" id="compRightResult">की</div>
+                        <div class="comparison-label" id="compRightLabel">बड़ी ई की मात्रा</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="examples-section">
+                <div class="section-title" id="examplesTitle">
+                    इस मात्रा के शब्द
+                </div>
+                <div class="word-grid" id="wordsContainer">
+                    </div>
+
+                <div class="transformation-container" id="transformationContainer" style="display: none;">
+                    <div class="transformation-title">🔄 मात्रा परिवर्तन का प्रभाव देखें (अंतर समझें):</div>
+                    <div class="transformation-pair-flex" id="transformationPairs">
+                        </div>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <script>
+        // Core Curated Linguistic Database Setup Object Arrays
+        const consonants = [
+            'क', 'ख', 'ग', 'घ', 'च', 'छ', 'ज', 'झ',
+            'ट', 'ठ', 'ड', 'ढ', 'ण', 'त', 'थ', 'द',
+            'ध', 'न', 'प', 'फ', 'ब', 'भ', 'म', 'य',
+            'र', 'ल', 'व', 'श', 'ष', 'स', 'ह'
+        ];
+
+        const matras = [
+            { id: 'none', sign: ' ', vowel: 'अ', name: 'बिना मात्रा', description: 'मुक्त रूप' },
+            { id: 'aa', sign: 'ा', vowel: 'आ', name: 'आ की मात्रा', description: 'बड़ी आ' },
+            { id: 'i', sign: 'ि', vowel: 'इ', name: 'छोटी इ की मात्रा', description: 'ह्रस्व इ' },
+            { id: 'ee', sign: 'ी', vowel: 'ई', name: 'बड़ी ई की मात्रा', description: 'दीर्घ ई' },
+            { id: 'u', sign: 'ु', vowel: 'उ', name: 'छोटी उ की मात्रा', description: 'ह्रस्व उ' },
+            { id: 'oo', sign: 'ू', vowel: 'ऊ', name: 'बड़ी ऊ की मात्रा', description: 'दीर्घ ऊ' },
+            { id: 'ri', sign: 'ृ', vowel: 'ऋ', name: 'ऋ की मात्रा', description: 'ऋषि ऋ' },
+            { id: 'e', sign: 'े', vowel: 'ए', name: 'ए की मात्रा', description: 'ए' },
+            { id: 'ai', sign: 'ै', vowel: 'ऐ', name: 'ऐ की मात्रा', description: 'ऐ' },
+            { id: 'o', sign: 'ो', vowel: 'ओ', name: 'ओ की मात्रा', description: 'ओ' },
+            { id: 'au', sign: 'ौ', vowel: 'औ', name: 'औ की मात्रा', description: 'औ' },
+            { id: 'anuswar', sign: 'ं', vowel: 'अं', name: 'अनुस्वार', description: 'बिंदु' },
+            { id: 'visarga', sign: 'ः', vowel: 'अः', name: 'विसर्ग', description: 'दो बिंदु' }
+        ];
+
+        const matraWords = {
+            none: [
+                { text: 'घर', segment: 'घर' }, { text: 'जल', segment: 'जल' }, { text: 'बस', segment: 'बस' },
+                { text: 'कमल', segment: 'कमल' }, { text: 'मटर', segment: 'मटर' }, { text: 'कलम', segment: 'कलम' },
+                { text: 'अदरक', segment: 'अदरक' }, { text: 'शरबत', segment: 'शरबत' }
+            ],
+            aa: [
+                { text: 'नाम', segment: 'ना' }, { text: 'काम', segment: 'का' }, { text: 'माला', segment: 'मा' },
+                { text: 'ताला', segment: 'ता' }, { text: 'राजा', segment: 'रा' }, { text: 'बादल', segment: 'बा' },
+                { text: 'बाजार', segment: 'बा' }, { text: 'आसमान', segment: 'मा' }
+            ],
+            i: [
+                { text: 'दिन', segment: 'दि' }, { text: 'मिल', segment: 'मि' }, { text: 'गिन', segment: 'गि' },
+                { text: 'किला', segment: 'कि' }, { text: 'किताब', segment: 'कि' }, { text: 'किसान', segment: 'कि' },
+                { text: 'गिलास', segment: 'गि' }, { text: 'चिड़िया', segment: 'चि' }
+            ],
+            ee: [
+                { text: 'तीर', segment: 'ती' }, { text: 'दीप', segment: 'दी' }, { text: 'नीम', segment: 'नी' },
+                { text: 'खीर', segment: 'खी' }, { text: 'जीप', segment: 'जी' }, { text: 'सीता', segment: 'सी' },
+                { text: 'मछली', segment: 'ली' }, { text: 'तितली', segment: 'ली' }
+            ],
+            u: [
+                { text: 'कुल', segment: 'कु' }, { text: 'पुल', segment: 'पु' }, { text: 'सुख', segment: 'सु' },
+                { text: 'दुख', segment: 'दु' }, { text: 'गुल', segment: 'गु' }, { text: 'गुलाब', segment: 'गु' },
+                { text: 'साबुन', segment: 'बु' }, { text: 'कछुआ', segment: 'छु' }
+            ],
+            oo: [
+                { text: 'फूल', segment: 'फू' }, { text: 'झूला', segment: 'झू' }, { text: 'जूता', segment: 'जू' },
+                { text: 'चूहा', segment: 'चू' }, { text: 'सूरज', segment: 'सू' }, { text: 'भालू', segment: 'लू' },
+                { text: 'आलू', segment: 'लू' }, { text: 'तरबूज', segment: 'बू' }
+            ],
+            ri: [
+                { text: 'मृग', segment: 'मृ' }, { text: 'गृह', segment: 'गृ' }, { text: 'वृक्ष', segment: 'वृ' },
+                { text: 'नृप', segment: 'नृ' }, { text: 'कृपा', segment: 'कृ' }, { text: 'कृषक', segment: 'कृ' }
+            ],
+            e: [
+                { text: 'सेब', segment: 'से' }, { text: 'रेल', segment: 'रे' }, { text: 'खेल', segment: 'खे' },
+                { text: 'मेला', segment: 'मे' }, { text: 'केला', segment: 'के' }, { text: 'शेर', segment: 'शे' },
+                { text: 'पेड़', segment: 'पे' }, { text: 'जलेबी', segment: 'ले' }
+            ],
+            ai: [
+                { text: 'मैना', segment: 'मै' }, { text: 'पैसा', segment: 'पै' }, { text: 'पैदल', segment: 'पै' },
+                { text: 'बैग', segment: 'बै' }, { text: 'बैल', segment: 'बै' }, { text: 'तैरना', segment: 'तै' },
+                { text: 'सैनिक', segment: 'सै' }, { text: 'मैदान', segment: 'मै' }
+            ],
+            o: [
+                { text: 'मोर', segment: 'मो' }, { text: 'तोता', segment: 'तो' }, { text: 'टोपी', segment: 'टो' },
+                { text: 'गोला', segment: 'गो' }, { text: 'घोड़ा', segment: 'घो' }, { text: 'कोयल', segment: 'को' },
+                { text: 'धोबी', segment: 'धो' }, { text: 'कटोरी', segment: 'टो' }
+            ],
+            au: [
+                { text: 'नौका', segment: 'नौ' }, { text: 'कौआ', segment: 'कौ' }, { text: 'पौधा', segment: 'पौ' },
+                { text: 'मौसम', segment: 'मौ' }, { text: 'खिलौना', segment: 'लौ' }, { text: 'चौकीदार', segment: 'चौ' }
+            ],
+            anuswar: [
+                { text: 'पंख', segment: 'पं' }, { text: 'शंख', segment: 'शं' }, { text: 'रंग', segment: 'रं' },
+                { text: 'बंदर', segment: 'बं' }, { text: 'अंगूर', segment: 'अं' }, { text: 'पतंग', segment: 'तं' }
+            ],
+            visarga: [
+                { text: 'पुनः', segment: 'नः' }, { text: 'अतः', segment: 'तः' }, { text: 'नमः', segment: 'मः' },
+                { text: 'प्रातः', segment: 'तः' }, { text: 'दुःख', segment: 'दुः' }
+            ]
+        };
+
+        // Curated Matrix Contrast Transformation Pairs Data Store
+        const transformationPairs = {
+            'i': [ { w1: 'दिन', w2: 'दीन', l1: 'छोटी इ', l2: 'बड़ी ई' }, { w1: 'मिल', w2: 'मील', l1: 'छोटी इ', l2: 'बड़ी ई' }, { w1: 'पिला', w2: 'पीला', l1: 'छोटी इ', l2: 'बड़ी ई' } ],
+            'ee': [ { w1: 'दिन', w2: 'दीन', l1: 'छोटी इ', l2: 'बड़ी ई' }, { w1: 'मिल', w2: 'मील', l1: 'छोटी इ', l2: 'बड़ी ई' }, { w1: 'पिला', w2: 'पीला', l1: 'छोटी इ', l2: 'बड़ी ई' } ],
+            'u': [ { w1: 'सुर', w2: 'सूर', l1: 'छोटी उ', l2: 'बड़ी ऊ' }, { w1: 'कुल', w2: 'कूल', l1: 'छोटी उ', l2: 'बड़ी ऊ' }, { w1: 'सुत', w2: 'सूत', l1: 'छोटी उ', l2: 'बड़ी ऊ' } ],
+            'oo': [ { w1: 'सुर', w2: 'सूर', l1: 'छोटी उ', l2: 'बड़ी ऊ' }, { w1: 'कुल', w2: 'कूल', l1: 'छोटी उ', l2: 'बड़ी ऊ' }, { w1: 'सुत', w2: 'सूत', l1: 'छोटी उ', l2: 'बड़ी ऊ' } ]
+        };
+
+        // State Machine Objects
+        let selectedConsonant = 'क';
+        let selectedMatraIndex = 1; // Defaulting to 'ा'
+        let isComparisonMode = false;
+        let isMuted = false;
+        let audioDebounceTimer = null;
+
+        // Initialization DOM Selectors
+        const consonantsTray = document.getElementById('consonantsTray');
+        const matraRibbon = document.getElementById('matraRibbon');
+        const partConsonant = document.getElementById('partConsonant');
+        const partMatra = document.getElementById('partMatra');
+        const combinationResult = document.getElementById('combinationResult');
+        const wordsContainer = document.getElementById('wordsContainer');
+        const examplesTitle = document.getElementById('examplesTitle');
+        
+        const toggleComparisonBtn = document.getElementById('toggleComparisonBtn');
+        const muteBtn = document.getElementById('muteBtn');
+        const standardDisplay = document.getElementById('standardDisplay');
+        const comparisonDisplay = document.getElementById('comparisonDisplay');
+        const compLeftResult = document.getElementById('compLeftResult');
+        const compRightResult = document.getElementById('compRightResult');
+        const compLeftLabel = document.getElementById('compLeftLabel');
+        const compRightLabel = document.getElementById('compRightLabel');
+        
+        const transformationContainer = document.getElementById('transformationContainer');
+        const transformationPairsDiv = document.getElementById('transformationPairs');
+
+        // Render Trays UI Elements
+        function initUI() {
+            // Render Consonants
+            consonants.forEach(c => {
+                const tile = document.createElement('div');
+                tile.className = `tile ${c === selectedConsonant ? 'active' : ''}`;
+                tile.textContent = c;
+                tile.setAttribute('role', 'button');
+                tile.setAttribute('aria-label', `व्यंजन ${c}`);
+                tile.addEventListener('click', () => selectConsonant(c));
+                consonantsTray.appendChild(tile);
+            });
+
+            // Render Matras Ribbon
+            matras.forEach((m, idx) => {
+                const tile = document.createElement('div');
+                tile.className = `matra-tile ${idx === selectedMatraIndex ? 'active' : ''}`;
+                tile.setAttribute('role', 'button');
+                tile.setAttribute('aria-label', `${m.name}`);
+                
+                const sign = document.createElement('span');
+                sign.className = 'sign';
+                sign.textContent = m.sign.trim() === '' ? 'अ' : m.sign;
+                
+                const vowel = document.createElement('span');
+                vowel.className = 'vowel';
+                vowel.textContent = m.vowel;
+
+                tile.appendChild(sign);
+                tile.appendChild(vowel);
+                tile.addEventListener('click', () => selectMatra(idx));
+                matraRibbon.appendChild(tile);
+            });
+
+            updateDisplayBoard();
+        }
+
+        // Live Processing Interaction Core Controllers
+        function selectConsonant(c) {
+            selectedConsonant = c;
+            document.querySelectorAll('#consonantsTray .tile').forEach(tile => {
+                tile.classList.toggle('active', tile.textContent === c);
+            });
+            updateDisplayBoard();
+            triggerAutoplaySpeech(getLiveCombination(selectedConsonant, matras[selectedMatraIndex]));
+        }
+
+        // Live Processing Interaction Core Controllers
+        function selectMatra(idx) {
+            selectedMatraIndex = idx;
+            document.querySelectorAll('#matraRibbon .matra-tile').forEach((tile, index) => {
+                tile.classList.toggle('active', index === idx);
+            });
+            updateDisplayBoard();
+            triggerAutoplaySpeech(getLiveCombination(selectedConsonant, matras[selectedMatraIndex]));
+        }
+
+        // Safely Build Correct Unified Devanagari Glyphs Shape
+        function getLiveCombination(consonant, matraObj) {
+            if (matraObj.id === 'none') return consonant;
+            
+            // Native Browser Shaping engine handles layout constraints elegantly
+            // Handling specialized 'र' exceptions for 'ु' and 'ू' forms implicitly
+            if (consonant === 'र') {
+                if (matraObj.id === 'u') return 'रु';
+                if (matraObj.id === 'oo') return 'रू';
+            }
+            return consonant + matraObj.sign;
+        }
+
+        // Live Workspace Render Update Processor
+        function updateDisplayBoard() {
+            const currentMatraObj = matras[selectedMatraIndex];
+            
+            // Swar rahit vyanjan (consonant + halant) explicitly only for 'none' matra (अ)
+            if (currentMatraObj.id === 'none') {
+                partConsonant.textContent = selectedConsonant + '्';
+            } else {
+                partConsonant.textContent = selectedConsonant;
+            }
+            
+            partMatra.textContent = currentMatraObj.sign.trim() === '' ? 'अ' : currentMatraObj.sign;
+            
+            const standardCombo = getLiveCombination(selectedConsonant, currentMatraObj);
+            combinationResult.textContent = standardCombo;
+
+            // Contextual Evaluated Contrast Mode Processing
+            updateComparisonModeDisplay();
+
+            // Word Grid Matrix Pipeline Setup
+            examplesTitle.textContent = `${currentMatraObj.name} वाले उदाहरण शब्द`;
+            renderExampleWords(currentMatraObj.id);
+            renderTransformations(currentMatraObj.id);
+        }
+
+        // Dedicated Method Managing Dual Contrast Panes
+        function updateComparisonModeDisplay() {
+            const currentMatraObj = matras[selectedMatraIndex];
+            
+            let pairedMatraId = 'ee'; // default pair aa -> i etc.
+            if (currentMatraObj.id === 'ee' || currentMatraObj.id === 'aa') pairedMatraId = 'i';
+            if (currentMatraObj.id === 'i') pairedMatraId = 'ee';
+            if (currentMatraObj.id === 'u') pairedMatraId = 'oo';
+            if (currentMatraObj.id === 'oo') pairedMatraId = 'u';
+            if (currentMatraObj.id === 'e') pairedMatraId = 'ai';
+            if (currentMatraObj.id === 'ai') pairedMatraId = 'e';
+            if (currentMatraObj.id === 'o') pairedMatraId = 'au';
+            if (currentMatraObj.id === 'au') pairedMatraId = 'o';
+
+            const pairedMatraObj = matras.find(m => m.id === pairedMatraId) || matras[0];
+
+            compLeftResult.textContent = getLiveCombination(selectedConsonant, currentMatraObj);
+            compLeftLabel.textContent = currentMatraObj.name;
+
+            compRightResult.textContent = getLiveCombination(selectedConsonant, pairedMatraObj);
+            compRightLabel.textContent = pairedMatraObj.name;
+        }
+
+        // Safely Display Highlighted Glyphs In Target Words
+        function renderExampleWords(matraId) {
+            wordsContainer.innerHTML = '';
+            const wordsList = matraWords[matraId] || [];
+
+            wordsList.forEach(w => {
+                const card = document.createElement('div');
+                card.className = 'word-card';
+                card.setAttribute('role', 'button');
+                
+                // Inject safe presentation markup isolating target segment clean shape
+                if (w.segment && w.text.includes(w.segment)) {
+                    const idx = w.text.indexOf(w.segment);
+                    const len = w.segment.length;
+                    card.innerHTML = `${w.text.substring(0, idx)}<span class="highlight">${w.text.substring(idx, idx+len)}</span>${w.text.substring(idx+len)}`;
+                } else {
+                    card.textContent = w.text;
+                }
+
+                card.addEventListener('click', () => speakHindiText(w.text));
+                wordsContainer.appendChild(card);
+            });
+        }
+
+        // Render Words Mutation System Pairs (e.g. दिन -> दीन)
+        function renderTransformations(matraId) {
+            const pairs = transformationPairs[matraId];
+            if (!pairs) {
+                transformationContainer.style.display = 'none';
+                return;
+            }
+            transformationContainer.style.display = 'flex';
+            transformationPairsDiv.innerHTML = '';
+
+            pairs.forEach(p => {
+                const tCard = document.createElement('div');
+                tCard.className = 'transform-card';
+                tCard.innerHTML = `<span class="w1">${p.w1}</span> <span class="sep">↕</span> <span class="w2">${p.w2}</span>`;
+                tCard.addEventListener('click', () => {
+                    speakHindiText(`${p.w1} और ${p.w2}`);
+                });
+                transformationPairsDiv.appendChild(tCard);
+            });
+        }
+
+        // Robust Native Speech Synthesis Configuration System
+        function speakHindiText(text) {
+            if (isMuted) return;
+            if ('speechSynthesis' in window) {
+                // Instantly cancel lingering utterance buffers
+                window.speechSynthesis.cancel();
+
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'hi-IN';
+                utterance.rate = 0.75; // Slower pedagogical tempo rate optimization
+                utterance.pitch = 1.0;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function triggerAutoplaySpeech(text) {
+            clearTimeout(audioDebounceTimer);
+            audioDebounceTimer = setTimeout(() => {
+                speakHindiText(text);
+            }, 250);
+        }
+
+        // Global Execution Action Event Handlers Configuration
+        document.getElementById('speakBtn').addEventListener('click', () => {
+            const currentText = getLiveCombination(selectedConsonant, matras[selectedMatraIndex]);
+            speakHindiText(currentText);
+        });
+
+        muteBtn.addEventListener('click', () => {
+            isMuted = !isMuted;
+            muteBtn.textContent = isMuted ? '🔕 ध्वनि: बंद' : '🔊 ध्वनि: चालू';
+            muteBtn.classList.toggle('btn-accent', isMuted);
+        });
+
+        toggleComparisonBtn.addEventListener('click', () => {
+            isComparisonMode = !isComparisonMode;
+            toggleComparisonBtn.classList.toggle('active', isComparisonMode);
+            
+            if (isComparisonMode) {
+                standardDisplay.style.display = 'none';
+                comparisonDisplay.style.display = 'grid';
+            } else {
+                standardDisplay.style.display = 'flex';
+                comparisonDisplay.style.display = 'none';
+            }
+            updateComparisonModeDisplay();
+        });
+
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            // Revert state context configurations safely to pristine defaults
+            selectedConsonant = 'क';
+            selectedMatraIndex = 0; // बिना मात्रा
+            isComparisonMode = false;
+            toggleComparisonBtn.classList.remove('active');
+            standardDisplay.style.display = 'flex';
+            comparisonDisplay.style.display = 'none';
+            
+            document.querySelectorAll('#consonantsTray .tile').forEach(tile => {
+                tile.classList.toggle('active', tile.textContent === 'क');
+            });
+            document.querySelectorAll('#matraRibbon .matra-tile').forEach((tile, index) => {
+                tile.classList.toggle('active', index === 0);
+            });
+            
+            updateDisplayBoard();
+        });
+
+        // Initialize Runtime Engine Logic Sequence
+        window.addEventListener('DOMContentLoaded', initUI);
+    </script>
+</body>
+</html>

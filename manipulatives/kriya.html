@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>क्रिया इंटरैक्टिव डिजिटल मैनिपुलेटिव - स्मार्ट बोर्ड क्लासरूम टूल</title>
+    
+    <!-- SEO Metadata -->
+    <meta name="description" content="प्राथमिक कक्षाओं के लिए बिना स्क्रॉल वाला क्रिया इंटरैक्टिव बोर्ड। वाक्य निर्माण और व्यापक क्रिया पहचान अभ्यास एक ही फ्रेम में।">
+    <meta name="keywords" content="क्रिया, Kriya Hindi grammar, interactive Hindi grammar tool, Hindi TLM, primary Hindi learning tool, Hindi sentence builder">
+    
+    <!-- Google Fonts for High-Quality Devanagari Rendering -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-main: #f5f7fa;
+            --surface-card: #ffffff;
+            --text-primary: #2d3748;
+            --text-muted: #718096;
+            --primary-color: #3182ce;
+            --accent-subject: #e2e8f0;
+            --accent-subject-border: #cbd5e0;
+            --accent-verb: #feebc8;
+            --accent-verb-border: #fbd38d;
+            --accent-verb-text: #c05621;
+            --success-color: #c6f6d5;
+            --success-text: #22543d;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 8px rgba(0,0,0,0.06);
+            --radius-md: 10px;
+            --radius-lg: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Noto Sans Devanagari', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Prevent page scrolling completely to maintain single-frame view */
+        html, body {
+            height: 100vh;
+            overflow: hidden;
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+        }
+
+        /* Full Screen Grid Layout Container */
+        .dashboard-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 12px;
+            gap: 12px;
+        }
+
+        /* Top Horizontal Ribbon: Merged Definition and Teacher Prompt */
+        .top-ribbon {
+            background: var(--surface-card);
+            border-left: 5px solid #dd6b20;
+            padding: 8px 15px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            gap: 20px;
+        }
+
+        .info-brand h1 {
+            font-size: 1.3rem;
+            color: #dd6b20;
+            font-weight: 800;
+            display: inline-block;
+            margin-right: 15px;
+        }
+
+        .info-brand p {
+            font-size: 0.95rem;
+            display: inline-block;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .teacher-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #ebf8ff;
+            padding: 5px 12px;
+            border-radius: 6px;
+            flex: 1;
+            max-width: 500px;
+            border: 1px dashed #bee3f8;
+        }
+
+        .teacher-label {
+            font-weight: 700;
+            color: #2b6cb0;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        .teacher-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid #90cdf4;
+            font-size: 0.9rem;
+            color: #2d3748;
+            font-weight: 500;
+        }
+
+        .teacher-input:focus { outline: none; border-bottom-color: #3182ce; }
+
+        /* Main Workspace 3-Column Dashboard Grid */
+        .main-workspace-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 260px 1fr 340px;
+            gap: 12px;
+            min-height: 0; /* Critical for dynamic inner overflow scrolling */
+        }
+
+        /* Panel Base Style */
+        .panel-box {
+            background: var(--surface-card);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .panel-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            border-bottom: 2px solid #edf2f7;
+            padding-bottom: 4px;
+            flex-shrink: 0;
+        }
+
+        /* Left Column: Trays Containers */
+        .left-tray-column {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 0;
+        }
+
+        .subject-pool {
+            flex-shrink: 0;
+        }
+
+        .verb-pool {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .scrollable-card-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        /* Cards Styles optimized for screen density */
+        .word-card {
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.15s ease;
+            box-shadow: var(--shadow-sm);
+            text-align: center;
+            border: 2px solid transparent;
+        }
+
+        .word-card:active { transform: scale(0.96); }
+        .word-card.subject-card { background-color: var(--accent-subject); border-color: var(--accent-subject-border); color: var(--text-primary); }
+        .word-card.subject-card.selected { background-color: #cbd5e0; border-color: #4a5568; }
+        .word-card.verb-card { background-color: var(--accent-verb); border-color: var(--accent-verb-border); color: var(--accent-verb-text); }
+        .word-card.verb-card.selected { background-color: #fbd38d; border-color: #dd6b20; }
+
+        .category-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-bottom: 8px;
+            flex-shrink: 0;
+        }
+
+        .tab-btn {
+            background: #edf2f7;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        .tab-btn.active { background: var(--text-muted); color: white; }
+
+        /* Center Column: Assembly Canvas */
+        .center-builder-column {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 0;
+        }
+
+        .assembly-mat {
+            background: #f7fafc;
+            border: 2px dashed #cbd5e0;
+            border-radius: var(--radius-md);
+            padding: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            flex-shrink: 0;
+        }
+
+        .placeholder-slot {
+            border: 2px dashed #a0aec0;
+            padding: 8px 16px;
+            border-radius: 6px;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.95rem;
+            background: rgba(255,255,255,0.8);
+        }
+
+        .giant-sentence-display {
+            background: #ffffff;
+            border-radius: var(--radius-lg);
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid #e2e8f0;
+            text-align: center;
+            min-height: 0;
+        }
+
+        .giant-text {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #1a202c;
+            line-height: 1.3;
+        }
+
+        .giant-text span.verb-highlight {
+            color: #dd6b20;
+            border-bottom: 3px solid #fbd38d;
+        }
+
+        .morphology-bridge {
+            display: flex;
+            justify-content: space-between;
+            background: #fffaf0;
+            border: 1px solid #feebc8;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .morph-item strong { color: #dd6b20; }
+
+        .tense-strip {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            background: #edf2f7;
+            padding: 8px;
+            border-radius: var(--radius-md);
+            flex-shrink: 0;
+        }
+
+        .tense-box {
+            background: var(--surface-card);
+            padding: 6px;
+            border-radius: 6px;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tense-label { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 2px; }
+        .tense-value { font-size: 0.95rem; font-weight: 700; color: var(--text-primary); }
+
+        .control-bar {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            flex-shrink: 0;
+        }
+
+        .btn-control {
+            background: #ffffff;
+            border: 1px solid #cbd5e0;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-control:hover { background: #edf2f7; }
+        .btn-control.btn-primary { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+
+        /* Right Column: Expanded Activity Framework */
+        .right-activity-column {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .activity-box-full {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .token-row {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 15px 0;
+        }
+
+        .token-block {
+            background: #edf2f7;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 1.15rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s;
+            border: 2px solid transparent;
+            user-select: none;
+        }
+        .token-block:hover { background: #e2e8f0; }
+
+        .token-block.selected-correct { background-color: var(--success-color); color: var(--success-text); border-color: #38a169; }
+        .token-block.selected-wrong { background-color: #fed7d7; color: #9b2c2c; border-color: #e53e3e; }
+
+        .feedback-banner { font-size: 1rem; font-weight: 700; text-align: center; min-height: 24px; padding: 0 10px; }
+
+        /* Bottom Row Footer Container: Archive Collection Shelf */
+        .bottom-shelf-bar {
+            background: var(--surface-card);
+            border-radius: var(--radius-md);
+            padding: 8px 15px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid #e2e8f0;
+            flex-shrink: 0;
+        }
+
+        .collection-title { font-size: 0.9rem; font-weight: 700; margin-bottom: 4px; color: var(--text-primary); }
+        .collection-shelf { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 6px; 
+            align-items: center; 
+            max-height: 60px; 
+            overflow-y: auto; 
+            padding-right: 4px;
+        }
+        .collected-tag { background: #e2e8f0; padding: 4px 10px; border-radius: 15px; font-weight: 600; font-size: 0.85rem; cursor: pointer; border: 1px solid #cbd5e0; }
+        .collected-tag:hover { background: #cbd5e0; }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-container">
+
+    <!-- Top Screen Header Dashboard Area -->
+    <header class="top-ribbon">
+        <div class="info-brand">
+            <h1>क्रिया मैनिपुलेटिव</h1>
+            <p>काम या अवस्था का बोध कराने वाले शब्द क्रिया कहलाते हैं।</p>
+        </div>
+        <div class="teacher-box">
+            <div class="teacher-label">अभ्यास निर्देश:</div>
+            <input type="text" class="teacher-input" value="कार्ड बदलकर वाक्य बनाओ और क्रिया में होने वाला बदलाव ध्यान से देखो।">
+        </div>
+    </header>
+
+    <!-- Main Workspace Area -->
+    <main class="main-workspace-grid">
+        
+        <!-- Left Panel Column: Source Data Card Trays -->
+        <div class="left-tray-column">
+            
+            <div class="panel-box subject-pool">
+                <div class="panel-title">१. कर्ता चुनें</div>
+                <div class="scrollable-card-grid" id="subject-tray" style="max-height: 110px;">
+                    <!-- Dynamic subjects injected -->
+                </div>
+            </div>
+
+            <div class="panel-box verb-pool">
+                <div class="panel-title">२. क्रिया चुनें (30 शब्द उपलब्ध)</div>
+                <div class="category-tabs" id="category-tabs">
+                    <button class="tab-btn active" onclick="filterVerbs('all')">सभी</button>
+                    <button class="tab-btn" onclick="filterVerbs('शरीर')">शरीर</button>
+                    <button class="tab-btn" onclick="filterVerbs('दैनिक')">दैनिक</button>
+                    <button class="tab-btn" onclick="filterVerbs('पढ़ना-लिखना')">पढ़ाई</button>
+                    <button class="tab-btn" onclick="filterVerbs('संचार')">संचार</button>
+                </div>
+                <div class="scrollable-card-grid" id="verb-tray">
+                    <!-- Dynamic verbs injected -->
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Center Panel Column: Sentence Matrix Engine Workspace -->
+        <div class="center-builder-column panel-box">
+            <div class="panel-title">वाक्य निर्माण पट (Sentence Builder)</div>
+            
+            <!-- Structural Dock Slot -->
+            <div class="assembly-mat" id="assembly-mat">
+                <div id="slot-subject" class="placeholder-slot">[ कर्ता ]</div>
+                <div style="font-size: 1.2rem; font-weight: bold; color: var(--text-muted);">+</div>
+                <div id="slot-verb" class="placeholder-slot">[ क्रिया ]</div>
+            </div>
+
+            <!-- Big Screen Render Engine Display Box -->
+            <div class="giant-sentence-display">
+                <div class="giant-text" id="sentence-output">कार्ड चुनकर वाक्य बनाओ</div>
+            </div>
+
+            <!-- Root Form Context Map -->
+            <div class="morphology-bridge" id="morphology-bridge" style="visibility: hidden;">
+                <div class="morph-item">मूल क्रिया रूप: <strong id="morph-root">-</strong></div>
+                <div class="morph-item">वाक्य अनुकूल रूप: <strong id="morph-inflected">-</strong></div>
+            </div>
+
+            <!-- Realtime Time/Aspect Transform Engine Grid -->
+            <div class="tense-strip" id="tense-strip" style="visibility: hidden;">
+                <div class="tense-box">
+                    <div class="tense-label">आज (Present)</div>
+                    <div class="tense-value" id="tense-present">-</div>
+                </div>
+                <div class="tense-box">
+                    <div class="tense-label">बीता समय (Past)</div>
+                    <div class="tense-value" id="tense-past">-</div>
+                </div>
+                <div class="tense-box">
+                    <div class="tense-label">आने वाला समय (Future)</div>
+                    <div class="tense-value" id="tense-future">-</div>
+                </div>
+            </div>
+
+            <!-- Control Strip UI -->
+            <div class="control-bar">
+                <button class="btn-control" onclick="speakCurrentText()">🔊 सुनें</button>
+                <button class="btn-control btn-primary" onclick="resetWorkspace()">साफ करें</button>
+            </div>
+        </div>
+
+        <!-- Right Panel Column: Expanded Identification Activity -->
+        <div class="right-activity-column">
+            <div class="panel-box activity-box-full">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; padding-bottom: 5px;">
+                    <div class="panel-title" style="margin: 0;">क्रिया खोजो गतिविधि (50 वाक्य)</div>
+                    <button class="tab-btn" style="background: var(--primary-color); color: white; padding: 5px 10px;" onclick="loadNextActivitySentence()">नया वाक्य</button>
+                </div>
+                <div style="margin-top: 10px; flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 15px; min-height: 0;">
+                    <div style="text-align: center; color: var(--text-muted); font-size: 0.9rem; font-weight: 500;">वाक्य के क्रिया शब्द समूह पर क्लिक करें:</div>
+                    <div class="token-row" id="token-row"></div>
+                    <div class="feedback-banner" id="activity-feedback"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom Footer Shelf Bar Panel -->
+    <footer class="bottom-shelf-bar">
+        <div class="collection-title">📁 मेरा क्रिया संग्रह (My Verb Collection)</div>
+        <div class="collection-shelf" id="collection-shelf">
+            <span style="color: var(--text-muted); font-size: 0.8rem; font-style: italic;" id="empty-collection-note">क्रियाओं का अभ्यास करने पर संग्रह यहाँ स्वतः जुड़ जाएगा। उच्चारण सुनने के लिए टैग पर क्लिक करें।</span>
+        </div>
+    </footer>
+
+</div>
+
+<script>
+    // --- CURATED GRAMMATICAL SCHEMA DATA (30 VERBS) ---
+    const subjects = [
+        { id: "sub1", text: "राम", gender: "masculine", number: "singular" },
+        { id: "sub2", text: "सीता", gender: "feminine", number: "singular" },
+        { id: "sub3", text: "बच्चे", gender: "masculine", number: "plural" },
+        { id: "sub4", text: "लड़कियाँ", gender: "feminine", number: "plural" },
+        { id: "sub5", text: "बच्चा", gender: "masculine", number: "singular" },
+        { id: "sub6", text: "लड़की", gender: "feminine", number: "singular" },
+        { id: "sub7", text: "पक्षी", gender: "masculine", number: "plural" },
+        { id: "sub8", text: "माँ", gender: "feminine", number: "plural" }
+    ];
+
+    const verbs = [
+        { id: "v1", root: "दौड़ना", category: "शरीर", forms: { masculineSingular: { present: "दौड़ता है", past: "दौड़ रहा था", future: "दौड़ेगा" }, feminineSingular: { present: "दौड़ती है", past: "दौड़ रही थी", future: "दौड़ेगी" }, masculinePlural: { present: "दौड़ते हैं", past: "दौड़ रहे थे", future: "दौड़ेंगे" }, femininePlural: { present: "दौड़ती हैं", past: "दौड़ रही थीं", future: "दौड़ेंगी" } } },
+        { id: "v2", root: "पढ़ना", category: "पढ़ना-लिखना", forms: { masculineSingular: { present: "पढ़ता है", past: "पढ़ रहा था", future: "पढ़ेगा" }, feminineSingular: { present: "पढ़ती है", past: "पढ़ रही थी", future: "पढ़ेगी" }, masculinePlural: { present: "पढ़ते हैं", past: "पढ़ रहे थे", future: "पढ़ेंगे" }, femininePlural: { present: "पढ़ती हैं", past: "पढ़ रही थीं", future: "पढ़ेंगी" } } },
+        { id: "v3", root: "खेलना", category: "शरीर", forms: { masculineSingular: { present: "खेलता है", past: "खेल रहा था", future: "खेलेगा" }, feminineSingular: { present: "खेलती है", past: "खेल रही थी", future: "खेलती" }, masculinePlural: { present: "खेलते हैं", past: "खेल रहे थे", future: "खेलेंगे" }, femininePlural: { present: "खेलती हैं", past: "खेल रही थीं", future: "खेलेंगी" } } },
+        { id: "v4", root: "सोना", category: "दैनिक", forms: { masculineSingular: { present: "सोता है", past: "सो रहा था", future: "सोएगा" }, feminineSingular: { present: "सोती है", past: "सो रही थी", future: "सोएगी" }, masculinePlural: { present: "सोते हैं", past: "सो रहे थे", future: "सोएंगे" }, femininePlural: { present: "सोती हैं", past: "सो रही थीं", future: "सोएंगी" } } },
+        { id: "v5", root: "उड़ना", category: "शरीर", forms: { masculineSingular: { present: "उड़ता है", past: "उड़ रहा था", future: "उड़ेगा" }, feminineSingular: { present: "उड़ती है", past: "उड़ रही थी", future: "उड़ेगी" }, masculinePlural: { present: "उड़ते हैं", past: "उड़ रहे थे", future: "उड़ेंगे" }, femininePlural: { present: "उड़ती हैं", past: "उड़ रही थीं", future: "उड़ेंगी" } } },
+        { id: "v6", root: "लिखना", category: "पढ़ना-लिखना", forms: { masculineSingular: { present: "लिखता है", past: "लिख रहा था", future: "लिखेगा" }, feminineSingular: { present: "लिखती है", past: "लिख रही थी", future: "लिखेगी" }, masculinePlural: { present: "लिखते हैं", past: "लिख रहे थे", future: "लिखेंगे" }, femininePlural: { present: "लिखती हैं", past: "लिख रही थीं", future: "लिखेंगी" } } },
+        { id: "v7", root: "गाना", category: "संचार", forms: { masculineSingular: { present: "गाता है", past: "गा रहा था", future: "गाएगा" }, feminineSingular: { present: "गाती है", past: "गा रही थी", future: "गाएगी" }, masculinePlural: { present: "गाते हैं", past: "गा रहे थे", future: "गाएंगे" }, femininePlural: { present: "गाती हैं", past: "गा रही थीं", future: "गाएंगी" } } },
+        { id: "v8", root: "हँसना", category: "शरीर", forms: { masculineSingular: { present: "हँसता है", past: "हँस रहा था", future: "हँसेगा" }, feminineSingular: { present: "हँसती है", past: "हँस रही थी", future: "हँसेगी" }, masculinePlural: { present: "हँसते हैं", past: "हँस रहे थे", future: "हँसेंगे" }, femininePlural: { present: "हँसती हैं", past: "हँस रही थीं", future: "हँसेंगी" } } },
+        { id: "v9", root: "पकाना", category: "दैनिक", forms: { masculineSingular: { present: "पकाता है", past: "पका रहा था", future: "पकाएगा" }, feminineSingular: { present: "पकाती है", past: "पका रही थी", future: "पकाएगी" }, masculinePlural: { present: "पकाते हैं", past: "पका रहे थे", future: "पकाएंगे" }, femininePlural: { present: "पкаती हैं", past: "पका रही थीं", future: "पकाएंगी" } } },
+        { id: "v10", root: "सुनना", category: "संचार", forms: { masculineSingular: { present: "सुनता है", past: "सुन रहा था", future: "सुनेगा" }, feminineSingular: { present: "सुनती है", past: "सुन रही थी", future: "सुनेगी" }, masculinePlural: { present: "सुनते हैं", past: "सुन रहे थे", future: "सुनेंगे" }, femininePlural: { present: "सुनती हैं", past: "सुन रही थीं", future: "सुनेंगी" } } },
+        { id: "v11", root: "चलना", category: "शरीर", forms: { masculineSingular: { present: "चलता है", past: "चल रहा था", future: "चलेगा" }, feminineSingular: { present: "चलती है", past: "चल रही थी", future: "चलेंगी" }, masculinePlural: { present: "चलते हैं", past: "चल रहे थे", future: "चलेंगे" }, femininePlural: { present: "चलती हैं", past: "चल रही थीं", future: "चलेंगी" } } },
+        { id: "v12", root: "खाना", category: "दैनिक", forms: { masculineSingular: { present: "खाता है", past: "खा रहा था", future: "खाएगा" }, feminineSingular: { present: "खाती है", past: "खा रही थी", future: "खाएगी" }, masculinePlural: { present: "खाते हैं", past: "खा रहे थे", future: "खाएंगे" }, femininePlural: { present: "खाती हैं", past: "खा रही थीं", future: "खाएंगी" } } },
+        { id: "v13", root: "पीना", category: "दैनिक", forms: { masculineSingular: { present: "पीता है", past: "पी रहा था", future: "पीएगा" }, feminineSingular: { present: "पीती है", past: "पी रही थी", future: "पीएगी" }, masculinePlural: { present: "पीते हैं", past: "पी रहे थे", future: "पीएंगे" }, femininePlural: { present: "पीती हैं", past: "पी रही थीं", future: "पीएंगी" } } },
+        { id: "v14", root: "देखना", category: "दैनिक", forms: { masculineSingular: { present: "देखता है", past: "देख रहा था", future: "देखेगा" }, feminineSingular: { present: "देखती है", past: "देख रही थी", future: "देखेगी" }, masculinePlural: { present: "देखते हैं", past: "देख रहे थे", future: "देखेंगे" }, femininePlural: { present: "देखती हैं", past: "देख रही थीं", future: "देखेंगी" } } },
+        { id: "v15", root: "नाचना", category: "शरीर", forms: { masculineSingular: { present: "नाचता है", past: "नाच रहा था", future: "नाचेगा" }, feminineSingular: { present: "नाचती है", past: "नाच रही थी", future: "नाचेगी" }, masculinePlural: { present: "नाचते हैं", past: "नाच रहे थे", future: "नाचेंगे" }, femininePlural: { present: "नाचती हैं", past: "नाच रही थीं", future: "नाचेंगी" } } },
+        { id: "v16", root: "कूदना", category: "शरीर", forms: { masculineSingular: { present: "कूदता है", past: "कूद रहा था", future: "कूदेगा" }, feminineSingular: { present: "कूदती है", past: "कूद रही थी", future: "कूदेगी" }, masculinePlural: { present: "कूदते हैं", past: "कूद रहे थे", future: "कूदेंगे" }, femininePlural: { present: "कूदती हैं", past: "कूद रही थीं", future: "कूदेंगी" } } },
+        { id: "v17", root: "तैरना", category: "शरीर", forms: { masculineSingular: { present: "तैरता है", past: "तैर रहा था", future: "तैरेगा" }, feminineSingular: { present: "तैरती है", past: "तैर रही थी", future: "तैरेगी" }, masculinePlural: { present: "तैरते हैं", past: "तैर रहे थे", future: "तैरेंगे" }, femininePlural: { present: "तैरती हैं", past: "तैर रही थीं", future: "तैरेंगी" } } },
+        { id: "v18", root: "रोना", category: "शरीर", forms: { masculineSingular: { present: "रोता है", past: "रो रहा था", future: "रोएगा" }, feminineSingular: { present: "रोती है", past: "रो रही थी", future: "रोएगी" }, masculinePlural: { present: "रोते हैं", past: "रो रहे थे", future: "रोएंगे" }, femininePlural: { present: "रोती हैं", past: "रो रही थीं", future: "रोएंगी" } } },
+        { id: "v19", root: "बोलना", category: "संचार", forms: { masculineSingular: { present: "बोलता है", past: "बोल रहा था", future: "बोलेगा" }, feminineSingular: { present: "बोलती है", past: "बोल रही थी", future: "बोलेगी" }, masculinePlural: { present: "बोलते हैं", past: "बोल रहे थे", future: "बोलेंगे" }, femininePlural: { present: "बोलती हैं", past: "बोल रही थीं", future: "बोलेंगी" } } },
+        { id: "v20", root: "बैठना", category: "शरीर", forms: { masculineSingular: { present: "बैठता है", past: "बैठ रहा था", future: "बैठेगा" }, feminineSingular: { present: "बैठती है", past: "बैठ रही थी", future: "बैठेगी" }, masculinePlural: { present: "बैठते हैं", past: "बैठ रहे थे", future: "बैठेंगे" }, femininePlural: { present: "बैठती हैं", past: "बैठ रही थीं", future: "बैठेंगी" } } },
+        { id: "v21", root: "उठना", category: "शरीर", forms: { masculineSingular: { present: "उठता है", past: "उठ रहा था", future: "उठेगा" }, feminineSingular: { present: "उठती है", past: "उठ रही थी", future: "उठेगी" }, masculinePlural: { present: "उठते हैं", past: "उठ रहे थे", future: "उठेंगे" }, femininePlural: { present: "उठती हैं", past: "उठ रही थीं", future: "उठेंगी" } } },
+        { id: "v22", root: "नहाना", category: "शरीर", forms: { masculineSingular: { present: "नहाता है", past: "नहा रहा था", future: "नहाएगा" }, feminineSingular: { present: "नहाती है", past: "नहा रही थी", future: "नहाएगी" }, masculinePlural: { present: "नहाते हैं", past: "नहा रहे थे", future: "नहाएंगे" }, femininePlural: { present: "नहाती हैं", past: "नहा रही थीं", future: "नहाएंगी" } } },
+        { id: "v23", root: "धोना", category: "दैनिक", forms: { masculineSingular: { present: "धोता है", past: "धो रहा था", future: "धोएगा" }, feminineSingular: { present: "धोती है", past: "धो रही थी", future: "धोएगी" }, masculinePlural: { present: "धोते हैं", past: "धो रहे थे", future: "धोएंगे" }, femininePlural: { present: "धोती हैं", past: "धो रही थीं", future: "धोएंगी" } } },
+        { id: "v24", root: "सोचना", category: "पढ़ना-लिखना", forms: { masculineSingular: { present: "सोचता है", past: "सोच रहा था", future: "सोचेगा" }, feminineSingular: { present: "सोचती है", past: "सोच रही थी", future: "सोचेगी" }, masculinePlural: { present: "सोचते हैं", past: "सोच रहे थे", future: "सोचेंगे" }, femininePlural: { present: "सोचती हैं", past: "सोच रही थीं", future: "सोचेंगी" } } },
+        { id: "v25", root: "लाना", category: "दैनिक", forms: { masculineSingular: { present: "लाता है", past: "ला रहा था", future: "लाएगा" }, feminineSingular: { present: "लाती है", past: "ला रही थी", future: "लाएगी" }, masculinePlural: { present: "लाते हैं", past: "ला रहे थे", future: "लाएंगे" }, femininePlural: { present: "लाती हैं", past: "ला रही थीं", future: "लाएगी" } } },
+        { id: "v26", root: "जाना", category: "दैनिक", forms: { masculineSingular: { present: "जाता है", past: "जा रहा था", future: "जाएगा" }, feminineSingular: { present: "जाती है", past: "जा रही थी", future: "जाएगी" }, masculinePlural: { present: "जाते हैं", past: "जा रहे थे", future: "जाएंगे" }, femininePlural: { present: "जाती हैं", past: "जा रही थीं", future: "जाएंगी" } } },
+        { id: "v27", root: "आना", category: "दैनिक", forms: { masculineSingular: { present: "आता है", past: "आ रहा था", future: "आएगा" }, feminineSingular: { present: "आती है", past: "आ रही थी", future: "आएगी" }, masculinePlural: { present: "आते हैं", past: "आ रहे थे", future: "आएंगे" }, femininePlural: { present: "आती हैं", past: "आ रही थीं", future: "आएंगी" } } },
+        { id: "v28", root: "सीखना", category: "पढ़ना-लिखना", forms: { masculineSingular: { present: "सीखता है", past: "सीख रहा था", future: "सीखेगा" }, feminineSingular: { present: "सीखती है", past: "सीख रही थी", future: "सीखती" }, masculinePlural: { present: "सीखते हैं", past: "सीख रहे थे", future: "सीखेंगे" }, femininePlural: { present: "सीखती हैं", past: "सीख रही थीं", future: "सीखेंगी" } } },
+        { id: "v29", root: "मुस्कुराना", category: "शरीर", forms: { masculineSingular: { present: "मुस्कुराता है", past: "मुस्कुरा रहा था", future: "मुस्कुराएगा" }, feminineSingular: { present: "मुस्कुराती है", past: "मुस्कुरा रही थी", future: "मुस्कुराएगी" }, masculinePlural: { present: "मुस्कुराते हैं", past: "मुस्कुरा रहे थे", future: "मुस्कुराएंगे" }, femininePlural: { present: "मुस्कुराती हैं", past: "मुस्कुरा रही थीं", future: "मुस्कुराएंगी" } } },
+        { id: "v30", root: "चमकना", category: "संचार", forms: { masculineSingular: { present: "चमकता है", past: "चमक रहा था", future: "चमकेगा" }, feminineSingular: { present: "चमकती है", past: "चमक रही थी", future: "चमकेगी" }, masculinePlural: { present: "चमकते हैं", past: "चमक रहे थे", future: "चमकेंगे" }, femininePlural: { present: "चमकती हैं", past: "चमक रही थीं", future: "चमकेंगी" } } }
+    ];
+
+    // --- CURATED DIVERSE PRACTICE SENTENCES (50 EXAMPLES) ---
+    const sentenceExamples = [
+        { id: "s1", segments: [{ text: "मोहन", type: "noun" }, { text: "बाजार", type: "other" }, { text: "जाता है", type: "verb" }] },
+        { id: "s2", segments: [{ text: "बच्चे", type: "noun" }, { text: "मैदान में", type: "other" }, { text: "खेल रहे हैं", type: "verb" }] },
+        { id: "s3", segments: [{ text: "माँ", type: "noun" }, { text: "स्वादिष्ट खाना", type: "other" }, { text: "बनाती हैं", type: "verb" }] },
+        { id: "s4", segments: [{ text: "पक्षी", type: "noun" }, { text: "नीले आकाश में", type: "other" }, { text: "उड़ते हैं", type: "verb" }] },
+        { id: "s5", segments: [{ text: "मछली", type: "noun" }, { text: "साफ पानी में", type: "other" }, { text: "तैरती है", type: "verb" }] },
+        { id: "s6", segments: [{ text: "किसान", type: "noun" }, { text: "खेत में हल", type: "other" }, { text: "चलाता है", type: "verb" }] },
+        { id: "s7", segments: [{ text: "लड़की", type: "noun" }, { text: "मधुर गीत", type: "other" }, { text: "गा रही है", type: "verb" }] },
+        { id: "s8", segments: [{ text: "बंदर", type: "noun" }, { text: "पेड़ पर", type: "other" }, { text: "कूद रहा है", type: "verb" }] },
+        { id: "s9", segments: [{ text: "कुत्ता", type: "noun" }, { text: "तेजी से", type: "other" }, { text: "दौड़ता है", type: "verb" }] },
+        { id: "s10", segments: [{ text: "बिल्ली", type: "noun" }, { text: "सारा दूध", type: "other" }, { text: "पी गई", type: "verb" }] },
+        { id: "s11", segments: [{ text: "सूरज", type: "noun" }, { text: "पूर्व में", type: "other" }, { text: "उगता है", type: "verb" }] },
+        { id: "s12", segments: [{ text: "तारे", type: "noun" }, { text: "रात में जोर से", type: "other" }, { text: "चमकते हैं", type: "verb" }] },
+        { id: "s13", segments: [{ text: "हम सब", type: "noun" }, { text: "पाठशाला में", type: "other" }, { text: "पढ़ते हैं", type: "verb" }] },
+        { id: "s14", segments: [{ text: "रोहन", type: "noun" }, { text: "कापी में कहानी", type: "other" }, { text: "लिख रहा है", type: "verb" }] },
+        { id: "s15", segments: [{ text: "गुरुजी", type: "noun" }, { text: "कक्षा में बच्चों को", type: "other" }, { text: "पढ़ाते हैं", type: "verb" }] },
+        { id: "s16", segments: [{ text: "माली", type: "noun" }, { text: "बगीचे के पौधों को", type: "other" }, { text: "पानी देता है", type: "verb" }] },
+        { id: "s17", segments: [{ text: "ठंडी हवा", type: "noun" }, { text: "धीरे-धीरे", type: "other" }, { text: "चल रही है", type: "verb" }] },
+        { id: "s18", segments: [{ text: "रीता", type: "noun" }, { text: "सुंदर खिलौने से", type: "other" }, { text: "खेलती है", type: "verb" }] },
+        { id: "s19", segments: [{ text: "शेर", type: "noun" }, { text: "घने जंगल में", type: "other" }, { text: "गरजता है", type: "verb" }] },
+        { id: "s20", segments: [{ text: "छोटा बच्चा", type: "noun" }, { text: "पलंग पर", type: "other" }, { text: "सोता है", type: "verb" }] },
+        { id: "s21", segments: [{ text: "कोयल", type: "noun" }, { text: "पेड़ पर मधुर", type: "other" }, { text: "बोलती है", type: "verb" }] },
+        { id: "s22", segments: [{ text: "हाथी", type: "noun" }, { text: "रास्ते पर मटककर", type: "other" }, { text: "चलता है", type: "verb" }] },
+        { id: "s23", segments: [{ text: "पिताजी", type: "noun" }, { text: "कमरे में अखबार", type: "other" }, { text: "पढ़ रहे हैं", type: "verb" }] },
+        { id: "s24", segments: [{ text: "दादी माँ", type: "noun" }, { text: "हमें अच्छी", type: "other" }, { text: "सुनाती हैं", type: "verb" }] },
+        { id: "s25", segments: [{ text: "अमित", type: "noun" }, { text: "गिलास भरकर", type: "other" }, { text: "पीता है", type: "verb" }] },
+        { id: "s26", segments: [{ text: "राधिका", type: "noun" }, { text: "कागज़ पर सुंदर", type: "other" }, { text: "बना रही है", type: "verb" }] },
+        { id: "s27", segments: [{ text: "मोर", type: "noun" }, { text: "सावन के महीने में", type: "other" }, { text: "नाचता है", type: "verb" }] },
+        { id: "s28", segments: [{ text: "नानी माँ", type: "noun" }, { text: "ऊन का स्वेटर", type: "other" }, { text: "बुनती हैं", type: "verb" }] },
+        { id: "s29", segments: [{ text: "डाकिया", type: "noun" }, { text: "हमारे घर पत्र", type: "other" }, { text: "लाता है", type: "verb" }] },
+        { id: "s30", segments: [{ text: "दर्जी", type: "noun" }, { text: "मशीन से कपड़े", type: "other" }, { text: "सीता है", type: "verb" }] },
+        { id: "s31", segments: [{ text: "धोबी", type: "noun" }, { text: "नदी किनारे कपड़े", type: "other" }, { text: "धो रहा है", type: "verb" }] },
+        { id: "s32", segments: [{ text: "वीर सैनिक", type: "noun" }, { text: "सदा देश की रक्षा", type: "other" }, { text: "करते हैं", type: "verb" }] },
+        { id: "s33", segments: [{ text: "पवित्र नदी", type: "noun" }, { text: "ऊंचे पहाड़ों से", type: "other" }, { text: "बहती है", type: "verb" }] },
+        { id: "s34", segments: [{ text: "रेलगाड़ी", type: "noun" }, { text: "लोहे की पटरी पर", type: "other" }, { text: "दौड़ती है", type: "verb" }] },
+        { id: "s35", segments: [{ text: "सब लड़के", type: "noun" }, { text: "खुशी से ताली", type: "other" }, { text: "बजा रहे हैं", type: "verb" }] },
+        { id: "s36", segments: [{ text: "हम सब", type: "noun" }, { text: "रात को समय पर", type: "other" }, { text: "खाते हैं", type: "verb" }] },
+        { id: "s37", segments: [{ text: "शिक्षक", type: "noun" }, { text: "बोर्ड पर नया पाठ", type: "other" }, { text: "समझा रहे हैं", type: "verb" }] },
+        { id: "s38", segments: [{ text: "कछुआ", type: "noun" }, { text: "जमीन पर बहुत धीरे", type: "other" }, { text: "चलता है", type: "verb" }] },
+        { id: "s39", segments: [{ text: "खरगोश", type: "noun" }, { text: "मजे से लाल", type: "other" }, { text: "खाता है", type: "verb" }] },
+        { id: "s40", segments: [{ text: "सफेद गाय", type: "noun" }, { text: "मैदान में हरी हरी", type: "other" }, { text: "चरती है", type: "verb" }] },
+        { id: "s41", segments: [{ text: "भौंरा", type: "noun" }, { text: "सुंदर फूल पर", type: "other" }, { text: "मंडराता है", type: "verb" }] },
+        { id: "s42", segments: [{ text: "प्यारी माँ", type: "noun" }, { text: "मामाजी को पत्र", type: "other" }, { text: "लिख रही हैं", type: "verb" }] },
+        { id: "s43", segments: [{ text: "छोटे बच्चे", type: "noun" }, { text: "टीवी पर कार्टून", type: "other" }, { text: "देख रहे हैं", type: "verb" }] },
+        { id: "s44", segments: [{ text: "सागर में", type: "noun" }, { text: "ऊंची-ऊंची लहरें", type: "other" }, { text: "उठती हैं", type: "verb" }] },
+        { id: "s45", segments: [{ text: "बूढ़ा माली", type: "noun" }, { text: "टोकरी में सुंदर फूल", type: "other" }, { text: "चुनता है", type: "verb" }] },
+        { id: "s46", segments: [{ text: "वह लड़का", type: "noun" }, { text: "छत से रंग-बिरंगी", type: "other" }, { text: "उड़ा रहा है", type: "verb" }] },
+        { id: "s47", segments: [{ text: "हम सब", type: "noun" }, { text: "शाम को पार्क में", type: "other" }, { text: "झूला झूलते हैं", type: "verb" }] },
+        { id: "s48", segments: [{ text: "सुधीर", type: "noun" }, { text: "बैठकर अपना पूरा", type: "other" }, { text: "याद करता है", type: "verb" }] },
+        { id: "s49", segments: [{ text: "नन्ही चिड़िया", type: "noun" }, { text: "जमीन से चावल का", type: "other" }, { text: "चुग रही है", type: "verb" }] },
+        { id: "s50", segments: [{ text: "काले बादल", type: "noun" }, { text: "आसमान में बहुत", type: "other" }, { text: "गरज रहे हैं", type: "verb" }] }
+    ];
+
+    // --- LOGICAL STATE ENGINE ---
+    let selectedSubject = null;
+    let selectedVerb = null;
+    let verbCollection = new Set();
+    let currentActivitySentence = null;
+    let recentSentencesQueue = [];
+
+    // --- LIFE CYCLE INIT ---
+    window.addEventListener('DOMContentLoaded', () => {
+        renderSubjectTray();
+        renderVerbTray('all');
+        loadNextActivitySentence();
+    });
+
+    function renderSubjectTray() {
+        const tray = document.getElementById('subject-tray');
+        tray.innerHTML = '';
+        subjects.forEach(sub => {
+            const card = document.createElement('div');
+            card.className = 'word-card subject-card';
+            card.innerText = sub.text;
+            card.addEventListener('click', () => selectSubject(sub.id));
+            tray.appendChild(card);
+        });
+    }
+
+    function renderVerbTray(filterCategory) {
+        const tray = document.getElementById('verb-tray');
+        tray.innerHTML = '';
+        verbs.forEach(v => {
+            if (filterCategory !== 'all' && v.category !== filterCategory) return;
+            const card = document.createElement('div');
+            card.className = 'word-card verb-card';
+            card.innerText = v.root;
+            card.addEventListener('click', () => selectVerb(v.id));
+            tray.appendChild(card);
+        });
+    }
+
+    function filterVerbs(category) {
+        document.querySelectorAll('#category-tabs .tab-btn').forEach(tab => tab.classList.remove('active'));
+        event.target.classList.add('active');
+        renderVerbTray(category);
+        if (selectedVerb && (category === 'all' || selectedVerb.category === category)) {
+            highlightSelectedCard('verb', selectedVerb.id);
+        }
+    }
+
+    function selectSubject(id) {
+        selectedSubject = subjects.find(s => s.id === id);
+        highlightSelectedCard('subject', id);
+        updateAssemblyMat();
+        processSentenceGeneration();
+    }
+
+    function selectVerb(id) {
+        selectedVerb = verbs.find(v => v.id === id);
+        highlightSelectedCard('verb', id);
+        updateAssemblyMat();
+        processSentenceGeneration();
+    }
+
+    function highlightSelectedCard(type, id) {
+        const selector = type === 'subject' ? '#subject-tray .subject-card' : '#verb-tray .verb-card';
+        document.querySelectorAll(selector).forEach(card => {
+            if (card.dataset.id === id) card.classList.add('selected');
+            else card.classList.remove('selected');
+        });
+    }
+
+    function updateAssemblyMat() {
+        const slotSub = document.getElementById('slot-subject');
+        const slotVerb = document.getElementById('slot-verb');
+        if (selectedSubject) { slotSub.innerText = selectedSubject.text; slotSub.style.background = 'var(--accent-subject)'; }
+        else { slotSub.innerText = '[ कर्ता ]'; slotSub.style.background = 'rgba(255,255,255,0.8)'; }
+        if (selectedVerb) { slotVerb.innerText = selectedVerb.root; slotVerb.style.background = 'var(--accent-verb)'; }
+        else { slotVerb.innerText = '[ क्रिया ]'; slotVerb.style.background = 'rgba(255,255,255,0.8)'; }
+    }
+
+    function getGrammarAgreementForm(subjectObj, verbObj) {
+        let formKey = "masculineSingular";
+        if (subjectObj.gender === "masculine" && subjectObj.number === "singular") formKey = "masculineSingular";
+        else if (subjectObj.gender === "feminine" && subjectObj.number === "singular") formKey = "feminineSingular";
+        else if (subjectObj.gender === "masculine" && subjectObj.number === "plural") formKey = "masculinePlural";
+        else if (subjectObj.gender === "feminine" && subjectObj.number === "plural") formKey = "femininePlural";
+        return verbObj.forms[formKey];
+    }
+
+    function processSentenceGeneration() {
+        const display = document.getElementById('sentence-output');
+        const bridge = document.getElementById('morphology-bridge');
+        const tenseStrip = document.getElementById('tense-strip');
+
+        if (!selectedSubject || !selectedVerb) {
+            display.innerHTML = "कार्ड चुनकर वाक्य बनाओ";
+            bridge.style.visibility = 'hidden';
+            tenseStrip.style.visibility = 'hidden';
+            return;
+        }
+
+        const exactForms = getGrammarAgreementForm(selectedSubject, selectedVerb);
+        display.innerHTML = `${selectedSubject.text} <span class="verb-highlight">${exactForms.present}</span>।`;
+
+        document.getElementById('morph-root').innerText = selectedVerb.root;
+        document.getElementById('morph-inflected').innerText = exactForms.present;
+        bridge.style.visibility = 'visible';
+
+        document.getElementById('tense-present').innerText = `${selectedSubject.text} ${exactForms.present}।`;
+        document.getElementById('tense-past').innerText = `${selectedSubject.text} ${exactForms.past}।`;
+        document.getElementById('tense-future').innerText = `${selectedSubject.text} ${exactForms.future}।`;
+        tenseStrip.style.visibility = 'visible';
+
+        addToCollection(selectedVerb.root);
+    }
+
+    function resetWorkspace() {
+        selectedSubject = null; selectedVerb = null;
+        document.querySelectorAll('.word-card').forEach(c => c.classList.remove('selected'));
+        updateAssemblyMat(); processSentenceGeneration();
+    }
+
+    // --- KRIYA KHOJO CONTROLLER (50 SENTENCES SYSTEM) ---
+    function loadNextActivitySentence() {
+        const feedback = document.getElementById('activity-feedback');
+        feedback.innerText = '';
+        let available = sentenceExamples.filter(s => !recentSentencesQueue.includes(s.id));
+        if (available.length === 0) { recentSentencesQueue = []; available = sentenceExamples; }
+        const chosen = available[Math.floor(Math.random() * available.length)];
+        currentActivitySentence = chosen;
+        recentSentencesQueue.push(chosen.id);
+
+        const row = document.getElementById('token-row'); row.innerHTML = '';
+        chosen.segments.forEach((seg, idx) => {
+            const token = document.createElement('div');
+            token.className = 'token-block'; token.innerText = seg.text;
+            token.addEventListener('click', () => {
+                document.querySelectorAll('#token-row .token-block').forEach(b => b.classList.remove('selected-correct', 'selected-wrong'));
+                if (seg.type === 'verb') {
+                    token.classList.add('selected-correct');
+                    feedback.innerText = `सही पहचाना! "${seg.text}" क्रिया है।`; feedback.style.color = 'var(--success-text)';
+                    
+                    // Comprehensive contextual lookup map for the 50 sample phrases to root dictionary forms
+                    const verbMap = { 
+                        "जाता है": "जाना", "खेल रहे हैं": "खेलना", "बनाती हैं": "बनाना", "उड़ते हैं": "उड़ना", "तैरती है": "तैरना",
+                        "चलाता है": "चलाना", "गा रही है": "गाना", "कूद रहा है": "कूदना", "दौड़ता है": "दौड़ना", "पी गई": "पीना",
+                        "उगता है": "उगना", "चमकते हैं": "चमकना", "पढ़ते हैं": "पढ़ना", "लिख रहा है": "लिखना", "पढ़ाते हैं": "पढ़ाना",
+                        "पानी देता है": "देना", "चल रही है": "चलना", "खेलती है": "खेलना", "गरजता है": "गरजना", "सोता है": "सोना",
+                        "बोलती है": "बोलना", "चलता है": "चलना", "पढ़ रहे हैं": "पढ़ना", "सुनाती हैं": "सुनाना", "पीता है": "पीना",
+                        "बना रही है": "बनाना", "नाचता है": "नाचना", "बुनती हैं": "बुनना", "लाता है": "लाना", "सीता है": "सीना",
+                        "धो रहा है": "धोना", "करते हैं": "करना", "बहती है": "बहना", "दौड़ती है": "दौड़ना", "बजा रहे हैं": "बजाना",
+                        "खाते हैं": "खाना", "समझा रहे हैं": "समझाना", "खाता है": "खाना", "चरती है": "चरना", "मंडराता है": "मंडराना",
+                        "लिख रही हैं": "लिखना", "देख रहे हैं": "देखना", "उठती हैं": "उठना", "चुनता है": "चुनना", "उड़ा रहा है": "उड़ना",
+                        "झूलते हैं": "झूलना", "याद करता है": "करना", "चुग रही है": "चुगना", "गरज रहे हैं": "गरजना"
+                    };
+                    addToCollection(verbMap[seg.text] || seg.text);
+                } else {
+                    token.classList.add('selected-wrong');
+                    feedback.innerText = `यह क्रिया नहीं है। फिर से प्रयास करें।`; feedback.style.color = '#9b2c2c';
+                }
+            });
+            row.appendChild(token);
+        });
+    }
+
+    function addToCollection(rootText) {
+        if (verbCollection.has(rootText)) return;
+        verbCollection.add(rootText);
+        const shelf = document.getElementById('collection-shelf');
+        const note = document.getElementById('empty-collection-note'); if (note) note.remove();
+        const tag = document.createElement('span');
+        tag.className = 'collected-tag'; tag.innerText = rootText;
+        tag.addEventListener('click', () => speakText(rootText));
+        shelf.appendChild(tag);
+    }
+
+    function speakCurrentText() {
+        let text = "";
+        if (selectedSubject && selectedVerb) {
+            const exact = getGrammarAgreementForm(selectedSubject, selectedVerb);
+            text = `${selectedSubject.text} ${exact.present}`;
+        } else { text = document.getElementById('sentence-output').innerText; }
+        speakText(text);
+    }
+
+    function speakText(rawText) {
+        if (!rawText || rawText.includes("कार्ड चुनकर")) return;
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(rawText);
+            utterance.lang = 'hi-IN'; utterance.rate = 0.8;
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+</script>
+
+</body>
+</html>

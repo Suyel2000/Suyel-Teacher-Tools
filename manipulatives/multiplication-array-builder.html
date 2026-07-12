@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Multiplication Array Builder</title>
+    <style>
+        :root {
+            --primary: #4A90E2;
+            --primary-dark: #357ABD;
+            --success: #2ECC71;
+            --accent: #E67E22;
+            --danger: #E74C3C;
+            --bg-main: #F5F7FA;
+            --bg-card: #FFFFFF;
+            --text-main: #2C3E50;
+            --text-muted: #7F8C8D;
+            --border: #E2E8F0;
+            --tile-default: #FF6B6B;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --shadow: 0 8px 16px rgba(0,0,0,0.06);
+            --transition: all 0.25s ease;
+        }
+
+        [data-theme="dark"] {
+            --bg-main: #1A202C;
+            --bg-card: #2D3748;
+            --text-main: #EDF2F7;
+            --text-muted: #A0AEC0;
+            --border: #4A5568;
+            --shadow: 0 8px 16px rgba(0,0,0,0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            transition: var(--transition);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto 20px auto;
+            background: var(--bg-card);
+            padding: 15px 25px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+        }
+
+        .brand h1 {
+            font-size: 1.6rem;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .brand p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .top-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            background: var(--border);
+            color: var(--text-main);
+            border: none;
+            padding: 10px 18px;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-accent { background: var(--accent); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 1024px) {
+            .app-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .mode-tabs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            background: var(--bg-main);
+            padding: 5px;
+            border-radius: var(--radius-md);
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 10px;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.85rem;
+        }
+
+        .tab-btn.active {
+            background: var(--bg-card);
+            color: var(--primary);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-main);
+        }
+
+        .counter-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .counter-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-main);
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .counter-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .slider {
+            flex-grow: 1;
+            height: 8px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: var(--border);
+            border-radius: var(--radius-sm);
+            outline: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .color-palette {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .color-dot {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: var(--transition);
+        }
+
+        .color-dot.active {
+            border-color: var(--text-main);
+            transform: scale(1.1);
+        }
+
+        .color-dot.rainbow {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #ffe66d, #1a535c);
+        }
+
+        .toggle-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .workspace-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 25px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-height: 500px;
+            position: relative;
+        }
+
+        .interactive-arena {
+            flex-grow: 1;
+            border: 2px dashed var(--border);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: auto;
+            background: rgba(0,0,0,0.01);
+            padding: 20px;
+        }
+
+        .array-grid {
+            display: grid;
+            gap: 6px;
+            transition: var(--transition);
+        }
+
+        .grid-cell {
+            width: 42px;
+            height: 42px;
+            border-radius: var(--radius-sm);
+            background-color: var(--tile-default);
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255,255,255,0.85);
+            font-weight: bold;
+            font-size: 0.8rem;
+            box-shadow: inset 0 -3px 0 rgba(0,0,0,0.15);
+        }
+
+        .grid-cell.highlighted {
+            filter: brightness(1.2) saturate(1.3);
+            box-shadow: 0 0 0 3px var(--accent), inset 0 -3px 0 rgba(0,0,0,0.15);
+            z-index: 2;
+        }
+
+        .grid-cell.dimmed {
+            opacity: 0.35;
+            filter: grayscale(0.5);
+        }
+
+        .no-grid-lines .grid-cell {
+            gap: 0;
+            border-radius: 0;
+            box-shadow: none;
+        }
+        .no-grid-lines .array-grid {
+            gap: 0;
+            border: 2px solid var(--text-main);
+        }
+
+        .math-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            background: var(--bg-main);
+            padding: 15px;
+            border-radius: var(--radius-md);
+        }
+
+        .math-card {
+            background: var(--bg-card);
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            border-left: 4px solid var(--primary);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .math-card.accent { border-left-color: var(--accent); }
+        .math-card.success { border-left-color: var(--success); }
+
+        .math-title {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .math-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .practice-banner {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 20px;
+            border-radius: var(--radius-md);
+            text-align: center;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .practice-question {
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+
+        .score-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            align-self: center;
+        }
+
+        .teacher-drawer {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            background: rgba(0,0,0,0.02);
+        }
+
+        .teacher-title {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .teacher-content {
+            display: none;
+            margin-top: 12px;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .teacher-content.open { display: flex; }
+
+        .switch-control {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.85rem;
+        }
+
+        .hidden-label {
+            filter: blur(5px);
+            pointer-events: none;
+        }
+
+        /* Drag and Drop Sandbox grid styles */
+        .sandbox-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 32px);
+            grid-template-rows: repeat(12, 32px);
+            gap: 4px;
+            background: rgba(0,0,0,0.03);
+            padding: 8px;
+            border-radius: var(--radius-sm);
+        }
+
+        .sandbox-cell {
+            background: var(--bg-card);
+            border: 1px dashed var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .sandbox-cell.active {
+            background-color: var(--tile-default);
+            border-style: solid;
+            box-shadow: inset 0 -2px 0 rgba(0,0,0,0.15);
+        }
+
+        canvas#confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        @media print {
+            body { background: white; color: black; }
+            .panel, header, .top-actions { display: none !important; }
+            .workspace-card { box-shadow: none; border: none; width: 100%; }
+            .interactive-arena { border: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <header>
+        <div class="brand">
+            <h1>Array Builder</h1>
+            <p>Explore Multiplication & Area Models</p>
+        </div>
+        <div class="top-actions">
+            <button class="btn" id="btn-theme" title="Toggle Theme">🌓 Mode</button>
+            <button class="btn" id="btn-fullscreen" title="Full Screen">⛶ Screen</button>
+            <button class="btn btn-danger" id="btn-reset">Reset All</button>
+        </div>
+    </header>
+
+    <main class="app-container">
+        <section class="panel">
+            <div class="mode-tabs">
+                <button class="tab-btn active" onclick="switchMode('builder')">Builder</button>
+                <button class="tab-btn" onclick="switchMode('practice')">Practice</button>
+                <button class="tab-btn" onclick="switchMode('dragdrop')">Draw / Tap</button>
+            </div>
+
+            <div id="builder-controls" class="control-group" style="gap: 18px;">
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Rows (Height)</span>
+                        <span id="val-rows" style="color:var(--primary); font-weight:bold;">4</span>
+                    </div>
+                    <div class="counter-controls">
+                        <button class="counter-btn" onclick="adjustInput('rows', -1)">-</button>
+                        <input type="range" min="1" max="12" value="4" class="slider" id="slide-rows">
+                        <button class="counter-btn" onclick="adjustInput('rows', 1)">+</button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Columns (Width)</span>
+                        <span id="val-cols" style="color:var(--primary); font-weight:bold;">6</span>
+                    </div>
+                    <div class="counter-controls">
+                        <button class="counter-btn" onclick="adjustInput('cols', -1)">-</button>
+                        <input type="range" min="1" max="12" value="6" class="slider" id="slide-cols">
+                        <button class="counter-btn" onclick="adjustInput('cols', 1)">+</button>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button class="btn btn-accent" onclick="rotateArray()">↩ Rotate Array</button>
+                    <button class="btn" onclick="randomizeArray()">🎲 Randomize</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <span class="control-label">Tile Colors</span>
+                <div class="color-palette">
+                    <div class="color-dot active" style="background-color: #FF6B6B;" onclick="changeColor('#FF6B6B', this)"></div>
+                    <div class="color-dot" style="background-color: #4ECD7A;" onclick="changeColor('#4ECD7A', this)"></div>
+                    <div class="color-dot" style="background-color: #4A90E2;" onclick="changeColor('#4A90E2', this)"></div>
+                    <div class="color-dot" style="background-color: #F1C40F;" onclick="changeColor('#F1C40F', this)"></div>
+                    <div class="color-dot" style="background-color: #9B59B6;" onclick="changeColor('#9B59B6', this)"></div>
+                    <div class="color-dot rainbow" title="Random Row Colors" onclick="changeColor('rainbow', this)"></div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <span class="control-label">Highlight Options</span>
+                <div class="toggle-grid">
+                    <button class="btn" id="hl-row-btn" onclick="toggleHighlight('row')">Highlight Row 1</button>
+                    <button class="btn" id="hl-col-btn" onclick="toggleHighlight('col')">Highlight Col 1</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <span class="control-label">Workspace Settings</span>
+                <div class="toggle-grid">
+                    <button class="btn" id="btn-gridlines" onclick="toggleGridLines()">Grid Lines: ON</button>
+                    <button class="btn" id="btn-labels" onclick="toggleLabels()">Labels: ON</button>
+                </div>
+                <button class="btn" style="margin-top:5px;" onclick="printWorksheet()">🖨 Print Worksheet View</button>
+            </div>
+
+            <div class="teacher-drawer">
+                <div class="teacher-title" onclick="toggleTeacherDrawer()">
+                    <span>🛠 Teacher Controls & Settings</span>
+                    <span id="drawer-arrow">▼</span>
+                </div>
+                <div class="teacher-content" id="teacher-content">
+                    <div class="switch-control">
+                        <span>Max Input Range</span>
+                        <select id="setting-max" onchange="changeMaxLimit(this.value)" style="padding: 4px; border-radius:4px;">
+                            <option value="5">Up to 5 × 5</option>
+                            <option value="10">Up to 10 × 10</option>
+                            <option value="12" selected>Up to 12 × 12</option>
+                        </select>
+                    </div>
+                    <div class="switch-control">
+                        <span>Show Math Formulas</span>
+                        <input type="checkbox" id="setting-formula" checked onchange="toggleTeacherRule('formula')">
+                    </div>
+                    <div class="switch-control">
+                        <span>Advanced Mode (No count hints)</span>
+                        <input type="checkbox" id="setting-advanced" onchange="toggleTeacherRule('advanced')">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="workspace-card">
+            <div class="practice-banner" id="practice-zone">
+                <div class="score-badge">Score: <span id="score-val">0</span></div>
+                <div class="practice-question" id="target-question">Build an array for 3 × 4</div>
+                <div style="display:flex; justify-content:center; gap:10px; margin-top:5px;">
+                    <button class="btn btn-success" onclick="checkPracticeAnswer()">Check Answer</button>
+                    <button class="btn" id="btn-next-question" style="display:none;" onclick="nextPracticeQuestion()">Next Question ➔</button>
+                </div>
+            </div>
+
+            <div class="interactive-arena" id="arena">
+                <div class="array-grid" id="main-array-grid"></div>
+                <div class="sandbox-grid" id="sandbox-grid" style="display: none;"></div>
+            </div>
+
+            <div class="math-panel" id="math-feedback-panel">
+                <div class="math-card">
+                    <div class="math-title">Multiplication Sentence</div>
+                    <div class="math-value" id="math-sentence">4 × 6 = 24</div>
+                </div>
+                <div class="math-card accent">
+                    <div class="math-title">Repeated Addition</div>
+                    <div class="math-value" id="math-addition">6 + 6 + 6 + 6 = 24</div>
+                </div>
+                <div class="math-card success">
+                    <div class="math-title">Equal Groups Descriptions</div>
+                    <div class="math-value" id="math-groups" style="font-size:1.1rem;">4 groups of 6</div>
+                </div>
+                <div class="math-card">
+                    <div class="math-title">Area Model Description</div>
+                    <div class="math-value" id="math-area" style="font-size:1.1rem;">4 rows by 6 columns</div>
+                </div>
+            </div>
+
+            <div style="font-size:0.85rem; color: var(--text-muted); display:flex; justify-content: space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <div>Factor pairs of total <strong id="total-val-display">24</strong>: <span id="math-factors" style="font-weight:600;">1, 2, 3, 4, 6, 8, 12, 24</span></div>
+                <div id="commute-hint" style="font-style: italic;">Tip: Press 'Rotate Array' to check the Commutative Property!</div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Core application state
+        let state = {
+            rows: 4,
+            cols: 6,
+            mode: 'builder', // builder, practice, dragdrop
+            tileColor: '#FF6B6B',
+            highlight: { type: 'none', index: 0 },
+            gridLines: true,
+            labelsVisible: true,
+            maxLimit: 12,
+            showFormulas: true,
+            advancedMode: false,
+            score: 0,
+            practiceTarget: { rows: 0, cols: 0 },
+            sandboxMatrix: Array(12).fill(null).map(() => Array(12).fill(false))
+        };
+
+        // DOM elements
+        const slideRows = document.getElementById('slide-rows');
+        const slideCols = document.getElementById('slide-cols');
+        const valRows = document.getElementById('val-rows');
+        const valCols = document.getElementById('val-cols');
+        const mainGrid = document.getElementById('main-array-grid');
+        const sandboxGrid = document.getElementById('sandbox-grid');
+        const mathSentence = document.getElementById('math-sentence');
+        const mathAddition = document.getElementById('math-addition');
+        const mathGroups = document.getElementById('math-groups');
+        const mathArea = document.getElementById('math-area');
+        const mathFactors = document.getElementById('math-factors');
+        const totalValDisplay = document.getElementById('total-val-display');
+
+        // Initial setup
+        window.addEventListener('DOMContentLoaded', () => {
+            initInputs();
+            initSandbox();
+            render();
+            setupTheme();
+        });
+
+        function initInputs() {
+            slideRows.addEventListener('input', (e) => {
+                state.rows = parseInt(e.target.value);
+                render();
+            });
+            slideCols.addEventListener('input', (e) => {
+                state.cols = parseInt(e.target.value);
+                render();
+            });
+
+            // General utility top-level buttons
+            document.getElementById('btn-reset').addEventListener('click', resetAll);
+            document.getElementById('btn-theme').addEventListener('click', toggleTheme);
+            document.getElementById('btn-fullscreen').addEventListener('click', toggleFullscreen);
+        }
+
+        function adjustInput(type, delta) {
+            if (type === 'rows') {
+                let v = Math.min(Math.max(state.rows + delta, 1), state.maxLimit);
+                state.rows = v;
+                slideRows.value = v;
+            } else {
+                let v = Math.min(Math.max(state.cols + delta, 1), state.maxLimit);
+                state.cols = v;
+                slideCols.value = v;
+            }
+            render();
+        }
+
+        function switchMode(newMode) {
+            state.mode = newMode;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.remove('active'); // fail-safe logic reference
+            
+            // Highlight explicit tab
+            const tabs = document.querySelectorAll('.mode-tabs .tab-btn');
+            if(newMode === 'builder') tabs[0].classList.add('active');
+            if(newMode === 'practice') tabs[1].classList.add('active');
+            if(newMode === 'dragdrop') tabs[2].classList.add('active');
+
+            document.getElementById('builder-controls').style.display = (newMode === 'dragdrop') ? 'none' : 'flex';
+            document.getElementById('practice-zone').style.display = (newMode === 'practice') ? 'flex' : 'none';
+            
+            if (newMode === 'practice') {
+                nextPracticeQuestion();
+            } else if (newMode === 'dragdrop') {
+                clearSandbox();
+            }
+            render();
+        }
+
+        // Render controller
+        function render() {
+            // Synchronize control panel counts
+            valRows.innerText = state.rows;
+            valCols.innerText = state.cols;
+            slideRows.value = state.rows;
+            slideCols.value = state.cols;
+
+            if (state.mode === 'dragdrop') {
+                mainGrid.style.display = 'none';
+                sandboxGrid.style.display = 'grid';
+                calculateSandboxMath();
+            } else {
+                mainGrid.style.display = 'grid';
+                sandboxGrid.style.display = 'none';
+                buildStandardGrid();
+            }
+
+            updateMathPanel();
+        }
+
+        function buildStandardGrid() {
+            mainGrid.innerHTML = '';
+            mainGrid.style.gridTemplateColumns = `repeat(${state.cols}, 1fr)`;
+            
+            let totalTiles = state.rows * state.cols;
+            let counter = 1;
+
+            for (let r = 0; r < state.rows; r++) {
+                for (let c = 0; c < state.cols; c++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('grid-cell');
+                    
+                    // Text details inside items
+                    if (!state.advancedMode) {
+                        cell.innerText = counter++;
+                    }
+
+                    // Apply Color Styling Rules
+                    if (state.tileColor === 'rainbow') {
+                        const rainbowColors = ['#FF6B6B', '#4ECD7A', '#4A90E2', '#F1C40F', '#9B59B6', '#E67E22'];
+                        cell.style.backgroundColor = rainbowColors[r % rainbowColors.length];
+                    } else {
+                        cell.style.backgroundColor = state.tileColor;
+                    }
+
+                    // Highlights processing
+                    applyHighlightLogic(cell, r, c);
+
+                    mainGrid.appendChild(cell);
+                }
+            }
+        }
+
+        function applyHighlightLogic(cell, r, c) {
+            if (state.highlight.type === 'row' && r === state.highlight.index) {
+                cell.classList.add('highlighted');
+            } else if (state.highlight.type === 'col' && c === state.highlight.index) {
+                cell.classList.add('highlighted');
+            } else if (state.highlight.type !== 'none') {
+                cell.classList.add('dimmed');
+            }
+        }
+
+        // Sandbox matrix creation
+        function initSandbox() {
+            sandboxGrid.innerHTML = '';
+            for (let r = 0; r < 12; r++) {
+                for (let c = 0; c < 12; c++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('sandbox-cell');
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    
+                    // Simple interaction handling across desktop/smart boards
+                    cell.addEventListener('pointerdown', (e) => {
+                        e.preventDefault();
+                        toggleSandboxCell(r, c);
+                    });
+                    
+                    sandboxGrid.appendChild(cell);
+                }
+            }
+        }
+
+        function toggleSandboxCell(r, c) {
+            state.sandboxMatrix[r][c] = !state.sandboxMatrix[r][c];
+            const cellNode = sandboxGrid.querySelector(`[data-row="${r}"][data-col="${c}"]`);
+            if (state.sandboxMatrix[r][c]) {
+                cellNode.classList.add('active');
+                cellNode.style.backgroundColor = state.tileColor === 'rainbow' ? '#FF6B6B' : state.tileColor;
+            } else {
+                cellNode.classList.remove('active');
+                cellNode.style.backgroundColor = '';
+            }
+            render();
+        }
+
+        function clearSandbox() {
+            state.sandboxMatrix = Array(12).fill(null).map(() => Array(12).fill(false));
+            sandboxGrid.querySelectorAll('.sandbox-cell').forEach(c => {
+                c.classList.remove('active');
+                c.style.backgroundColor = '';
+            });
+            render();
+        }
+
+        function calculateSandboxMath() {
+            // Compute structural bounds of user highlighted blocks
+            let minR = 13, maxR = -1, minC = 13, maxC = -1;
+            let totalActive = 0;
+
+            for (let r = 0; r < 12; r++) {
+                for (let c = 0; c < 12; c++) {
+                    if (state.sandboxMatrix[r][c]) {
+                        totalActive++;
+                        if (r < minR) minR = r;
+                        if (r > maxR) maxR = r;
+                        if (c < minC) minC = c;
+                        if (c > maxC) maxC = c;
+                    }
+                }
+            }
+
+            if (totalActive > 0) {
+                state.rows = (maxR - minR) + 1;
+                state.cols = (maxC - minC) + 1;
+            } else {
+                state.rows = 0;
+                state.cols = 0;
+            }
+        }
+
+        // Live Math computations
+        function updateMathPanel() {
+            const total = state.rows * state.cols;
+            totalValDisplay.innerText = total;
+
+            if (!state.showFormulas) {
+                mathSentence.innerText = "Hidden";
+                mathAddition.innerText = "Hidden";
+                mathGroups.innerText = "Hidden";
+                mathArea.innerText = "Hidden";
+                mathFactors.innerText = "Hidden";
+                return;
+            }
+
+            // Multiplication Sentence Text Display
+            mathSentence.innerText = `${state.rows} × ${state.cols} = ${total}`;
+
+            // Repeated addition logic standard mapping
+            if (state.rows === 0 || state.cols === 0) {
+                mathAddition.innerText = "0";
+            } else {
+                let parts = [];
+                for (let i = 0; i < state.rows; i++) {
+                    parts.push(state.cols);
+                }
+                mathAddition.innerText = parts.join(' + ') + ` = ${total}`;
+            }
+
+            // Group representations definitions
+            mathGroups.innerText = `${state.rows} groups of ${state.cols}`;
+            mathArea.innerText = `${state.rows} rows by ${state.cols} columns`;
+
+            // Compute math unique factors array list
+            let factors = [];
+            for (let i = 1; i <= total; i++) {
+                if (total % i === 0) factors.push(i);
+            }
+            mathFactors.innerText = factors.length ? factors.join(', ') : '0';
+        }
+
+        // Feature actions
+        function rotateArray() {
+            let temp = state.rows;
+            state.rows = state.cols;
+            state.cols = temp;
+            render();
+        }
+
+        function randomizeArray() {
+            state.rows = Math.floor(Math.random() * state.maxLimit) + 1;
+            state.cols = Math.floor(Math.random() * state.maxLimit) + 1;
+            render();
+        }
+
+        function changeColor(colorCode, element) {
+            state.tileColor = colorCode;
+            document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+            element.classList.add('active');
+            render();
+        }
+
+        function toggleHighlight(type) {
+            if (state.highlight.type === type) {
+                state.highlight.type = 'none';
+                document.getElementById(`hl-${type}-btn`).classList.remove('btn-accent');
+            } else {
+                // Clear opposite element highlight state tracker cleanly
+                document.getElementById('hl-row-btn').classList.remove('btn-accent');
+                document.getElementById('hl-col-btn').classList.remove('btn-accent');
+                
+                state.highlight.type = type;
+                state.highlight.index = 0; // Default context mapping target index
+                document.getElementById(`hl-${type}-btn`).classList.add('btn-accent');
+            }
+            render();
+        }
+
+        function toggleGridLines() {
+            state.gridLines = !state.gridLines;
+            const arena = document.getElementById('arena');
+            if (state.gridLines) {
+                arena.classList.remove('no-grid-lines');
+                document.getElementById('btn-gridlines').innerText = "Grid Lines: ON";
+            } else {
+                arena.classList.add('no-grid-lines');
+                document.getElementById('btn-gridlines').innerText = "Grid Lines: OFF";
+            }
+        }
+
+        function toggleLabels() {
+            state.labelsVisible = !state.labelsVisible;
+            const panel = document.getElementById('math-feedback-panel');
+            if (state.labelsVisible) {
+                panel.classList.remove('hidden-label');
+                document.getElementById('btn-labels').innerText = "Labels: ON";
+            } else {
+                panel.classList.add('hidden-label');
+                document.getElementById('btn-labels').innerText = "Labels: OFF";
+            }
+        }
+
+        // Practice Mode Mechanics
+        function nextPracticeQuestion() {
+            state.practiceTarget.rows = Math.floor(Math.random() * state.maxLimit) + 1;
+            state.practiceTarget.cols = Math.floor(Math.random() * state.maxLimit) + 1;
+            
+            document.getElementById('target-question').innerText = `Build an array for: ${state.practiceTarget.rows} × ${state.practiceTarget.cols}`;
+            document.getElementById('btn-next-question').style.display = 'none';
+            document.getElementById('target-question').style.color = 'white';
+        }
+
+        function checkPracticeAnswer() {
+            if (state.rows === state.practiceTarget.rows && state.cols === state.practiceTarget.cols) {
+                triggerConfetti();
+                state.score += 10;
+                document.getElementById('score-val').innerText = state.score;
+                document.getElementById('target-question').innerText = "🎉 Correct! Great Job!";
+                document.getElementById('target-question').style.color = '#2ECC71';
+                document.getElementById('btn-next-question').style.display = 'inline-block';
+            } else if (state.rows === state.practiceTarget.cols && state.cols === state.practiceTarget.rows) {
+                triggerConfetti();
+                state.score += 10;
+                document.getElementById('score-val').innerText = state.score;
+                document.getElementById('target-question').innerText = "🎉 Correct! You showed the Commutative Property!";
+                document.getElementById('target-question').style.color = '#F1C40F';
+                document.getElementById('btn-next-question').style.display = 'inline-block';
+            } else {
+                document.getElementById('target-question').innerText = "❌ Try Again! Adjust your rows and columns.";
+                document.getElementById('target-question').style.color = '#E74C3C';
+            }
+        }
+
+        // Teacher dashboard options execution
+        function toggleTeacherDrawer() {
+            const content = document.getElementById('teacher-content');
+            const arrow = document.getElementById('drawer-arrow');
+            content.classList.toggle('open');
+            arrow.innerText = content.classList.contains('open') ? "▲" : "▼";
+        }
+
+        function changeMaxLimit(val) {
+            state.maxLimit = parseInt(val);
+            slideRows.max = state.maxLimit;
+            slideCols.max = state.maxLimit;
+            if (state.rows > state.maxLimit) state.rows = state.maxLimit;
+            if (state.cols > state.maxLimit) state.cols = state.maxLimit;
+            render();
+        }
+
+        function toggleTeacherRule(rule) {
+            if (rule === 'formula') {
+                state.showFormulas = document.getElementById('setting-formula').checked;
+            }
+            render();
+        }
+
+        function toggleTeacherAdvanced() {
+            // Handled dynamically via element click tracking mappings down below
+            state.advancedMode = document.getElementById('setting-advanced').checked;
+            render();
+        }
+        document.getElementById('setting-advanced').addEventListener('change', () => {
+            state.advancedMode = document.getElementById('setting-advanced').checked;
+            render();
+        });
+
+        // Global environment features mechanics
+        function resetAll() {
+            state.rows = 4;
+            state.cols = 6;
+            state.mode = 'builder';
+            state.tileColor = '#FF6B6B';
+            state.highlight = { type: 'none', index: 0 };
+            state.score = 0;
+            document.getElementById('score-val').innerText = 0;
+            clearSandbox();
+            switchMode('builder');
+        }
+
+        function setupTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {});
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        function printWorksheet() {
+            window.print();
+        }
+
+        // Lightweight embedded local canvas particle system (Confetti Effect)
+        function triggerConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            let particles = [];
+            const colors = ['#FF6B6B', '#4ECD7A', '#4A90E2', '#F1C40F', '#9B59B6'];
+
+            for (let i = 0; i < 100; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    r: Math.random() * 6 + 4,
+                    d: Math.random() * canvas.height,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    tilt: Math.random() * 10 - 5,
+                    tiltAngleIncremental: Math.random() * 0.07 + 0.02,
+                    tiltAngle: 0
+                });
+            }
+
+            let animationFrameId;
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let remaining = false;
+
+                particles.forEach((p, idx) => {
+                    p.tiltAngle += p.tiltAngleIncremental;
+                    p.y += (Math.cos(p.d) + 3 + p.r / 2) / 2;
+                    p.x += Math.sin(p.tiltAngle);
+                    p.tilt = Math.sin(p.tiltAngle - idx / 3) * 15;
+
+                    if (p.y <= canvas.height) remaining = true;
+
+                    ctx.beginPath();
+                    ctx.lineWidth = p.r;
+                    ctx.strokeStyle = p.color;
+                    ctx.moveTo(p.x + p.tilt + p.r / 2, p.y);
+                    ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 2);
+                    ctx.stroke();
+                });
+
+                if (remaining) {
+                    animationFrameId = requestAnimationFrame(draw);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    cancelAnimationFrame(animationFrameId);
+                }
+            }
+            draw();
+        }
+    </script>
+</body>
+</html>

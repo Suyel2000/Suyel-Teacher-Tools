@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Division Board Manipulative</title>
+    <style>
+        :root {
+            --primary: #4A90E2;
+            --primary-dark: #357ABD;
+            --success: #2ECC71;
+            --warning: #F1C40F;
+            --danger: #E74C3C;
+            --background: #F4F7F6;
+            --card-bg: #FFFFFF;
+            --text: #2C3E50;
+            --text-light: #7F8C8D;
+            --border: #E0E6ED;
+            --radius: 16px;
+            --font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            
+            /* Group Colors for Visualizer */
+            --g1: #FF6B6B; --g2: #4DABF7; --g3: #51CF66; --g4: #FCC419;
+            --g5: #FF922B; --g6: #845EF7; --g7: #20C997; --g8: #FF8787;
+            --g9: #748FFC; --g10: #A9E34B; --g11: #DA77F2; --g12: #63E6BE;
+        }
+
+        [data-theme="dark"] {
+            --background: #1A1A1A;
+            --card-bg: #2D2D2D;
+            --text: #F5F5F5;
+            --text-light: #B0B0B0;
+            --border: #404040;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            font-family: var(--font);
+            background-color: var(--background);
+            color: var(--text);
+            padding: 20px;
+            min-height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* App Wrapper Layout */
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+        }
+
+        /* Navigation & Header */
+        header {
+            grid-column: 1 / -1;
+            background: var(--card-bg);
+            padding: 15px 25px;
+            border-radius: var(--radius);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .brand h1 {
+            font-size: 1.5rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-modes {
+            display: flex;
+            gap: 10px;
+            background: var(--background);
+            padding: 5px;
+            border-radius: 30px;
+        }
+
+        .mode-btn {
+            background: transparent;
+            border: none;
+            padding: 8px 18px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-light);
+            cursor: pointer;
+            border-radius: 20px;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background: var(--card-bg);
+            color: var(--primary);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .utility-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .icon-btn {
+            background: var(--background);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text);
+            transition: background 0.2s;
+        }
+
+        .icon-btn:hover {
+            background: var(--border);
+        }
+
+        /* Sidebar Panel (Controls) */
+        aside {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: fit-content;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-light);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .input-with-btns {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .step-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--background);
+            color: var(--text);
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .num-input {
+            flex: 1;
+            height: 36px;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--background);
+            color: var(--text);
+        }
+
+        .slider {
+            width: 100%;
+            margin-top: 5px;
+            accent-color: var(--primary);
+        }
+
+        .toggle-switch {
+            display: flex;
+            background: var(--background);
+            border-radius: 8px;
+            padding: 3px;
+            gap: 3px;
+        }
+
+        .toggle-switch button {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            background: transparent;
+            color: var(--text-light);
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border-radius: 6px;
+        }
+
+        .toggle-switch button.active {
+            background: var(--card-bg);
+            color: var(--text);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* Main Workspace Container */
+        main {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .workspace-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            min-height: 400px;
+            position: relative;
+        }
+
+        /* Active Display Elements */
+        .board-view, .dragdrop-view, .practice-view {
+            display: none;
+            width: 100%;
+            height: 100%;
+        }
+
+        .board-view.active, .dragdrop-view.active, .practice-view.active {
+            display: block;
+        }
+
+        /* Interactive Board Layout */
+        .visual-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            align-items: flex-start;
+            margin-bottom: 25px;
+            min-height: 220px;
+            padding: 15px;
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+        }
+
+        /* Loose Items Pool */
+        .items-pool {
+            width: 100%;
+            min-height: 80px;
+            background: var(--background);
+            border-radius: var(--radius);
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Group Structure */
+        .group-box {
+            border: 3px solid var(--border);
+            border-radius: var(--radius);
+            padding: 15px;
+            min-width: 130px;
+            min-height: 130px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            align-content: center;
+            background: rgba(255,255,255,0.02);
+            transition: transform 0.2s, border-color 0.2s;
+            position: relative;
+        }
+
+        .group-box::before {
+            content: attr(data-label);
+            position: absolute;
+            top: -12px;
+            left: 12px;
+            background: var(--card-bg);
+            padding: 0 6px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: var(--text-light);
+            border-radius: 4px;
+        }
+
+        .group-box.highlight {
+            transform: scale(1.03);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        /* Counter Manipulatives */
+        .counter {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            cursor: grab;
+            transition: transform 0.15s, top 0.3s, left 0.3s;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            background: var(--primary);
+        }
+
+        .counter:active {
+            cursor: grabbing;
+        }
+
+        .counter.remainder-highlight {
+            animation: pulse-border 1.5s infinite alternate;
+            box-shadow: 0 0 0 4px var(--danger);
+        }
+
+        @keyframes pulse-border {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1); }
+        }
+
+        /* Mathematical Representations Panels */
+        .math-panel {
+            background: var(--background);
+            border-radius: var(--radius);
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+        }
+
+        .math-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .math-card h4 {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .math-card p {
+            font-size: 1.4rem;
+            font-weight: 700;
+            font-family: monospace, var(--font);
+        }
+
+        .sentence-card {
+            grid-column: 1 / -1;
+            text-align: left;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .label-highlight {
+            font-size: 0.75rem;
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 4px;
+            font-weight: bold;
+            color: #fff;
+        }
+        .lbl-dividend { background-color: #9b59b6; }
+        .lbl-divisor { background-color: #3498db; }
+        .lbl-quotient { background-color: #2ecc71; }
+        .lbl-remainder { background-color: #e74c3c; }
+
+        /* Practice Area Elements */
+        .practice-setup {
+            text-align: center;
+            max-width: 500px;
+            margin: 40px auto;
+        }
+
+        .problem-box {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: var(--background);
+            padding: 25px;
+            border-radius: var(--radius);
+            margin-bottom: 25px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+            line-height: 1.5;
+        }
+
+        .answer-grid {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .answer-input-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .answer-input-container input {
+            width: 80px;
+            height: 50px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border-radius: 8px;
+            border: 2px solid var(--border);
+            background: var(--card-bg);
+            color: var(--text);
+        }
+
+        .action-row {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            border: none;
+            transition: transform 0.1s, background 0.2s;
+        }
+
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-secondary { background: var(--border); color: var(--text); }
+
+        .score-tracker {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            font-weight: bold;
+            background: var(--background);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .feedback-message {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin: 15px 0;
+            min-height: 30px;
+        }
+
+        /* Animation System */
+        .animating-counter {
+            position: fixed;
+            z-index: 1000;
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            pointer-events: none;
+        }
+
+        /* Confetti Effect */
+        .confetti-particle {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            z-index: 9999;
+            animation: fall linear forwards;
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* Print Stylesheet overrides */
+        @media print {
+            body { background: white; color: black; padding: 0; }
+            aside, header, .action-row, .utility-controls, .nav-modes { display: none !important; }
+            .app-container { grid-template-columns: 1fr; }
+            .workspace-card { box-shadow: none; border: none; padding: 0; }
+            .math-panel { background: white; }
+            .math-card { border: 1px solid #000; }
+        }
+
+        /* Accessibility/Hide Labels Option */
+        .hide-labels .label-highlight,
+        .hide-labels h4 {
+            visibility: hidden;
+        }
+
+        /* Responsiveness rules */
+        @media (max-width: 900px) {
+            .app-container { grid-template-columns: 1fr; }
+            aside { order: 2; }
+            main { order: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header>
+        <div class="brand">
+            <h1>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="6" r="1.5" fill="currentColor"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="12" cy="18" r="1.5" fill="currentColor"/></svg>
+                Division Board
+            </h1>
+        </div>
+        <div class="nav-modes">
+            <button class="mode-btn active" onclick="switchMode('board')">Explore Board</button>
+            <button class="mode-btn" onclick="switchMode('dragdrop')">Drag & Drop</button>
+            <button class="mode-btn" onclick="switchMode('practice')">Practice Arena</button>
+        </div>
+        <div class="utility-controls">
+            <button class="icon-btn" onclick="toggleMute()" title="Mute/Unmute Audio" id="muteBtn">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5zM15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+            </button>
+            <button class="icon-btn" onclick="toggleDarkMode()" title="Dark/Light Mode">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            </button>
+            <button class="icon-btn" onclick="window.print()" title="Print Worksheet Layout">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>
+            </button>
+            <button class="icon-btn" onclick="toggleFullscreen()" title="Toggle Fullscreen Mode">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+            </button>
+        </div>
+    </header>
+
+    <aside id="controlsPanel">
+        <section class="control-group">
+            <label>Counter Object Design</label>
+            <select id="counterCounterType" class="num-input" style="text-align: left; padding: 0 10px;" onchange="updateBoard()">
+                <option value="🔴">🔴 Simple Dot</option>
+                <option value="🍎">🍎 Red Apple</option>
+                <option value="⭐">⭐ Shiny Star</option>
+                <option value="🟩">🟩 Square Block</option>
+                <option value="🍪">🍪 Tasty Cookie</option>
+            </select>
+        </section>
+
+        <section class="control-group">
+            <label>Conceptualization Style</label>
+            <div class="toggle-switch">
+                <button id="btnModelSharing" class="active" onclick="setConceptModel('sharing')">Equal Sharing</button>
+                <button id="btnModelGrouping" onclick="setConceptModel('grouping')">Equal Grouping</button>
+            </div>
+        </section>
+
+        <section class="control-group">
+            <label><span id="dividendLabelText">Total Objects (Dividend)</span> <span id="valDividend">24</span></label>
+            <div class="input-with-btns">
+                <button class="step-btn" onclick="adjustInput('dividend', -1)">-</button>
+                <input type="number" id="inputDividend" class="num-input" value="24" min="1" max="144" onchange="validateAndSyncInputs()">
+                <button class="step-btn" onclick="adjustInput('dividend', 1)">+</button>
+            </div>
+            <input type="range" id="sliderDividend" class="slider" min="1" max="144" value="24" oninput="syncSlider('dividend')">
+        </section>
+
+        <section class="control-group">
+            <label><span id="divisorLabelText">Number of Groups (Divisor)</span> <span id="valDivisor">4</span></label>
+            <div class="input-with-btns">
+                <button class="step-btn" onclick="adjustInput('divisor', -1)">-</button>
+                <input type="number" id="inputDivisor" class="num-input" value="4" min="1" max="12" onchange="validateAndSyncInputs()">
+                <button class="step-btn" onclick="adjustInput('divisor', 1)">+</button>
+            </div>
+            <input type="range" id="sliderDivisor" class="slider" min="1" max="12" value="4" oninput="syncSlider('divisor')">
+        </section>
+
+        <section class="control-group">
+            <label>Color Themes</label>
+            <select id="colorOptionSelect" class="num-input" style="text-align: left; padding: 0 10px;" onchange="updateBoard()">
+                <option value="distinct">Different Colors per Group</option>
+                <option value="highlightFirst">Highlight First Group Only</option>
+                <option value="uniform">Uniform Dynamic Blue</option>
+            </select>
+        </section>
+
+        <hr style="border: none; border-top: 1px solid var(--border);">
+
+        <section class="control-group">
+            <label style="color: var(--primary); font-weight: bold;">🏫 Teacher Preferences</label>
+            <div style="display:flex; flex-direction:column; gap:8px; margin-top:5px; font-size:0.85rem;">
+                <label style="display:flex; align-items:center; gap:8px; justify-content:flex-start; color: var(--text);">
+                    <input type="checkbox" id="teacherAllowRemainders" checked onchange="handleTeacherSettingsChange()"> Allow Remainder Explanations
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; justify-content:flex-start; color: var(--text);">
+                    <input type="checkbox" id="teacherShowAnswers" checked onchange="handleTeacherSettingsChange()"> Instantly Show Math Facts
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; justify-content:flex-start; color: var(--text);">
+                    <input type="checkbox" id="teacherEnableHints" checked> Show Context Clues & Highlight Hints
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; justify-content:flex-start; color: var(--text);">
+                    Maximum Dividend Value Allowed
+                    <select id="teacherMaxNumSelect" onchange="handleTeacherSettingsChange()" style="padding:2px; border-radius:4px; background:var(--background); color:var(--text);">
+                        <option value="12">12</option>
+                        <option value="24" selected>24</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="144">144</option>
+                    </select>
+                </label>
+            </div>
+        </section>
+
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: auto;">
+            <button class="btn btn-secondary" onclick="toggleLabelsVisibility()" id="btnToggleLabels">Hide Labels</button>
+            <button class="btn btn-secondary" onclick="exportBoardAsCanvasImage()">Save Board Image</button>
+        </div>
+    </aside>
+
+    <main>
+        <div class="workspace-card">
+            
+            <div id="viewBoard" class="board-view active">
+                <div class="visual-container" id="boardVisualContainer">
+                    </div>
+                
+                <div class="action-row" style="margin-bottom: 20px;">
+                    <button class="btn btn-primary" onclick="triggerDistributionAnimation()">Animate Step-by-Step Distribution</button>
+                    <button class="btn btn-secondary" onclick="resetBoardState()">Clear Board State</button>
+                </div>
+            </div>
+
+            <div id="viewDragDrop" class="dragdrop-view">
+                <div class="items-pool" id="dragDropItemsPool" ondragover="allowDrop(event)" ondrop="handleTokenDrop(event, 'pool')">
+                    </div>
+                <div class="visual-container" id="dragDropGroupContainer">
+                    </div>
+                <div class="action-row">
+                    <button class="btn btn-success" onclick="verifyDragDropEquality()">Verify Groups Balance</button>
+                    <button class="btn btn-secondary" onclick="setupDragDropMode()">Reset Workspace Placement</button>
+                </div>
+            </div>
+
+            <div id="viewPractice" class="practice-view">
+                <div class="score-tracker">Score: <span id="txtPracticeScore">0</span> / <span id="txtPracticeTotal">0</span></div>
+                
+                <div class="practice-setup">
+                    <div class="problem-box" id="practiceProblemText">
+                        Click 'Next Question' to populate a mathematical challenge word problem!
+                    </div>
+                    
+                    <div class="answer-grid">
+                        <div class="answer-input-container">
+                            <label style="font-weight: bold; font-size: 0.9rem;">Quotient</label>
+                            <input type="number" id="ansQuotient" min="0">
+                        </div>
+                        <div class="answer-input-container" id="practiceRemainderInputBox">
+                            <label style="font-weight: bold; font-size: 0.9rem;">Remainder</label>
+                            <input type="number" id="ansRemainder" min="0" value="0">
+                        </div>
+                    </div>
+
+                    <div class="feedback-message" id="practiceFeedback"></div>
+
+                    <div class="action-row">
+                        <button class="btn btn-success" onclick="checkPracticeAnswer()">Verify Answer</button>
+                        <button class="btn btn-primary" onclick="generatePracticeQuestion()">Next Question</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="math-panel" id="mathPanelContainer">
+                <div class="math-card">
+                    <h4>Division Sentence <span class="label-highlight lbl-dividend">Dividend</span> ÷ <span class="label-highlight lbl-divisor">Divisor</span> = <span class="label-highlight lbl-quotient">Quotient</span></h4>
+                    <p id="mathDivSentence">24 ÷ 4 = 6</p>
+                </div>
+                <div class="math-card">
+                    <h4>Inverse Multiplication Check</h4>
+                    <p id="mathMultFact">4 × 6 = 24</p>
+                </div>
+                <div class="math-card">
+                    <h4>Repeated Subtraction Track</h4>
+                    <p id="mathRepeatedSub" style="font-size: 1.1rem; padding-top: 5px;">24 - 4 - 4 - 4 - 4 - 4 - 4 = 0</p>
+                </div>
+                <div class="math-card sentence-card">
+                    <h4>Word Statement Interpretation</h4>
+                    <p id="mathWordSentence">24 objects shared equally into 4 groups gives 6 in each group.</p>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<script>
+    // System Global Application State
+    let state = {
+        activeMode: 'board',         // board | dragdrop | practice
+        conceptModel: 'sharing',     // sharing (Divisor = Groups) | grouping (Divisor = Items/Group)
+        dividend: 24,
+        divisor: 4,
+        isMuted: false,
+        labelsHidden: false,
+        animationInProgress: false,
+        
+        // Practice Session Tracking Context
+        practice: {
+            currentDividend: 0,
+            currentDivisor: 0,
+            expectedQuotient: 0,
+            expectedRemainder: 0,
+            score: 0,
+            total: 0
+        }
+    };
+
+    // Configuration constraints mappings
+    const groupColors = [
+        'var(--g1)', 'var(--g2)', 'var(--g3)', 'var(--g4)', 'var(--g5)', 
+        'var(--g6)', 'var(--g7)', 'var(--g8)', 'var(--g9)', 'var(--g10)', 
+        'var(--g11)', 'var(--g12)'
+    ];
+
+    // Initialization routine on page window load
+    window.onload = function() {
+        validateAndSyncInputs();
+        // Initialize active speech state or keyboard loops safely
+    };
+
+    // Global Mode Switch Engine
+    function switchMode(targetMode) {
+        state.activeMode = targetMode;
+        
+        // Update styling layout of navigation links
+        document.querySelectorAll('.nav-modes .mode-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if(btn.textContent.toLowerCase().includes(targetMode === 'dragdrop' ? 'drag' : targetMode)) {
+                btn.classList.add('active');
+            }
+        });
+
+        // Toggle active visual structures layout panels
+        document.getElementById('viewBoard').classList.remove('active');
+        document.getElementById('viewDragDrop').classList.remove('active');
+        document.getElementById('viewPractice').classList.remove('active');
+
+        if(targetMode === 'board') {
+            document.getElementById('viewBoard').classList.add('active');
+            updateBoard();
+        } else if(targetMode === 'dragdrop') {
+            document.getElementById('viewDragDrop').classList.add('active');
+            setupDragDropMode();
+        } else if(targetMode === 'practice') {
+            document.getElementById('viewPractice').classList.add('active');
+            generatePracticeQuestion();
+        }
+        
+        // Speak instructions via accessible sound synth context
+        speakInstruction(`Switched to ${targetMode} mode.`);
+    }
+
+    // Toggle sharing models parameters context
+    function setConceptModel(modelType) {
+        state.conceptModel = modelType;
+        document.getElementById('btnModelSharing').classList.remove('active');
+        document.getElementById('btnModelGrouping').classList.remove('active');
+        
+        if(modelType === 'sharing') {
+            document.getElementById('btnModelSharing').classList.add('active');
+            document.getElementById('dividendLabelText').innerText = "Total Objects (Dividend)";
+            document.getElementById('divisorLabelText').innerText = "Number of Groups (Divisor)";
+        } else {
+            document.getElementById('btnModelGrouping').classList.add('active');
+            document.getElementById('dividendLabelText').innerText = "Total Objects (Dividend)";
+            document.getElementById('divisorLabelText').innerText = "Objects per Group (Divisor)";
+        }
+        
+        validateAndSyncInputs();
+    }
+
+    // Mathematical calculations validation constraints processing engine
+    function validateAndSyncInputs() {
+        const maxLimit = parseInt(document.getElementById('teacherMaxNumSelect').value);
+        let currentDiv = parseInt(document.getElementById('inputDividend').value) || 1;
+        let currentDivisor = parseInt(document.getElementById('inputDivisor').value) || 1;
+
+        // Apply dynamic parameter cap ceilings from constraints engine
+        if(currentDiv > maxLimit) currentDiv = maxLimit;
+        if(currentDiv < 1) currentDiv = 1;
+        
+        if(currentDivisor < 1) currentDivisor = 1;
+        
+        // Boundary condition parsing check
+        if(state.conceptModel === 'sharing') {
+            if(currentDivisor > 12) currentDivisor = 12;
+            if(currentDivisor > currentDiv) currentDivisor = currentDiv;
+        } else {
+            // Grouping constraints mapping structure
+            if(currentDivisor > maxLimit) currentDivisor = maxLimit;
+            if(currentDivisor > currentDiv) currentDivisor = currentDiv;
+        }
+
+        // Remainder rejection mode toggle constraints algorithm tracking
+        if(!document.getElementById('teacherAllowRemainders').checked) {
+            // Force adjustment logic down or up to perfect factor mapping match
+            while(currentDiv % currentDivisor !== 0 && currentDiv > 1) {
+                currentDiv--;
+            }
+        }
+
+        // Synchronize values variables context bindings
+        state.dividend = currentDiv;
+        state.divisor = currentDivisor;
+
+        // Update elements text value views matching elements
+        document.getElementById('inputDividend').value = currentDiv;
+        document.getElementById('sliderDividend').value = currentDiv;
+        document.getElementById('sliderDividend').max = maxLimit;
+        document.getElementById('valDividend').innerText = currentDiv;
+
+        document.getElementById('inputDivisor').value = currentDivisor;
+        document.getElementById('sliderDivisor').value = currentDivisor;
+        document.getElementById('sliderDivisor').max = (state.conceptModel === 'sharing') ? 12 : maxLimit;
+        document.getElementById('valDivisor').innerText = currentDivisor;
+
+        if(state.activeMode === 'board') updateBoard();
+        if(state.activeMode === 'dragdrop') setupDragDropMode();
+    }
+
+    function adjustInput(target, delta) {
+        if(target === 'dividend') {
+            document.getElementById('inputDividend').value = state.dividend + delta;
+        } else {
+            document.getElementById('inputDivisor').value = state.divisor + delta;
+        }
+        validateAndSyncInputs();
+    }
+
+    function syncSlider(target) {
+        if(target === 'dividend') {
+            document.getElementById('inputDividend').value = document.getElementById('sliderDividend').value;
+        } else {
+            document.getElementById('inputDivisor').value = document.getElementById('sliderDivisor').value;
+        }
+        validateAndSyncInputs();
+    }
+
+    // UI View Construction Rendering Engine for Division Board
+    function updateBoard() {
+        if(state.animationInProgress) return; // Prevent render collision loops
+        
+        const container = document.getElementById('boardVisualContainer');
+        container.innerHTML = '';
+
+        // Derive structural quotient architecture fields
+        const dividend = state.dividend;
+        const divisor = state.divisor;
+        
+        let targetGroupsCount = 0;
+        let itemsPerGroupTarget = 0;
+
+        if(state.conceptModel === 'sharing') {
+            targetGroupsCount = divisor;
+            itemsPerGroupTarget = Math.floor(dividend / divisor);
+        } else {
+            itemsPerGroupTarget = divisor;
+            targetGroupsCount = Math.floor(dividend / divisor);
+        }
+
+        const remainderCount = dividend % (itemsPerGroupTarget * targetGroupsCount ? (state.conceptModel === 'sharing' ? divisor : itemsPerGroupTarget) : 1) + (state.conceptModel === 'grouping' ? (dividend % divisor) : 0);
+        const continuousRemainder = dividend - (targetGroupsCount * itemsPerGroupTarget);
+
+        const counterSymbol = document.getElementById('counterCounterType').value;
+        const colorMode = document.getElementById('colorOptionSelect').value;
+
+        // Render Equal Group boxes structures
+        for (let i = 0; i < targetGroupsCount; i++) {
+            const groupEl = document.createElement('div');
+            groupEl.className = 'group-box';
+            groupEl.id = `boardGroup_${i}`;
+            groupEl.setAttribute('data-label', `Group ${i + 1}`);
+            
+            // Inject uniform styling configurations options metrics
+            if(colorMode === 'distinct') {
+                groupEl.style.borderColor = groupColors[i % groupColors.length];
+            } else if (colorMode === 'highlightFirst' && i === 0) {
+                groupEl.style.borderColor = 'var(--success)';
+                groupEl.classList.add('highlight');
+            } else {
+                groupEl.style.borderColor = 'var(--primary)';
+            }
+
+            // Populate items immediately inside standard visual grid container array
+            for (let j = 0; j < itemsPerGroupTarget; j++) {
+                const item = document.createElement('div');
+                item.className = 'counter';
+                item.innerText = counterSymbol;
+                // Add specific color mapping profiles style context override properties
+                if(colorMode === 'distinct') item.style.background = groupColors[i % groupColors.length];
+                groupEl.appendChild(item);
+            }
+
+            container.appendChild(groupEl);
+        }
+
+        // Render Remainder Block Items outside elements space
+        if(continuousRemainder > 0 && document.getElementById('teacherAllowRemainders').checked) {
+            const remainderGroupEl = document.createElement('div');
+            remainderGroupEl.className = 'group-box';
+            remainderGroupEl.style.borderColor = 'var(--danger)';
+            remainderGroupEl.setAttribute('data-label', 'Remainders (Leftovers)');
+            
+            for (let r = 0; r < continuousRemainder; r++) {
+                const item = document.createElement('div');
+                item.className = 'counter';
+                item.innerText = counterSymbol;
+                item.style.background = 'var(--danger)';
+                if(document.getElementById('teacherEnableHints').checked) {
+                    item.classList.add('remainder-highlight');
+                }
+                remainderGroupEl.appendChild(item);
+            }
+            container.appendChild(remainderGroupEl);
+        }
+
+        // Trigger dynamic text calculations display update loops elements
+        updateMathematicalReadouts(dividend, divisor, itemsPerGroupTarget, targetGroupsCount, continuousRemainder);
+    }
+
+    // Realtime Mathematical formulas processing context script render
+    function updateMathematicalReadouts(dividend, divisor, calculatedQuotient, calculatedGroups, remainder) {
+        if(!document.getElementById('teacherShowAnswers').checked) {
+            document.getElementById('mathPanelContainer').style.opacity = '0.1';
+            document.getElementById('mathPanelContainer').style.pointerEvents = 'none';
+            return;
+        } else {
+            document.getElementById('mathPanelContainer').style.opacity = '1';
+            document.getElementById('mathPanelContainer').style.pointerEvents = 'auto';
+        }
+
+        let mainQuotientResult = (state.conceptModel === 'sharing') ? calculatedQuotient : calculatedGroups;
+
+        // 1. Division Math Sentence String builder
+        let remText = remainder > 0 ? ` R ${remainder}` : '';
+        document.getElementById('mathDivSentence').innerHTML = `${dividend} ÷ ${divisor} = <span style="color:var(--success)">${mainQuotientResult}</span>${remText}`;
+
+        // 2. Inverse Multiplicative verification execution mapping formula
+        if(remainder > 0) {
+            document.getElementById('mathMultFact').innerHTML = `(${divisor} × ${mainQuotientResult}) + ${remainder} = ${dividend}`;
+        } else {
+            document.getElementById('mathMultFact').innerHTML = `${divisor} × ${mainQuotientResult} = ${dividend}`;
+        }
+
+        // 3. Repeated Subtraction String Array loop execution logic block
+        let subStr = `${dividend}`;
+        let subValueTemp = dividend;
+        let operationStepDecrement = (state.conceptModel === 'sharing') ? divisor : divisor;
+        
+        // Loop safety condition threshold tracking criteria
+        let iterationSanityCheck = 0;
+        while(subValueTemp >= operationStepDecrement && iterationSanityCheck < 150) {
+            subStr += ` - ${operationStepDecrement}`;
+            subValueTemp -= operationStepDecrement;
+            iterationSanityCheck++;
+        }
+        if (subValueTemp > 0) subStr += ` [Leftover: ${subValueTemp}]`;
+        subStr += ` = ${subValueTemp}`;
+        document.getElementById('mathRepeatedSub').innerText = subStr;
+
+        // 4. English Word Statement Context breakdown parser engine
+        if(state.conceptModel === 'sharing') {
+            document.getElementById('mathWordSentence').innerHTML = `Sharing <b style="color:#9b59b6">${dividend}</b> items across <b style="color:#3498db">${divisor} groups</b> sequentially deposits <b style="color:#2ecc71">${mainQuotientResult}</b> item(s) inside every container group with <b style="color:#e74c3c">${remainder}</b> remaining spare pieces left over.`;
+        } else {
+            document.getElementById('mathWordSentence').innerHTML = `Grouping <b style="color:#9b59b6">${dividend}</b> items into bundles of exactly <b style="color:#3498db">${divisor}</b> components constructs <b style="color:#2ecc71">${mainQuotientResult} stable groups</b> with an un-allocatable leftover of <b style="color:#e74c3c">${remainder}</b> item components.`;
+        }
+    }
+
+    // Step by Step Animated objects deployment layout loop script engine
+    function triggerDistributionAnimation() {
+        if(state.animationInProgress) return;
+        state.animationInProgress = true;
+
+        const container = document.getElementById('boardVisualContainer');
+        container.innerHTML = ''; // Wipe and clear immediate content elements configuration
+
+        const dividend = state.dividend;
+        const divisor = state.divisor;
+        const counterSymbol = document.getElementById('counterCounterType').value;
+
+        let targetGroupsCount = (state.conceptModel === 'sharing') ? divisor : Math.floor(dividend / divisor);
+        let itemsPerGroupTarget = (state.conceptModel === 'sharing') ? Math.floor(dividend / divisor) : divisor;
+        const totalAllocatedItemsCount = targetGroupsCount * itemsPerGroupTarget;
+
+        // Build container group frames structure arrays
+        for (let i = 0; i < targetGroupsCount; i++) {
+            const groupEl = document.createElement('div');
+            groupEl.className = 'group-box';
+            groupEl.id = `animGroup_${i}`;
+            groupEl.setAttribute('data-label', `Container Box ${i + 1}`);
+            container.appendChild(groupEl);
+        }
+
+        let animationIndexCounter = 0;
+
+        function dropNextCounterAnimationLoop() {
+            if(animationIndexCounter >= dividend) {
+                state.animationInProgress = false;
+                updateBoard(); // Re-render core model for precision consistency check layout
+                speakInstruction("Distribution animation sequence successfully completed.");
+                return;
+            }
+
+            // Distribute into groups logically or send to remainder container shelf structure box
+            if(animationIndexCounter < totalAllocatedItemsCount) {
+                let destinationGroupIndex = 0;
+                if(state.conceptModel === 'sharing') {
+                    destinationGroupIndex = animationIndexCounter % targetGroupsCount;
+                } else {
+                    destinationGroupIndex = Math.floor(animationIndexCounter / itemsPerGroupTarget);
+                }
+                
+                const targetBox = document.getElementById(`animGroup_${destinationGroupIndex}`);
+                if(targetBox) {
+                    const tempCounter = document.createElement('div');
+                    tempCounter.className = 'counter';
+                    tempCounter.innerText = counterSymbol;
+                    tempCounter.style.transform = 'scale(0.3)';
+                    targetBox.appendChild(tempCounter);
+                    setTimeout(() => tempCounter.style.transform = 'scale(1)', 50);
+                    playBeepSound(440 + (animationIndexCounter * 15));
+                }
+            } else if (document.getElementById('teacherAllowRemainders').checked) {
+                // Deposit inside dynamically designated remainder zone configuration panel
+                let remainderContainerBox = document.getElementById('animRemainderBox');
+                if(!remainderContainerBox) {
+                    remainderContainerBox = document.createElement('div');
+                    remainderContainerBox.className = 'group-box';
+                    remainderContainerBox.id = 'animRemainderBox';
+                    remainderContainerBox.style.borderColor = 'var(--danger)';
+                    remainderContainerBox.setAttribute('data-label', 'Leftover Segment Panel');
+                    container.appendChild(remainderContainerBox);
+                }
+                const tempCounter = document.createElement('div');
+                tempCounter.className = 'counter';
+                tempCounter.innerText = counterSymbol;
+                tempCounter.style.background = 'var(--danger)';
+                remainderContainerBox.appendChild(tempCounter);
+                playBeepSound(280);
+            }
+
+            animationIndexCounter++;
+            setTimeout(dropNextCounterAnimationLoop, 250 - Math.min(200, dividend * 1));
+        }
+
+        dropNextCounterAnimationLoop();
+    }
+
+    // Reset layout interface configuration properties to factory defaults structures
+    function resetBoardState() {
+        document.getElementById('inputDividend').value = 12;
+        document.getElementById('inputDivisor').value = 3;
+        validateAndSyncInputs();
+    }
+
+    // Kinesthetic Workspace Layout Generator Engine logic block
+    function setupDragDropMode() {
+        const pool = document.getElementById('dragDropItemsPool');
+        const groupsContainer = document.getElementById('dragDropGroupContainer');
+        
+        pool.innerHTML = '';
+        groupsContainer.innerHTML = '';
+
+        const dividend = state.dividend;
+        const divisor = state.divisor;
+        const counterSymbol = document.getElementById('counterCounterType').value;
+
+        // Build item blocks objects arrays mapping profile definitions lists
+        for(let i=0; i < dividend; i++) {
+            const token = document.createElement('div');
+            token.className = 'counter';
+            token.id = `draggableToken_${i}`;
+            token.draggable = true;
+            token.innerText = counterSymbol;
+            token.style.background = 'var(--primary)';
+            token.addEventListener('dragstart', handleTokenDragStart);
+            pool.appendChild(token);
+        }
+
+        // Determine destination zones numbers
+        let requiredTargetBoxes = (state.conceptModel === 'sharing') ? divisor : Math.floor(dividend / divisor);
+        if(requiredTargetBoxes < 1) requiredTargetBoxes = 1;
+
+        for(let g=0; g < requiredTargetBoxes; g++) {
+            const zone = document.createElement('div');
+            zone.className = 'group-box';
+            zone.id = `dropZoneBox_${g}`;
+            zone.setAttribute('data-label', `Drop Bucket Zone ${g+1}`);
+            zone.addEventListener('dragover', allowDrop);
+            zone.addEventListener('drop', (e) => handleTokenDrop(e, `zone_${g}`));
+            groupsContainer.appendChild(zone);
+        }
+    }
+
+    function handleTokenDragStart(event) {
+        event.dataTransfer.setData("text/plain", event.target.id);
+    }
+
+    function allowDrop(event) {
+        event.preventDefault();
+    }
+
+    function handleTokenDrop(event, destinationIdentifier) {
+        event.preventDefault();
+        const tokenId = event.dataTransfer.getData("text/plain");
+        const tokenElement = document.getElementById(tokenId);
+        if(!tokenElement) return;
+
+        if(destinationIdentifier === 'pool') {
+            document.getElementById('dragDropItemsPool').appendChild(tokenElement);
+            tokenElement.style.background = 'var(--primary)';
+        } else {
+            const zoneBoxIndex = destinationIdentifier.split('_')[1];
+            const destinationBox = document.getElementById(`dropZoneBox_${zoneBoxIndex}`);
+            if(destinationBox) {
+                destinationBox.appendChild(tokenElement);
+                // Dynamically update color coding style layout elements context properties
+                destinationBox.style.transform = 'scale(1.05)';
+                setTimeout(() => destinationBox.style.transform = 'scale(1)', 150);
+                tokenElement.style.background = groupColors[zoneBoxIndex % groupColors.length];
+                playBeepSound(520);
+            }
+        }
+    }
+
+    // Kinesthetic Accuracy Evaluation verification engine logic parsing routine
+    function verifyDragDropEquality() {
+        const groupsContainer = document.getElementById('dragDropGroupContainer');
+        const totalZonesCount = groupsContainer.children.length;
+        
+        let assignmentsCountsArray = [];
+        let totalItemsPlacedInsideZones = 0;
+
+        for(let i=0; i < totalZonesCount; i++) {
+            const box = document.getElementById(`dropZoneBox_${i}`);
+            const tokensCountInside = box.getElementsByClassName('counter').length;
+            assignmentsCountsArray.push(tokensCountInside);
+            totalItemsPlacedInsideZones += tokensCountInside;
+        }
+
+        // Verify mathematical equality constraints
+        const internalFirstCountReference = assignmentsCountsArray[0];
+        const allGroupsEqualFlag = assignmentsCountsArray.every(c => c === internalFirstCountReference);
+        const poolLeftoverRemainderCount = document.getElementById('dragDropItemsPool').getElementsByClassName('counter').length;
+
+        if(allGroupsEqualFlag && internalFirstCountReference > 0) {
+            if(state.conceptModel === 'sharing') {
+                alert(`Perfect Equal Allocation! Every container box contains precisely ${internalFirstCountReference} elements. Remaining unplaced items: ${poolLeftoverRemainderCount}.`);
+            } else {
+                alert(`Excellent! You created equivalent bundles containing exactly ${internalFirstCountReference} item components.`);
+            }
+            triggerConfettiCelebration();
+        } else {
+            alert("The distribution layout configurations are not equal yet. Keep shifting tokens until all box counts match up perfectly!");
+        }
+    }
+
+    // Adaptive Word Problems Practice Mode Generator Framework
+    function generatePracticeQuestion() {
+        document.getElementById('practiceFeedback').innerText = '';
+        document.getElementById('ansQuotient').value = '';
+        document.getElementById('ansRemainder').value = '0';
+
+        const maxRange = parseInt(document.getElementById('teacherMaxNumSelect').value);
+        
+        // Formulate randomized configuration numbers pairs algorithms
+        let randomDivisor = Math.floor(Math.random() * (maxRange === 12 ? 4 : 10)) + 2;
+        let randomQuotient = Math.floor(Math.random() * (maxRange / randomDivisor)) + 1;
+        let randomDividend = (randomDivisor * randomQuotient);
+
+        // Inject intentional remainder elements based on settings rules mapping profile configuration
+        if(document.getElementById('teacherAllowRemainders').checked && Math.random() > 0.5) {
+            let spaceLeftovers = Math.floor(Math.random() * (randomDivisor - 1)) + 1;
+            if(randomDividend + spaceLeftovers <= maxRange) {
+                randomDividend += spaceLeftovers;
+            }
+        }
+
+        // Cache parameters into contextual application states trackers variables structures
+        state.practice.currentDividend = randomDividend;
+        state.practice.currentDivisor = randomDivisor;
+        state.practice.expectedQuotient = Math.floor(randomDividend / randomDivisor);
+        state.practice.expectedRemainder = randomDividend % randomDivisor;
+
+        // Hide or display remainder fields dynamically based on context rules settings criteria mapping options
+        if(!document.getElementById('teacherAllowRemainders').checked || state.practice.expectedRemainder === 0) {
+            document.getElementById('practiceRemainderInputBox').style.opacity = '0.3';
+        } else {
+            document.getElementById('practiceRemainderInputBox').style.opacity = '1';
+        }
+
+        // Generate customized child narrative text strings
+        const problemTypesList = [
+            `Arrange a set of <b>${randomDividend}</b> apples equally onto <b>${randomDivisor}</b> wooden serving trays. How many items rest on each tray?`,
+            `Construct tight structural bundles of <b>${randomDivisor}</b> sparkling crayons using a massive box collection pool of <b>${randomDividend}</b> pieces. How many complete packages can you lock together?`,
+            `Share out a deck of <b>${randomDividend}</b> score matching cards among <b>${randomDivisor}</b> elementary school students. How many pieces does each child keep?`
+        ];
+
+        const selectionText = problemTypesList[Math.floor(Math.random() * problemTypesList.length)];
+        document.getElementById('practiceProblemText').innerHTML = selectionText;
+        speakInstruction(document.getElementById('practiceProblemText').innerText);
+    }
+
+    // Verify User input performance profiles evaluation routine
+    function checkPracticeAnswer() {
+        const userQuotient = parseInt(document.getElementById('ansQuotient').value);
+        const userRemainder = parseInt(document.getElementById('ansRemainder').value) || 0;
+
+        const isCorrect = (userQuotient === state.practice.expectedQuotient) && 
+                          (userRemainder === state.practice.expectedRemainder);
+
+        const feedbackEl = document.getElementById('practiceFeedback');
+        state.practice.total++;
+
+        if(isCorrect) {
+            state.practice.score++;
+            feedbackEl.innerText = "🌟 Terrific Job! Your processing model is completely accurate!";
+            feedbackEl.style.color = "var(--success)";
+            triggerConfettiCelebration();
+            playBeepSound(660, 0.1);
+            setTimeout(() => playBeepSound(880, 0.15), 100);
+        } else {
+            feedbackEl.innerHTML = `❌ Try again! Let's check: <b>${state.practice.currentDividend} ÷ ${state.practice.currentDivisor}</b> provides <b>${state.practice.expectedQuotient}</b> with a remainder of <b>${state.practice.expectedRemainder}</b>.`;
+            feedbackEl.style.color = "var(--danger)";
+            playBeepSound(220, 0.3);
+        }
+
+        // Sync internal scoreboard text labels
+        document.getElementById('txtPracticeScore').innerText = state.practice.score;
+        document.getElementById('txtPracticeTotal').innerText = state.practice.total;
+    }
+
+    // Accessible Voice synthesis routine context handlers
+    function speakInstruction(textString) {
+        if(state.isMuted || !window.speechSynthesis) return;
+        window.speechSynthesis.cancel(); // Terminate pending backlogs
+        const utterance = new SpeechSynthesisUtterance(textString);
+        utterance.rate = 0.95;
+        window.speechSynthesis.speak(utterance);
+    }
+
+    function toggleMute() {
+        state.isMuted = !state.isMuted;
+        const muteIconBtn = document.getElementById('muteBtn');
+        if(state.isMuted) {
+            muteIconBtn.style.background = 'var(--danger)';
+            muteIconBtn.style.color = '#fff';
+        } else {
+            muteIconBtn.style.background = 'var(--background)';
+            muteIconBtn.style.color = 'var(--text)';
+        }
+    }
+
+    function toggleDarkMode() {
+        const activeTheme = document.documentElement.getAttribute('data-theme');
+        if(activeTheme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'light');
+        } else {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+    }
+
+    function toggleLabelsVisibility() {
+        state.labelsHidden = !state.labelsHidden;
+        const btn = document.getElementById('btnToggleLabels');
+        if(state.labelsHidden) {
+            document.body.classList.add('hide-labels');
+            btn.innerText = "Show Math Terminology Labels";
+        } else {
+            document.body.classList.remove('hide-labels');
+            btn.innerText = "Hide Labels";
+        }
+    }
+
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(() => {});
+        } else {
+            document.exitFullscreen();
+        }
+    }
+
+    function handleTeacherSettingsChange() {
+        validateAndSyncInputs();
+    }
+
+    // Digital Canvas Blueprint exporter tool execution routing sequence mapping context options data URLs
+    function exportBoardAsCanvasImage() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 800;
+        canvas.height = 400;
+        const ctx = canvas.getContext('2d');
+
+        // Paint background layers structure styles profiles parameters logic
+        ctx.fillStyle = '#F4F7F6';
+        ctx.fillRect(0,0,800,400);
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(20,20,760,360);
+
+        // Render basic mathematical summary data into target exported images parameters maps layout blocks
+        ctx.fillStyle = '#2C3E50';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.fillText('My Custom Classroom Division Board Blueprint', 50, 60);
+
+        ctx.font = '18px sans-serif';
+        ctx.fillText(`Active Equation Representation Summary: ${state.dividend} ÷ ${state.divisor} = ${Math.floor(state.dividend/state.divisor)} (Remainder: ${state.dividend%state.divisor})`, 50, 110);
+        ctx.fillText(`Configuration Style Layout: ${state.conceptModel === 'sharing' ? 'Equal Distribution Model' : 'Fixed Object Groupings Packaging Strategy'}`, 50, 145);
+
+        ctx.fillStyle = '#4A90E2';
+        ctx.font = 'italic 14px sans-serif';
+        ctx.fillText('Generated natively via Interactive Elementary Digital Manipulatives Board.', 50, 350);
+
+        // Construct programmatic automatic download link routing sequence layout elements
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.download = `division_board_snapshot_${state.dividend}_by_${state.divisor}.png`;
+        downloadAnchor.href = canvas.toDataURL('image/png');
+        downloadAnchor.click();
+    }
+
+    // Pure audio synth engine oscillators without asset files bindings paths
+    function playBeepSound(frequencyValue, lengthDurationValue = 0.1) {
+        if(state.isMuted) return;
+        try {
+            const context = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = context.createOscillator();
+            const gainNode = context.createGain();
+            
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(frequencyValue, context.currentTime);
+            
+            gainNode.gain.setValueAtTime(0.15, context.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + lengthDurationValue);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(context.destination);
+            
+            oscillator.start();
+            oscillator.stop(context.currentTime + lengthDurationValue);
+        } catch(e) { /* Audio context safety block triggers if constraints engine stalls */ }
+    }
+
+    // Modular lightweight celebratory CSS dynamic falling particles system code algorithm execution layers
+    function triggerConfettiCelebration() {
+        for(let i=0; i<40; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'confetti-particle';
+            particle.style.background = ['#FF6B6B','#4DABF7','#51CF66','#FCC419','#DA77F2'][Math.floor(Math.random()*5)];
+            particle.style.left = Math.random() * window.innerWidth + 'px';
+            particle.style.top = '-10px';
+            particle.style.transform = `scale(${Math.random() * 0.6 + 0.4})`;
+            particle.style.animationDuration = (Math.random() * 2 + 1) + 's';
+            
+            document.body.appendChild(particle);
+            setTimeout(() => particle.remove(), 3000);
+        }
+    }
+</script>
+</body>
+</html>

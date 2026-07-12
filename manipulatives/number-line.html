@@ -1,0 +1,1712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Number Line Manipulative</title>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --card-bg: #ffffff;
+            --text-color: #2c3e50;
+            --primary: #4a90e2;
+            --primary-hover: #357abd;
+            --secondary: #2ecc71;
+            --accent: #e67e22;
+            --danger: #e74c3c;
+            --purple: #9b59b6;
+            --border-color: #dcdde1;
+            --tick-color: #2c3e50;
+            --shadow: 0 4px 6px rgba(0,0,0,0.1);
+            --radius: 16px;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a24;
+            --card-bg: #242530;
+            --text-color: #f5f6fa;
+            --primary: #54a0ff;
+            --primary-hover: #2e86de;
+            --secondary: #1dd1a1;
+            --border-color: #485460;
+            --tick-color: #f5f6fa;
+            --shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            background: var(--card-bg);
+            padding: 15px 25px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        button.secondary { background-color: var(--secondary); }
+        button.secondary:hover { background-color: #27ae60; }
+        button.accent { background-color: var(--accent); }
+        button.accent:hover { background-color: #d35400; }
+        button.danger { background-color: var(--danger); }
+        button.danger:hover { background-color: #c0392b; }
+        button.purple { background-color: var(--purple); }
+        button.purple:hover { background-color: #8e44ad; }
+        button.icon-btn { padding: 12px; border-radius: 50%; }
+
+        .app-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 20px;
+            flex-grow: 1;
+        }
+
+        @media (max-width: 1024px) {
+            .app-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .sidebar {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+        }
+
+        .sidebar h3 {
+            font-size: 1.1rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 8px;
+            margin-bottom: 5px;
+            color: var(--text-color);
+        }
+
+        .mode-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+
+        .mode-btn {
+            background: transparent;
+            color: var(--text-color);
+            border: 2px solid var(--border-color);
+            box-shadow: none;
+            justify-content: flex-start;
+            text-align: left;
+            padding: 10px 15px;
+        }
+
+        .mode-btn:hover {
+            background: rgba(74, 144, 226, 0.1);
+            color: var(--primary);
+            border-color: var(--primary);
+            transform: none;
+        }
+
+        .mode-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .main-workspace {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .workspace-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 25px;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+
+        /* Number Line Canvas Styles */
+        .number-line-container {
+            width: 100%;
+            overflow-x: auto;
+            padding: 40px 0;
+            position: relative;
+            background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(0,0,0,0.02) 100%);
+            border-radius: 12px;
+        }
+
+        svg.number-line-svg {
+            width: 100%;
+            min-width: 800px;
+            height: 180px;
+            overflow: visible;
+        }
+
+        .tick-line {
+            stroke: var(--tick-color);
+            stroke-width: 3;
+            stroke-linecap: round;
+        }
+
+        .sub-tick-line {
+            stroke: var(--tick-color);
+            stroke-width: 1.5;
+            opacity: 0.6;
+        }
+
+        .main-line {
+            stroke: var(--tick-color);
+            stroke-width: 5;
+            stroke-linecap: round;
+        }
+
+        .tick-label {
+            fill: var(--text-color);
+            font-size: 16px;
+            font-weight: bold;
+            text-anchor: middle;
+            font-family: sans-serif;
+        }
+
+        .fraction-label-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .jump-arc {
+            fill: none;
+            stroke-width: 3.5;
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: drawArc 0.6s ease-out forwards;
+            stroke-linecap: round;
+        }
+
+        @keyframes drawArc {
+            to { stroke-dashoffset: 0; }
+        }
+
+        .pointer-marker {
+            cursor: grab;
+            transition: transform 0.1s ease;
+        }
+
+        .pointer-marker:active {
+            cursor: grabbing;
+        }
+
+        /* Interaction Panel */
+        .control-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            background: rgba(0,0,0,0.02);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            opacity: 0.8;
+        }
+
+        input, select {
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 2px solid var(--border-color);
+            background: var(--card-bg);
+            color: var(--text-color);
+            font-size: 1rem;
+            font-weight: 600;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+        }
+
+        .display-sentence {
+            font-size: 2.2rem;
+            font-weight: 800;
+            text-align: center;
+            margin: 15px 0;
+            color: var(--primary);
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        /* Modals & Overlays */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            max-width: 500px;
+            width: 90%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc;
+            transition: .3s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider { background-color: var(--secondary); }
+        input:checked + .slider:before { transform: translateX(24px); }
+
+        /* Canvas Confetti */
+        #confetti-canvas {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        /* Utilities */
+        .range-quick-btn {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            background: transparent;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            box-shadow: none;
+        }
+        .range-quick-btn:hover {
+            background: var(--border-color);
+        }
+
+        .flex-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .hidden { display: none !important; }
+        .text-center { text-align: center; }
+
+        /* Fraction layout blocks */
+        .frac-container {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            vertical-align: middle;
+            font-size: 0.85em;
+            line-height: 1.1;
+        }
+        .frac-num { border-bottom: 2px solid var(--text-color); padding: 0 2px; }
+        .frac-denom { padding: 0 2px; }
+
+        /* Compare design */
+        .compare-box {
+            font-size: 3rem;
+            font-weight: 900;
+            padding: 10px 30px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 12px;
+            margin: 0 15px;
+        }
+
+        /* Practice area styling */
+        .practice-card {
+            border: 3px dashed var(--primary);
+            background: rgba(74, 144, 226, 0.05);
+        }
+        .feedback-banner {
+            font-size: 1.5rem;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            animation: popIn 0.3s ease;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body data-theme="light">
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <header>
+        <h1>🔢 Number Line Master</h1>
+        <div class="header-controls">
+            <button id="btn-practice-mode" class="purple" onclick="togglePracticeMode()"><span id="practice-btn-text">🎯 Practice Room</span></button>
+            <button class="secondary icon-btn" onclick="toggleMute()" id="mute-btn" title="Toggle Sound">🔊</button>
+            <button class="accent icon-btn" onclick="toggleTeacherControls()" title="Teacher Control Dashboard">⚙️</button>
+            <button class="icon-btn" onclick="toggleTheme()" id="theme-btn" title="Light/Dark Mode">🌙</button>
+            <button class="danger" onclick="resetApplication()">🔄 Reset</button>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <div class="sidebar" id="sidebar-modes">
+            <h3>🎯 Standard Modes</h3>
+            <div class="mode-grid">
+                <button class="mode-btn active" data-mode="counting" onclick="switchMode('counting')">🔢 Counting Exploration</button>
+                <button class="mode-btn" data-mode="skip-counting" onclick="switchMode('skip-counting')">🐇 Skip Counting</button>
+                <button class="mode-btn" data-mode="addition" onclick="switchMode('addition')">➕ Visual Addition</button>
+                <button class="mode-btn" data-mode="subtraction" onclick="switchMode('subtraction')">➖ Visual Subtraction</button>
+                <button class="mode-btn" data-mode="multiplication" onclick="switchMode('multiplication')">✖️ Multiplication Jumps</button>
+                <button class="mode-btn" data-mode="division" onclick="switchMode('division')">➗ Equal Division Sharing</button>
+            </div>
+            <h3>🧩 Advanced Realms</h3>
+            <div class="mode-grid">
+                <button class="mode-btn" data-mode="fractions" id="mode-nav-fractions" onclick="switchMode('fractions')">🍰 Fraction Splits</button>
+                <button class="mode-btn" data-mode="decimals" id="mode-nav-decimals" onclick="switchMode('decimals')">📐 Decimal Ticks</button>
+                <button class="mode-btn" data-mode="negatives" id="mode-nav-negatives" onclick="switchMode('negatives')">❄️ Negative Numbers</button>
+                <button class="mode-btn" data-mode="compare" onclick="switchMode('compare')">⚖️ Number Comparison</button>
+                <button class="mode-btn" data-mode="place-value" onclick="switchMode('place-value')">🏗️ Place Value Jumps</button>
+            </div>
+            <div style="margin-top:auto; font-size:0.8rem; text-align:center; opacity:0.6;">
+                Interactive Learning Deck v2.5
+            </div>
+        </div>
+
+        <div class="main-workspace">
+            
+            <div id="practice-card-container" class="workspace-card practice-card hidden">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <span style="font-size:1.2rem; font-weight:bold; color:var(--purple);">🎯 Student Mission Control</span>
+                    <span style="font-size:1.1rem; font-weight:bold;" id="practice-score">Score: 0</span>
+                </div>
+                <div id="practice-question-text" style="font-size:1.4rem; font-weight:700; margin-bottom:15px; color:var(--text-color);">
+                    Loading mission setup...
+                </div>
+                <div class="flex-row" id="practice-input-area">
+                    </div>
+                <div id="practice-feedback" class="feedback-banner hidden"></div>
+            </div>
+
+            <div class="workspace-card">
+                <div class="display-sentence" id="sentence-output">0</div>
+
+                <div class="number-line-container" id="nl-scroll-container">
+                    <svg class="number-line-svg" id="number-line-svg" viewBox="0 0 1000 180" preserveAspectRatio="xMidYMid meet">
+                        <g id="svg-grid-group"></g>
+                        <g id="svg-jumps-group"></g>
+                        <g id="svg-labels-group"></g>
+                        <g id="svg-pointer-group"></g>
+                    </svg>
+                </div>
+
+                <div class="flex-row" style="margin-top:15px; justify-content: space-between;">
+                    <div class="flex-row" id="quick-range-container">
+                        <span style="font-size:0.9rem; font-weight:600;">Presets:</span>
+                        <button class="range-quick-btn" onclick="setGlobalRange(0,10)">0 to 10</button>
+                        <button class="range-quick-btn" onclick="setGlobalRange(0,20)">0 to 20</button>
+                        <button class="range-quick-btn" onclick="setGlobalRange(0,50)">0 to 50</button>
+                        <button class="range-quick-btn" onclick="setGlobalRange(0,100)">0 to 100</button>
+                        <button class="range-quick-btn" id="range-preset-neg" onclick="setGlobalRange(-20,20)">-20 to 20</button>
+                    </div>
+                    <div class="flex-row">
+                        <button class="range-quick-btn" onclick="zoomNumberLine(1.2)">🔍 Zoom In</button>
+                        <button class="range-quick-btn" onclick="zoomNumberLine(0.8)">🔍 Zoom Out</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="workspace-card">
+                <h3 style="margin-bottom:15px;" id="mode-panel-title">Configuration Deck</h3>
+                
+                <div id="panel-counting" class="control-panel mode-panel">
+                    <div class="form-group">
+                        <label>Manual Steps</label>
+                        <div class="flex-row">
+                            <button class="danger" onclick="stepPointer(-1)">🚶 Go Left (-1)</button>
+                            <button class="secondary" onclick="stepPointer(1)">🚶 Go Right (+1)</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="panel-skip-counting" class="control-panel mode-panel hidden">
+                    <div class="form-group">
+                        <label>Jump Sequence Step Size</label>
+                        <select id="skip-factor" onchange="runSkipCountingAnimation()">
+                            <option value="2">Count by 2s</option>
+                            <option value="3">Count by 3s</option>
+                            <option value="5" selected>Count by 5s</option>
+                            <option value="10">Count by 10s</option>
+                        </select>
+                    </div>
+                    <button class="purple" onclick="runSkipCountingAnimation()">▶️ Play Jump Chain</button>
+                </div>
+
+                <div id="panel-addition" class="control-panel mode-panel hidden">
+                    <div class="form-group">
+                        <label>Start Number</label>
+                        <input type="number" id="add-start" value="5" style="width:80px;">
+                    </div>
+                    <div style="font-size:1.5rem; font-weight:bold; margin-top:18px;">+</div>
+                    <div class="form-group">
+                        <label>Add Amount</label>
+                        <input type="number" id="add-value" value="6" style="width:80px;">
+                    </div>
+                    <button class="secondary" style="margin-top:18px;" onclick="executeAddition()">🚀 Create Jumps</button>
+                </div>
+
+                <div id="panel-subtraction" class="control-panel mode-panel hidden">
+                    <div class="form-group">
+                        <label>Start Number</label>
+                        <input type="number" id="sub-start" value="15" style="width:80px;">
+                    </div>
+                    <div style="font-size:1.5rem; font-weight:bold; margin-top:18px;">−</div>
+                    <div class="form-group">
+                        <label>Subtract Amount</label>
+                        <input type="number" id="sub-value" value="7" style="width:80px;">
+                    </div>
+                    <button class="danger" style="margin-top:18px;" onclick="executeSubtraction()">🚀 Create Jumps</button>
+                </div>
+
+                <div id="panel-multiplication" class="control-panel mode-panel hidden">
+                    <div class="form-group">
+                        <label>Number of Jumps</label>
+                        <input type="number" id="mul-count" value="4" min="1" max="20" style="width:80px;">
+                    </div>
+                    <div style="font-size:1.2rem; font-weight:bold; margin-top:18px;">groups of</div>
+                    <div class="form-group">
+                        <label>Jump Size</label>
+                        <input type="number" id="mul-size" value="3" min="1" max="25" style="width:80px;">
+                    </div>
+                    <button class="accent" style="margin-top:18px;" onclick="executeMultiplication()">🚀 Plot Jumps</button>
+                </div>
+
+                <div id="panel-division" class="control-panel mode-panel hidden">
+                    <div class="form-group">
+                        <label>Total Value (Dividend)</label>
+                        <input type="number" id="div-total" value="12" min="1" style="width:90px;">
+                    </div>
+                    <div style="font-size:1.5rem; font-weight:bold; margin-top:18px;">÷</div>
+                    <div class="form-group">
+                        <label>Divisor Size</label>
+                        <input type="number" id="div-step" value="3" min="1" style="width:80px;">
+                    </div>
+                    <button class="purple" style="margin-top:18px;" onclick="executeDivision()">🚀 Plot Equal Sharing</button>
+                </div>
+
+                <div id="panel-fractions" class="control-panel mode-panel hidden">
+                    <div class="form-group">
+                        <label>Partition Splits (Denominator)</label>
+                        <select id="frac-denominator" onchange="updateFractionPartitions()">
+                            <option value="2">Halves (1/2)</option>
+                            <option value="3">Thirds (1/3)</option>
+                            <option value="4" selected>Fourths (1/4)</option>
+                            <option value="5">Fifths (1/5)</option>
+                            <option value="8">Eighths (1/8)</option>
+                            <option value="10">Tenths (1/10)</option>
+                        </select>
+                    </div>
+                    <div class="toggle-switch" style="margin-top:15px;">
+                        <span style="font-size:0.9rem; font-weight:600;">Reveal Decimals alongside Fractions</span>
+                        <label class="switch">
+                            <input type="checkbox" id="toggle-frac-decimals" onchange="renderNumberLine()">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="panel-decimals" class="control-panel mode-panel hidden">
+                    <div class="form-group">
+                        <label>Granularity Mode</label>
+                        <select id="decimal-step-size" onchange="renderNumberLine()">
+                            <option value="0.1" selected>Tenths Grid (0.1)</option>
+                            <option value="0.2">Intervals of 0.2</option>
+                            <option value="0.25">Quarter Steps (0.25)</option>
+                        </select>
+                    </div>
+                    <div style="font-size:0.9rem; opacity:0.8; max-width:400px;">
+                        💡 Tip: Slider snaps perfectly to configured decimal boundaries. Use zoom tools for precise micro-inspection!
+                    </div>
+                </div>
+
+                <div id="panel-negatives" class="control-panel mode-panel hidden">
+                    <div class="flex-row">
+                        <button class="danger" onclick="stepPointer(-1)">👈 Jump Left (-1)</button>
+                        <button class="secondary" onclick="stepPointer(1)">👉 Jump Right (+1)</button>
+                        <button class="accent" onclick="setPointerValue(0)">📍 Snap to Zero</button>
+                    </div>
+                </div>
+
+                <div id="panel-compare" class="control-panel mode-panel hidden">
+                    <div class="form-group">
+                        <label>First Number (Blue Marker)</label>
+                        <input type="number" id="comp-val1" value="4" onchange="updateComparison()">
+                    </div>
+                    <div class="form-group">
+                        <label>Second Number (Orange Marker)</label>
+                        <input type="number" id="comp-val2" value="8" onchange="updateComparison()">
+                    </div>
+                    <button class="secondary" style="margin-top:18px;" onclick="syncCompareInputsToLine()">Plot Comparison</button>
+                </div>
+
+                <div id="panel-place-value" class="control-panel mode-panel hidden">
+                    <div class="flex-row">
+                        <button class="secondary" onclick="executePlaceValueJump(100)">⚡ +100</button>
+                        <button class="secondary" onclick="executePlaceValueJump(10)">⚡ +10</button>
+                        <button class="secondary" onclick="executePlaceValueJump(1)">⚡ +1</button>
+                        <div style="width:2px; height:30px; background:var(--border-color); margin:0 10px;"></div>
+                        <button class="danger" onclick="executePlaceValueJump(-1)">⚡ -1</button>
+                        <button class="danger" onclick="executePlaceValueJump(-10)">⚡ -10</button>
+                        <button class="danger" onclick="executePlaceValueJump(-100)">⚡ -100</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="teacher-modal">
+        <div class="modal">
+            <h2 style="color:var(--primary); display:flex; align-items:center; gap:10px;">⚙️ Teacher Management Control</h2>
+            <hr style="border:0; border-top:1px solid var(--border-color);">
+            
+            <div class="form-group">
+                <label>Custom Base Coordinate Bounds</label>
+                <div class="flex-row">
+                    <input type="number" id="cfg-min-range" value="0" style="width:80px;">
+                    <span>to</span>
+                    <input type="number" id="cfg-max-range" value="20" style="width:80px;">
+                    <button class="secondary" onclick="applyTeacherRange()">Apply Bounds</button>
+                </div>
+            </div>
+
+            <div class="toggle-switch">
+                <span>Unlock Negative Number Spaces</span>
+                <label class="switch">
+                    <input type="checkbox" id="cfg-allow-negatives" checked onchange="toggleTeacherFeatureLocks()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="toggle-switch">
+                <span>Unlock Fractions Module</span>
+                <label class="switch">
+                    <input type="checkbox" id="cfg-allow-fractions" checked onchange="toggleTeacherFeatureLocks()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="toggle-switch">
+                <span>Unlock Decimals Module</span>
+                <label class="switch">
+                    <input type="checkbox" id="cfg-allow-decimals" checked onchange="toggleTeacherFeatureLocks()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="toggle-switch">
+                <span>Expose Direct Math Question Answers</span>
+                <label class="switch">
+                    <input type="checkbox" id="cfg-show-answers" checked onchange="updateAnswerVisibility()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label>Operational Curricula Complexity Profile</label>
+                <select id="cfg-difficulty-tier" onchange="onDifficultyTierChanged()">
+                    <option value="beginner" selected>Beginner (Integers, Small Steps, Uniform Ranges)</option>
+                    <option value="advanced">Advanced (Deeper Operational Ranges & Complex Scales)</option>
+                </select>
+            </div>
+
+            <button class="primary" style="margin-top:10px;" onclick="toggleTeacherControls()">💾 Save and Return to Main Panel</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Core Application State Database Engine ---
+        let state = {
+            currentMode: 'counting',
+            minRange: 0,
+            maxRange: 20,
+            pointerVal: 7,
+            zoomLevel: 1.0,
+            isMuted: false,
+            
+            // Jumps array stores architectural metadata structures
+            jumps: [], 
+            
+            // Mode-specific parameter variables
+            fractionDenominator: 4,
+            decimalStep: 0.1,
+            compareValue1: 4,
+            compareValue2: 8,
+            
+            // Practice Mode internal runtime variables
+            isInPracticeMode: false,
+            practiceScore: 0,
+            currentChallenge: null,
+            
+            // Teacher specific parameters overrides
+            showAnswers: true,
+            difficultyTier: 'beginner',
+            negativesUnlocked: true,
+            fractionsUnlocked: true,
+            decimalsUnlocked: true
+        };
+
+        // Screen configuration parameters
+        const svgConfig = {
+            totalWidth: 1000,
+            lineY: 90,
+            padLeft: 60,
+            padRight: 60
+        };
+
+        // System Audio Synthesizer Engine Configuration
+        let audioCtx = null;
+        function initAudioEngine() {
+            if(!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playToneSound(freq, type, duration) {
+            if (state.isMuted) return;
+            try {
+                initAudioEngine();
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e) { console.log("Audio not allowed yet."); }
+        }
+
+        function playJumpBoingSound() { playToneSound(220, 'sine', 0.25); }
+        function playSuccessFanfareSound() { 
+            playToneSound(523.25, 'triangle', 0.1); 
+            setTimeout(() => playToneSound(659.25, 'triangle', 0.1), 100);
+            setTimeout(() => playToneSound(783.99, 'triangle', 0.3), 200);
+        }
+        function playErrorBuzzSound() { playToneSound(130, 'sawtooth', 0.4); }
+
+        // --- Core Startup Initialization Lifecycle Hook ---
+        window.addEventListener('DOMContentLoaded', () => {
+            setupDragAndDropMechanics();
+            switchMode('counting');
+            renderNumberLine();
+            
+            // Dynamic window monitoring adaptation metrics
+            window.addEventListener('resize', () => renderNumberLine());
+        });
+
+        function toggleTheme() {
+            const body = document.body;
+            const current = body.getAttribute('data-theme');
+            const target = current === 'dark' ? 'light' : 'dark';
+            body.setAttribute('data-theme', target);
+            document.getElementById('theme-btn').innerText = target === 'dark' ? '☀️' : '🌙';
+            renderNumberLine();
+        }
+
+        function toggleMute() {
+            state.isMuted = !state.isMuted;
+            document.getElementById('mute-btn').innerText = state.isMuted ? '🔇' : '🔊';
+        }
+
+        function toggleTeacherControls() {
+            const modal = document.getElementById('teacher-modal');
+            modal.classList.toggle('active');
+        }
+
+        function applyTeacherRange() {
+            const rMin = parseInt(document.getElementById('cfg-min-range').value) || 0;
+            const rMax = parseInt(document.getElementById('cfg-max-range').value) || 20;
+            if(rMin >= rMax) {
+                alert("Minimum value configuration must be less than the Maximum boundary value.");
+                return;
+            }
+            setGlobalRange(rMin, rMax);
+        }
+
+        function toggleTeacherFeatureLocks() {
+            state.negativesUnlocked = document.getElementById('cfg-allow-negatives').checked;
+            state.fractionsUnlocked = document.getElementById('cfg-allow-fractions').checked;
+            state.decimalsUnlocked = document.getElementById('cfg-allow-decimals').checked;
+
+            document.getElementById('mode-nav-negatives').style.display = state.negativesUnlocked ? 'block' : 'none';
+            document.getElementById('mode-nav-fractions').style.display = state.fractionsUnlocked ? 'block' : 'none';
+            document.getElementById('mode-nav-decimals').style.display = state.decimalsUnlocked ? 'block' : 'none';
+            document.getElementById('range-preset-neg').style.display = state.negativesUnlocked ? 'inline-block' : 'none';
+
+            if(!state.negativesUnlocked && state.minRange < 0) setGlobalRange(0, 20);
+            if(!state.fractionsUnlocked && state.currentMode === 'fractions') switchMode('counting');
+            if(!state.decimalsUnlocked && state.currentMode === 'decimals') switchMode('counting');
+        }
+
+        function updateAnswerVisibility() {
+            state.showAnswers = document.getElementById('cfg-show-answers').checked;
+            updateMathematicalFormulaDisplay();
+        }
+
+        function onDifficultyTierChanged() {
+            state.difficultyTier = document.getElementById('cfg-difficulty-tier').value;
+            if(state.isInPracticeMode) {
+                generatePracticeChallenge();
+            }
+        }
+
+        function setGlobalRange(min, max) {
+            state.minRange = min;
+            state.maxRange = max;
+            
+            // Constrain pointer value strictly within boundaries
+            if(state.pointerVal < min) state.pointerVal = min;
+            if(state.pointerVal > max) state.pointerVal = max;
+            
+            document.getElementById('cfg-min-range').value = min;
+            document.getElementById('cfg-max-range').value = max;
+            
+            state.jumps = []; // Reset visual trace lines across transformations
+            renderNumberLine();
+            updateMathematicalFormulaDisplay();
+        }
+
+        function zoomNumberLine(factor) {
+            state.zoomLevel *= factor;
+            if(state.zoomLevel < 0.5) state.zoomLevel = 0.5;
+            if(state.zoomLevel > 3.0) state.zoomLevel = 3.0;
+            renderNumberLine();
+        }
+
+        function setPointerValue(val) {
+            // Precision enforcement logic tracking boundary caps
+            let parsedValue = parseFloat(val);
+            if (isNaN(parsedValue)) return;
+            
+            if(parsedValue < state.minRange) parsedValue = state.minRange;
+            if(parsedValue > state.maxRange) parsedValue = state.maxRange;
+            
+            state.pointerVal = parseFloat(parsedValue.toFixed(3));
+            renderPointerElementOnly();
+            updateMathematicalFormulaDisplay();
+        }
+
+        function stepPointer(delta) {
+            let step = delta;
+            if(state.currentMode === 'decimals') step = delta * state.decimalStep;
+            if(state.currentMode === 'fractions') step = delta * (1 / state.fractionDenominator);
+            
+            setPointerValue(state.pointerVal + step);
+            playJumpBoingSound();
+        }
+
+        function resetApplication() {
+            state.minRange = 0;
+            state.maxRange = 20;
+            state.pointerVal = 7;
+            state.zoomLevel = 1.0;
+            state.jumps = [];
+            state.practiceScore = 0;
+            if(state.isInPracticeMode) togglePracticeMode();
+            
+            document.getElementById('cfg-min-range').value = 0;
+            document.getElementById('cfg-max-range').value = 20;
+            document.getElementById('skip-factor').value = "5";
+            document.getElementById('add-start').value = "5";
+            document.getElementById('add-value').value = "6";
+            document.getElementById('sub-start').value = "15";
+            document.getElementById('sub-value').value = "7";
+            document.getElementById('mul-count').value = "4";
+            document.getElementById('mul-size').value = "3";
+            document.getElementById('div-total').value = "12";
+            document.getElementById('div-step').value = "3";
+            document.getElementById('frac-denominator').value = "4";
+            document.getElementById('decimal-step-size').value = "0.1";
+            
+            switchMode('counting');
+            renderNumberLine();
+        }
+
+        // --- Core Engine Workspace Architecture Swapping ---
+        function switchMode(targetMode) {
+            state.currentMode = targetMode;
+            state.jumps = []; // Sweep the line canvas grid clean
+            
+            // Deactivate existing buttons interface focus loops
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            const matchedBtn = document.querySelector(`.mode-btn[data-mode="${targetMode}"]`);
+            if(matchedBtn) matchedBtn.classList.add('active');
+
+            // Toggle panels configurations setup grids
+            document.querySelectorAll('.mode-panel').forEach(p => p.classList.add('hidden'));
+            const targetPanel = document.getElementById(`panel-${targetMode}`);
+            if(targetPanel) targetPanel.classList.remove('hidden');
+
+            // Format Context Titles dynamically
+            document.getElementById('mode-panel-title').innerText = `Configuration Deck: ${targetMode.toUpperCase().replace('-', ' ')}`;
+
+            // Default Mode Boundary Environment Overwrites Setup
+            if(targetMode === 'negatives' && state.minRange >= 0) {
+                setGlobalRange(-10, 10);
+            } else if(targetMode === 'fractions') {
+                setGlobalRange(0, 4);
+                updateFractionPartitions();
+            } else if(targetMode === 'decimals') {
+                setGlobalRange(0, 2);
+            } else if(targetMode === 'compare') {
+                syncCompareInputsToLine();
+            }
+
+            renderNumberLine();
+            updateMathematicalFormulaDisplay();
+            
+            if(state.isInPracticeMode) {
+                generatePracticeChallenge();
+            }
+        }
+
+        // --- Mathematical Sentence Visual Template Formatting Logic ---
+        function updateMathematicalFormulaDisplay() {
+            const out = document.getElementById('sentence-output');
+            if(!state.showAnswers && state.isInPracticeMode) {
+                out.innerHTML = "❔ Math Engine Running...";
+                return;
+            }
+
+            switch (state.currentMode) {
+                case 'counting':
+                    out.innerHTML = `Position Point: ${state.pointerVal}`;
+                    break;
+                case 'skip-counting':
+                    out.innerHTML = `Skip Sequence Node Tracker: ${state.pointerVal}`;
+                    break;
+                case 'addition':
+                    let aStart = parseFloat(document.getElementById('add-start').value) || 0;
+                    let aVal = parseFloat(document.getElementById('add-value').value) || 0;
+                    out.innerHTML = `${aStart} + ${aVal} = <span style="color:var(--secondary);">${aStart + aVal}</span>`;
+                    break;
+                case 'subtraction':
+                    let sStart = parseFloat(document.getElementById('sub-start').value) || 0;
+                    let sVal = parseFloat(document.getElementById('sub-value').value) || 0;
+                    out.innerHTML = `${sStart} − ${sVal} = <span style="color:var(--danger);">${sStart - sVal}</span>`;
+                    break;
+                case 'multiplication':
+                    let mCount = parseInt(document.getElementById('mul-count').value) || 0;
+                    let mSize = parseInt(document.getElementById('mul-size').value) || 0;
+                    let mAns = mCount * mSize;
+                    let repeatedSumStr = Array(mCount).fill(mSize).join(' + ');
+                    out.innerHTML = `<div>${mCount} × ${mSize} = <span style="color:var(--accent);">${mAns}</span></div>
+                                     <div style="font-size:1.1rem; opacity:0.7; margin-top:5px;">Repeated Addition: ${repeatedSumStr} = ${mAns}</div>`;
+                    break;
+                case 'division':
+                    let dTotal = parseInt(document.getElementById('div-total').value) || 0;
+                    let dStep = parseInt(document.getElementById('div-step').value) || 1;
+                    let quotient = Math.floor(dTotal / dStep);
+                    let remainder = dTotal % dStep;
+                    let ansStr = `${dTotal} ÷ ${dStep} = <span style="color:var(--purple);">${quotient}</span>`;
+                    if(remainder > 0) ansStr += ` <span style="font-size:1.2rem; color:var(--accent);"> (Remainder: ${remainder})</span>`;
+                    out.innerHTML = `<div>${ansStr}</div>
+                                     <div style="font-size:1.1rem; opacity:0.7; margin-top:5px;">Check Verification Loop: (${dStep} × ${quotient}) + ${remainder} = ${dTotal}</div>`;
+                    break;
+                case 'fractions':
+                    let fVal = state.pointerVal;
+                    let whole = Math.floor(fVal);
+                    let remFrac = fVal - whole;
+                    let num = Math.round(remFrac * state.fractionDenominator);
+                    
+                    let fracHtml = `<span class="frac-container"><span class="frac-num">${num}</span><span class="frac-denom">${state.fractionDenominator}</span></span>`;
+                    let mixedHtml = whole > 0 ? `${whole} ${num > 0 ? fracHtml : ''}` : (num > 0 ? fracHtml : '0');
+                    if(num === 0 && whole === 0) mixedHtml = '0';
+
+                    out.innerHTML = `Fraction Landmark: ${mixedHtml} ${document.getElementById('toggle-frac-decimals').checked ? `(Decimal Value: ${fVal.toFixed(2)})` : ''}`;
+                    break;
+                case 'decimals':
+                    out.innerHTML = `Decimal Node Coordinate: ${state.pointerVal.toFixed(2)}`;
+                    break;
+                case 'negatives':
+                    out.innerHTML = `Integer Coordinates State: ${state.pointerVal > 0 ? '+' : ''}${state.pointerVal}`;
+                    break;
+                case 'compare':
+                    let v1 = state.compareValue1;
+                    let v2 = state.compareValue2;
+                    let symbol = '=';
+                    let symColor = 'var(--text-color)';
+                    if(v1 > v2) { symbol = '>'; symColor = 'var(--primary)'; }
+                    if(v1 < v2) { symbol = '<'; symColor = 'var(--accent)'; }
+                    out.innerHTML = `<span style="color:var(--primary);">${v1}</span> 
+                                     <span class="compare-box" style="color:${symColor};">${symbol}</span> 
+                                     <span style="color:var(--accent);">${v2}</span>`;
+                    break;
+                case 'place-value':
+                    out.innerHTML = `Place Value Accumulator Vector: ${state.pointerVal}`;
+                    break;
+            }
+        }
+
+        // --- Core Architectural Geometry Scaling Map Conversion Formulas ---
+        function getXCoord(value) {
+            const rangeSpan = state.maxRange - state.minRange;
+            const availableWidth = svgConfig.totalWidth - svgConfig.padLeft - svgConfig.padRight;
+            
+            // Standard normalized base position transformation
+            let norm = (value - state.minRange) / rangeSpan;
+            
+            // Center-weighted zoom operational scaling matrix shift
+            const centerVal = (state.maxRange + state.minRange) / 2;
+            let normCenter = (centerVal - state.minRange) / rangeSpan;
+            
+            let xPosition = svgConfig.padLeft + (normCenter * availableWidth) + ((norm - normCenter) * availableWidth * state.zoomLevel);
+            return xPosition;
+        }
+
+        function getValueFromXCoord(x) {
+            const rangeSpan = state.maxRange - state.minRange;
+            const availableWidth = svgConfig.totalWidth - svgConfig.padLeft - svgConfig.padRight;
+            const centerVal = (state.maxRange + state.minRange) / 2;
+            let normCenter = (centerVal - state.minRange) / rangeSpan;
+
+            let baseNorm = ((x - svgConfig.padLeft) / availableWidth);
+            let norm = normCenter + ((baseNorm - normCenter) / state.zoomLevel);
+            
+            let rawVal = state.minRange + (norm * rangeSpan);
+            return rawVal;
+        }
+
+        // --- Core SVG Render Engine Pipeline Module ---
+        function renderNumberLine() {
+            const gridGroup = document.getElementById('svg-grid-group');
+            const labelsGroup = document.getElementById('svg-labels-group');
+            const jumpsGroup = document.getElementById('svg-jumps-group');
+            
+            gridGroup.innerHTML = '';
+            labelsGroup.innerHTML = '';
+            jumpsGroup.innerHTML = '';
+
+            // Render Core Backbone Horizontal Architecture Wire
+            const leftEndLine = getXCoord(state.minRange) - 20;
+            const rightEndLine = getXCoord(state.maxRange) + 20;
+            
+            let mainLineElement = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            mainLineElement.setAttribute("x1", leftEndLine);
+            mainLineElement.setAttribute("y1", svgConfig.lineY);
+            mainLineElement.setAttribute("x2", rightEndLine);
+            mainLineElement.setAttribute("y2", svgConfig.lineY);
+            mainLineElement.setAttribute("class", "main-line");
+            gridGroup.appendChild(mainLineElement);
+
+            // Compute tick scaling parameters dynamically to avoid rendering overlapping dense lines
+            let deltaRange = state.maxRange - state.minRange;
+            let stepInterval = 1;
+            
+            if (deltaRange > 300) stepInterval = 50;
+            else if (deltaRange > 150) stepInterval = 20;
+            else if (deltaRange > 50) stepInterval = 10;
+            else if (deltaRange > 25) stepInterval = 5;
+            else if (state.currentMode === 'decimals' || state.currentMode === 'fractions') stepInterval = 1;
+
+            // Render Dynamic Scale Tick Markers & Text Structural Matrices Loop
+            for (let i = Math.ceil(state.minRange); i <= Math.floor(state.maxRange); i += stepInterval) {
+                // Eliminate extreme overlapping bounds outliers beyond visible panels viewports
+                let curX = getXCoord(i);
+                if(curX < 0 || curX > svgConfig.totalWidth) continue;
+
+                // Build Primary Ticks Structural Pillars
+                let majorTick = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                majorTick.setAttribute("x1", curX);
+                majorTick.setAttribute("y1", svgConfig.lineY - 15);
+                majorTick.setAttribute("x2", curX);
+                majorTick.setAttribute("y2", svgConfig.lineY + 15);
+                majorTick.setAttribute("class", "tick-line");
+                gridGroup.appendChild(majorTick);
+
+                // Build Numeric Text Label Entities Node blocks
+                let textLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                textLabel.setAttribute("x", curX);
+                textLabel.setAttribute("y", svgConfig.lineY + 40);
+                textLabel.setAttribute("class", "tick-label");
+                textLabel.textContent = i;
+                labelsGroup.appendChild(textLabel);
+
+                // Draw secondary nested micro subgrid layers inside fractions/decimals domains
+                if(state.currentMode === 'decimals' && stepInterval === 1) {
+                    let dStep = state.decimalStep;
+                    for(let d = i + dStep; d < i + 1 && d <= state.maxRange; d += dStep) {
+                        let subX = getXCoord(d);
+                        if(subX < 0 || subX > svgConfig.totalWidth) continue;
+                        let subTick = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                        subTick.setAttribute("x1", subX);
+                        subTick.setAttribute("y1", svgConfig.lineY - 8);
+                        subTick.setAttribute("x2", subX);
+                        subTick.setAttribute("y2", svgConfig.lineY + 8);
+                        subTick.setAttribute("class", "sub-tick-line");
+                        gridGroup.appendChild(subTick);
+                    }
+                }
+
+                if(state.currentMode === 'fractions' && stepInterval === 1) {
+                    let fDenom = state.fractionDenominator;
+                    let showDecs = document.getElementById('toggle-frac-decimals').checked;
+                    for(let f = 1; f < fDenom; f++) {
+                        let fVal = i + (f / fDenom);
+                        if(fVal > state.maxRange) break;
+                        let subX = getXCoord(fVal);
+                        if(subX < 0 || subX > svgConfig.totalWidth) continue;
+                        
+                        let subTick = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                        subTick.setAttribute("x1", subX);
+                        subTick.setAttribute("y1", svgConfig.lineY - 10);
+                        subTick.setAttribute("x2", subX);
+                        subTick.setAttribute("y2", svgConfig.lineY + 10);
+                        subTick.setAttribute("class", "sub-tick-line");
+                        gridGroup.appendChild(subTick);
+
+                        // If user configuration calls for fractional labels micro-injections
+                        if(state.zoomLevel > 1.3) {
+                            let fLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                            fLabel.setAttribute("x", subX);
+                            fLabel.setAttribute("y", svgConfig.lineY - 22);
+                            fLabel.setAttribute("font-size", "11px");
+                            fLabel.setAttribute("text-anchor", "middle");
+                            fLabel.setAttribute("fill", "var(--text-color)");
+                            fLabel.textContent = showDecs ? fVal.toFixed(2) : `${f}/${fDenom}`;
+                            labelsGroup.appendChild(fLabel);
+                        }
+                    }
+                }
+            }
+
+            // Execute Jump Arcs Render Pipelines Execution Blocks
+            state.jumps.forEach(j => {
+                let xStart = getXCoord(j.start);
+                let xEnd = getXCoord(j.end);
+                
+                // Do not render geometric lines for nodes completely shifted off grid canvas viewport spaces
+                if(Math.max(xStart, xEnd) < 0 || Math.min(xStart, xEnd) > svgConfig.totalWidth) return;
+
+                let arcHeight = Math.min(100, Math.abs(xEnd - xStart) * 0.4);
+                let controlX = (xStart + xEnd) / 2;
+                let controlY = svgConfig.lineY - arcHeight;
+
+                let pathData = `M ${xStart} ${svgConfig.lineY} Q ${controlX} ${controlY} ${xEnd} ${svgConfig.lineY}`;
+                
+                let arcPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                arcPath.setAttribute("d", pathData);
+                arcPath.setAttribute("class", "jump-arc");
+                arcPath.setAttribute("stroke", j.color || "var(--primary)");
+                jumpsGroup.appendChild(arcPath);
+
+                // Add arrow pointer indicator configurations vector paths
+                let arrowHead = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+                let dir = xEnd >= xStart ? 1 : -1;
+                let p1 = `${xEnd},${svgConfig.lineY}`;
+                let p2 = `${xEnd - (8 * dir)},${svgConfig.lineY - 6}`;
+                let p3 = `${xEnd - (8 * dir)},${svgConfig.lineY + 6}`;
+                arrowHead.setAttribute("points", `${p1} ${p2} ${p3}`);
+                arrowHead.setAttribute("fill", j.color || "var(--primary)");
+                jumpsGroup.appendChild(arrowHead);
+            });
+
+            // Trigger child engine viewport element execution sync
+            renderPointerElementOnly();
+        }
+
+        function renderPointerElementOnly() {
+            const pointerGroup = document.getElementById('svg-pointer-group');
+            pointerGroup.innerHTML = '';
+
+            if (state.currentMode === 'compare') {
+                // Dual pointer rendering strategy for multi-number relationship comparisons
+                let p1X = getXCoord(state.compareValue1);
+                let p2X = getXCoord(state.compareValue2);
+
+                buildMarkerNodeSvg(pointerGroup, p1X, "var(--primary)", "Val A", "comp1");
+                buildMarkerNodeSvg(pointerGroup, p2X, "var(--accent)", "Val B", "comp2");
+            } else {
+                // Standard Single Navigation Active Pointer Target Indicator Pin Map
+                let activeX = getXCoord(state.pointerVal);
+                buildMarkerNodeSvg(pointerGroup, activeX, "var(--secondary)", state.pointerVal.toString(), "main");
+            }
+        }
+
+        function buildMarkerNodeSvg(group, x, color, tagLabel, identityType) {
+            let container = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            container.setAttribute("class", "pointer-marker");
+            container.setAttribute("data-id", identityType);
+            container.setAttribute("transform", `translate(${x}, ${svgConfig.lineY})`);
+
+            // Transcribe structural triangular downward anchor indicator flag vector
+            let pinShape = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+            pinShape.setAttribute("points", "0,0 -15,-25 15,-25");
+            pinShape.setAttribute("fill", color);
+            pinShape.setAttribute("stroke", "#ffffff");
+            pinShape.setAttribute("stroke-width", "2");
+            container.appendChild(pinShape);
+
+            // Add Top Floating Status Bubble Capsule Frame
+            let bubble = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            bubble.setAttribute("cx", "0");
+            bubble.setAttribute("cy", "-38");
+            bubble.setAttribute("r", "20");
+            bubble.setAttribute("fill", color);
+            bubble.setAttribute("stroke", "#ffffff");
+            bubble.setAttribute("stroke-width", "2.5");
+            container.appendChild(bubble);
+
+            // Append textual identification strings overlay inside bubble frames elements
+            let txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            txt.setAttribute("x", "0");
+            txt.setAttribute("y", "-33");
+            txt.setAttribute("fill", "#ffffff");
+            txt.setAttribute("font-size", "12px");
+            txt.setAttribute("font-weight", "bold");
+            txt.setAttribute("text-anchor", "middle");
+            
+            // Format output based on length to prevent text overflow in the bubble
+            txt.textContent = tagLabel.length > 4 ? tagLabel.substring(0,4) : tagLabel;
+            container.appendChild(txt);
+
+            group.appendChild(container);
+        }
+
+        // --- Drag and Drop Touch/Mouse Core Coordinate Listener Handlers ---
+        function setupDragAndDropMechanics() {
+            const svg = document.getElementById('number-line-svg');
+            let dragTargetIdentity = null;
+            let isDraggingActive = false;
+
+            const startDragEvent = (e) => {
+                let targetElement = e.target.closest('.pointer-marker');
+                if(targetElement) {
+                    dragTargetIdentity = targetElement.getAttribute('data-id');
+                    isDraggingActive = true;
+                    initAudioEngine();
+                }
+            };
+
+            const processDragMovement = (e) => {
+                if(!isDraggingActive || !dragTargetIdentity) return;
+                
+                // Fetch internal relative target client coordinate positioning bounding boxes
+                let rect = svg.getBoundingClientRect();
+                let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                let relativeX = ((clientX - rect.left) / rect.width) * svgConfig.totalWidth;
+
+                let calculatedValue = getValueFromXCoord(relativeX);
+                
+                // Core step snap mapping algorithm calculation block logic implementation
+                if(state.currentMode === 'decimals') {
+                    calculatedValue = Math.round(calculatedValue / state.decimalStep) * state.decimalStep;
+                } else if(state.currentMode === 'fractions') {
+                    let step = 1 / state.fractionDenominator;
+                    calculatedValue = Math.round(calculatedValue / step) * step;
+                } else {
+                    calculatedValue = Math.round(calculatedValue);
+                }
+
+                // Snap boundary limits execution clamps check loops
+                if(calculatedValue < state.minRange) calculatedValue = state.minRange;
+                if(calculatedValue > state.maxRange) calculatedValue = state.maxRange;
+                calculatedValue = parseFloat(calculatedValue.toFixed(3));
+
+                // Routing output assignments back dynamically into state data structures registers
+                if(state.currentMode === 'compare') {
+                    if(dragTargetIdentity === 'comp1') {
+                        state.compareValue1 = calculatedValue;
+                        document.getElementById('comp-val1').value = calculatedValue;
+                    } else {
+                        state.compareValue2 = calculatedValue;
+                        document.getElementById('comp-val2').value = calculatedValue;
+                    }
+                    updateComparison();
+                } else {
+                    state.pointerVal = calculatedValue;
+                }
+
+                renderPointerElementOnly();
+                updateMathematicalFormulaDisplay();
+            };
+
+            const terminalDragStop = () => {
+                if(isDraggingActive) playJumpBoingSound();
+                isDraggingActive = false;
+                dragTargetIdentity = null;
+            };
+
+            // Register event structural binds execution frames mappings
+            svg.addEventListener('mousedown', startDragEvent);
+            svg.addEventListener('mousemove', processDragMovement);
+            window.addEventListener('mouseup', terminalDragStop);
+
+            svg.addEventListener('touchstart', startDragEvent, { passive: true });
+            svg.addEventListener('touchmove', processDragMovement, { passive: true });
+            window.addEventListener('touchend', terminalDragStop);
+        }
+
+        // --- Custom Mathematical Operational Execution Action Scripts Controllers ---
+        function executeAddition() {
+            let start = parseFloat(document.getElementById('add-start').value) || 0;
+            let val = parseFloat(document.getElementById('add-value').value) || 0;
+            let end = start + val;
+
+            // Shift limits out automatically if calculation exceeds parameters thresholds bounds
+            if(end > state.maxRange) setGlobalRange(state.minRange, Math.ceil(end + 5));
+            if(start < state.minRange) setGlobalRange(Math.floor(start - 2), state.maxRange);
+
+            state.jumps = [{ start: start, end: end, color: "var(--secondary)" }];
+            state.pointerVal = end;
+            renderNumberLine();
+            updateMathematicalFormulaDisplay();
+            playToneSound(440, 'triangle', 0.3);
+        }
+
+        function executeSubtraction() {
+            let start = parseFloat(document.getElementById('sub-start').value) || 0;
+            let val = parseFloat(document.getElementById('sub-value').value) || 0;
+            let end = start - val;
+
+            if(end < state.minRange) setGlobalRange(Math.floor(end - 5), state.maxRange);
+            if(start > state.maxRange) setGlobalRange(state.minRange, Math.ceil(start + 2));
+
+            state.jumps = [{ start: start, end: end, color: "var(--danger)" }];
+            state.pointerVal = end;
+            renderNumberLine();
+            updateMathematicalFormulaDisplay();
+            playToneSound(380, 'triangle', 0.3);
+        }
+
+        function executeMultiplication() {
+            let count = parseInt(document.getElementById('mul-count').value) || 1;
+            let size = parseInt(document.getElementById('mul-size').value) || 1;
+            
+            state.jumps = [];
+            let currentTracker = 0;
+
+            for(let i=0; i < count; i++) {
+                let next = currentTracker + size;
+                state.jumps.push({ start: currentTracker, end: next, color: "var(--accent)" });
+                currentTracker = next;
+            }
+
+            if(currentTracker > state.maxRange) setGlobalRange(state.minRange, currentTracker + 4);
+            state.pointerVal = currentTracker;
+            renderNumberLine();
+            updateMathematicalFormulaDisplay();
+            playToneSound(500, 'sine', 0.4);
+        }
+
+        function executeDivision() {
+            let total = parseInt(document.getElementById('div-total').value) || 1;
+            let step = parseInt(document.getElementById('div-step').value) || 1;
+            
+            state.jumps = [];
+            let currentTracker = total;
+
+            while(currentTracker >= step) {
+                let next = currentTracker - step;
+                state.jumps.push({ start: currentTracker, end: next, color: "var(--purple)" });
+                currentTracker = next;
+            }
+
+            // Remainder visual line marker trace injection execution frame setup
+            if(currentTracker > 0) {
+                state.jumps.push({ start: currentTracker, end: 0, color: "var(--danger)" });
+            }
+
+            if(total > state.maxRange) setGlobalRange(state.minRange, total + 5);
+            state.pointerVal = 0;
+            renderNumberLine();
+            updateMathematicalFormulaDisplay();
+            playToneSound(450, 'sawtooth', 0.3);
+        }
+
+        function updateFractionPartitions() {
+            state.fractionDenominator = parseInt(document.getElementById('frac-denominator').value) || 4;
+            renderNumberLine();
+            updateMathematicalFormulaDisplay();
+        }
+
+        function runSkipCountingAnimation() {
+            let factor = parseInt(document.getElementById('skip-factor').value) || 2;
+            state.jumps = [];
+            let tracker = state.minRange;
+            
+            // Loop step limits allocation generator parameters trace
+            let safetyGuard = 0;
+            while(tracker + factor <= state.maxRange && safetyGuard < 30) {
+                state.jumps.push({ start: tracker, end: tracker + factor, color: "var(--primary)" });
+                tracker += factor;
+                safetyGuard++;
+            }
+            state.pointerVal = tracker;
+            renderNumberLine();
+            updateMathematicalFormulaDisplay();
+            playToneSound(300, 'sine', 0.5);
+        }
+
+        function updateComparison() {
+            state.compareValue1 = parseFloat(document.getElementById('comp-val1').value) || 0;
+            state.compareValue2 = parseFloat(document.getElementById('comp-val2').value) || 0;
+            renderPointerElementOnly();
+            updateMathematicalFormulaDisplay();
+        }
+
+        function syncCompareInputsToLine() {
+            updateComparison();
+            let boundaryMax = Math.max(state.compareValue1, state.compareValue2);
+            let boundaryMin = Math.min(state.compareValue1, state.compareValue2);
+            if(boundaryMax > state.maxRange || boundaryMin < state.minRange) {
+                setGlobalRange(Math.floor(boundaryMin - 2), Math.ceil(boundaryMax + 2));
+            }
+        }
+
+        function executePlaceValueJump(magnitude) {
+            let initial = state.pointerVal;
+            let target = initial + magnitude;
+            
+            state.jumps = [{ start: initial, end: target, color: Math.abs(magnitude) >= 100 ? "var(--purple)" : (Math.abs(magnitude) >= 10 ? "var(--accent)" : "var(--secondary)") }];
+            setPointerValue(target);
+            
+            if(target > state.maxRange || target < state.minRange) {
+                setGlobalRange(Math.min(state.minRange, target - 10), Math.max(state.maxRange, target + 10));
+            }
+            renderNumberLine();
+        }
+
+        // --- Interactive Student Missions Practice Module Core Engine Engine Code ---
+        function togglePracticeMode() {
+            state.isInPracticeMode = !state.isInPracticeMode;
+            const container = document.getElementById('practice-card-container');
+            const sideBar = document.getElementById('sidebar-modes');
+            const btnText = document.getElementById('practice-btn-text');
+
+            if(state.isInPracticeMode) {
+                container.classList.remove('hidden');
+                btnText.innerText = "🚪 Exit Practice";
+                generatePracticeChallenge();
+            } else {
+                container.classList.add('hidden');
+                btnText.innerText = "🎯 Practice Room";
+                document.getElementById('practice-feedback').classList.add('hidden');
+                updateMathematicalFormulaDisplay();
+            }
+        }
+
+        function generatePracticeChallenge() {
+            document.getElementById('practice-feedback').classList.add('hidden');
+            let configTier = state.difficultyTier;
+            let currentMode = state.currentMode;
+
+            let challenge = { type: 'pointer', question: '', target: 0, inputs: [] };
+            let randA = 0, randB = 0;
+
+            if(configTier === 'beginner') {
+                randA = Math.floor(Math.random() * 8) + 2; // [2..9]
+                randB = Math.floor(Math.random() * 7) + 1; // [1..7]
+            } else {
+                randA = Math.floor(Math.random() * 25) + 10; // [10..34]
+                randB = Math.floor(Math.random() * 12) + 3;  // [3..14]
+            }
+
+            switch(currentMode) {
+                case 'counting':
+                    challenge.target = randA;
+                    challenge.question = `Mission Assignment: Drag the marker pin directly to target coordinate number <b>${randA}</b> on the line deck.`;
+                    challenge.type = 'pointer';
+                    break;
+                case 'addition':
+                    challenge.question = `Mission Assignment: Compute the configuration path result for: <b>${randA} + ${randB}</b>`;
+                    challenge.target = randA + randB;
+                    challenge.type = 'input';
+                    break;
+                case 'subtraction':
+                    // Prevent drop configurations below absolute bounds limit floors
+                    let sStart = Math.max(randA, randB);
+                    let sSub = Math.min(randA, randB);
+                    challenge.question = `Mission Assignment: Solve the subtraction calculation loop: <b>${sStart} − ${sSub}</b>`;
+                    challenge.target = sStart - sSub;
+                    challenge.type = 'input';
+                    break;
+                case 'multiplication':
+                    let mCount = configTier === 'beginner' ? Math.floor(Math.random() * 4) + 2 : Math.floor(Math.random() * 6) + 3;
+                    let mSize = configTier === 'beginner' ? 2 : Math.floor(Math.random() * 4) + 2;
+                    challenge.question = `Mission Assignment: Find total calculation output length for <b>${mCount} groups of ${mSize}</b> (Hint: ${mCount} × ${mSize})`;
+                    challenge.target = mCount * mSize;
+                    challenge.type = 'input';
+                    break;
+                case 'division':
+                    let dDivisor = Math.floor(Math.random() * 3) + 2;
+                    let dQuotient = Math.floor(Math.random() * 4) + 2;
+                    let dDividend = dDivisor * dQuotient; // Guarantee zero remainder outputs on beginner thresholds profiles
+                    challenge.question = `Mission Assignment: Calculate the exact shared quotient split for: <b>${dDividend} ÷ ${dDivisor}</b>`;
+                    challenge.target = dQuotient;
+                    challenge.type = 'input';
+                    break;
+                case 'compare':
+                    challenge.question = `Mission Assignment: Analyze the numeric scales size. Choose correct logic symbol linking: <b>${randA} [?] ${randB}</b>`;
+                    challenge.target = randA > randB ? '>' : (randA < randB ? '<' : '=');
+                    challenge.type = 'choice';
+                    challenge.choices = ['<', '=', '>'];
+                    break;
+                default:
+                    // General fallback catch safe loops bounds assignment overrides
+                    challenge.target = 10;
+                    challenge.question = "Mission Assignment: Position the pointer location directly targeting step marker 10.";
+                    challenge.type = 'pointer';
+                    break;
+            }
+
+            state.currentChallenge = challenge;
+            document.getElementById('practice-question-text').innerHTML = challenge.question;
+            buildPracticeControlInputsUI(challenge);
+            updateMathematicalFormulaDisplay();
+        }
+
+        function buildPracticeControlInputsUI(challenge) {
+            const area = document.getElementById('practice-input-area');
+            area.innerHTML = '';
+
+            if(challenge.type === 'pointer') {
+                let checkBtn = document.createElement('button');
+                checkBtn.className = "purple";
+                checkBtn.innerText = "Validate Marker Location Placement";
+                checkBtn.onclick = verifyPracticeUserSubmission;
+                area.appendChild(checkBtn);
+            } else if(challenge.type === 'input') {
+                let numInput = document.createElement('input');
+                numInput.type = "number";
+                numInput.id = "practice-user-field-input";
+                numInput.placeholder = "?";
+                numInput.style.width = "100px";
+                area.appendChild(numInput);
+
+                let checkBtn = document.createElement('button');
+                checkBtn.className = "secondary";
+                checkBtn.innerText = "Submit Answer";
+                checkBtn.onclick = verifyPracticeUserSubmission;
+                area.appendChild(checkBtn);
+            } else if(challenge.type === 'choice') {
+                challenge.choices.forEach(c => {
+                    let btn = document.createElement('button');
+                    btn.className = "accent";
+                    btn.innerText = c;
+                    btn.onclick = () => verifyPracticeChoiceSubmission(c);
+                    area.appendChild(btn);
+                });
+            }
+        }
+
+        function verifyPracticeUserSubmission() {
+            let userAns = null;
+            if(state.currentChallenge.type === 'pointer') {
+                userAns = state.pointerVal;
+            } else if(state.currentChallenge.type === 'input') {
+                userAns = parseFloat(document.getElementById('practice-user-field-input').value);
+            }
+            processPracticeVerificationPipeline(userAns === state.currentChallenge.target);
+        }
+
+        function verifyPracticeChoiceSubmission(choiceString) {
+            processPracticeVerificationPipeline(choiceString === state.currentChallenge.target);
+        }
+
+        function processPracticeVerificationPipeline(isCorrect) {
+            const banner = document.getElementById('practice-feedback');
+            banner.classList.remove('hidden');
+
+            if(isCorrect) {
+                state.practiceScore += 10;
+                banner.innerText = "🎉 Outstanding Work! Your operational solution logic calculation is completely verified!";
+                banner.style.background = "rgba(46, 204, 113, 0.2)";
+                banner.style.color = "var(--secondary)";
+                playSuccessFanfareSound();
+                triggerVisualConfettiCelebrationEngine();
+                
+                // Advance challenge cycle queue sequence loops automatically
+                setTimeout(() => { generatePracticeChallenge(); }, 2500);
+            } else {
+                banner.innerText = "❌ Not quite right. Review the number line steps, adjust your inputs, and try again!";
+                banner.style.background = "rgba(231, 76, 60, 0.2)";
+                banner.style.color = "var(--danger)";
+                playErrorBuzzSound();
+            }
+            document.getElementById('practice-score').innerText = `Score: ${state.practiceScore}`;
+        }
+
+        // --- Embedded Canvas Confetti Particle System FX Architecture ---
+        let confettiCanvas = document.getElementById('confetti-canvas');
+        let ctxConf = confettiCanvas.getContext('2d');
+        let confettiParticlesArray = [];
+
+        function resizeConfettiCanvas() {
+            confettiCanvas.width = window.innerWidth;
+            confettiCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeConfettiCanvas);
+        resizeConfettiCanvas();
+
+        function triggerVisualConfettiCelebrationEngine() {
+            confettiParticlesArray = [];
+            for(let i=0; i<100; i++) {
+                confettiParticlesArray.push({
+                    x: window.innerWidth / 2,
+                    y: window.innerHeight / 2,
+                    vX: (Math.random() - 0.5) * 15,
+                    vY: (Math.random() - 0.7) * 15 - 5,
+                    size: Math.random() * 8 + 5,
+                    color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+                    rotation: Math.random() * 360,
+                    rotationSpeed: (Math.random() - 0.5) * 10
+                });
+            }
+            requestAnimationFrame(animateConfettiLoopFrames);
+        }
+
+        function animateConfettiLoopFrames() {
+            if(confettiParticlesArray.length === 0) return;
+            ctxConf.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+            
+            confettiParticlesArray.forEach((p, idx) => {
+                p.x += p.vX;
+                p.y += p.vY;
+                p.vY += 0.3; // Gravity Vector Constant Pull Factor
+                p.rotation += p.rotationSpeed;
+
+                ctxConf.save();
+                ctxConf.translate(p.x, p.y);
+                ctxConf.rotate(p.rotation * Math.PI / 180);
+                ctxConf.fillStyle = p.color;
+                ctxConf.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+                ctxConf.restore();
+
+                // Drop particles exiting active screen layouts limits
+                if(p.y > window.innerHeight) confettiParticlesArray.splice(idx, 1);
+            });
+
+            requestAnimationFrame(animateConfettiLoopFrames);
+        }
+    </script>
+</body>
+</html>

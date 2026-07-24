@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Apple & Basket Addition - Interactive Math Tool</title>
+  <style>
+    /* --- CSS RESET & BASE STYLES --- */
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Comic Sans MS', 'Chalkboard SE', 'Fredoka', 'Comic Neue', cursive, sans-serif;
+      background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 65%, #7EC850 65%, #5C9E32 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      overflow-x: hidden;
+      color: #333;
+      position: relative;
+    }
+
+    /* --- BACKGROUND DECORATIONS --- */
+    .sky-element {
+      position: absolute;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .cloud {
+      fill: #FFFFFF;
+      opacity: 0.9;
+      filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.05));
+      animation: floatCloud 25s linear infinite;
+    }
+
+    @keyframes floatCloud {
+      0% { transform: translateX(-150px); }
+      100% { transform: translateX(calc(100vw + 150px)); }
+    }
+
+    /* --- HEADER & CONTROLS BAR --- */
+    header {
+      width: 100%;
+      max-width: 1000px;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .title-badge {
+      background: #FFF;
+      padding: 6px 16px;
+      border-radius: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      font-weight: bold;
+      color: #D32F2F;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .top-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-icon {
+      background: #FFF;
+      border: 2px solid #FFF;
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+      transition: transform 0.1s, background-color 0.2s;
+    }
+
+    .btn-icon:active { transform: scale(0.92); }
+
+    /* --- MAIN APP CONTAINER --- */
+    main {
+      width: 100%;
+      max-width: 1000px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      padding: 0 15px 15px;
+      z-index: 5;
+      flex-grow: 1;
+    }
+
+    /* --- EQUATION DISPLAY CARD --- */
+    .equation-card {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 24px;
+      padding: 12px 35px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 2.8rem;
+      font-weight: 900;
+      color: #2C3E50;
+      border: 4px solid #FFD54F;
+      transition: all 0.3s;
+    }
+
+    .num-box {
+      padding: 4px 16px;
+      border-radius: 14px;
+      transition: all 0.3s;
+    }
+
+    .num-box.addend-a { background-color: #FFEBEE; color: #C62828; }
+    .num-box.addend-b { background-color: #E3F2FD; color: #1565C0; }
+    .num-box.sum { background-color: #E8F5E9; color: #2E7D32; min-width: 60px; text-align: center; }
+
+    .highlight-basket {
+      transform: scale(1.08);
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+    }
+
+    /* --- WORKSPACE LAYOUT --- */
+    .workspace {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .source-baskets {
+      display: flex;
+      justify-content: space-around;
+      width: 100%;
+      max-width: 800px;
+    }
+
+    .basket-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      transition: transform 0.3s;
+    }
+
+    .basket-label {
+      background: #FFF;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 1rem;
+      margin-bottom: 4px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .basket-svg-wrap {
+      width: 220px;
+      height: 140px;
+      position: relative;
+    }
+
+    .answer-zone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .answer-basket-wrap {
+      width: 320px;
+      height: 180px;
+      position: relative;
+    }
+
+    /* --- DRAGGABLE & STACKED APPLES --- */
+    .apple-node {
+      position: absolute;
+      width: 48px;
+      height: 48px;
+      cursor: grab;
+      touch-action: none;
+      z-index: 20;
+      transition: transform 0.1s ease;
+      filter: drop-shadow(0px 3px 3px rgba(0,0,0,0.2));
+    }
+
+    .apple-node:active {
+      cursor: grabbing;
+      z-index: 100;
+    }
+
+    .apple-node.sway {
+      animation: gentleSway 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes gentleSway {
+      0% { transform: rotate(-4deg); }
+      100% { transform: rotate(4deg); }
+    }
+
+    .apple-counter-badge {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -20%);
+      font-size: 1.1rem;
+      font-weight: 900;
+      color: #FFF;
+      text-shadow: 1px 1px 2px #000, -1px -1px 2px #000;
+      pointer-events: none;
+    }
+
+    /* --- ACTION TOOLBAR --- */
+    .action-bar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    .btn-action {
+      background: linear-gradient(180deg, #4CAF50 0%, #388E3C 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .btn-action:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.25); }
+    .btn-action:active { transform: translateY(1px); }
+    .btn-secondary { background: linear-gradient(180deg, #FF9800 0%, #F57C00 100%); }
+    .btn-blue { background: linear-gradient(180deg, #2196F3 0%, #1976D2 100%); }
+
+    /* --- MODAL & SETTINGS PANEL --- */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: #FFF;
+      border-radius: 24px;
+      padding: 25px;
+      width: 90%;
+      max-width: 480px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .modal-title {
+      font-size: 1.5rem;
+      color: #D32F2F;
+      font-weight: bold;
+      text-align: center;
+      border-bottom: 2px solid #EEE;
+      padding-bottom: 10px;
+    }
+
+    .setting-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .setting-label {
+      font-weight: bold;
+      font-size: 0.95rem;
+      color: #555;
+    }
+
+    .setting-options {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .opt-btn {
+      flex: 1;
+      min-width: 80px;
+      padding: 8px;
+      border: 2px solid #DDD;
+      background: #F9F9F9;
+      border-radius: 12px;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: bold;
+      font-size: 0.85rem;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .opt-btn.active {
+      border-color: #4CAF50;
+      background: #E8F5E9;
+      color: #2E7D32;
+    }
+
+    /* --- CELEBRATION & FEEDBACK OVERLAYS --- */
+    .feedback-banner {
+      position: fixed;
+      top: 20%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      background: #FFF;
+      border: 4px solid #FFD54F;
+      padding: 15px 40px;
+      border-radius: 50px;
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: #E65100;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      pointer-events: none;
+      z-index: 500;
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .feedback-banner.show {
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    /* Canvas for Sparkles/Confetti */
+    #fxCanvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      pointer-events: none;
+      z-index: 450;
+    }
+
+    /* --- MASCOT --- */
+    .mascot-container {
+      position: fixed;
+      bottom: 10px;
+      right: 15px;
+      width: 90px;
+      height: 90px;
+      pointer-events: none;
+      z-index: 30;
+      transition: transform 0.3s;
+    }
+
+    .mascot-bounce {
+      animation: mascotJump 0.6s infinite alternate ease-out;
+    }
+
+    @keyframes mascotJump {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-20px); }
+    }
+
+    /* High Contrast Accessibility Theme */
+    body.high-contrast {
+      background: #000 !important;
+      color: #FFF !important;
+    }
+    body.high-contrast .equation-card,
+    body.high-contrast .modal-card,
+    body.high-contrast .title-badge,
+    body.high-contrast .basket-label {
+      background: #111 !important;
+      color: #FFF !important;
+      border-color: #FFF !important;
+    }
+
+    /* --- RESPONSIVE ADJUSTMENTS --- */
+    @media (max-width: 600px) {
+      .equation-card { font-size: 2rem; padding: 8px 20px; }
+      .basket-svg-wrap { width: 150px; height: 100px; }
+      .answer-basket-wrap { width: 240px; height: 140px; }
+      .apple-node { width: 38px; height: 38px; }
+      .apple-counter-badge { font-size: 0.9rem; }
+      .mascot-container { width: 65px; height: 65px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- FX Particle Canvas -->
+  <canvas id="fxCanvas"></canvas>
+
+  <!-- Sky Background Elements -->
+  <svg class="sky-element cloud" style="top: 8%; width: 140px; animation-duration: 35s;" viewBox="0 0 100 60"><path d="M10 40 A20 20 0 0 1 40 20 A25 25 0 0 1 80 25 A15 15 0 0 1 90 40 Z"/></svg>
+  <svg class="sky-element cloud" style="top: 18%; width: 200px; animation-duration: 22s; animation-delay: -10s;" viewBox="0 0 100 60"><path d="M10 40 A20 20 0 0 1 40 20 A25 25 0 0 1 80 25 A15 15 0 0 1 90 40 Z"/></svg>
+
+  <!-- Top Navigation & Controls -->
+  <header>
+    <div class="title-badge">
+      <svg width="24" height="24" viewBox="0 0 32 32"><path fill="#D32F2F" d="M16 4C10 4 6 9 6 16c0 8 5 12 10 12s10-4 10-12C26 9 22 4 16 4z"/><path fill="#4CAF50" d="M16 4c2-3 6-3 8-1c-1 3-4 4-8 1z"/></svg>
+      <span>Apple Math</span>
+    </div>
+    <div class="top-buttons">
+      <button class="btn-icon" id="btnAudio" title="Toggle Audio Feedback" aria-label="Toggle Sound">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5zM15.54 8.46a5 5 0 010 7.07"/></svg>
+      </button>
+      <button class="btn-icon" id="btnContrast" title="High Contrast Mode" aria-label="Toggle Contrast">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 010 20V2z" fill="#333"/></svg>
+      </button>
+      <button class="btn-icon" id="btnSettings" title="Teacher Controls" aria-label="Open Settings">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      </button>
+      <button class="btn-icon" id="btnFullscreen" title="Toggle Fullscreen" aria-label="Toggle Fullscreen">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main>
+    <!-- Math Equation Display -->
+    <div class="equation-card" id="equationCard">
+      <span class="num-box addend-a" id="valA">7</span>
+      <span>+</span>
+      <span class="num-box addend-b" id="valB">5</span>
+      <span>=</span>
+      <span class="num-box sum" id="valSum">?</span>
+    </div>
+
+    <!-- Workspace with Source and Target Baskets -->
+    <div class="workspace">
+      <div class="source-baskets">
+        <!-- Basket A -->
+        <div class="basket-container" id="wrapA">
+          <div class="basket-label" style="color: #C62828;">Basket A</div>
+          <div class="basket-svg-wrap" id="basketA"></div>
+        </div>
+
+        <!-- Basket B -->
+        <div class="basket-container" id="wrapB">
+          <div class="basket-label" style="color: #1565C0;">Basket B</div>
+          <div class="basket-svg-wrap" id="basketB"></div>
+        </div>
+      </div>
+
+      <!-- Target/Answer Basket -->
+      <div class="answer-zone">
+        <div class="basket-label" style="color: #2E7D32; font-size: 1.1rem;">Answer Basket</div>
+        <div class="answer-basket-wrap" id="basketTarget"></div>
+      </div>
+    </div>
+
+    <!-- Action Toolbar -->
+    <div class="action-bar">
+      <button class="btn-action btn-blue" id="btnHint">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18h6m-3 3v-3m1.4-14.7a7 7 0 10-8.8 0C6 7 7 9 7 11h10c0-2 1-4 2.4-5.7z"/></svg>
+        Auto Move
+      </button>
+      <button class="btn-action btn-secondary" id="btnReset">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg>
+        Reset
+      </button>
+      <button class="btn-action" id="btnNext">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        Next Problem
+      </button>
+    </div>
+  </main>
+
+  <!-- Mascot Container -->
+  <div class="mascot-container" id="mascot">
+    <svg viewBox="0 0 100 100" width="100%" height="100%">
+      <path d="M50 15 C25 15 15 35 15 60 C15 85 35 95 50 95 C65 95 85 85 85 60 C85 35 75 15 50 15 Z" fill="#FF3B30"/>
+      <path d="M50 15 C45 5 35 8 30 10 C40 18 45 18 50 15 Z" fill="#4CD964"/>
+      <circle cx="38" cy="45" r="6" fill="#FFF"/><circle cx="38" cy="45" r="3" fill="#000"/>
+      <circle cx="62" cy="45" r="6" fill="#FFF"/><circle cx="62" cy="45" r="3" fill="#000"/>
+      <path d="M40 65 Q50 78 60 65" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round"/>
+      <ellipse cx="28" cy="55" rx="4" ry="2" fill="#FF9500" opacity="0.6"/>
+      <ellipse cx="72" cy="55" rx="4" ry="2" fill="#FF9500" opacity="0.6"/>
+    </svg>
+  </div>
+
+  <!-- Encouraging Visual Banner -->
+  <div class="feedback-banner" id="feedbackBanner">Great Job!</div>
+
+  <!-- Teacher / Settings Controls Modal -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-card">
+      <div class="modal-title">Teacher Controls</div>
+      
+      <div class="setting-row">
+        <div class="setting-label">Problem Type / Digits:</div>
+        <div class="setting-options" id="optDigits">
+          <button class="opt-btn active" data-val="1d1d">1-Digit + 1-Digit</button>
+          <button class="opt-btn" data-val="2d1d">2-Digit + 1-Digit</button>
+          <button class="opt-btn" data-val="2d2d">2-Digit + 2-Digit</button>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-label">Addition Limit Range:</div>
+        <div class="setting-options" id="optRange">
+          <button class="opt-btn active" data-val="10">Within 10</button>
+          <button class="opt-btn" data-val="20">Within 20</button>
+          <button class="opt-btn" data-val="50">Within 50</button>
+          <button class="opt-btn" data-val="100">Within 100</button>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-label">Animation Speed & Effects:</div>
+        <div class="setting-options" id="optAnim">
+          <button class="opt-btn active" data-val="full">Full Effects</button>
+          <button class="opt-btn" data-val="reduced">Reduced</button>
+        </div>
+      </div>
+
+      <button class="btn-action" id="btnCloseSettings" style="margin-top: 10px; width: 100%; justify-content: center;">Apply & Close</button>
+    </div>
+  </div>
+
+  <!-- --- JAVASCRIPT LOGIC --- -->
+  <script>
+    /* --- SVG ASSET TEMPLATES --- */
+    const SVG_TEMPLATES = {
+      apple: `
+        <svg viewBox="0 0 100 100" width="100%" height="100%">
+          <defs>
+            <radialGradient id="appleGrad" cx="35%" cy="35%" r="65%">
+              <stop offset="0%" stop-color="#FF6B6B" />
+              <stop offset="70%" stop-color="#D32F2F" />
+              <stop offset="100%" stop-color="#8B0000" />
+            </radialGradient>
+            <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#81C784"/>
+              <stop offset="100%" stop-color="#2E7D32"/>
+            </linearGradient>
+          </defs>
+          <path d="M50 22 C40 10 20 8 18 22 C16 32 20 42 22 52 C26 70 38 88 50 88 C62 88 74 70 78 52 C80 42 84 32 82 22 C80 8 60 10 50 22 Z" fill="url(#appleGrad)" />
+          <path d="M50 22 C48 14 45 8 42 2" fill="none" stroke="#5D4037" stroke-width="4" stroke-linecap="round"/>
+          <path d="M50 16 Q65 6 72 14 Q60 22 50 16 Z" fill="url(#leafGrad)"/>
+          <ellipse cx="38" cy="32" rx="6" ry="10" fill="#FFFFFF" opacity="0.3" transform="rotate(-25 38 32)"/>
+        </svg>
+      `,
+      basket: (width=220, height=140) => `
+        <svg viewBox="0 0 220 140" width="100%" height="100%">
+          <defs>
+            <linearGradient id="basketGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#D7CCC8"/>
+              <stop offset="20%" stop-color="#A1887F"/>
+              <stop offset="100%" stop-color="#4E342E"/>
+            </linearGradient>
+            <pattern id="weave" width="16" height="16" patternUnits="userSpaceOnUse">
+              <path d="M 0 8 L 16 8 M 8 0 L 8 16" stroke="#3E2723" stroke-width="2" opacity="0.4"/>
+            </pattern>
+          </defs>
+          <ellipse cx="110" cy="30" rx="95" ry="20" fill="#3E2723" opacity="0.7"/>
+          <path d="M 20 30 Q 25 125 110 125 Q 195 125 200 30 Z" fill="url(#basketGrad)"/>
+          <path d="M 20 30 Q 25 125 110 125 Q 195 125 200 30 Z" fill="url(#weave)"/>
+          <ellipse cx="110" cy="30" rx="92" ry="16" fill="none" stroke="#8D6E63" stroke-width="5"/>
+          <path d="M 15 30 Q 110 45 205 30" fill="none" stroke="#5D4037" stroke-width="3"/>
+        </svg>
+      `
+    };
+
+    /* --- GAME STATE & CONFIGURATION --- */
+    const state = {
+      valA: 7,
+      valB: 5,
+      targetSum: 12,
+      applesMoved: 0,
+      apples: [],
+      digitMode: '1d1d', // '1d1d', '2d1d', '2d2d'
+      rangeLimit: 20,    // 10, 20, 50, 100
+      audioEnabled: true,
+      highContrast: false,
+      fullAnimations: true,
+      isAutoMoving: false
+    };
+
+    const FEEDBACK_MESSAGES = ["Great Job!", "Excellent!", "Wonderful!", "Amazing!", "Super Math Star!"];
+
+    /* --- AUDIO SYNTHESIZER (Web Audio API) --- */
+    class SoundFX {
+      constructor() {
+        this.ctx = null;
+      }
+
+      init() {
+        if (!this.ctx) {
+          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+      }
+
+      playPop() {
+        if (!state.audioEnabled) return;
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(600, this.ctx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.08);
+      }
+
+      playSuccess() {
+        if (!state.audioEnabled) return;
+        this.init();
+        const notes = [261.63, 329.63, 392.00, 523.25]; // C E G C
+        notes.forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0.2, this.ctx.currentTime + idx * 0.1);
+          gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + idx * 0.1 + 0.3);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(this.ctx.currentTime + idx * 0.1);
+          osc.stop(this.ctx.currentTime + idx * 0.1 + 0.3);
+        });
+      }
+    }
+
+    const sound = new SoundFX();
+
+    /* --- DOM ELEMENTS --- */
+    const dom = {
+      valA: document.getElementById('valA'),
+      valB: document.getElementById('valB'),
+      valSum: document.getElementById('valSum'),
+      basketA: document.getElementById('basketA'),
+      basketB: document.getElementById('basketB'),
+      basketTarget: document.getElementById('basketTarget'),
+      wrapA: document.getElementById('wrapA'),
+      wrapB: document.getElementById('wrapB'),
+      equationCard: document.getElementById('equationCard'),
+      feedbackBanner: document.getElementById('feedbackBanner'),
+      mascot: document.getElementById('mascot'),
+      settingsModal: document.getElementById('settingsModal'),
+      fxCanvas: document.getElementById('fxCanvas')
+    };
+
+    /* --- INITIALIZATION --- */
+    function init() {
+      renderBaskets();
+      setupEventListeners();
+      setupFXCanvas();
+      generateNewProblem();
+    }
+
+    function renderBaskets() {
+      dom.basketA.innerHTML = SVG_TEMPLATES.basket(220, 140);
+      dom.basketB.innerHTML = SVG_TEMPLATES.basket(220, 140);
+      dom.basketTarget.innerHTML = SVG_TEMPLATES.basket(320, 180);
+    }
+
+    /* --- PROBLEM GENERATOR --- */
+    function generateNewProblem() {
+      let max = state.rangeLimit;
+      let a = 1, b = 1;
+
+      if (state.digitMode === '1d1d') {
+        a = Math.floor(Math.random() * 8) + 1;
+        b = Math.floor(Math.random() * Math.min(9, max - a)) + 1;
+      } else if (state.digitMode === '2d1d') {
+        a = Math.floor(Math.random() * 15) + 10;
+        b = Math.floor(Math.random() * 8) + 1;
+        if (a + b > max) a = max - b - 1;
+      } else { // 2d2d
+        a = Math.floor(Math.random() * 20) + 10;
+        b = Math.floor(Math.random() * 20) + 10;
+        if (a + b > max) { a = 12; b = 11; }
+      }
+
+      if (a <= 0) a = 2;
+      if (b <= 0) b = 3;
+
+      state.valA = a;
+      state.valB = b;
+      state.targetSum = a + b;
+      state.applesMoved = 0;
+      state.isAutoMoving = false;
+
+      dom.valA.textContent = a;
+      dom.valB.textContent = b;
+      dom.valSum.textContent = '?';
+
+      clearApples();
+      spawnApples();
+    }
+
+    function clearApples() {
+      state.apples.forEach(app => app.el.remove());
+      state.apples = [];
+    }
+
+    /* --- APPLE SPAWNING & STACKING --- */
+    function spawnApples() {
+      // Spawn Basket A Apples
+      spawnGroupForBasket(state.valA, dom.basketA, 'A');
+      // Spawn Basket B Apples
+      spawnGroupForBasket(state.valB, dom.basketB, 'B');
+    }
+
+    function spawnGroupForBasket(count, basketEl, sourceBasket) {
+      const rect = basketEl.getBoundingClientRect();
+      
+      for (let i = 0; i < count; i++) {
+        const appleEl = document.createElement('div');
+        appleEl.className = 'apple-node sway';
+        appleEl.innerHTML = SVG_TEMPLATES.apple;
+
+        // Counter badge hidden initially
+        const badge = document.createElement('div');
+        badge.className = 'apple-counter-badge';
+        badge.style.display = 'none';
+        appleEl.appendChild(badge);
+
+        document.body.appendChild(appleEl);
+
+        // Position in basket grid with slight randomness
+        const pos = calculateBasketSlot(basketEl, i, count);
+
+        const appleObj = {
+          id: `${sourceBasket}_${i}`,
+          el: appleEl,
+          badge: badge,
+          source: sourceBasket,
+          isMoved: false,
+          x: pos.x,
+          y: pos.y
+        };
+
+        setApplePosition(appleObj, pos.x, pos.y);
+        makeDraggable(appleObj);
+        state.apples.push(appleObj);
+      }
+    }
+
+    function calculateBasketSlot(basketEl, index, total) {
+      const rect = basketEl.getBoundingClientRect();
+      const cols = Math.min(5, Math.ceil(Math.sqrt(total)));
+      const row = Math.floor(index / cols);
+      const col = index % cols;
+
+      const paddingX = 35;
+      const startX = rect.left + paddingX;
+      const widthAvailable = rect.width - (paddingX * 2);
+      const stepX = cols > 1 ? widthAvailable / (cols - 1) : widthAvailable / 2;
+
+      const startY = rect.top + 25;
+      const stepY = 22;
+
+      // Jitter for natural look
+      const jitterX = (Math.random() - 0.5) * 8;
+      const jitterY = (Math.random() - 0.5) * 6;
+
+      return {
+        x: startX + (col * stepX) + jitterX - 24,
+        y: startY + (row * stepY) + jitterY - 24
+      };
+    }
+
+    function setApplePosition(appleObj, x, y) {
+      appleObj.x = x;
+      appleObj.y = y;
+      appleObj.el.style.left = `${x}px`;
+      appleObj.el.style.top = `${y}px`;
+    }
+
+    /* --- DRAG & DROP INTERACTION --- */
+    function makeDraggable(appleObj) {
+      const el = appleObj.el;
+      let isDragging = false;
+      let startX, startY;
+
+      const onStart = (e) => {
+        if (appleObj.isMoved || state.isAutoMoving) return;
+        isDragging = true;
+        el.classList.remove('sway');
+        
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        startX = clientX - appleObj.x;
+        startY = clientY - appleObj.y;
+        
+        el.style.transform = 'scale(1.2)';
+        sound.playPop();
+      };
+
+      const onMove = (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+        
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        const newX = clientX - startX;
+        const newY = clientY - startY;
+
+        setApplePosition(appleObj, newX, newY);
+      };
+
+      const onEnd = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        el.style.transform = 'scale(1)';
+
+        // Check drop inside Target Basket
+        const targetRect = dom.basketTarget.getBoundingClientRect();
+        if (
+          appleObj.x + 24 > targetRect.left &&
+          appleObj.x + 24 < targetRect.right &&
+          appleObj.y + 24 > targetRect.top &&
+          appleObj.y + 24 < targetRect.bottom + 30
+        ) {
+          moveAppleToTarget(appleObj);
+        } else {
+          // Tap to auto-move feature OR Snap back
+          if (Math.abs(appleObj.x - (startX - (e.clientX||0))) < 5) {
+            moveAppleToTarget(appleObj);
+          } else {
+            snapBack(appleObj);
+          }
+        }
+      };
+
+      el.addEventListener('mousedown', onStart);
+      el.addEventListener('touchstart', onStart, { passive: false });
+
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('touchmove', onMove, { passive: false });
+
+      window.addEventListener('mouseup', onEnd);
+      window.addEventListener('touchend', onEnd);
+    }
+
+    function snapBack(appleObj) {
+      const origin = calculateBasketSlot(
+        appleObj.source === 'A' ? dom.basketA : dom.basketB,
+        parseInt(appleObj.id.split('_')[1]),
+        appleObj.source === 'A' ? state.valA : state.valB
+      );
+      
+      animateMove(appleObj, origin.x, origin.y, () => {
+        appleObj.el.classList.add('sway');
+      });
+    }
+
+    function moveAppleToTarget(appleObj) {
+      if (appleObj.isMoved) return;
+      appleObj.isMoved = true;
+      state.applesMoved++;
+
+      // Highlight active basket during counting
+      if (appleObj.source === 'A') {
+        dom.wrapA.classList.add('highlight-basket');
+        setTimeout(() => dom.wrapA.classList.remove('highlight-basket'), 400);
+      } else {
+        dom.wrapB.classList.add('highlight-basket');
+        setTimeout(() => dom.wrapB.classList.remove('highlight-basket'), 400);
+      }
+
+      // Calculate position inside Target Basket
+      const targetSlot = calculateBasketSlot(dom.basketTarget, state.applesMoved - 1, state.targetSum);
+
+      animateMove(appleObj, targetSlot.x, targetSlot.y, () => {
+        // Show counter badge on apple
+        appleObj.badge.textContent = state.applesMoved;
+        appleObj.badge.style.display = 'block';
+        sound.playPop();
+
+        // Check Completion
+        if (state.applesMoved === state.targetSum) {
+          onProblemCompleted();
+        }
+      });
+    }
+
+    function animateMove(appleObj, targetX, targetY, callback) {
+      const startX = appleObj.x;
+      const startY = appleObj.y;
+      const startTime = performance.now();
+      const duration = state.fullAnimations ? 350 : 150;
+
+      function step(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Ease Out Back curve for bounce effect
+        const ease = 1 + 2.70158 * Math.pow(progress - 1, 3) + 1.70158 * Math.pow(progress - 1, 2);
+
+        const currentX = startX + (targetX - startX) * progress;
+        const currentY = startY + (targetY - startY) * ease;
+
+        setApplePosition(appleObj, currentX, currentY);
+
+        if (progress < 1) {
+          requestAnimationFrame(step);
+        } else {
+          setApplePosition(appleObj, targetX, targetY);
+          if (callback) callback();
+        }
+      }
+
+      requestAnimationFrame(step);
+    }
+
+    /* --- HINT / AUTO-MOVE ALL --- */
+    function autoMoveNextApple() {
+      const remaining = state.apples.filter(a => !a.isMoved);
+      if (remaining.length === 0) return;
+
+      state.isAutoMoving = true;
+      let delay = 0;
+
+      remaining.forEach((apple, idx) => {
+        setTimeout(() => {
+          moveAppleToTarget(apple);
+          if (idx === remaining.length - 1) {
+            state.isAutoMoving = false;
+          }
+        }, delay);
+        delay += 300;
+      });
+    }
+
+    /* --- COMPLETION & CELEBRATION --- */
+    function onProblemCompleted() {
+      dom.valSum.textContent = state.targetSum;
+      dom.equationCard.style.transform = 'scale(1.1)';
+      setTimeout(() => dom.equationCard.style.transform = 'scale(1)', 300);
+
+      sound.playSuccess();
+      triggerConfetti();
+
+      // Show random praise phrase
+      const phrase = FEEDBACK_MESSAGES[Math.floor(Math.random() * FEEDBACK_MESSAGES.length)];
+      dom.feedbackBanner.textContent = phrase;
+      dom.feedbackBanner.classList.add('show');
+
+      // Mascot Animation
+      dom.mascot.classList.add('mascot-bounce');
+
+      setTimeout(() => {
+        dom.feedbackBanner.classList.remove('show');
+        dom.mascot.classList.remove('mascot-bounce');
+      }, 2500);
+    }
+
+    /* --- CONFETTI & SPARKLE CANVAS FX --- */
+    let fxCtx, particles = [];
+
+    function setupFXCanvas() {
+      dom.fxCanvas.width = window.innerWidth;
+      dom.fxCanvas.height = window.innerHeight;
+      fxCtx = dom.fxCanvas.getContext('2d');
+
+      window.addEventListener('resize', () => {
+        dom.fxCanvas.width = window.innerWidth;
+        dom.fxCanvas.height = window.innerHeight;
+      });
+    }
+
+    function triggerConfetti() {
+      particles = [];
+      const colors = ['#FF3B30', '#4CD964', '#FFCC00', '#007AFF', '#FF9500'];
+      
+      for (let i = 0; i < 80; i++) {
+        particles.push({
+          x: window.innerWidth / 2,
+          y: window.innerHeight / 2,
+          vx: (Math.random() - 0.5) * 14,
+          vy: (Math.random() - 0.8) * 14,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          size: Math.random() * 8 + 4,
+          gravity: 0.25,
+          life: 1
+        });
+      }
+      renderParticles();
+    }
+
+    function renderParticles() {
+      if (particles.length === 0) return;
+      fxCtx.clearRect(0, 0, dom.fxCanvas.width, dom.fxCanvas.height);
+
+      particles.forEach((p, idx) => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += p.gravity;
+        p.life -= 0.015;
+
+        fxCtx.fillStyle = p.color;
+        fxCtx.globalAlpha = Math.max(0, p.life);
+        fxCtx.fillRect(p.x, p.y, p.size, p.size);
+
+        if (p.life <= 0) particles.splice(idx, 1);
+      });
+
+      if (particles.length > 0) {
+        requestAnimationFrame(renderParticles);
+      }
+    }
+
+    /* --- EVENT LISTENERS & CONTROLS --- */
+    function setupEventListeners() {
+      document.getElementById('btnNext').addEventListener('click', generateNewProblem);
+      document.getElementById('btnReset').addEventListener('click', () => {
+        state.applesMoved = 0;
+        dom.valSum.textContent = '?';
+        clearApples();
+        spawnApples();
+      });
+      document.getElementById('btnHint').addEventListener('click', autoMoveNextApple);
+
+      // Teacher Controls Modal
+      document.getElementById('btnSettings').addEventListener('click', () => {
+        dom.settingsModal.classList.add('active');
+      });
+      document.getElementById('btnCloseSettings').addEventListener('click', () => {
+        dom.settingsModal.classList.remove('active');
+        generateNewProblem();
+      });
+
+      // Settings options selection UI
+      setupToggleGroup('optDigits', (val) => state.digitMode = val);
+      setupToggleGroup('optRange', (val) => state.rangeLimit = parseInt(val));
+      setupToggleGroup('optAnim', (val) => state.fullAnimations = (val === 'full'));
+
+      // Audio Toggle
+      document.getElementById('btnAudio').addEventListener('click', function() {
+        state.audioEnabled = !state.audioEnabled;
+        this.style.opacity = state.audioEnabled ? '1' : '0.4';
+      });
+
+      // Contrast Toggle
+      document.getElementById('btnContrast').addEventListener('click', () => {
+        state.highContrast = !state.highContrast;
+        document.body.classList.toggle('high-contrast', state.highContrast);
+      });
+
+      // Fullscreen Toggle
+      document.getElementById('btnFullscreen').addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        } else {
+          document.exitFullscreen().catch(() => {});
+        }
+      });
+    }
+
+    function setupToggleGroup(groupId, onChange) {
+      const group = document.getElementById(groupId);
+      const btns = group.querySelectorAll('.opt-btn');
+      btns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          btns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          onChange(btn.dataset.val);
+        });
+      });
+    }
+
+    // Launch Application on load
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>

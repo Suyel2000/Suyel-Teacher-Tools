@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Apple Subtraction Garden - Interactive Math Learning</title>
+  <style>
+    :root {
+      --primary: #4CAF50;
+      --primary-dark: #388E3C;
+      --accent: #FF5722;
+      --yellow: #FFC107;
+      --blue: #2196F3;
+      --purple: #9C27B0;
+      --bg-sky: #87CEEB;
+      --card-bg: rgba(255, 255, 255, 0.92);
+      --font-main: 'Comic Sans MS', 'Chalkboard SE', 'Fredoka', cursive, sans-serif;
+      --high-contrast-bg: #121212;
+      --high-contrast-text: #FFFFFF;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: var(--font-main);
+      background-color: var(--bg-sky);
+    }
+
+    /* High Contrast Mode */
+    body.high-contrast {
+      background: var(--high-contrast-bg) !important;
+      color: var(--high-contrast-text) !important;
+    }
+    body.high-contrast .card {
+      background: #000000 !important;
+      border: 3px solid #FFFF00 !important;
+      color: #FFFFFF !important;
+    }
+    body.high-contrast button {
+      border: 2px solid #FFFFFF !important;
+    }
+
+    #game-container {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    /* SVG Garden Background */
+    #background-svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* Cloud animations */
+    .cloud {
+      animation: floatCloud 40s linear infinite;
+    }
+    .cloud-slow {
+      animation: floatCloud 65s linear infinite;
+    }
+    @keyframes floatCloud {
+      0% { transform: translateX(-200px); }
+      100% { transform: translateX(100vw); }
+    }
+
+    /* Top Navigation & Controls Header */
+    header {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      padding: 10px 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.4);
+      backdrop-filter: blur(5px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .app-title {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #2E7D32;
+      text-shadow: 1px 1px 2px white;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .controls-group {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      background: white;
+      border: 2px solid #ddd;
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 0.9rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 3px 0 rgba(0,0,0,0.15);
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-family: inherit;
+    }
+
+    .btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.15);
+    }
+
+    .btn-primary { background: #4CAF50; color: white; border-color: #388E3C; }
+    .btn-accent { background: #FF9800; color: white; border-color: #F57C00; }
+    .btn-blue { background: #2196F3; color: white; border-color: #1976D2; }
+    .btn-purple { background: #9C27B0; color: white; border-color: #7B1FA2; }
+    .btn-action { 
+      background: #E91E63; 
+      color: white; 
+      border-color: #C2185B;
+      font-size: 1.1rem;
+      padding: 8px 18px;
+      box-shadow: 0 4px 0 #AD1457;
+    }
+    .btn-submit {
+      background: #4CAF50;
+      color: white;
+      border-color: #2E7D32;
+      font-size: 1.1rem;
+      padding: 8px 18px;
+      box-shadow: 0 4px 0 #1B5E20;
+    }
+
+    select.btn {
+      appearance: none;
+      -webkit-appearance: none;
+      padding-right: 25px;
+      background-image: url('data:image/svg+xml;utf8,<svg fill="%23333" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+      background-repeat: no-repeat;
+      background-position: right 5px center;
+    }
+
+    /* Main Content Area */
+    main {
+      position: relative;
+      z-index: 5;
+      width: 100%;
+      max-width: 1200px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px;
+    }
+
+    /* Equation Banner */
+    .equation-card {
+      background: var(--card-bg);
+      border-radius: 25px;
+      padding: 12px 30px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 10px;
+      border: 4px solid #81C784;
+    }
+
+    .equation-text {
+      font-size: 2.8rem;
+      font-weight: 900;
+      color: #1B5E20;
+      letter-spacing: 2px;
+    }
+
+    .action-bar {
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .counters-bar {
+      display: flex;
+      gap: 20px;
+      background: rgba(255,255,255,0.85);
+      padding: 6px 20px;
+      border-radius: 20px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      margin-bottom: 10px;
+    }
+
+    .counter-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .counter-remaining { color: #2E7D32; }
+    .counter-removed { color: #D84315; }
+
+    /* Playground / Baskets Area */
+    .play-area {
+      width: 100%;
+      flex: 1;
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-end;
+      padding-bottom: 20px;
+      position: relative;
+    }
+
+    .basket-container {
+      position: relative;
+      width: 42%;
+      max-width: 450px;
+      height: 320px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .basket-label {
+      background: rgba(255, 255, 255, 0.9);
+      padding: 6px 16px;
+      border-radius: 15px;
+      font-weight: bold;
+      font-size: 1.1rem;
+      color: #333;
+      margin-bottom: 8px;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+      z-index: 6;
+    }
+
+    .basket-svg-wrap {
+      position: relative;
+      width: 100%;
+      height: 240px;
+    }
+
+    .basket-svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 10px 8px rgba(0,0,0,0.2));
+      animation: subtleBreathing 4s ease-in-out infinite;
+    }
+
+    @keyframes subtleBreathing {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.015); }
+    }
+
+    /* Apple Holding Zone inside Basket */
+    .apple-zone {
+      position: absolute;
+      top: 10px;
+      left: 10%;
+      width: 80%;
+      height: 160px;
+      z-index: 4;
+      display: flex;
+      flex-wrap: wrap-reverse;
+      align-content: flex-start;
+      justify-content: center;
+      gap: 4px;
+      padding: 10px;
+    }
+
+    /* Apple Styling & Animations */
+    .apple {
+      width: 48px;
+      height: 48px;
+      cursor: grab;
+      position: relative;
+      transition: transform 0.2s ease, opacity 0.3s ease;
+      touch-action: none;
+      z-index: 5;
+    }
+
+    .apple:hover {
+      transform: scale(1.15) rotate(5deg);
+    }
+
+    .apple:active {
+      cursor: grabbing;
+    }
+
+    .apple-svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 3px 3px rgba(0,0,0,0.2));
+    }
+
+    .apple.sway {
+      animation: appleSway 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes appleSway {
+      0% { transform: rotate(-3deg); }
+      100% { transform: rotate(3deg); }
+    }
+
+    .apple.dragging {
+      position: fixed !important;
+      z-index: 1000 !important;
+      pointer-events: none;
+      transform: scale(1.25) !important;
+      filter: drop-shadow(0 15px 15px rgba(0,0,0,0.3));
+    }
+
+    /* Floating Canvas for Animations & Confetti */
+    #effects-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 50;
+      pointer-events: none;
+    }
+
+    /* Mascot Display */
+    .mascot-container {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      width: 110px;
+      height: 120px;
+      z-index: 8;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .mascot-container:hover {
+      transform: scale(1.08);
+    }
+
+    .mascot-svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .mascot-happy {
+      animation: mascotJump 0.6s ease infinite alternate;
+    }
+
+    @keyframes mascotJump {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-20px); }
+    }
+
+    /* Speech Bubble */
+    .speech-bubble {
+      position: absolute;
+      bottom: 125px;
+      left: 30px;
+      background: white;
+      border-radius: 15px;
+      padding: 10px 15px;
+      font-size: 0.95rem;
+      font-weight: bold;
+      color: #333;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      border: 2px solid #FFB74D;
+      z-index: 9;
+      max-width: 200px;
+      display: none;
+    }
+    .speech-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 30px;
+      border-width: 10px 10px 0;
+      border-style: solid;
+      border-color: white transparent;
+      display: block;
+      width: 0;
+    }
+
+    /* Celebration Modal / Banner */
+    .celebration-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.4);
+      z-index: 100;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .celebration-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .celebration-card {
+      background: white;
+      border-radius: 30px;
+      padding: 30px 40px;
+      text-align: center;
+      box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+      transform: scale(0.7);
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      max-width: 90%;
+      width: 450px;
+      border: 6px solid #FFC107;
+    }
+
+    .celebration-overlay.show .celebration-card {
+      transform: scale(1);
+    }
+
+    .celebration-title {
+      font-size: 2.2rem;
+      color: #E91E63;
+      margin-bottom: 10px;
+    }
+
+    .celebration-equation {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #2E7D32;
+      margin: 15px 0;
+      background: #E8F5E9;
+      padding: 10px;
+      border-radius: 15px;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .equation-text { font-size: 2rem; }
+      .basket-container { height: 260px; }
+      .apple { width: 38px; height: 38px; }
+      .mascot-container { width: 80px; height: 90px; }
+      .counters-bar { font-size: 0.95rem; padding: 4px 12px; }
+      .btn { padding: 5px 10px; font-size: 0.8rem; }
+      .btn-action, .btn-submit { font-size: 0.95rem; padding: 6px 14px; }
+    }
+
+    @media (max-height: 500px) {
+      header { padding: 4px 10px; }
+      .equation-card { padding: 4px 15px; margin-bottom: 4px; }
+      .equation-text { font-size: 1.6rem; }
+      .counters-bar { margin-bottom: 4px; padding: 2px 10px; }
+      .basket-container { height: 180px; }
+      .basket-svg-wrap { height: 140px; }
+      .apple { width: 30px; height: 30px; }
+      .mascot-container { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="game-container">
+  <!-- Dynamic SVG Background Scene -->
+  <svg id="background-svg" preserveAspectRatio="none" viewBox="0 0 1000 600">
+    <defs>
+      <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#72C6EF" />
+        <stop offset="100%" stop-color="#004E92" />
+      </linearGradient>
+      <linearGradient id="grassGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#A8E063" />
+        <stop offset="100%" stop-color="#56AB2F" />
+      </linearGradient>
+      <linearGradient id="hillGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#8ECE39" />
+        <stop offset="100%" stop-color="#458B00" />
+      </linearGradient>
+    </defs>
+
+    <!-- Sky -->
+    <rect width="1000" height="600" fill="url(#skyGrad)"/>
+
+    <!-- Sun with Ray Animation -->
+    <g transform="translate(850, 90)">
+      <circle r="45" fill="#FFD700">
+        <animate attributeName="r" values="45;48;45" dur="3s" repeatCount="indefinite"/>
+      </circle>
+      <g stroke="#FFD700" stroke-width="4" stroke-linecap="round">
+        <line x1="0" y1="-60" x2="0" y2="-50"/>
+        <line x1="0" y1="50" x2="0" y2="60"/>
+        <line x1="-60" y1="0" x2="-50" y2="0"/>
+        <line x1="50" y1="0" x2="60" y2="0"/>
+        <line x1="-42" y1="-42" x2="-35" y2="-35"/>
+        <line x1="35" y1="35" x2="42" y2="42"/>
+        <line x1="-42" y1="42" x2="-35" y2="35"/>
+        <line x1="35" y1="-35" x2="42" y2="-42"/>
+      </g>
+    </g>
+
+    <!-- Animated Clouds -->
+    <g class="cloud" fill="#FFFFFF" opacity="0.85">
+      <path d="M 20 60 Q 30 40 50 45 Q 65 30 85 40 Q 100 35 110 50 Q 125 55 120 70 Q 125 85 105 85 L 30 85 Q 10 80 20 60 Z"/>
+    </g>
+    <g class="cloud-slow" fill="#FFFFFF" opacity="0.7" transform="translate(400, 40)">
+      <path d="M 20 60 Q 30 40 50 45 Q 65 30 85 40 Q 100 35 110 50 Q 125 55 120 70 Q 125 85 105 85 L 30 85 Q 10 80 20 60 Z"/>
+    </g>
+
+    <!-- Background Hills -->
+    <path d="M -50 450 Q 150 320 350 420 T 750 380 Q 900 340 1050 400 L 1050 600 L -50 600 Z" fill="url(#hillGrad)" opacity="0.7"/>
+    <path d="M -50 480 Q 250 380 500 460 T 1050 440 L 1050 600 L -50 600 Z" fill="url(#grassGrad)"/>
+
+    <!-- Decorative Trees -->
+    <g transform="translate(80, 280)">
+      <rect x="35" y="100" width="20" height="70" rx="5" fill="#795548"/>
+      <circle cx="45" cy="80" r="45" fill="#388E3C"/>
+      <circle cx="25" cy="60" r="35" fill="#4CAF50"/>
+      <circle cx="65" cy="60" r="35" fill="#4CAF50"/>
+    </g>
+    <g transform="translate(820, 260)">
+      <rect x="35" y="100" width="25" height="90" rx="5" fill="#5D4037"/>
+      <circle cx="47" cy="80" r="50" fill="#2E7D32"/>
+      <circle cx="20" cy="70" r="40" fill="#388E3C"/>
+      <circle cx="75" cy="70" r="40" fill="#388E3C"/>
+    </g>
+
+    <!-- Flowers in Grass -->
+    <g transform="translate(180, 520)">
+      <circle cx="0" cy="-10" r="8" fill="#FF4081"/>
+      <circle cx="10" cy="0" r="8" fill="#FF4081"/>
+      <circle cx="0" cy="10" r="8" fill="#FF4081"/>
+      <circle cx="-10" cy="0" r="8" fill="#FF4081"/>
+      <circle cx="0" cy="0" r="6" fill="#FFEB3B"/>
+    </g>
+    <g transform="translate(750, 530)">
+      <circle cx="0" cy="-10" r="8" fill="#9C27B0"/>
+      <circle cx="10" cy="0" r="8" fill="#9C27B0"/>
+      <circle cx="0" cy="10" r="8" fill="#9C27B0"/>
+      <circle cx="-10" cy="0" r="8" fill="#9C27B0"/>
+      <circle cx="0" cy="0" r="6" fill="#FFEB3B"/>
+    </g>
+  </svg>
+
+  <!-- Header Controls -->
+  <header>
+    <div class="app-title">
+      <svg width="28" height="28" viewBox="0 0 100 100">
+        <path d="M50 15 C30 15 15 35 15 60 C15 85 35 95 50 95 C65 95 85 85 85 60 C85 35 70 15 50 15 Z" fill="#E53935"/>
+        <path d="M50 15 C45 0 55 0 50 15" stroke="#795548" stroke-width="6" fill="none"/>
+        <path d="M50 15 Q65 5 70 15 Q55 20 50 15" fill="#4CAF50"/>
+      </svg>
+      <span>Apple Subtraction</span>
+    </div>
+
+    <div class="controls-group">
+      <label for="mode-select" class="sr-only" style="display:none">Select Mode</label>
+      <select id="mode-select" class="btn btn-primary" aria-label="Learning Mode">
+        <option value="10">Within 10</option>
+        <option value="20">Within 20</option>
+        <option value="50">Within 50</option>
+        <option value="100">Within 100</option>
+        <option value="1d-1d">1-Digit - 1-Digit</option>
+        <option value="2d-1d">2-Digit - 1-Digit</option>
+        <option value="2d-2d">2-Digit - 2-Digit</option>
+      </select>
+
+      <button id="btn-hint" class="btn btn-accent" title="Show Hint">
+        💡 Hint
+      </button>
+
+      <button id="btn-reset" class="btn btn-blue" title="Reset Current Problem">
+        🔄 Reset
+      </button>
+
+      <button id="btn-next" class="btn btn-purple" title="Next Question">
+        ➡️ Next
+      </button>
+
+      <button id="btn-sound" class="btn" aria-label="Toggle Sound">
+        🔊
+      </button>
+
+      <button id="btn-contrast" class="btn" title="High Contrast Mode">
+        👁️
+      </button>
+
+      <button id="btn-fullscreen" class="btn" title="Toggle Fullscreen">
+        ⛶
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Activity Area -->
+  <main>
+    <!-- Math Equation Box -->
+    <div class="equation-card">
+      <div id="equation-display" class="equation-text" aria-live="polite">
+        9 − 4 = ?
+      </div>
+    </div>
+
+    <!-- Subtract and Submit Button Area -->
+    <div class="action-bar">
+      <button id="btn-subtract" class="btn btn-action">
+        ➖ Subtract 1 Apple
+      </button>
+      <button id="btn-submit" class="btn btn-submit">
+        ✅ Submit Answer
+      </button>
+    </div>
+
+    <!-- Live Counters -->
+    <div class="counters-bar">
+      <div class="counter-item counter-remaining">
+        🍎 Remaining in Main Basket: <span id="count-remaining">9</span>
+      </div>
+      <div class="counter-item counter-removed">
+        🧺 Removed: <span id="count-removed">0</span> / <span id="target-removed">4</span>
+      </div>
+    </div>
+
+    <!-- Interactive Baskets Container -->
+    <div class="play-area">
+      <!-- Main Basket -->
+      <div class="basket-container" id="main-basket-container">
+        <div class="basket-label">Main Basket</div>
+        <div class="basket-svg-wrap">
+          <svg class="basket-svg" viewBox="0 0 200 140">
+            <defs>
+              <linearGradient id="basketGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#D7CCC8"/>
+                <stop offset="50%" stop-color="#A1887F"/>
+                <stop offset="100%" stop-color="#5D4037"/>
+              </linearGradient>
+            </defs>
+            <!-- Basket Back Rim -->
+            <ellipse cx="100" cy="35" rx="85" ry="20" fill="#3E2723"/>
+            <ellipse cx="100" cy="35" rx="80" ry="16" fill="#5D4037"/>
+            
+            <!-- Basket Body -->
+            <path d="M 20 35 Q 25 125 100 125 Q 175 125 180 35 Z" fill="url(#basketGrad)"/>
+            
+            <!-- Woven Pattern Detail -->
+            <path d="M 35 45 Q 100 70 165 45 M 30 65 Q 100 90 170 65 M 35 85 Q 100 110 165 85" stroke="#3E2723" stroke-width="3" fill="none" opacity="0.6"/>
+            <path d="M 60 40 Q 50 80 65 118 M 100 40 Q 100 80 100 124 M 140 40 Q 150 80 135 118" stroke="#3E2723" stroke-width="3" fill="none" opacity="0.6"/>
+
+            <!-- Basket Front Rim -->
+            <path d="M 15 35 C 15 20, 185 20, 185 35 C 185 45, 15 45, 15 35 Z" fill="#8D6E63" stroke="#4E342E" stroke-width="3"/>
+          </svg>
+
+          <!-- Apples Container Area inside Main Basket -->
+          <div class="apple-zone" id="main-apple-zone"></div>
+        </div>
+      </div>
+
+      <!-- Removed Basket -->
+      <div class="basket-container" id="removed-basket-container">
+        <div class="basket-label">Removed Apples Basket</div>
+        <div class="basket-svg-wrap">
+          <svg class="basket-svg" viewBox="0 0 200 140">
+            <!-- Basket Back Rim -->
+            <ellipse cx="100" cy="35" rx="85" ry="20" fill="#3E2723"/>
+            <ellipse cx="100" cy="35" rx="80" ry="16" fill="#4E342E"/>
+            
+            <!-- Basket Body (Slightly Tinted Reddish) -->
+            <path d="M 20 35 Q 25 125 100 125 Q 175 125 180 35 Z" fill="#8D6E63"/>
+            
+            <!-- Woven Pattern -->
+            <path d="M 35 45 Q 100 70 165 45 M 30 65 Q 100 90 170 65 M 35 85 Q 100 110 165 85" stroke="#3E2723" stroke-width="3" fill="none" opacity="0.5"/>
+            <path d="M 60 40 Q 50 80 65 118 M 100 40 Q 100 80 100 124 M 140 40 Q 150 80 135 118" stroke="#3E2723" stroke-width="3" fill="none" opacity="0.5"/>
+
+            <!-- Basket Front Rim -->
+            <path d="M 15 35 C 15 20, 185 20, 185 35 C 185 45, 15 45, 15 35 Z" fill="#6D4C41" stroke="#3E2723" stroke-width="3"/>
+          </svg>
+
+          <!-- Apples Area inside Removed Basket -->
+          <div class="apple-zone" id="removed-apple-zone"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Mascot & Speech -->
+  <div class="speech-bubble" id="speech-bubble">
+    Tap an apple, drag it, or click 'Subtract 1 Apple'! When ready, click 'Submit Answer'.
+  </div>
+
+  <div class="mascot-container" id="mascot" title="Click me for encouragement!">
+    <svg class="mascot-svg" viewBox="0 0 100 100">
+      <!-- Mascot Body (Cute Apple Character) -->
+      <circle cx="50" cy="55" r="38" fill="#FF3D00"/>
+      <path d="M30 30 C35 15 65 15 70 30 C55 35 45 35 30 30 Z" fill="#D50000"/>
+      
+      <!-- Leaf & Stem -->
+      <rect x="47" y="8" width="6" height="15" rx="3" fill="#795548"/>
+      <path d="M52 14 Q70 0 75 15 Q60 22 52 14" fill="#4CAF50"/>
+
+      <!-- Eyes -->
+      <circle cx="38" cy="50" r="6" fill="white"/>
+      <circle cx="62" cy="50" r="6" fill="white"/>
+      <circle cx="40" cy="50" r="3" fill="#212121"/>
+      <circle cx="64" cy="50" r="3" fill="#212121"/>
+
+      <!-- Smile -->
+      <path d="M 40 68 Q 50 78 60 68" stroke="#212121" stroke-width="3" stroke-linecap="round" fill="none"/>
+
+      <!-- Cheeks -->
+      <circle cx="30" cy="60" r="5" fill="#FF8A80" opacity="0.6"/>
+      <circle cx="70" cy="60" r="5" fill="#FF8A80" opacity="0.6"/>
+    </svg>
+  </div>
+
+  <!-- Particle & Animation Canvas overlay -->
+  <canvas id="effects-canvas"></canvas>
+
+  <!-- Celebration Modal -->
+  <div class="celebration-overlay" id="celebration-modal">
+    <div class="celebration-card">
+      <div class="celebration-title">🎉 Great Job! 🎉</div>
+      <p style="font-size: 1.2rem; color: #555;">You solved the subtraction problem correctly!</p>
+      <div class="celebration-equation" id="celebration-equation-text">
+        9 − 4 = 5
+      </div>
+      <button class="btn btn-primary" id="btn-modal-next" style="font-size: 1.3rem; padding: 10px 25px;">
+        Play Next Question ➡️
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Inline SVG Template for Cloned Apples (No Numbers) -->
+<template id="apple-svg-template">
+  <svg class="apple-svg" viewBox="0 0 100 100">
+    <defs>
+      <radialGradient id="appleGrad" cx="35%" cy="35%" r="65%">
+        <stop offset="0%" stop-color="#FF5252"/>
+        <stop offset="40%" stop-color="#E53935"/>
+        <stop offset="100%" stop-color="#B71C1C"/>
+      </radialGradient>
+      <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#81C784"/>
+        <stop offset="100%" stop-color="#2E7D32"/>
+      </linearGradient>
+    </defs>
+    <!-- Stem -->
+    <path d="M50 22 Q48 10 55 5" stroke="#4E342E" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <!-- Leaf -->
+    <path d="M53 12 Q70 2 72 18 Q58 22 53 12 Z" fill="url(#leafGrad)"/>
+    <!-- Main Body -->
+    <path d="M50 22 C30 18 10 32 10 58 C10 82 32 95 50 92 C68 95 90 82 90 58 C90 32 70 18 50 22 Z" fill="url(#appleGrad)"/>
+    <!-- Glossy Highlight -->
+    <ellipse cx="32" cy="38" rx="8" ry="14" fill="white" opacity="0.4" transform="rotate(-25 32 38)"/>
+  </svg>
+</template>
+
+<script>
+/**
+ * Apple Subtraction Learning Game
+ * Interactive math visualizer designed for children.
+ */
+
+class SoundEngine {
+  constructor() {
+    this.ctx = null;
+    this.enabled = true;
+  }
+
+  init() {
+    if (!this.ctx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) this.ctx = new AudioCtx();
+    }
+  }
+
+  playPop() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.08);
+
+    gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.08);
+  }
+
+  playFanfare() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    const notes = [261.63, 329.63, 392.00, 523.25]; // C, E, G, C
+    notes.forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+
+      const startTime = this.ctx.currentTime + idx * 0.1;
+      gain.gain.setValueAtTime(0.2, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.3);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(startTime);
+      osc.stop(startTime + 0.3);
+    });
+  }
+
+  playError() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(180, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(110, this.ctx.currentTime + 0.2);
+
+    gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.2);
+  }
+
+  speakNumber(num) {
+    if (!this.enabled) return;
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(num.toString());
+      utterance.rate = 1.0;
+      utterance.pitch = 1.2;
+      window.speechSynthesis.speak(utterance);
+    }
+  }
+}
+
+class ParticleSystem {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.particles = [];
+    this.animating = false;
+    this.resize();
+
+    window.addEventListener('resize', () => this.resize());
+  }
+
+  resize() {
+    this.canvas.width = window.innerWidth;
+    this.canvas.height = window.innerHeight;
+  }
+
+  addConfetti() {
+    const colors = ['#FF5252', '#FF4081', '#E040FB', '#7C4DFF', '#536DFE', '#40C4FF', '#64FFDA', '#B2FF59', '#EEFF41', '#FFD700'];
+    for (let i = 0; i < 120; i++) {
+      this.particles.push({
+        x: this.canvas.width / 2,
+        y: this.canvas.height / 2 - 50,
+        vx: (Math.random() - 0.5) * 18,
+        vy: (Math.random() - 0.7) * 18,
+        size: Math.random() * 8 + 6,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        rotation: Math.random() * 360,
+        vRot: (Math.random() - 0.5) * 10,
+        opacity: 1,
+        life: 1
+      });
+    }
+    if (!this.animating) {
+      this.animating = true;
+      this.loop();
+    }
+  }
+
+  addSparkle(x, y) {
+    for (let i = 0; i < 12; i++) {
+      this.particles.push({
+        x: x,
+        y: y,
+        vx: (Math.random() - 0.5) * 6,
+        vy: (Math.random() - 0.5) * 6,
+        size: Math.random() * 4 + 2,
+        color: '#FFD700',
+        opacity: 1,
+        life: 0.8
+      });
+    }
+    if (!this.animating) {
+      this.animating = true;
+      this.loop();
+    }
+  }
+
+  loop() {
+    if (!this.animating) return;
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      const p = this.particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.3;
+      p.life -= 0.015;
+      p.opacity = Math.max(0, p.life);
+
+      if (p.rotation !== undefined) {
+        p.rotation += p.vRot;
+      }
+
+      this.ctx.save();
+      this.ctx.globalAlpha = p.opacity;
+      this.ctx.fillStyle = p.color;
+      this.ctx.translate(p.x, p.y);
+      if (p.rotation) this.ctx.rotate((p.rotation * Math.PI) / 180);
+      this.ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+      this.ctx.restore();
+
+      if (p.life <= 0) {
+        this.particles.splice(i, 1);
+      }
+    }
+
+    if (this.particles.length > 0) {
+      requestAnimationFrame(() => this.loop());
+    } else {
+      this.animating = false;
+    }
+  }
+}
+
+class SubtractionGame {
+  constructor() {
+    this.sound = new SoundEngine();
+    this.particles = new ParticleSystem(document.getElementById('effects-canvas'));
+
+    this.numA = 9;
+    this.numB = 4;
+    this.currentMode = '10';
+    this.removedCount = 0;
+    this.apples = [];
+    this.isCompleted = false;
+
+    this.initDOM();
+    this.bindEvents();
+    this.newProblem();
+  }
+
+  initDOM() {
+    this.dom = {
+      modeSelect: document.getElementById('mode-select'),
+      equationDisplay: document.getElementById('equation-display'),
+      countRemaining: document.getElementById('count-remaining'),
+      countRemoved: document.getElementById('count-removed'),
+      targetRemoved: document.getElementById('target-removed'),
+      mainAppleZone: document.getElementById('main-apple-zone'),
+      removedAppleZone: document.getElementById('removed-apple-zone'),
+      btnSubtract: document.getElementById('btn-subtract'),
+      btnSubmit: document.getElementById('btn-submit'),
+      btnHint: document.getElementById('btn-hint'),
+      btnReset: document.getElementById('btn-reset'),
+      btnNext: document.getElementById('btn-next'),
+      btnSound: document.getElementById('btn-sound'),
+      btnContrast: document.getElementById('btn-contrast'),
+      btnFullscreen: document.getElementById('btn-fullscreen'),
+      mascot: document.getElementById('mascot'),
+      speechBubble: document.getElementById('speech-bubble'),
+      celebrationModal: document.getElementById('celebration-modal'),
+      celebrationEquationText: document.getElementById('celebration-equation-text'),
+      btnModalNext: document.getElementById('btn-modal-next'),
+      appleTemplate: document.getElementById('apple-svg-template')
+    };
+  }
+
+  bindEvents() {
+    this.dom.modeSelect.addEventListener('change', (e) => {
+      this.currentMode = e.target.value;
+      this.newProblem();
+    });
+
+    this.dom.btnSubtract.addEventListener('click', () => {
+      this.subtractOneApple();
+    });
+
+    this.dom.btnSubmit.addEventListener('click', () => {
+      this.submitAnswer();
+    });
+
+    this.dom.btnNext.addEventListener('click', () => this.newProblem());
+    this.dom.btnModalNext.addEventListener('click', () => {
+      this.hideCelebration();
+      this.newProblem();
+    });
+
+    this.dom.btnReset.addEventListener('click', () => this.resetCurrent());
+
+    this.dom.btnHint.addEventListener('click', () => this.provideHint());
+
+    this.dom.btnSound.addEventListener('click', () => {
+      this.sound.enabled = !this.sound.enabled;
+      this.dom.btnSound.textContent = this.sound.enabled ? '🔊' : '🔇';
+    });
+
+    this.dom.btnContrast.addEventListener('click', () => {
+      document.body.classList.toggle('high-contrast');
+    });
+
+    this.dom.btnFullscreen.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
+    });
+
+    this.dom.mascot.addEventListener('click', () => {
+      this.showSpeech(`Let's solve ${this.numA} − ${this.numB}! Take away ${this.numB} apples and click Submit.`);
+      this.dom.mascot.classList.add('mascot-happy');
+      setTimeout(() => this.dom.mascot.classList.remove('mascot-happy'), 1200);
+    });
+  }
+
+  generateNumbers() {
+    let a = 9, b = 4;
+    switch (this.currentMode) {
+      case '10':
+        a = Math.floor(Math.random() * 8) + 3;
+        b = Math.floor(Math.random() * (a - 1)) + 1;
+        break;
+      case '20':
+        a = Math.floor(Math.random() * 11) + 10;
+        b = Math.floor(Math.random() * 9) + 1;
+        break;
+      case '50':
+        a = Math.floor(Math.random() * 25) + 15;
+        b = Math.floor(Math.random() * 12) + 1;
+        break;
+      case '100':
+        a = Math.floor(Math.random() * 40) + 20;
+        b = Math.floor(Math.random() * 15) + 1;
+        break;
+      case '1d-1d':
+        a = Math.floor(Math.random() * 8) + 2;
+        b = Math.floor(Math.random() * a) + 1;
+        break;
+      case '2d-1d':
+        a = Math.floor(Math.random() * 15) + 10;
+        b = Math.floor(Math.random() * 9) + 1;
+        break;
+      case '2d-2d':
+        a = Math.floor(Math.random() * 15) + 15;
+        b = Math.floor(Math.random() * 10) + 5;
+        if (b > a) b = a - 1;
+        break;
+    }
+    this.numA = a;
+    this.numB = b;
+  }
+
+  newProblem() {
+    this.generateNumbers();
+    this.resetCurrent();
+    this.showSpeech(`Take out ${this.numB} apples, then press Submit!`);
+  }
+
+  resetCurrent() {
+    this.removedCount = 0;
+    this.isCompleted = false;
+    this.apples = [];
+
+    this.dom.mainAppleZone.innerHTML = '';
+    this.dom.removedAppleZone.innerHTML = '';
+
+    this.updateUI();
+    this.renderApples();
+  }
+
+  updateUI() {
+    this.dom.equationDisplay.textContent = `${this.numA} − ${this.numB} = ?`;
+    this.dom.countRemaining.textContent = this.numA - this.removedCount;
+    this.dom.countRemoved.textContent = this.removedCount;
+    this.dom.targetRemoved.textContent = this.numB;
+
+    if (this.isCompleted) {
+      this.dom.btnSubtract.disabled = true;
+      this.dom.btnSubtract.style.opacity = '0.5';
+      this.dom.btnSubtract.style.cursor = 'not-allowed';
+      this.dom.btnSubmit.disabled = true;
+      this.dom.btnSubmit.style.opacity = '0.5';
+      this.dom.btnSubmit.style.cursor = 'not-allowed';
+    } else {
+      this.dom.btnSubtract.disabled = false;
+      this.dom.btnSubtract.style.opacity = '1';
+      this.dom.btnSubtract.style.cursor = 'pointer';
+      this.dom.btnSubmit.disabled = false;
+      this.dom.btnSubmit.style.opacity = '1';
+      this.dom.btnSubmit.style.cursor = 'pointer';
+    }
+  }
+
+  renderApples() {
+    for (let i = 1; i <= this.numA; i++) {
+      const appleEl = document.createElement('div');
+      appleEl.className = 'apple sway';
+      appleEl.dataset.id = i;
+
+      // Clone SVG Content (No numbers added)
+      const svgClone = this.dom.appleTemplate.content.cloneNode(true);
+      appleEl.appendChild(svgClone);
+
+      // Bind Interaction
+      this.makeAppleInteractive(appleEl);
+
+      this.dom.mainAppleZone.appendChild(appleEl);
+      this.apples.push(appleEl);
+    }
+  }
+
+  makeAppleInteractive(appleEl) {
+    let startX = 0, startY = 0;
+
+    const onPointerDown = (e) => {
+      if (this.isCompleted) return;
+
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+      startX = clientX;
+      startY = clientY;
+
+      const onPointerMove = (moveEv) => {
+        const moveX = moveEv.touches ? moveEv.touches[0].clientX : moveEv.clientX;
+        const moveY = moveEv.touches ? moveEv.touches[0].clientY : moveEv.clientY;
+
+        if (Math.hypot(moveX - startX, moveY - startY) > 10) {
+          appleEl.classList.add('dragging');
+          appleEl.style.left = `${moveX - 24}px`;
+          appleEl.style.top = `${moveY - 24}px`;
+        }
+      };
+
+      const onPointerUp = (upEv) => {
+        document.removeEventListener('mousemove', onPointerMove);
+        document.removeEventListener('mouseup', onPointerUp);
+        document.removeEventListener('touchmove', onPointerMove);
+        document.removeEventListener('touchend', onPointerUp);
+
+        if (appleEl.classList.contains('dragging')) {
+          appleEl.classList.remove('dragging');
+          appleEl.style.left = '';
+          appleEl.style.top = '';
+
+          const dropX = upEv.changedTouches ? upEv.changedTouches[0].clientX : upEv.clientX;
+          const dropY = upEv.changedTouches ? upEv.changedTouches[0].clientY : upEv.clientY;
+
+          const removedZoneRect = this.dom.removedAppleZone.getBoundingClientRect();
+          const mainZoneRect = this.dom.mainAppleZone.getBoundingClientRect();
+
+          if (
+            dropX >= removedZoneRect.left - 40 &&
+            dropX <= removedZoneRect.right + 40 &&
+            dropY >= removedZoneRect.top - 40 &&
+            dropY <= removedZoneRect.bottom + 40
+          ) {
+            this.moveAppleToRemoved(appleEl);
+          } else if (
+            dropX >= mainZoneRect.left - 40 &&
+            dropX <= mainZoneRect.right + 40 &&
+            dropY >= mainZoneRect.top - 40 &&
+            dropY <= mainZoneRect.bottom + 40
+          ) {
+            this.moveAppleToMain(appleEl);
+          }
+        } else {
+          if (appleEl.parentElement === this.dom.mainAppleZone) {
+            this.moveAppleToRemoved(appleEl);
+          } else {
+            this.moveAppleToMain(appleEl);
+          }
+        }
+      };
+
+      document.addEventListener('mousemove', onPointerMove);
+      document.addEventListener('mouseup', onPointerUp);
+      document.addEventListener('touchmove', onPointerMove);
+      document.addEventListener('touchend', onPointerUp);
+    };
+
+    appleEl.addEventListener('mousedown', onPointerDown);
+    appleEl.addEventListener('touchstart', onPointerDown, { passive: true });
+  }
+
+  moveAppleToRemoved(appleEl) {
+    if (appleEl.parentElement === this.dom.removedAppleZone) return;
+    this.removedCount++;
+    this.sound.playPop();
+
+    const rect = appleEl.getBoundingClientRect();
+    this.particles.addSparkle(rect.left + 24, rect.top + 24);
+
+    appleEl.classList.remove('sway');
+    this.dom.removedAppleZone.appendChild(appleEl);
+    this.updateUI();
+  }
+
+  moveAppleToMain(appleEl) {
+    if (appleEl.parentElement === this.dom.mainAppleZone) return;
+    this.removedCount--;
+    this.sound.playPop();
+
+    appleEl.classList.add('sway');
+    this.dom.mainAppleZone.appendChild(appleEl);
+    this.updateUI();
+  }
+
+  subtractOneApple() {
+    const remainingApples = Array.from(this.dom.mainAppleZone.children);
+    if (remainingApples.length > 0) {
+      const targetApple = remainingApples[remainingApples.length - 1];
+      this.moveAppleToRemoved(targetApple);
+    }
+  }
+
+  submitAnswer() {
+    if (this.isCompleted) return;
+
+    if (this.removedCount === this.numB) {
+      this.checkCompletion();
+    } else {
+      this.sound.playError();
+      this.showSpeech(`Not quite right! Try again.`);
+    }
+  }
+
+  provideHint() {
+    if (this.isCompleted) return;
+    if (this.removedCount < this.numB) {
+      this.subtractOneApple();
+      this.showSpeech(`Look! We subtracted 1 apple for you.`);
+    } else if (this.removedCount > this.numB) {
+      const removedApples = Array.from(this.dom.removedAppleZone.children);
+      if (removedApples.length > 0) {
+        this.moveAppleToMain(removedApples[removedApples.length - 1]);
+        this.showSpeech(`Look! We put 1 apple back for you.`);
+      }
+    } else {
+      this.showSpeech(`You have removed exactly ${this.numB} apples! Click Submit!`);
+    }
+  }
+
+  checkCompletion() {
+    this.isCompleted = true;
+    const answer = this.numA - this.numB;
+
+    this.dom.equationDisplay.textContent = `${this.numA} − ${this.numB} = ${answer}`;
+    this.dom.celebrationEquationText.textContent = `${this.numA} − ${this.numB} = ${answer}`;
+
+    this.sound.playFanfare();
+    this.particles.addConfetti();
+
+    this.dom.mascot.classList.add('mascot-happy');
+    this.showSpeech(`Great job! ${this.numA} − ${this.numB} = ${answer}`);
+    this.updateUI();
+
+    setTimeout(() => {
+      this.showCelebration();
+    }, 600);
+  }
+
+  showSpeech(text) {
+    this.dom.speechBubble.textContent = text;
+    this.dom.speechBubble.style.display = 'block';
+    setTimeout(() => {
+      this.dom.speechBubble.style.display = 'none';
+    }, 4000);
+  }
+
+  showCelebration() {
+    this.dom.celebrationModal.classList.add('show');
+  }
+
+  hideCelebration() {
+    this.dom.celebrationModal.classList.remove('show');
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  window.gameApp = new SubtractionGame();
+});
+</script>
+</body>
+</html>

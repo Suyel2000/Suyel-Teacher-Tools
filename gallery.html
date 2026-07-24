@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Photo Gallery | Digital Classroom Hub</title>
+<meta name="description" content="Explore classroom photo memories.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Poppins:wght@600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+/* ===== DESIGN TOKENS ===== */
+:root {
+  --indigo:   #3B4FCC;
+  --indigo-d: #2B3BA8;
+  --teal:     #0DB4B9;
+  --amber:    #F59E0B;
+  --rose:     #F43F5E;
+  --emerald:  #10B981;
+  --bg:       #F5F7FF;
+  --surface:  #FFFFFF;
+  --surface-2:#EEF1FF;
+  --border:   rgba(59,79,204,.12);
+  --text-h:   #1A1F5C;
+  --text-b:   #3D4262;
+  --text-m:   #6B7280;
+  --sh-xs:    0 1px 3px rgba(0,0,0,.06);
+  --sh-sm:    0 4px 12px rgba(59,79,204,.10);
+  --sh-md:    0 8px 28px rgba(59,79,204,.16);
+  --sh-lg:    0 16px 48px rgba(59,79,204,.22);
+  --r-sm: 10px; --r-md: 18px; --r-lg: 28px; --r-xl: 40px;
+  --ease:   cubic-bezier(.25,.46,.45,.94);
+  --spring: cubic-bezier(.175,.885,.32,1.275);
+}
+
+/* ===== RESET ===== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Nunito','Segoe UI',sans-serif;background:var(--bg);color:var(--text-b);line-height:1.65;overflow-x:hidden}
+a{text-decoration:none;color:inherit}
+
+/* ===== NAV ===== */
+.nav{
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 40px;height:68px;
+  background:rgba(255,255,255,.93);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  box-shadow:var(--sh-xs);
+  transition:background .3s var(--ease),box-shadow .3s;
+}
+.nav.scrolled{background:rgba(27,31,92,.97);border-bottom-color:transparent;box-shadow:var(--sh-md)}
+.nav-brand{display:flex;align-items:center;gap:12px}
+.nav-brand img{width:44px;height:44px;border-radius:10px;object-fit:contain}
+.nav-brand-text h1{font-family:'Poppins',sans-serif;font-size:1.05rem;font-weight:800;color:var(--text-h);transition:color .3s}
+.nav-tagline{font-size:.7rem;font-weight:600;color:var(--text-m);transition:color .3s}
+.nav.scrolled .nav-brand-text h1,.nav.scrolled .nav-tagline{color:#fff}
+.nav-links{display:flex;align-items:center;gap:6px}
+.nav-links a{padding:7px 15px;border-radius:8px;font-size:.88rem;font-weight:700;color:var(--text-b);transition:background .2s,color .2s}
+.nav.scrolled .nav-links a{color:rgba(255,255,255,.8)}
+.nav-links a:hover{background:var(--surface-2);color:var(--indigo)}
+.nav.scrolled .nav-links a:hover{background:rgba(255,255,255,.12);color:#fff}
+.nav-cta{background:var(--indigo)!important;color:#fff!important;border-radius:10px!important;box-shadow:0 2px 8px rgba(59,79,204,.35)}
+.nav-cta:hover{background:var(--indigo-d)!important;transform:translateY(-1px)}
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:8px}
+.hamburger span{display:block;width:24px;height:2px;background:var(--text-h);border-radius:2px;transition:.3s}
+.nav.scrolled .hamburger span{background:#fff}
+.mobile-menu{display:none;position:fixed;inset:0;z-index:999;background:#fff;padding:100px 24px 40px;flex-direction:column;gap:8px}
+.mobile-menu.open{display:flex}
+.mobile-menu a{padding:14px 18px;border-radius:12px;font-size:1.05rem;font-weight:700;color:var(--text-h);border:1px solid var(--border)}
+.mobile-close{position:absolute;top:22px;right:22px;background:var(--surface-2);border:none;border-radius:50%;width:40px;height:40px;font-size:1.2rem;cursor:pointer;color:var(--text-h)}
+
+/* ===== HERO ===== */
+.hero{
+  padding:120px 24px 60px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;position:relative;overflow:hidden;
+  background:linear-gradient(150deg,#E3E8FF 0%,#E8F9F9 50%,#FEF9EC 100%);
+}
+.breadcrumb{
+  display:flex;align-items:center;gap:8px;
+  font-size:.82rem;font-weight:700;color:var(--text-m);
+  margin-bottom:20px;
+}
+.breadcrumb a{color:var(--indigo)}
+.hero h2{
+  font-family:'Poppins',sans-serif;
+  font-size:clamp(2rem,5vw,3rem);font-weight:900;
+  color:var(--text-h);line-height:1.15;margin-bottom:12px;
+}
+.hero h2 em{
+  font-style:normal;
+  background:linear-gradient(135deg,var(--indigo),var(--teal));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.hero-desc{font-size:1.05rem;color:var(--text-b);max-width:580px;margin:0 auto}
+
+/* ===== GALLERY GRID ===== */
+.page-wrap{max-width:1200px;margin:0 auto;padding:48px 24px 96px}
+.gallery-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));
+  gap:24px;
+}
+
+.gallery-card{
+  background:var(--surface);
+  border-radius:var(--r-md);
+  border:1.5px solid var(--border);
+  overflow:hidden;
+  box-shadow:var(--sh-xs);
+  transition:transform .35s var(--spring),box-shadow .35s var(--ease);
+  display:flex;flex-direction:column;
+}
+.gallery-card:hover{
+  transform:translateY(-8px);
+  box-shadow:var(--sh-md);
+}
+
+.gallery-img-wrap{
+  width:100%;height:220px;
+  background:var(--surface-2);
+  overflow:hidden;position:relative;
+  cursor:pointer;
+}
+.gallery-img-wrap img{
+  width:100%;height:100%;
+  object-fit:cover;
+  transition:transform .4s var(--ease);
+}
+.gallery-card:hover .gallery-img-wrap img{
+  transform:scale(1.06);
+}
+
+.gallery-info{
+  padding:16px 20px;
+  display:flex;flex-direction:column;gap:6px;
+  background:#fff;
+}
+.gallery-title{
+  font-family:'Poppins',sans-serif;
+  font-size:1rem;font-weight:700;color:var(--text-h);
+}
+.gallery-path{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:.78rem;font-family:monospace;
+  color:var(--indigo);background:var(--surface-2);
+  padding:4px 10px;border-radius:6px;
+  width:fit-content;word-break:break-all;
+}
+
+/* ===== FOOTER ===== */
+.footer{background:#0F1229;color:rgba(255,255,255,.55);padding:40px 24px 24px;margin-top:auto}
+.footer-bottom{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;font-size:.82rem}
+
+@media(max-width:768px){
+  .nav-links{display:none}
+  .hamburger{display:flex}
+  .footer-bottom{flex-direction:column;text-align:center}
+}
+</style>
+</head>
+<body>
+
+<!-- NAVIGATION -->
+<nav class="nav" id="mainNav">
+  <div class="nav-brand">
+    <img src="logo.png" alt="Digital Classroom Hub Logo">
+    <div class="nav-brand-text">
+      <h1>Digital Classroom Hub</h1>
+      <div class="nav-tagline">Connecting Minds · Empowering Learning</div>
+    </div>
+  </div>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="teacher-tools.html">Teacher Tools</a>
+    <a href="games.html">Games</a>
+    <a href="quiz.html">Quizzes</a>
+    <a href="worksheets.html">Worksheets</a>
+    <a href="fln.html">FLN</a>
+    <a href="gallery.html" class="nav-cta">Gallery</a>
+  </div>
+  <div class="hamburger" onclick="toggleMobile()">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" onclick="toggleMobile()">✕</button>
+  <a href="index.html">🏠 Home</a>
+  <a href="teacher-tools.html">👩‍🏫 Teacher Tools</a>
+  <a href="games.html">🎮 Games</a>
+  <a href="quiz.html">📝 Quizzes</a>
+  <a href="worksheets.html">📋 Worksheets</a>
+  <a href="fln.html">🎯 FLN</a>
+  <a href="gallery.html">🖼️ Gallery</a>
+</div>
+
+<!-- HERO HEADER -->
+<section class="hero">
+  <div class="breadcrumb">
+    <a href="index.html">Home</a>
+    <span>›</span>
+    <span style="color:var(--indigo);font-weight:800">Photo Gallery</span>
+  </div>
+  <h2>Classroom <em>Memories & Media</em></h2>
+  <p class="hero-desc">Explore activity photos, visual learning aids, and event highlights stored directly in our media repository.</p>
+</section>
+
+<!-- MAIN GALLERY -->
+<main class="page-wrap">
+  <div class="gallery-grid" id="galleryGrid">
+    
+    <!-- Photo 1 -->
+    <div class="gallery-card">
+      <div class="gallery-img-wrap">
+        <img src="gallery/1.png" alt="Photo 1" onerror="this.src='https://via.placeholder.com/400x300/EEF1FF/3B4FCC?text=gallery/1.png'">
+      </div>
+      <div class="gallery-info">
+        <div class="gallery-title">Classroom Activity 1</div>
+        <div class="gallery-path">📁 gallery/1.png</div>
+      </div>
+    </div>
+
+    <!-- Photo 2 -->
+    <div class="gallery-card">
+      <div class="gallery-img-wrap">
+        <img src="gallery/2.png" alt="Photo 2" onerror="this.src='https://via.placeholder.com/400x300/EEF1FF/3B4FCC?text=gallery/2.png'">
+      </div>
+      <div class="gallery-info">
+        <div class="gallery-title">Classroom Activity 2</div>
+        <div class="gallery-path">📁 gallery/2.png</div>
+      </div>
+    </div>
+
+    <!-- Photo 3 -->
+    <div class="gallery-card">
+      <div class="gallery-img-wrap">
+        <img src="gallery/3.png" alt="Photo 3" onerror="this.src='https://via.placeholder.com/400x300/EEF1FF/3B4FCC?text=gallery/3.png'">
+      </div>
+      <div class="gallery-info">
+        <div class="gallery-title">Classroom Activity 3</div>
+        <div class="gallery-path">📁 gallery/3.png</div>
+      </div>
+    </div>
+
+    <!-- Photo 4 -->
+    <div class="gallery-card">
+      <div class="gallery-img-wrap">
+        <img src="gallery/4.png" alt="Photo 4" onerror="this.src='https://via.placeholder.com/400x300/EEF1FF/3B4FCC?text=gallery/4.png'">
+      </div>
+      <div class="gallery-info">
+        <div class="gallery-title">Classroom Activity 4</div>
+        <div class="gallery-path">📁 gallery/4.png</div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-bottom">
+    <div>Made with ❤️ for Students, Teachers and Parents</div>
+    <div>© 2026 Digital Classroom Hub · Curated by <strong style="color:#fff">Suyel Aktar</strong></div>
+  </div>
+</footer>
+
+<script>
+/* Navigation & Mobile Menu */
+const nav = document.getElementById('mainNav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 40);
+}, {passive:true});
+
+function toggleMobile(){
+  document.getElementById('mobileMenu').classList.toggle('open');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Number Recognition Flashcards</title>
+<style>
+  :root{
+    --bg1:#fff7ee;
+    --bg2:#eef7ff;
+    --ink:#2c2438;
+    --ink-soft:#5b5470;
+    --card-bg:#ffffff;
+    --card-border:#e4dcf5;
+    --purple:#7c5cff;
+    --purple-dark:#5b3ff0;
+    --teal:#1fb6a8;
+    --coral:#ff6b6b;
+    --amber:#ffb648;
+    --pink:#ff7ab8;
+    --shadow: 0 10px 30px rgba(90, 70, 150, 0.15);
+    --radius-lg: 26px;
+    --radius-md: 18px;
+    --radius-sm: 12px;
+    --focus: 3px solid #1fb6a8;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;
+    min-height:100vh;
+    font-family: 'Baloo 2','Comic Sans MS','Trebuchet MS', Verdana, sans-serif;
+    background:
+      radial-gradient(circle at 10% 10%, #ffe9c9 0%, transparent 40%),
+      radial-gradient(circle at 90% 15%, #c9f3ff 0%, transparent 40%),
+      radial-gradient(circle at 50% 100%, #e3d4ff 0%, transparent 45%),
+      linear-gradient(160deg, var(--bg1), var(--bg2));
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important;}
+  }
+
+  a:focus, button:focus, [tabindex]:focus{
+    outline: var(--focus);
+    outline-offset:3px;
+  }
+
+  .app{
+    max-width:1400px;
+    margin:0 auto;
+    padding: 24px 20px 80px;
+  }
+
+  /* ---------- HEADER ---------- */
+  header.top{
+    text-align:center;
+    margin-bottom: 22px;
+  }
+  .title{
+    font-size: clamp(28px, 5vw, 46px);
+    font-weight:800;
+    margin:0;
+    letter-spacing: 0.5px;
+    background: linear-gradient(90deg, var(--purple-dark), var(--coral), var(--amber));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    display:inline-flex;
+    align-items:center;
+    gap:14px;
+  }
+  .title .digit-badge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:56px;height:56px;
+    border-radius:16px;
+    background: linear-gradient(135deg, var(--purple), var(--teal));
+    color:white;
+    font-size:28px;
+    box-shadow: var(--shadow);
+    -webkit-text-fill-color:white;
+  }
+  .subtitle{
+    margin: 10px 0 0;
+    font-size: clamp(15px, 2.2vw, 20px);
+    color: var(--ink-soft);
+    font-weight:600;
+    letter-spacing:0.5px;
+  }
+  .subtitle .dot{
+    color: var(--pink);
+    margin: 0 6px;
+  }
+
+  /* ---------- CONTROLS ---------- */
+  .controls-wrap{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    margin: 18px 0 22px;
+  }
+
+  .category-row{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:8px;
+  }
+  .cat-btn{
+    border:none;
+    cursor:pointer;
+    font-family:inherit;
+    font-weight:700;
+    font-size: clamp(11px, 1.4vw, 13px);
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: white;
+    color: var(--ink);
+    box-shadow: 0 3px 10px rgba(90,70,150,0.1);
+    border: 2px solid transparent;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease, color 0.2s ease;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    min-height:36px;
+  }
+  .cat-btn:hover{ transform: translateY(-2px) scale(1.02); box-shadow: 0 6px 16px rgba(90,70,150,0.18); }
+  .cat-btn.active{
+    background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+    color:white;
+    border-color: var(--purple-dark);
+    box-shadow: 0 6px 18px rgba(91,63,240,0.3);
+  }
+
+  .action-row{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    align-items:center;
+    gap:10px;
+  }
+  .action-btn{
+    border:none;
+    cursor:pointer;
+    font-family:inherit;
+    font-weight:800;
+    font-size: clamp(12px, 1.8vw, 14px);
+    padding: 10px 18px;
+    border-radius: 12px;
+    color:white;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    box-shadow: var(--shadow);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    min-height:40px;
+  }
+  .action-btn:hover{ transform: translateY(-2px); filter:brightness(1.05); }
+  .action-btn:active{ transform: translateY(0); }
+  .btn-shuffle{ background: linear-gradient(135deg, var(--coral), var(--pink)); }
+  .btn-reset{ background: linear-gradient(135deg, #8f97ff, var(--purple)); }
+  .btn-mute{ background: linear-gradient(135deg, #6fcf97, var(--teal)); }
+
+  .teacher-toggle{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:white;
+    padding:6px 14px;
+    border-radius:999px;
+    box-shadow: 0 3px 10px rgba(90,70,150,0.1);
+    font-weight:700;
+    font-size:13px;
+    cursor:pointer;
+    user-select:none;
+  }
+  .switch{
+    position:relative;
+    width:40px;height:22px;
+    background:#ddd6f5;
+    border-radius:999px;
+    transition: background 0.2s ease;
+    flex-shrink:0;
+  }
+  .switch::after{
+    content:"";
+    position:absolute;
+    top:2px;left:2px;
+    width:18px;height:18px;
+    border-radius:50%;
+    background:white;
+    box-shadow:0 2px 4px rgba(0,0,0,0.2);
+    transition: transform 0.2s ease;
+  }
+  .teacher-toggle input{ display:none; }
+  .teacher-toggle input:checked + .switch{ background: var(--teal); }
+  .teacher-toggle input:checked + .switch::after{ transform: translateX(18px); }
+
+  /* ---------- PROGRESS ---------- */
+  .progress-wrap{
+    max-width: 520px;
+    margin: 0 auto 26px;
+    text-align:center;
+  }
+  .progress-label{
+    font-weight:700;
+    color: var(--ink-soft);
+    margin-bottom:8px;
+    font-size:15px;
+  }
+  .progress-track{
+    height:16px;
+    border-radius:999px;
+    background: #efe9ff;
+    overflow:hidden;
+    box-shadow: inset 0 2px 6px rgba(90,70,150,0.15);
+  }
+  .progress-fill{
+    height:100%;
+    width:0%;
+    border-radius:999px;
+    background: linear-gradient(90deg, var(--teal), var(--purple), var(--pink));
+    transition: width 0.5s cubic-bezier(.4,1.4,.6,1);
+  }
+
+  .celebrate{
+    text-align:center;
+    font-size: clamp(18px,3vw,26px);
+    font-weight:800;
+    color: var(--purple-dark);
+    margin: -10px 0 20px;
+    display:none;
+    animation: pop-in 0.5s cubic-bezier(.4,1.8,.6,1);
+  }
+  .celebrate.show{ display:block; }
+  @keyframes pop-in{
+    0%{ transform: scale(0.6); opacity:0; }
+    60%{ transform: scale(1.08); opacity:1; }
+    100%{ transform: scale(1); }
+  }
+
+  /* ---------- GRID ---------- */
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 22px;
+  }
+  @media (min-width: 900px){
+    .grid{ grid-template-columns: repeat(5, 1fr); }
+  }
+  @media (min-width: 640px) and (max-width:899px){
+    .grid{ grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 639px){
+    .grid{ grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .card-slot{
+    perspective: 1200px;
+    min-height: 280px;
+  }
+  .flash-card{
+    position:relative;
+    width:100%;
+    height:100%;
+    min-height:280px;
+    cursor:pointer;
+    transform-style: preserve-3d;
+    transition: transform 0.7s cubic-bezier(.3,.9,.4,1.1);
+  }
+  .flash-card.flipped{
+    transform: rotateY(180deg);
+  }
+  .flash-card.bounce{
+    animation: bounce-reveal 0.6s ease;
+  }
+  @keyframes bounce-reveal{
+    0%{ transform: rotateY(180deg) scale(1); }
+    50%{ transform: rotateY(180deg) scale(1.08); }
+    100%{ transform: rotateY(180deg) scale(1); }
+  }
+
+  .card-face{
+    position:absolute;
+    inset:0;
+    border-radius: var(--radius-lg);
+    backface-visibility: hidden;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding: 16px;
+    box-shadow: var(--shadow);
+    border: 3px solid var(--card-border);
+  }
+  .card-front{
+    background: linear-gradient(160deg, #ffffff, #f4f0ff);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .card-slot:hover .card-front{
+    transform: translateY(-4px);
+    box-shadow: 0 16px 34px rgba(90,70,150,0.25);
+  }
+  .card-front .qmark{
+    font-size: 52px;
+    margin-bottom:8px;
+    filter: drop-shadow(0 3px 6px rgba(124,92,255,0.35));
+  }
+  .card-front .tap-label{
+    font-weight:800;
+    color: var(--purple-dark);
+    font-size: clamp(15px,2vw,18px);
+    text-align:center;
+  }
+  .card-front .card-glow{
+    position:absolute;
+    inset:0;
+    border-radius: var(--radius-lg);
+    background: radial-gradient(circle at 50% 20%, rgba(124,92,255,0.15), transparent 60%);
+    pointer-events:none;
+  }
+
+  .card-back{
+    background: var(--card-bg);
+    transform: rotateY(180deg);
+    overflow:hidden;
+  }
+  .card-back svg{
+    width: 100%;
+    height: 100%;
+    max-width: 260px;
+    max-height: 200px;
+  }
+  .card-back .answer-name{
+    margin-top:10px;
+    font-size: clamp(13px,1.8vw,16px);
+    font-weight:800;
+    color: var(--teal);
+    background:#e8fbf6;
+    padding:6px 12px;
+    border-radius:10px;
+    text-align:center;
+  }
+  .digit-display{
+    font-size: clamp(56px, 9vw, 80px);
+    font-weight:800;
+    color: var(--purple-dark);
+  }
+  .expanded-display{
+    font-size: clamp(22px, 3.8vw, 34px);
+    font-weight:800;
+    color: var(--purple-dark);
+    text-align:center;
+    line-height:1.3;
+  }
+  .pv-table{
+    border-collapse: collapse;
+    font-weight:800;
+  }
+  .pv-table th, .pv-table td{
+    border: 2px solid var(--card-border);
+    padding: 8px 12px;
+    text-align:center;
+    font-size: clamp(13px, 1.8vw, 16px);
+  }
+  .pv-table th{
+    background: #f4f0ff;
+    color: var(--purple-dark);
+  }
+  .pv-table td{
+    color: var(--ink);
+    font-size: clamp(20px, 2.6vw, 26px);
+  }
+
+  /* footer */
+  footer.hint{
+    text-align:center;
+    margin-top: 40px;
+    color: var(--ink-soft);
+    font-size:14px;
+  }
+
+  .sr-only{
+    position:absolute;
+    width:1px;height:1px;
+    padding:0;margin:-1px;
+    overflow:hidden;
+    clip:rect(0,0,0,0);
+    white-space:nowrap;
+    border:0;
+  }
+
+  /* confetti */
+  .confetti-piece{
+    position:fixed;
+    top:-20px;
+    width:10px;height:16px;
+    opacity:0.9;
+    pointer-events:none;
+    z-index:999;
+    border-radius:2px;
+    animation-name: confetti-fall;
+    animation-timing-function: ease-in;
+    animation-fill-mode: forwards;
+  }
+  @keyframes confetti-fall{
+    0%{ transform: translateY(0) rotate(0deg); }
+    100%{ transform: translateY(105vh) rotate(360deg); }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <h1 class="title"><span class="digit-badge" aria-hidden="true">123</span>Number Recognition Flashcards</h1>
+    <p class="subtitle">Look<span class="dot">•</span>Think<span class="dot">•</span>Say the Number</p>
+  </header>
+
+  <section class="controls-wrap" aria-label="Category and action controls">
+    <div class="category-row" role="group" aria-label="Choose a number category">
+      <button class="cat-btn active" data-cat="one" aria-pressed="true">⭐ One-Digit Numbers (1–9)</button>
+      <button class="cat-btn" data-cat="two" aria-pressed="false">⭐ Two-Digit Numbers (10–99)</button>
+      <button class="cat-btn" data-cat="three" aria-pressed="false">⭐ Three-Digit Numbers (100–999)</button>
+      <button class="cat-btn" data-cat="thousand" aria-pressed="false">⭐ Numbers up to 1000</button>
+      <button class="cat-btn" data-cat="mixed" aria-pressed="false">⭐ Mixed Challenge</button>
+    </div>
+
+    <div class="action-row">
+      <button class="action-btn btn-shuffle" id="shuffleBtn">🔀 Shuffle Cards</button>
+      <button class="action-btn btn-reset" id="resetBtn">🔁 Reset</button>
+      <button class="action-btn btn-mute" id="muteBtn">🔊 Sound On</button>
+      <label class="teacher-toggle" for="teacherToggle">
+        👩‍🏫 Teacher Mode
+        <input type="checkbox" id="teacherToggle">
+        <span class="switch" aria-hidden="true"></span>
+      </label>
+    </div>
+  </section>
+
+  <section class="progress-wrap" aria-label="Progress">
+    <div class="progress-label"><span id="progressText">0 / 10 Cards Opened</span></div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  </section>
+
+  <p class="celebrate" id="celebrateMsg">🎉 Great Job! Press Shuffle to play again!</p>
+
+  <main class="grid" id="cardGrid" aria-label="Flashcards"></main>
+
+  <footer class="hint">Tap a card to reveal a number puzzle. Say the number out loud before checking with your teacher!</footer>
+</div>
+
+<script>
+/* ============================================================
+   NUMBER RECOGNITION FLASHCARDS
+   Vanilla JS, modular sections:
+   1. State
+   2. Number generation
+   3. Representation selection
+   4. SVG builders (Improved realistic, non-overlapping & centered)
+   5. Rendering
+   6. Interaction handlers
+   7. Sound
+   8. Confetti / celebration
+   ============================================================ */
+
+/* ---------------- 1. STATE ---------------- */
+const state = {
+  category: 'one',
+  numbers: [],       // array of 10 numbers for current session
+  reps: [],          // array of representation ids matching numbers
+  opened: [],        // booleans
+  teacherMode: false,
+  muted: false,
+  openedCount: 0
+};
+
+const CATEGORY_RANGES = {
+  one:      { min: 1, max: 9 },
+  two:      { min: 10, max: 99 },
+  three:    { min: 100, max: 999 },
+  thousand: { min: 1, max: 1000 },
+  mixed:    { min: 1, max: 999 }
+};
+
+/* ---------------- 2. NUMBER GENERATION ---------------- */
+function randInt(min, max){
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function generateNumbers(category){
+  const nums = new Set();
+  if(category === 'mixed'){
+    const buckets = [
+      {min:1,max:9}, {min:10,max:99}, {min:100,max:999}, {min:1,max:1000}
+    ];
+    let guard = 0;
+    while(nums.size < 10 && guard < 2000){
+      const b = buckets[randInt(0,buckets.length-1)];
+      nums.add(randInt(b.min, b.max));
+      guard++;
+    }
+  } else {
+    const {min,max} = CATEGORY_RANGES[category];
+    const rangeSize = max - min + 1;
+    if(rangeSize <= 10){
+      const all = [];
+      for(let v=min; v<=max; v++) all.push(v);
+      shuffleArray(all);
+      const result = [];
+      for(let i=0;i<10;i++){
+        result.push(all[i % all.length]);
+      }
+      shuffleArray(result);
+      return result;
+    }
+    let guard = 0;
+    while(nums.size < 10 && guard < 2000){
+      nums.add(randInt(min,max));
+      guard++;
+    }
+  }
+  return Array.from(nums);
+}
+
+function shuffleArray(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j = randInt(0,i);
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  return arr;
+}
+
+/* ---------------- 3. REPRESENTATION SELECTION ---------------- */
+function eligibleReps(num){
+  const digits = String(num).length;
+  const reps = [];
+
+  reps.push('digits');
+
+  if(num < 1000){
+    reps.push('abacus');
+  }
+  if(num > 10 && num < 1000){
+    reps.push('dienes');
+  }
+  if(digits >= 2){
+    reps.push('expanded');
+    reps.push('standard');
+  }
+  if(digits === 2 || digits === 3){
+    reps.push('placevalue');
+  }
+  if(num <= 999){
+    reps.push('bundles');
+  }
+  if(num <= 99){
+    reps.push('tenframes');
+  }
+  if(num <= 30){
+    reps.push('dots');
+  }
+
+  return reps;
+}
+
+function pickRepresentation(num){
+  const options = eligibleReps(num);
+  return options[randInt(0, options.length-1)];
+}
+
+/* ---------------- number name (teacher mode only) ---------------- */
+const ONES = ['','one','two','three','four','five','six','seven','eight','nine',
+  'ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
+const TENS = ['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+
+function numberToWords(n){
+  if(n === 0) return 'zero';
+  if(n === 1000) return 'one thousand';
+  let result = '';
+  if(n >= 100){
+    result += ONES[Math.floor(n/100)] + ' hundred';
+    n = n % 100;
+    if(n > 0) result += ' ';
+  }
+  if(n >= 20){
+    result += TENS[Math.floor(n/10)];
+    if(n % 10 > 0) result += '-' + ONES[n % 10];
+  } else if(n > 0){
+    result += ONES[n];
+  }
+  return capitalize(result.trim());
+}
+function capitalize(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+
+/* ---------------- 4. SVG BUILDERS ---------------- */
+
+// -- Vertical Realistic Centered Abacus with H, T, O labels
+function buildAbacus(num){
+  const str = String(num);
+  const digitsArr = str.split('').map(Number);
+  const allLabels = ['H', 'T', 'O'];
+  const placeLabels = allLabels.slice(3 - digitsArr.length);
+
+  const width = 300, height = 200;
+  const baseY = 160;
+  const topY = 25;
+
+  const numRods = digitsArr.length;
+  const frameWidth = Math.max(150, numRods * 65 + 30);
+  const startFrameX = (width - frameWidth) / 2;
+
+  let svg = `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Abacus representation">`;
+  svg += `<defs>
+    <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#a1887f"/><stop offset="100%" stop-color="#5d4037"/></linearGradient>
+    <linearGradient id="beadGrad0" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#a78bfa"/><stop offset="100%" stop-color="#5b21b6"/></linearGradient>
+    <linearGradient id="beadGrad1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f87171"/><stop offset="100%" stop-color="#991b1b"/></linearGradient>
+    <linearGradient id="beadGrad2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fbbf24"/><stop offset="100%" stop-color="#92400e"/></linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%"><feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.25"/></filter>
+  </defs>`;
+
+  // Base frame
+  svg += `<rect x="${startFrameX}" y="${baseY}" width="${frameWidth}" height="26" rx="6" fill="url(#wood)" filter="url(#shadow)"/>`;
+  // Top frame bar
+  svg += `<rect x="${startFrameX + 10}" y="${topY - 8}" width="${frameWidth - 20}" height="10" rx="4" fill="url(#wood)"/>`;
+
+  const rodSpacing = frameWidth / (numRods + 1);
+
+  digitsArr.forEach((d, colIdx) => {
+    const rx = startFrameX + rodSpacing * (colIdx + 1);
+    // Metallic Rod
+    svg += `<line x1="${rx}" y1="${topY}" x2="${rx}" y2="${baseY}" stroke="#cbd5e1" stroke-width="5" stroke-linecap="round"/>`;
+
+    // Beads stacked vertically cleanly with zero overlap
+    const beadR = 10;
+    const beadH = 13;
+    const gradId = `beadGrad${colIdx % 3}`;
+    for(let b = 0; b < d; b++){
+      const cy = baseY - 10 - (b * beadH);
+      svg += `<ellipse cx="${rx}" cy="${cy}" rx="${beadR}" ry="6" fill="url(#${gradId})" stroke="#ffffff" stroke-width="1" filter="url(#shadow)"/>`;
+    }
+
+    // Label on base frame
+    svg += `<text x="${rx}" y="${baseY + 18}" font-size="14" font-weight="800" fill="#ffffff" text-anchor="middle" style="font-family:sans-serif;">${placeLabels[colIdx]}</text>`;
+  });
+  svg += `</svg>`;
+  return svg;
+}
+
+// -- Realistic, Centered Base Ten Blocks (Dienes) with Zero Overlap
+function buildDienes(num){
+  const h = Math.floor(num / 100);
+  const t = Math.floor((num % 100) / 10);
+  const o = num % 10;
+
+  const width = 320, height = 200;
+
+  const flatsCol = h > 0 ? Math.min(h, 4) : 0;
+  const flatsWidth = h > 0 ? (flatsCol * 56) : 0;
+
+  const rodsCol = t > 0 ? Math.min(t, 5) : 0;
+  const rodsWidth = t > 0 ? (rodsCol * 14) : 0;
+
+  const cubesCols = o > 0 ? Math.min(o, 5) : 0;
+  const cubesWidth = o > 0 ? (cubesCols * 14) : 0;
+
+  const gap = 18;
+  let sections = 0;
+  if(h > 0) sections++;
+  if(t > 0) sections++;
+  if(o > 0) sections++;
+
+  const totalW = flatsWidth + rodsWidth + cubesWidth + Math.max(0, sections - 1) * gap;
+  let currX = Math.max(15, (width - totalW) / 2);
+
+  let svg = `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Base ten blocks">`;
+  svg += `<defs>
+    <linearGradient id="flatGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#6d28d9"/></linearGradient>
+    <linearGradient id="rodGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#f87171"/><stop offset="100%" stop-color="#dc2626"/></linearGradient>
+    <linearGradient id="cubeGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fbbf24"/><stop offset="100%" stop-color="#d97706"/></linearGradient>
+    <filter id="blkShadow"><feDropShadow dx="1" dy="2" stdDeviation="1.5" flood-opacity="0.2"/></filter>
+  </defs>`;
+
+  // 1. Hundreds Flats (100)
+  if(h > 0){
+    let fy = 35;
+    for(let i = 0; i < h; i++){
+      const row = Math.floor(i / 4);
+      const col = i % 4;
+      const fx = currX + col * 56;
+      const fPosY = fy + row * 62;
+
+      svg += `<g filter="url(#blkShadow)">`;
+      svg += `<rect x="${fx}" y="${fPosY}" width="50" height="50" rx="3" fill="url(#flatGrad)" stroke="#4c1d95" stroke-width="1"/>`;
+      for(let g = 1; g < 10; g++){
+        svg += `<line x1="${fx + g*5}" y1="${fPosY}" x2="${fx + g*5}" y2="${fPosY + 50}" stroke="#a78bfa" stroke-width="0.5" opacity="0.6"/>`;
+        svg += `<line x1="${fx}" y1="${fPosY + g*5}" x2="${fx + 50}" y2="${fPosY + g*5}" stroke="#a78bfa" stroke-width="0.5" opacity="0.6"/>`;
+      }
+      svg += `</g>`;
+    }
+    currX += flatsWidth + gap;
+  }
+
+  // 2. Tens Rods (10)
+  if(t > 0){
+    let ry = 35;
+    for(let i = 0; i < t; i++){
+      const row = Math.floor(i / 5);
+      const col = i % 5;
+      const rx = currX + col * 14;
+      const rPosY = ry + row * 62;
+
+      svg += `<g filter="url(#blkShadow)">`;
+      svg += `<rect x="${rx}" y="${rPosY}" width="10" height="50" rx="2" fill="url(#rodGrad)" stroke="#991b1b" stroke-width="1"/>`;
+      for(let g = 1; g < 10; g++){
+        svg += `<line x1="${rx}" y1="${rPosY + g*5}" x2="${rx + 10}" y2="${rPosY + g*5}" stroke="#fca5a5" stroke-width="0.6"/>`;
+      }
+      svg += `</g>`;
+    }
+    currX += rodsWidth + gap;
+  }
+
+  // 3. Ones Cubes (1)
+  if(o > 0){
+    let cy = 35;
+    for(let i = 0; i < o; i++){
+      const row = Math.floor(i / 5);
+      const col = i % 5;
+      const cx = currX + col * 14;
+      const cPosY = cy + row * 16;
+
+      svg += `<g filter="url(#blkShadow)">`;
+      svg += `<rect x="${cx}" y="${cPosY}" width="10" height="10" rx="2" fill="url(#cubeGrad)" stroke="#92400e" stroke-width="1"/>`;
+      svg += `</g>`;
+    }
+  }
+
+  svg += `</svg>`;
+  return svg;
+}
+
+// -- Realistic, Centered Stick Bundles with Labels "100" and "10"
+function buildBundles(num){
+  const h = Math.floor(num / 100);
+  const t = Math.floor((num % 100) / 10);
+  const o = num % 10;
+
+  const width = 320, height = 200;
+
+  const hCols = h > 0 ? Math.min(h, 4) : 0;
+  const hWidth = h > 0 ? (hCols * 52) : 0;
+
+  const tCols = t > 0 ? Math.min(t, 5) : 0;
+  const tWidth = t > 0 ? (tCols * 30) : 0;
+
+  const oCols = o > 0 ? Math.min(o, 5) : 0;
+  const oWidth = o > 0 ? (oCols * 12) : 0;
+
+  const gap = 18;
+  let sections = 0;
+  if(h > 0) sections++;
+  if(t > 0) sections++;
+  if(o > 0) sections++;
+
+  const totalW = hWidth + tWidth + oWidth + Math.max(0, sections - 1) * gap;
+  let currX = Math.max(15, (width - totalW) / 2);
+
+  let svg = `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bundles of sticks">`;
+  svg += `<defs>
+    <linearGradient id="stickWood" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#d7ccc8"/><stop offset="50%" stop-color="#bcaaa4"/><stop offset="100%" stop-color="#8d6e63"/></linearGradient>
+    <linearGradient id="band100" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7c5cff"/><stop offset="100%" stop-color="#4c1d95"/></linearGradient>
+    <linearGradient id="band10" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#06b6d4"/><stop offset="100%" stop-color="#0e7490"/></linearGradient>
+    <filter id="stickShadow"><feDropShadow dx="1" dy="2" stdDeviation="1" flood-opacity="0.2"/></filter>
+  </defs>`;
+
+  // 1. Hundreds Bundles (labeled 100)
+  if(h > 0){
+    for(let i = 0; i < h; i++){
+      const row = Math.floor(i / 4);
+      const col = i % 4;
+      const bx = currX + col * 52;
+      const by = 30 + row * 75;
+
+      svg += `<g filter="url(#stickShadow)">`;
+      for(let s = 0; s < 10; s++){
+        svg += `<rect x="${bx + s*3.8}" y="${by}" width="3" height="60" rx="1.5" fill="url(#stickWood)" stroke="#6d4c41" stroke-width="0.5"/>`;
+      }
+      svg += `<rect x="${bx - 2}" y="${by + 22}" width="42" height="16" rx="4" fill="url(#band100)" stroke="#ffffff" stroke-width="1"/>`;
+      svg += `<text x="${bx + 19}" y="${by + 34}" font-size="11" font-weight="800" fill="#ffffff" text-anchor="middle" style="font-family:sans-serif;">100</text>`;
+      svg += `</g>`;
+    }
+    currX += hWidth + gap;
+  }
+
+  // 2. Tens Bundles (labeled 10)
+  if(t > 0){
+    for(let i = 0; i < t; i++){
+      const row = Math.floor(i / 5);
+      const col = i % 5;
+      const bx = currX + col * 30;
+      const by = 33 + row * 70;
+
+      svg += `<g filter="url(#stickShadow)">`;
+      for(let s = 0; s < 5; s++){
+        svg += `<rect x="${bx + s*3.8}" y="${by}" width="3" height="54" rx="1.5" fill="url(#stickWood)" stroke="#6d4c41" stroke-width="0.5"/>`;
+      }
+      svg += `<rect x="${bx - 2}" y="${by + 20}" width="23" height="14" rx="3" fill="url(#band10)" stroke="#ffffff" stroke-width="1"/>`;
+      svg += `<text x="${bx + 9.5}" y="${by + 31}" font-size="10" font-weight="800" fill="#ffffff" text-anchor="middle" style="font-family:sans-serif;">10</text>`;
+      svg += `</g>`;
+    }
+    currX += tWidth + gap;
+  }
+
+  // 3. Loose Sticks (Ones)
+  if(o > 0){
+    for(let i = 0; i < o; i++){
+      const row = Math.floor(i / 5);
+      const col = i % 5;
+      const sx = currX + col * 12;
+      const sy = 38 + row * 55;
+
+      svg += `<g filter="url(#stickShadow)">`;
+      svg += `<rect x="${sx}" y="${sy}" width="4" height="48" rx="2" fill="url(#stickWood)" stroke="#5d4037" stroke-width="0.8"/>`;
+      svg += `</g>`;
+    }
+  }
+
+  svg += `</svg>`;
+  return svg;
+}
+
+// -- Expanded form
+function buildExpanded(num){
+  const s = String(num);
+  const parts = [];
+  for(let i=0;i<s.length;i++){
+    const digit = Number(s[i]);
+    if(digit === 0) continue;
+    const placeValue = digit * Math.pow(10, s.length - 1 - i);
+    parts.push(placeValue);
+  }
+  const text = parts.join(' + ');
+  return `<div class="expanded-display">${text}</div>`;
+}
+
+// -- Standard form
+function buildStandard(num){
+  return buildExpanded(num);
+}
+
+// -- Place value table
+function buildPlaceValueTable(num){
+  const s = String(num).padStart(3,'0');
+  const useHundreds = num >= 100;
+  let headers = useHundreds ? ['Hundreds','Tens','Ones'] : ['Tens','Ones'];
+  let vals = useHundreds ? s.split('').map(Number) : String(num).padStart(2,'0').split('').map(Number);
+  let html = `<table class="pv-table" role="table" aria-label="Place value table"><thead><tr>`;
+  headers.forEach(h => html += `<th>${h}</th>`);
+  html += `</tr></thead><tbody><tr>`;
+  vals.forEach(v => html += `<td>${v}</td>`);
+  html += `</tr></tbody></table>`;
+  return html;
+}
+
+// -- Ten frames
+function buildTenFrames(num){
+  const frames = Math.ceil(num/10) || 1;
+  const cellW = 28, cellH = 28, gap=4;
+  const frameW = cellW*5 + gap*6;
+  const frameH = cellH*2 + gap*3;
+  const perRow = frames <= 5 ? frames : Math.ceil(frames/2);
+  const rows = Math.ceil(frames/perRow);
+  const totalW = perRow*(frameW+10);
+  const totalH = rows*(frameH+10);
+  let svg = `<svg viewBox="0 0 ${totalW} ${totalH}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ten frame representation">`;
+  let remaining = num;
+  for(let f=0; f<frames; f++){
+    const fx = (f % perRow) * (frameW+10);
+    const fy = Math.floor(f/perRow) * (frameH+10);
+    svg += `<rect x="${fx}" y="${fy}" width="${frameW}" height="${frameH}" rx="6" fill="none" stroke="#7c5cff" stroke-width="2"/>`;
+    for(let r=0;r<2;r++){
+      for(let c=0;c<5;c++){
+        const cx = fx + gap + c*(cellW+gap);
+        const cy = fy + gap + r*(cellH+gap);
+        svg += `<rect x="${cx}" y="${cy}" width="${cellW-2}" height="${cellH-2}" fill="none" stroke="#d9cffa" stroke-width="1.5"/>`;
+        if(remaining > 0){
+          svg += `<circle cx="${cx+cellW/2-1}" cy="${cy+cellH/2-1}" r="10" fill="#7c5cff"/>`;
+          remaining--;
+        }
+      }
+    }
+  }
+  svg += `</svg>`;
+  return svg;
+}
+
+// -- Dot arrays
+function buildDots(num){
+  const perRow = 5;
+  const rows = Math.ceil(num/perRow);
+  const cell = 26;
+  const w = perRow*cell + 20;
+  const h = rows*cell + 20;
+  let svg = `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dot array representation">`;
+  for(let i=0;i<num;i++){
+    const r = Math.floor(i/perRow);
+    const c = i % perRow;
+    const cx = 20 + c*cell;
+    const cy = 20 + r*cell;
+    svg += `<circle cx="${cx}" cy="${cy}" r="9" fill="#1fb6a8" stroke="white" stroke-width="1.5"/>`;
+  }
+  svg += `</svg>`;
+  return svg;
+}
+
+/* ---------------- 5. RENDERING ---------------- */
+const gridEl = document.getElementById('cardGrid');
+
+function buildRepresentationMarkup(num, rep){
+  switch(rep){
+    case 'digits':
+      return `<div class="digit-display">${num}</div>`;
+    case 'abacus':
+      return buildAbacus(num);
+    case 'dienes':
+      return buildDienes(num);
+    case 'expanded':
+      return buildExpanded(num);
+    case 'standard':
+      return buildStandard(num);
+    case 'placevalue':
+      return buildPlaceValueTable(num);
+    case 'bundles':
+      return buildBundles(num);
+    case 'tenframes':
+      return buildTenFrames(num);
+    case 'dots':
+      return buildDots(num);
+    default:
+      return `<div class="digit-display">${num}</div>`;
+  }
+}
+
+function renderGrid(){
+  gridEl.innerHTML = '';
+  state.numbers.forEach((num, idx) => {
+    const rep = state.reps[idx];
+    const slot = document.createElement('div');
+    slot.className = 'card-slot';
+
+    const card = document.createElement('div');
+    card.className = 'flash-card';
+    card.setAttribute('tabindex','0');
+    card.setAttribute('role','button');
+    card.setAttribute('aria-label', `Flashcard ${idx+1} of 10. Tap to reveal a number puzzle.`);
+    card.dataset.index = idx;
+
+    const front = document.createElement('div');
+    front.className = 'card-face card-front';
+    front.innerHTML = `<div class="card-glow"></div><div class="qmark" aria-hidden="true">❓</div><div class="tap-label">Tap to Reveal</div>`;
+
+    const back = document.createElement('div');
+    back.className = 'card-face card-back';
+    back.innerHTML = buildRepresentationMarkup(num, rep);
+    if(state.teacherMode){
+      back.innerHTML += `<div class="answer-name">${numberToWords(num)}</div>`;
+    }
+
+    card.appendChild(front);
+    card.appendChild(back);
+    slot.appendChild(card);
+    gridEl.appendChild(slot);
+
+    if(state.opened[idx]){
+      card.classList.add('flipped');
+    }
+
+    card.addEventListener('click', () => revealCard(idx));
+    card.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter' || e.key === ' '){
+        e.preventDefault();
+        revealCard(idx);
+      }
+    });
+  });
+  updateProgress();
+}
+
+function updateProgress(){
+  const count = state.opened.filter(Boolean).length;
+  state.openedCount = count;
+  document.getElementById('progressText').textContent = `${count} / 10 Cards Opened`;
+  document.getElementById('progressFill').style.width = `${count*10}%`;
+  const celebrate = document.getElementById('celebrateMsg');
+  if(count === 10){
+    celebrate.classList.add('show');
+    launchConfetti();
+    playSuccessSound();
+  } else {
+    celebrate.classList.remove('show');
+  }
+}
+
+/* ---------------- 6. INTERACTION ---------------- */
+function revealCard(idx){
+  if(state.opened[idx]) return;
+  state.opened[idx] = true;
+  const card = gridEl.querySelectorAll('.flash-card')[idx];
+  card.classList.add('flipped');
+  playFlipSound();
+  setTimeout(() => {
+    card.classList.add('bounce');
+    setTimeout(() => card.classList.remove('bounce'), 650);
+  }, 350);
+  updateProgress();
+}
+
+function newSession(category){
+  state.category = category;
+  state.numbers = generateNumbers(category);
+  state.reps = state.numbers.map(n => pickRepresentation(n));
+  state.opened = new Array(10).fill(false);
+  renderGrid();
+}
+
+function resetFlips(){
+  state.opened = new Array(10).fill(false);
+  renderGrid();
+}
+
+/* category buttons */
+document.querySelectorAll('.cat-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.cat-btn').forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-pressed','false');
+    });
+    btn.classList.add('active');
+    btn.setAttribute('aria-pressed','true');
+    newSession(btn.dataset.cat);
+  });
+});
+
+document.getElementById('shuffleBtn').addEventListener('click', () => {
+  newSession(state.category);
+});
+document.getElementById('resetBtn').addEventListener('click', () => {
+  resetFlips();
+});
+document.getElementById('teacherToggle').addEventListener('change', (e) => {
+  state.teacherMode = e.target.checked;
+  renderGrid();
+});
+document.getElementById('muteBtn').addEventListener('click', (e) => {
+  state.muted = !state.muted;
+  e.currentTarget.textContent = state.muted ? '🔇 Sound Off' : '🔊 Sound On';
+});
+
+/* ---------------- 7. SOUND (WebAudio, no external files) ---------------- */
+let audioCtx = null;
+function getAudioCtx(){
+  if(!audioCtx){
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return audioCtx;
+}
+function playTone(freq, duration, type='sine', volume=0.15, delay=0){
+  if(state.muted) return;
+  try{
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.value = volume;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    const start = ctx.currentTime + delay;
+    osc.start(start);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+    osc.stop(start + duration + 0.02);
+  } catch(err){ /* audio not available */ }
+}
+function playFlipSound(){
+  playTone(520, 0.12, 'triangle', 0.12);
+}
+function playSuccessSound(){
+  playTone(523.25, 0.15, 'sine', 0.15, 0);
+  playTone(659.25, 0.15, 'sine', 0.15, 0.12);
+  playTone(783.99, 0.25, 'sine', 0.15, 0.24);
+}
+
+/* ---------------- 8. CONFETTI ---------------- */
+function launchConfetti(){
+  const colors = ['#7c5cff','#ff6b6b','#ffb648','#1fb6a8','#ff7ab8','#6fcf97'];
+  const count = 60;
+  for(let i=0;i<count;i++){
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = Math.random()*100 + 'vw';
+    piece.style.background = colors[randInt(0,colors.length-1)];
+    piece.style.animationDuration = (2 + Math.random()*1.5) + 's';
+    piece.style.animationDelay = (Math.random()*0.4) + 's';
+    document.body.appendChild(piece);
+    setTimeout(() => piece.remove(), 4000);
+  }
+}
+
+/* ---------------- INIT ---------------- */
+newSession('one');
+</script>
+</body>
+</html>

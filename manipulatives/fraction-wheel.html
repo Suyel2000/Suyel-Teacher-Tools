@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Interactive Fraction Wheel Manipulative</title>
+    <style>
+        :root {
+            --bg-color: #f7fafc;
+            --card-bg: #ffffff;
+            --text-color: #2d3748;
+            --primary: #3182ce;
+            --accent-green: #38a169;
+            --accent-yellow: #d69e2e;
+            --accent-red: #e53e3e;
+            --shadow: 0 10px 25px rgba(0,0,0,0.08);
+            --border-radius: 20px;
+            /* FIXED WHEEL DIMENSIONS */
+            --wheel-size: 260px;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a202c;
+            --card-bg: #2d3748;
+            --text-color: #edf2f7;
+            --shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            margin: 0;
+            padding: 0;
+            touch-action: manipulation;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Segoe UI', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Header Navigation */
+        header {
+            background: var(--card-bg);
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            z-index: 20;
+            gap: 8px;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+
+        .title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tool-group {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: #edf2f7;
+            border: 2px solid #cbd5e0;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: transform 0.1s ease, background-color 0.2s;
+            color: var(--text-color);
+            min-height: 38px;
+            touch-action: manipulation;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn-danger { background: var(--accent-red); color: white; border-color: #c53030; }
+
+        /* Tray Bar */
+        #piece-tray {
+            background: var(--card-bg);
+            padding: 10px 12px;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            z-index: 20;
+            overflow-x: auto;
+            border-bottom: 2px solid #e2e8f0;
+            flex-shrink: 0;
+            -webkit-overflow-scrolling: touch;
+            width: 100%;
+        }
+
+        .tray-card {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            min-width: 80px;
+            transition: transform 0.15s ease, border-color 0.15s;
+            touch-action: none;
+            flex-shrink: 0;
+        }
+
+        .tray-card:active {
+            transform: scale(0.95);
+        }
+
+        .tray-card svg {
+            width: 50px;
+            height: 50px;
+            pointer-events: none;
+        }
+
+        .tray-card span {
+            font-size: 0.85rem;
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+        .add-piece-btn {
+            background: var(--primary);
+            color: white;
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 8px;
+            font-weight: bold;
+            pointer-events: none;
+            margin-top: 2px;
+        }
+
+        /* Playground Workspace */
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            padding: 12px;
+            gap: 12px;
+        }
+
+        /* Dual Wheels Area - Exact Geometry */
+        #wheels-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            position: relative;
+            background-image: radial-gradient(#cbd5e0 1.5px, transparent 1.5px);
+            background-size: 24px 24px;
+            border-radius: var(--border-radius);
+            overflow: auto;
+            padding: 16px;
+        }
+
+        .wheel-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .wheel-target {
+            width: var(--wheel-size);
+            height: var(--wheel-size);
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.95);
+            border: 4px dashed #a0aec0;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: var(--shadow);
+            transition: border-color 0.15s, transform 0.15s;
+            box-sizing: border-box;
+        }
+
+        .wheel-target.hovering {
+            border-color: var(--primary);
+            background: #ebf8ff;
+            transform: scale(1.02);
+        }
+
+        .wheel-center-label {
+            position: absolute;
+            pointer-events: none;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #a0aec0;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .wheel-badge {
+            background: var(--card-bg);
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border: 2px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Fixed Dimensions for Draggable Slices */
+        .draggable-piece {
+            position: fixed;
+            cursor: grab;
+            touch-action: none;
+            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.15));
+            z-index: 100;
+            will-change: transform, left, top;
+            pointer-events: auto;
+        }
+
+        .draggable-piece:active {
+            cursor: grabbing;
+            z-index: 1000;
+        }
+
+        /* Confetti Overlay */
+        #confetti-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        @media (max-width: 600px) {
+            :root {
+                --wheel-size: 190px;
+            }
+            header {
+                padding: 8px;
+            }
+            .title {
+                font-size: 1.1rem;
+            }
+            .btn {
+                padding: 5px 8px;
+                font-size: 0.78rem;
+                min-height: 34px;
+            }
+            #wheels-container {
+                flex-direction: column;
+                gap: 20px;
+                justify-content: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="title">
+            <span>🎡</span> Fraction Lab
+        </div>
+        <div class="tool-group">
+            <button class="btn" onclick="toggleAudio()" id="btn-audio">🔊 Sound: ON</button>
+            <button class="btn" onclick="toggleLabels()" id="btn-label">🏷️ Labels: ON</button>
+            <button class="btn btn-danger" onclick="clearAll()">🗑️ Reset</button>
+            <button class="btn" onclick="toggleDarkMode()">🌙 Theme</button>
+        </div>
+    </header>
+
+    <div id="piece-tray"></div>
+
+    <main>
+        <div id="wheels-container">
+            <div class="wheel-card">
+                <div class="wheel-badge">
+                    <span>Wheel 1:</span>
+                    <strong id="w1-sum" style="color: var(--primary);">0</strong>
+                </div>
+                <div class="wheel-target" id="wheel-0" data-wheel-index="0">
+                    <div class="wheel-center-label">Drop Slices Here</div>
+                </div>
+            </div>
+
+            <div class="wheel-card">
+                <div class="wheel-badge">
+                    <span>Wheel 2:</span>
+                    <strong id="w2-sum" style="color: var(--primary);">0</strong>
+                </div>
+                <div class="wheel-target" id="wheel-1" data-wheel-index="1">
+                    <div class="wheel-center-label">Drop Slices Here</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <script>
+        // Web Audio Synthesizer
+        const AudioFX = {
+            ctx: null,
+            enabled: true,
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
+            playSnap() {
+                if (!this.enabled) return;
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(450, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(850, this.ctx.currentTime + 0.06);
+                gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.06);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.06);
+            },
+            playClear() {
+                if (!this.enabled) return;
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(320, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(160, this.ctx.currentTime + 0.12);
+                gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.12);
+            },
+            playWin() {
+                if (!this.enabled) return;
+                this.init();
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0.2, this.ctx.currentTime + idx * 0.08);
+                    gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + idx * 0.08 + 0.2);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(this.ctx.currentTime + idx * 0.08);
+                    osc.stop(this.ctx.currentTime + idx * 0.08 + 0.2);
+                });
+            }
+        };
+
+        const FRACTIONS = [
+            { denom: 1, label: "1/1", name: "Whole", color: "#e53e3e" },
+            { denom: 2, label: "1/2", name: "Half", color: "#3182ce" },
+            { denom: 3, label: "1/3", name: "Third", color: "#38a169" },
+            { denom: 4, label: "1/4", name: "Quarter", color: "#d69e2e" },
+            { denom: 5, label: "1/5", name: "Fifth", color: "#805ad5" },
+            { denom: 6, label: "1/6", name: "Sixth", color: "#dd6b20" },
+            { denom: 8, label: "1/8", name: "Eighth", color: "#319795" },
+            { denom: 10, label: "1/10", name: "Tenth", color: "#d53f8c" },
+            { denom: 12, label: "1/12", name: "Twelfth", color: "#4c51bf" }
+        ];
+
+        let state = {
+            showLabels: true,
+            wheels: [[], []]
+        };
+
+        const trayContainer = document.getElementById('piece-tray');
+        const wheelTargets = [document.getElementById('wheel-0'), document.getElementById('wheel-1')];
+
+        // Dynamic Inner Wheel Calculation Helpers
+        function getWheelRadius() {
+            const target = wheelTargets[0];
+            const computed = window.getComputedStyle(target);
+            const border = parseFloat(computed.borderLeftWidth) || 0;
+            return (target.getBoundingClientRect().width - (border * 2)) / 2;
+        }
+
+        function getWheelBorderWidth() {
+            const target = wheelTargets[0];
+            const computed = window.getComputedStyle(target);
+            return parseFloat(computed.borderLeftWidth) || 0;
+        }
+
+        // Exact Vector Arc Renderer - Generates identical fraction slices for wheels & tray
+        function getSliceSvgPath(startAngleDeg, angleSpanDeg, radius, color, label = "") {
+            const startRad = (startAngleDeg - 90) * Math.PI / 180;
+            const endRad = (startAngleDeg + angleSpanDeg - 90) * Math.PI / 180;
+
+            const x1 = radius * Math.cos(startRad);
+            const y1 = radius * Math.sin(startRad);
+            const x2 = radius * Math.cos(endRad);
+            const y2 = radius * Math.sin(endRad);
+
+            const largeArcFlag = angleSpanDeg > 180 ? 1 : 0;
+
+            let pathData = "";
+            if (angleSpanDeg >= 359.99) {
+                pathData = `M 0 0 m -${radius}, 0 a ${radius},${radius} 0 1,0 ${radius * 2},0 a ${radius},${radius} 0 1,0 -${radius * 2},0`;
+            } else {
+                pathData = `M 0 0 L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
+            }
+
+            const midRad = (startAngleDeg + angleSpanDeg / 2 - 90) * Math.PI / 180;
+            const textX = (radius * 0.62) * Math.cos(midRad);
+            const textY = (radius * 0.62) * Math.sin(midRad);
+
+            return `
+                <path d="${pathData}" fill="${color}" stroke="#ffffff" stroke-width="2" />
+                ${label && state.showLabels ? `<text x="${textX}" y="${textY}" fill="#ffffff" font-size="${Math.max(10, Math.min(14, radius * 0.12))}" font-weight="bold" text-anchor="middle" dominant-baseline="middle">${label}</text>` : ''}
+            `;
+        }
+
+        function buildTray() {
+            trayContainer.innerHTML = '';
+            FRACTIONS.forEach(f => {
+                const card = document.createElement('div');
+                card.className = 'tray-card';
+                const angleSpan = 360 / f.denom;
+                
+                card.innerHTML = `
+                    <svg viewBox="-50 -50 100 100">
+                        ${getSliceSvgPath(0, angleSpan, 46, f.color)}
+                    </svg>
+                    <span>${f.label}</span>
+                    <span class="add-piece-btn">Add Piece</span>
+                `;
+                
+                card.addEventListener('pointerdown', (e) => spawnPieceFromTray(f, e));
+                trayContainer.appendChild(card);
+            });
+        }
+
+        function spawnPieceFromTray(frac, event) {
+            AudioFX.init();
+            event.preventDefault();
+            const sliceAngle = 360 / frac.denom;
+            const piece = document.createElement('div');
+            piece.className = 'draggable-piece';
+
+            const radius = getWheelRadius();
+            const diameter = radius * 2;
+            piece.style.width = `${diameter}px`;
+            piece.style.height = `${diameter}px`;
+
+            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            svg.setAttribute("viewBox", `-${radius} -${radius} ${diameter} ${diameter}`);
+            svg.setAttribute("width", diameter);
+            svg.setAttribute("height", diameter);
+            svg.innerHTML = getSliceSvgPath(0, sliceAngle, radius, frac.color, frac.label);
+            piece.appendChild(svg);
+
+            document.body.appendChild(piece);
+
+            const pieceData = {
+                element: piece,
+                denom: frac.denom,
+                color: frac.color,
+                label: frac.label,
+                angleSpan: sliceAngle,
+                wheelIndex: -1
+            };
+
+            const clientX = event.clientX || (event.touches && event.touches[0].clientX) || 0;
+            const clientY = event.clientY || (event.touches && event.touches[0].clientY) || 0;
+
+            piece.style.left = `${clientX - radius}px`;
+            piece.style.top = `${clientY - radius}px`;
+
+            initDrag(pieceData, event);
+        }
+
+        // Glitch-Free Touch Drag Engine
+        function initDrag(pieceData, initialEvent) {
+            const elem = pieceData.element;
+            const radius = getWheelRadius();
+            
+            elem.style.position = 'fixed';
+
+            if (initialEvent.pointerId !== undefined) {
+                try {
+                    elem.setPointerCapture(initialEvent.pointerId);
+                } catch (err) {}
+            }
+
+            function onPointerMove(e) {
+                e.preventDefault();
+                elem.style.left = `${e.clientX - radius}px`;
+                elem.style.top = `${e.clientY - radius}px`;
+
+                const pieceCenter = {
+                    x: e.clientX,
+                    y: e.clientY
+                };
+
+                wheelTargets.forEach(target => {
+                    const rect = target.getBoundingClientRect();
+                    const targetCenter = {
+                        x: rect.left + rect.width / 2,
+                        y: rect.top + rect.height / 2
+                    };
+                    const dist = Math.hypot(pieceCenter.x - targetCenter.x, pieceCenter.y - targetCenter.y);
+                    if (dist < radius + 30) target.classList.add('hovering');
+                    else target.classList.remove('hovering');
+                });
+            }
+
+            function onPointerUp(e) {
+                e.preventDefault();
+                window.removeEventListener('pointermove', onPointerMove);
+                window.removeEventListener('pointerup', onPointerUp);
+                window.removeEventListener('pointercancel', onPointerUp);
+
+                if (e.pointerId !== undefined) {
+                    try {
+                        elem.releasePointerCapture(e.pointerId);
+                    } catch (err) {}
+                }
+
+                let snapped = false;
+                const pieceCenter = {
+                    x: e.clientX,
+                    y: e.clientY
+                };
+
+                wheelTargets.forEach((target, wIdx) => {
+                    target.classList.remove('hovering');
+                    const rect = target.getBoundingClientRect();
+                    const targetCenter = {
+                        x: rect.left + rect.width / 2,
+                        y: rect.top + rect.height / 2
+                    };
+                    const dist = Math.hypot(pieceCenter.x - targetCenter.x, pieceCenter.y - targetCenter.y);
+
+                    if (dist < radius + 40 && !snapped) {
+                        snapped = snapToWheel(pieceData, wIdx);
+                    }
+                });
+
+                if (!snapped) {
+                    if (pieceData.wheelIndex !== -1) {
+                        removePieceFromWheel(pieceData);
+                    }
+                    elem.remove();
+                }
+            }
+
+            window.addEventListener('pointermove', onPointerMove, { passive: false });
+            window.addEventListener('pointerup', onPointerUp, { passive: false });
+            window.addEventListener('pointercancel', onPointerUp, { passive: false });
+        }
+
+        function snapToWheel(pieceData, wIdx) {
+            let currentOccupiedAngle = 0;
+            state.wheels[wIdx].forEach(p => { currentOccupiedAngle += p.angleSpan; });
+
+            if (currentOccupiedAngle + pieceData.angleSpan > 360.01) {
+                return false;
+            }
+
+            if (pieceData.wheelIndex !== -1 && pieceData.wheelIndex !== wIdx) {
+                removePieceFromWheel(pieceData);
+            }
+
+            pieceData.wheelIndex = wIdx;
+            state.wheels[wIdx].push(pieceData);
+
+            realignWheelSlices(wIdx);
+            AudioFX.playSnap();
+            updateCalculations();
+
+            pieceData.element.onpointerdown = (e) => {
+                e.preventDefault();
+                initDrag(pieceData, e);
+            };
+            return true;
+        }
+
+        function removePieceFromWheel(pieceData) {
+            const wIdx = pieceData.wheelIndex;
+            if (wIdx === -1) return;
+
+            state.wheels[wIdx] = state.wheels[wIdx].filter(p => p !== pieceData);
+            pieceData.wheelIndex = -1;
+            realignWheelSlices(wIdx);
+            updateCalculations();
+        }
+
+        function realignWheelSlices(wIdx) {
+            const target = wheelTargets[wIdx];
+            const centerLabel = target.querySelector('.wheel-center-label');
+            const pieces = state.wheels[wIdx];
+
+            if (pieces.length === 0) {
+                centerLabel.style.display = 'block';
+            } else {
+                centerLabel.style.display = 'none';
+            }
+
+            let startAngle = 0;
+            const targetRect = target.getBoundingClientRect();
+            const border = getWheelBorderWidth();
+            const radius = (targetRect.width - (border * 2)) / 2;
+            const diameter = radius * 2;
+
+            pieces.forEach(p => {
+                p.element.style.width = `${diameter}px`;
+                p.element.style.height = `${diameter}px`;
+                p.element.style.left = `${targetRect.left + border}px`;
+                p.element.style.top = `${targetRect.top + border}px`;
+
+                const svg = p.element.querySelector('svg');
+                svg.setAttribute("viewBox", `-${radius} -${radius} ${diameter} ${diameter}`);
+                svg.setAttribute("width", diameter);
+                svg.setAttribute("height", diameter);
+                svg.innerHTML = getSliceSvgPath(startAngle, p.angleSpan, radius, p.color, p.label);
+
+                startAngle += p.angleSpan;
+            });
+        }
+
+        function updateCalculations() {
+            const v1 = getWheelValue(0);
+            const v2 = getWheelValue(1);
+
+            document.getElementById('w1-sum').textContent = decimalToFraction(v1);
+            document.getElementById('w2-sum').textContent = decimalToFraction(v2);
+
+            if ((Math.abs(v1 - 1) < 0.001) || (Math.abs(v2 - 1) < 0.001)) {
+                AudioFX.playWin();
+            }
+        }
+
+        function getWheelValue(wIdx) {
+            return state.wheels[wIdx].reduce((acc, p) => acc + (1 / p.denom), 0);
+        }
+
+        function decimalToFraction(val) {
+            if (val === 0) return "0";
+            if (Math.abs(val - 1) < 0.001) return "1 Whole 🎉";
+
+            const tolerance = 1.0E-6;
+            let h1 = 1, h2 = 0, k1 = 0, k2 = 1;
+            let b = val;
+            do {
+                let a = Math.floor(b);
+                let aux = h1; h1 = a * h1 + h2; h2 = aux;
+                aux = k1; k1 = a * k1 + k2; k2 = aux;
+                b = 1 / (b - a);
+            } while (Math.abs(val - h1 / k1) > val * tolerance);
+
+            return `${h1}/${k1}`;
+        }
+
+        function clearAll() {
+            AudioFX.playClear();
+            [0, 1].forEach(wIdx => {
+                state.wheels[wIdx].forEach(p => p.element.remove());
+                state.wheels[wIdx] = [];
+                realignWheelSlices(wIdx);
+            });
+            updateCalculations();
+        }
+
+        function toggleLabels() {
+            state.showLabels = !state.showLabels;
+            document.getElementById('btn-label').textContent = state.showLabels ? "🏷️ Labels: ON" : "🏷️ Labels: OFF";
+            [0, 1].forEach(realignWheelSlices);
+        }
+
+        function toggleAudio() {
+            AudioFX.enabled = !AudioFX.enabled;
+            document.getElementById('btn-audio').textContent = AudioFX.enabled ? "🔊 Sound: ON" : "🔇 Sound: OFF";
+        }
+
+        function toggleDarkMode() {
+            const body = document.body;
+            if (body.getAttribute('data-theme') === 'dark') body.removeAttribute('data-theme');
+            else body.setAttribute('data-theme', 'dark');
+        }
+
+        window.onresize = () => {
+            [0, 1].forEach(realignWheelSlices);
+        };
+
+        buildTray();
+    </script>
+</body>
+</html>

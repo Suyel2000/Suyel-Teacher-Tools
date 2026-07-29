@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🧩 Tangram Puzzle Studio - NEP 2020 Digital Manipulative</title>
+  <style>
+    :root {
+      --bg-main: #f4f7fb;
+      --panel-bg: #ffffff;
+      --text-main: #2c3e50;
+      --text-muted: #7f8c8d;
+      --accent: #4a90e2;
+      --accent-hover: #357abd;
+      --border: #e2e8f0;
+      --shadow: 0 8px 24px rgba(0,0,0,0.08);
+      --radius: 12px;
+      
+      /* Piece Colors */
+      --c-lt1: #ff5252;
+      --c-lt2: #448aff;
+      --c-mt:  #69f0ae;
+      --c-st1: #e040fb;
+      --c-st2: #ffd740;
+      --c-sq:  #ff6e40;
+      --c-pa:  #1de9b6;
+    }
+
+    body.dark-mode {
+      --bg-main: #121824;
+      --panel-bg: #1e293b;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --border: #334155;
+      --shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    /* HEADER */
+    header {
+      background: var(--panel-bg);
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    }
+    .brand h1 { font-size: 1.4rem; display: flex; align-items: center; gap: 8px; color: var(--accent); }
+    .brand p { font-size: 0.8rem; color: var(--text-muted); font-style: italic; }
+    
+    .top-controls { display: flex; gap: 8px; align-items: center; }
+
+    /* TOOLBAR */
+    .toolbar {
+      background: var(--panel-bg);
+      padding: 8px 16px;
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      border-bottom: 1px solid var(--border);
+      scrollbar-width: thin;
+    }
+    .btn {
+      background: var(--bg-main);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+    .btn:hover { background: var(--accent); color: white; border-color: var(--accent); transform: translateY(-1px); }
+    .btn.active { background: var(--accent); color: white; }
+    .btn-primary { background: var(--accent); color: white; border-color: var(--accent); }
+
+    /* MAIN LAYOUT */
+    .app-container {
+      display: grid;
+      grid-template-columns: 240px 1fr 280px;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* PANELS */
+    .panel {
+      background: var(--panel-bg);
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 12px;
+      gap: 16px;
+    }
+    .panel-right { border-right: none; border-left: 1px solid var(--border); }
+    
+    .panel-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* PIECE TRAY */
+    .tray-pieces {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+    }
+    .tray-item {
+      width: 100%;
+      height: 70px;
+      background: var(--bg-main);
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .tray-item:hover { border-color: var(--accent); }
+
+    /* WORKSPACE */
+    .workspace-container {
+      position: relative;
+      background-color: var(--bg-main);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+    }
+    #svg-canvas {
+      width: 100%;
+      height: 100%;
+      background-image: radial-gradient(var(--border) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+
+    /* PIECE SYTLES */
+    .tangram-piece {
+      cursor: move;
+      transition: filter 0.2s, transform 0.05s ease-out;
+      filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.15));
+    }
+    .tangram-piece:hover { filter: drop-shadow(3px 6px 10px rgba(0,0,0,0.25)); }
+    .tangram-piece.selected polygon { stroke: #ffffff; stroke-width: 3px; stroke-dasharray: 4; }
+    
+    .silhouette-path {
+      fill: rgba(0, 0, 0, 0.08);
+      stroke: var(--text-muted);
+      stroke-width: 2px;
+      stroke-dasharray: 6 6;
+      transition: all 0.3s ease;
+    }
+    .dark-mode .silhouette-path { fill: rgba(255, 255, 255, 0.1); }
+
+    /* ROTATION CONTROLS OVERLAY */
+    .controls-overlay {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--panel-bg);
+      padding: 8px 16px;
+      border-radius: 30px;
+      box-shadow: var(--shadow);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      border: 1px solid var(--border);
+    }
+
+    /* INFO CARDS */
+    .info-card {
+      background: var(--bg-main);
+      padding: 12px;
+      border-radius: var(--radius);
+      font-size: 0.85rem;
+    }
+    .info-card div { display: flex; justify-content: space-between; margin-bottom: 6px; }
+    .info-card div:last-child { margin-bottom: 0; }
+    .info-val { font-weight: 700; color: var(--accent); }
+
+    /* GEOMETRY PANEL */
+    .geo-property {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      border-bottom: 1px stroke var(--border);
+      font-size: 0.8rem;
+    }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      z-index: 1000;
+    }
+    .modal-overlay.active { opacity: 1; pointer-events: all; }
+    .modal {
+      background: var(--panel-bg);
+      width: 90%;
+      max-width: 600px;
+      max-height: 80vh;
+      border-radius: var(--radius);
+      padding: 24px;
+      overflow-y: auto;
+      box-shadow: var(--shadow);
+    }
+    .library-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .library-item {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      cursor: pointer;
+      background: var(--bg-main);
+      transition: all 0.2s;
+    }
+    .library-item:hover { border-color: var(--accent); transform: scale(1.03); }
+
+    /* CELEBRATION CANVAS */
+    #confetti-canvas {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 900px) {
+      .app-container { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; }
+      .panel { max-height: 150px; }
+      .panel-right { max-height: 200px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      <h1>🧩 Tangram Studio</h1>
+      <p>"Create • Rotate • Solve • Explore Geometry"</p>
+    </div>
+    <div class="top-controls">
+      <button class="btn" id="btn-sound" title="Toggle Sound">🔊 Sound ON</button>
+      <button class="btn" id="btn-theme" title="Toggle Light/Dark Mode">🌙 Dark Mode</button>
+      <button class="btn" id="btn-fullscreen" title="Toggle Fullscreen">⛶ Fullscreen</button>
+      <button class="btn btn-primary" id="btn-help" title="Help & Instructions">❓ Help</button>
+    </div>
+  </header>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <button class="btn" id="btn-new">📄 New Freeplay</button>
+    <button class="btn" id="btn-random">🎲 Random Puzzle</button>
+    <button class="btn" id="btn-library">📂 Puzzle Library</button>
+    <button class="btn" id="btn-challenge">🎯 Challenge Mode</button>
+    <button class="btn" id="btn-hint">💡 Hint</button>
+    <button class="btn" id="btn-outline">👁 Toggle Outline</button>
+    <button class="btn" id="btn-undo">↩ Undo</button>
+    <button class="btn" id="btn-redo">↪ Redo</button>
+    <button class="btn" id="btn-reset">🧹 Reset</button>
+    <button class="btn" id="btn-save">💾 Save</button>
+    <button class="btn" id="btn-load">📂 Load</button>
+    <button class="btn" id="btn-teacher">🎓 Teacher Mode</button>
+  </div>
+
+  <!-- MAIN APP LAYOUT -->
+  <div class="app-container">
+    
+    <!-- LEFT PANEL: TANGRAM TRAY -->
+    <div class="panel">
+      <div class="panel-title">Tangram Pieces</div>
+      <div class="tray-pieces" id="tray-container">
+        <!-- SVG Miniatures added dynamically -->
+      </div>
+    </div>
+
+    <!-- CENTER PANEL: WORKSPACE -->
+    <div class="workspace-container">
+      <canvas id="confetti-canvas"></canvas>
+      <svg id="svg-canvas" viewBox="0 0 1000 700">
+        <!-- Target Silhouette -->
+        <g id="silhouette-group"></g>
+        <!-- Dynamic Guides/Snaps -->
+        <g id="guides-group"></g>
+        <!-- Interactive Tangram Pieces -->
+        <g id="pieces-group"></g>
+      </svg>
+
+      <!-- ROTATION & FLIP OVERLAY -->
+      <div class="controls-overlay" id="piece-controls" style="display: none;">
+        <button class="btn" id="rot-ccw-45">↺ -45°</button>
+        <button class="btn" id="rot-ccw-15">↺ -15°</button>
+        <span id="angle-display" style="font-weight:700; font-size:0.85rem;">0°</span>
+        <button class="btn" id="rot-cw-15">↻ +15°</button>
+        <button class="btn" id="rot-cw-45">↻ +45°</button>
+        <button class="btn" id="btn-flip" style="display:none;">↔ Flip</button>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: INFO & GEOMETRY -->
+    <div class="panel panel-right">
+      <div class="panel-title">Puzzle Stats</div>
+      <div class="info-card">
+        <div><span>Puzzle:</span> <span class="info-val" id="info-name">Free Play</span></div>
+        <div><span>Difficulty:</span> <span class="info-val" id="info-diff">-</span></div>
+        <div><span>Placed:</span> <span class="info-val" id="info-placed">0 / 7</span></div>
+        <div><span>Time:</span> <span class="info-val" id="info-timer">00:00</span></div>
+        <div><span>Moves:</span> <span class="info-val" id="info-moves">0</span></div>
+        <div><span>Completion:</span> <span class="info-val" id="info-progress">0%</span></div>
+      </div>
+
+      <div class="panel-title">Geometry Inspector</div>
+      <div class="info-card" id="geo-card">
+        <p style="color: var(--text-muted); font-size:0.8rem;">Select a piece on canvas to inspect geometric properties.</p>
+      </div>
+
+      <div class="panel-title">NEP 2020 Learning Goals</div>
+      <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
+        • Spatial Transformation (Rotation/Reflection)<br>
+        • Area Conservation & Decomposition<br>
+        • Geometric Symmetry & Edge Matching
+      </div>
+    </div>
+
+  </div>
+
+  <!-- LIBRARY MODAL -->
+  <div class="modal-overlay" id="modal-library">
+    <div class="modal">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2>📂 Puzzle Library</h2>
+        <button class="btn" id="close-library">✖</button>
+      </div>
+      <div class="library-grid" id="library-grid"></div>
+    </div>
+  </div>
+
+  <!-- HELP MODAL -->
+  <div class="modal-overlay" id="modal-help">
+    <div class="modal">
+      <h2>🧩 Tangram Studio Guide</h2>
+      <br>
+      <p><strong>Controls:</strong></p>
+      <ul style="margin-left: 20px; font-size:0.9rem; line-height:1.6;">
+        <li><strong>Drag:</strong> Click and drag pieces to position them.</li>
+        <li><strong>Rotate:</strong> Select a piece and use bottom toolbar buttons or press <strong>'R'</strong> key.</li>
+        <li><strong>Flip:</strong> Select the Parallelogram piece and press <strong>'F'</strong> or click Flip button.</li>
+        <li><strong>Magnetic Snap:</strong> Pieces automatically snap when close to target outline or other aligned pieces.</li>
+        <li><strong>Keyboard Shortcuts:</strong> Arrow keys (Move), R (Rotate +45°), F (Flip), Tab (Cycle pieces), Esc (Deselect).</li>
+      </ul>
+      <br>
+      <button class="btn btn-primary" id="close-help" style="width:100%; justify-content:center;">Got it!</button>
+    </div>
+  </div>
+
+  <script>
+    /* ========================================================================
+       TANGRAM MATH & DEFINITIONS
+       ======================================================================== */
+    // Base scale unit: 1 unit = 50px
+    // Total standard square = 200px x 200px (Area = 40,000)
+    const PIECE_TYPES = {
+      LARGE_TRI_1: {
+        id: 'LT1', name: 'Large Triangle 1', color: 'var(--c-lt1)',
+        points: [[0,0], [200,0], [0,200]],
+        area: 20000, sides: 3, angles: '45°, 45°, 90°', canFlip: false
+      },
+      LARGE_TRI_2: {
+        id: 'LT2', name: 'Large Triangle 2', color: 'var(--c-lt2)',
+        points: [[0,0], [200,0], [0,200]],
+        area: 20000, sides: 3, angles: '45°, 45°, 90°', canFlip: false
+      },
+      MEDIUM_TRI: {
+        id: 'MT', name: 'Medium Triangle', color: 'var(--c-mt)',
+        points: [[0,0], [200,0], [100,100]],
+        area: 10000, sides: 3, angles: '45°, 45°, 90°', canFlip: false
+      },
+      SMALL_TRI_1: {
+        id: 'ST1', name: 'Small Triangle 1', color: 'var(--c-st1)',
+        points: [[0,0], [100,0], [0,100]],
+        area: 5000, sides: 3, angles: '45°, 45°, 90°', canFlip: false
+      },
+      SMALL_TRI_2: {
+        id: 'ST2', name: 'Small Triangle 2', color: 'var(--c-st2)',
+        points: [[0,0], [100,0], [0,100]],
+        area: 5000, sides: 3, angles: '45°, 45°, 90°', canFlip: false
+      },
+      SQUARE: {
+        id: 'SQ', name: 'Square', color: 'var(--c-sq)',
+        points: [[0,0], [100,0], [100,100], [0,100]],
+        area: 10000, sides: 4, angles: '90°, 90°, 90°, 90°', canFlip: false
+      },
+      PARALLELOGRAM: {
+        id: 'PA', name: 'Parallelogram', color: 'var(--c-pa)',
+        points: [[0,0], [100,0], [150,50], [50,50]],
+        area: 10000, sides: 4, angles: '45°, 135°, 45°, 135°', canFlip: true
+      }
+    };
+
+    /* ========================================================================
+       PRESET PUZZLES LIBRARY (10 Classic Silhouettes)
+       ======================================================================== */
+    const PUZZLE_LIBRARY = [
+      {
+        id: 'square', name: 'Classic Square', diff: 'Easy', cat: 'Beginner',
+        pieces: [
+          { id: 'LT1', x: 400, y: 200, rot: 0, flip: false },
+          { id: 'LT2', x: 600, y: 400, rot: 180, flip: false },
+          { id: 'MT',  x: 600, y: 200, rot: 270, flip: false },
+          { id: 'ST1', x: 400, y: 300, rot: 90, flip: false },
+          { id: 'ST2', x: 500, y: 200, rot: 0, flip: false },
+          { id: 'SQ',  x: 450, y: 250, rot: 45, flip: false },
+          { id: 'PA',  x: 400, y: 350, rot: 0, flip: false }
+        ]
+      },
+      {
+        id: 'house', name: 'Cozy House', diff: 'Easy', cat: 'Objects',
+        pieces: [
+          { id: 'LT1', x: 400, y: 200, rot: 0, flip: false },
+          { id: 'LT2', x: 600, y: 200, rot: 270, flip: false },
+          { id: 'SQ',  x: 450, y: 300, rot: 0, flip: false },
+          { id: 'MT',  x: 350, y: 300, rot: 180, flip: false },
+          { id: 'ST1', x: 550, y: 300, rot: 0, flip: false },
+          { id: 'ST2', x: 550, y: 400, rot: 90, flip: false },
+          { id: 'PA',  x: 450, y: 400, rot: 0, flip: false }
+        ]
+      },
+      {
+        id: 'swan', name: 'Graceful Swan', diff: 'Medium', cat: 'Animals',
+        pieces: [
+          { id: 'LT1', x: 450, y: 300, rot: 45, flip: false },
+          { id: 'LT2', x: 550, y: 300, rot: 225, flip: false },
+          { id: 'MT',  x: 400, y: 200, rot: 90, flip: false },
+          { id: 'ST1', x: 380, y: 120, rot: 0, flip: false },
+          { id: 'ST2', x: 500, y: 400, rot: 180, flip: false },
+          { id: 'SQ',  x: 400, y: 150, rot: 0, flip: false },
+          { id: 'PA',  x: 550, y: 200, rot: 45, flip: true }
+        ]
+      },
+      {
+        id: 'cat', name: 'Sitting Cat', diff: 'Medium', cat: 'Animals',
+        pieces: [
+          { id: 'LT1', x: 450, y: 350, rot: 90, flip: false },
+          { id: 'LT2', x: 450, y: 200, rot: 0, flip: false },
+          { id: 'MT',  x: 350, y: 450, rot: 180, flip: false },
+          { id: 'ST1', x: 420, y: 120, rot: 45, flip: false },
+          { id: 'ST2', x: 480, y: 120, rot: 315, flip: false },
+          { id: 'SQ',  x: 450, y: 150, rot: 45, flip: false },
+          { id: 'PA',  x: 550, y: 400, rot: 90, flip: false }
+        ]
+      },
+      {
+        id: 'rocket', name: 'Space Rocket', diff: 'Hard', cat: 'Transport',
+        pieces: [
+          { id: 'LT1', x: 500, y: 150, rot: 135, flip: false },
+          { id: 'LT2', x: 500, y: 300, rot: 315, flip: false },
+          { id: 'MT',  x: 500, y: 450, rot: 0, flip: false },
+          { id: 'ST1', x: 400, y: 400, rot: 270, flip: false },
+          { id: 'ST2', x: 600, y: 400, rot: 90, flip: false },
+          { id: 'SQ',  x: 500, y: 380, rot: 0, flip: false },
+          { id: 'PA',  x: 500, y: 520, rot: 0, flip: false }
+        ]
+      }
+    ];
+
+    /* ========================================================================
+       SOUND ENGINE (Web Audio API)
+       ======================================================================== */
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+      init() {
+        if(!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      playTone(freq, duration, type='sine') {
+        if(!this.enabled) return;
+        this.init();
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+          gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + duration);
+        } catch(e) {}
+      }
+      playClick() { this.playTone(600, 0.05, 'triangle'); }
+      playPickup() { this.playTone(400, 0.08, 'sine'); }
+      playDrop() { this.playTone(250, 0.08, 'sine'); }
+      playSnap() { this.playTone(800, 0.12, 'square'); }
+      playWin() {
+        [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+          setTimeout(() => this.playTone(freq, 0.25, 'triangle'), idx * 120);
+        });
+      }
+    }
+    const sounds = new SoundEngine();
+
+    /* ========================================================================
+       APP STATE & CORE ENGINE
+       ======================================================================== */
+    const state = {
+      pieces: [],       // Current dynamic piece instances
+      selectedPiece: null,
+      currentPuzzle: null,
+      showOutline: true,
+      timer: 0,
+      timerInterval: null,
+      moves: 0,
+      history: [],
+      redoStack: [],
+      isDarkMode: false,
+      isTeacherMode: false
+    };
+
+    // DOM Elements
+    const svgCanvas = document.getElementById('svg-canvas');
+    const piecesGroup = document.getElementById('pieces-group');
+    const silhouetteGroup = document.getElementById('silhouette-group');
+    const trayContainer = document.getElementById('tray-container');
+    const pieceControls = document.getElementById('piece-controls');
+    const geoCard = document.getElementById('geo-card');
+
+    /* Initialize Application */
+    function initApp() {
+      setupPieceInstances();
+      renderTray();
+      renderCanvasPieces();
+      setupEventListeners();
+      setupKeyboardControls();
+      loadPuzzle(PUZZLE_LIBRARY[0]); // Load square by default
+      startTimer();
+    }
+
+    /* Instantiate 7 standard pieces */
+    function setupPieceInstances() {
+      state.pieces = Object.keys(PIECE_TYPES).map(key => {
+        const type = PIECE_TYPES[key];
+        return {
+          id: type.id,
+          name: type.name,
+          color: type.color,
+          points: type.points,
+          canFlip: type.canFlip,
+          x: 100, y: 100, // Position on canvas
+          rot: 0,
+          flip: false,
+          inTray: true
+        };
+      });
+    }
+
+    /* Render Piece Tray (Left Panel) */
+    function renderTray() {
+      trayContainer.innerHTML = '';
+      state.pieces.forEach(p => {
+        if(!p.inTray) return;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'tray-item';
+        wrapper.title = `Click to add ${p.name}`;
+        
+        // Mini SVG
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '-20 -20 240 240');
+        svg.setAttribute('width', '50');
+        svg.setAttribute('height', '50');
+        
+        const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        poly.setAttribute('points', p.points.map(pt => pt.join(',')).join(' '));
+        poly.setAttribute('fill', p.color);
+        
+        svg.appendChild(poly);
+        wrapper.appendChild(svg);
+        
+        wrapper.onclick = () => spawnPieceToCanvas(p);
+        trayContainer.appendChild(wrapper);
+      });
+    }
+
+    /* Move piece from tray to center workspace */
+    function spawnPieceToCanvas(p) {
+      sounds.playPickup();
+      p.inTray = false;
+      p.x = 450 + (Math.random() * 40 - 20);
+      p.y = 280 + (Math.random() * 40 - 20);
+      p.rot = 0;
+      p.flip = false;
+      
+      saveHistory();
+      renderTray();
+      renderCanvasPieces();
+      selectPiece(p);
+      updateStats();
+    }
+
+    /* Render Active Pieces on SVG Canvas */
+    function renderCanvasPieces() {
+      piecesGroup.innerHTML = '';
+      state.pieces.forEach(p => {
+        if(p.inTray) return;
+
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.setAttribute('class', `tangram-piece ${state.selectedPiece === p ? 'selected' : ''}`);
+        g.setAttribute('transform', `translate(${p.x}, ${p.y}) rotate(${p.rot}) scale(${p.flip ? -1 : 1}, 1)`);
+
+        const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        poly.setAttribute('points', p.points.map(pt => pt.join(',')).join(' '));
+        poly.setAttribute('fill', p.color);
+
+        g.appendChild(poly);
+        g.onpointerdown = (e) => startDrag(e, p);
+
+        piecesGroup.appendChild(g);
+      });
+    }
+
+    /* Render Target Silhouette Outline */
+    function renderSilhouette() {
+      silhouetteGroup.innerHTML = '';
+      if(!state.currentPuzzle || !state.showOutline) return;
+
+      state.currentPuzzle.pieces.forEach(target => {
+        const typeKey = Object.keys(PIECE_TYPES).find(k => PIECE_TYPES[k].id === target.id);
+        const type = PIECE_TYPES[typeKey];
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        path.setAttribute('class', 'silhouette-path');
+        path.setAttribute('points', type.points.map(pt => pt.join(',')).join(' '));
+        path.setAttribute('transform', `translate(${target.x}, ${target.y}) rotate(${target.rot}) scale(${target.flip ? -1 : 1}, 1)`);
+
+        silhouetteGroup.appendChild(path);
+      });
+    }
+
+    /* ========================================================================
+       DRAG, DROP & MAGNETIC SNAPPING ENGINE
+       ======================================================================== */
+    let dragTarget = null;
+    let dragOffset = { x: 0, y: 0 };
+
+    function startDrag(e, piece) {
+      e.stopPropagation();
+      sounds.playPickup();
+      dragTarget = piece;
+      selectPiece(piece);
+
+      const pt = getSVGCoordinates(e);
+      dragOffset.x = pt.x - piece.x;
+      dragOffset.y = pt.y - piece.y;
+
+      window.addEventListener('pointermove', onDrag);
+      window.addEventListener('pointerup', endDrag);
+    }
+
+    function onDrag(e) {
+      if(!dragTarget) return;
+      const pt = getSVGCoordinates(e);
+      
+      dragTarget.x = pt.x - dragOffset.x;
+      dragTarget.y = pt.y - dragOffset.y;
+
+      // Magnetic Snapping check against puzzle target
+      if(state.currentPuzzle) {
+        const target = state.currentPuzzle.pieces.find(tp => tp.id === dragTarget.id);
+        if(target) {
+          const dist = Math.hypot(dragTarget.x - target.x, dragTarget.y - target.y);
+          const rotDiff = Math.abs((dragTarget.rot % 360) - (target.rot % 360));
+          
+          if(dist < 25 && (rotDiff === 0 || rotDiff === 360)) {
+            dragTarget.x = target.x;
+            dragTarget.y = target.y;
+            dragTarget.rot = target.rot;
+            dragTarget.flip = target.flip;
+            sounds.playSnap();
+          }
+        }
+      }
+
+      renderCanvasPieces();
+      updateControlsPosition();
+    }
+
+    function endDrag() {
+      if(dragTarget) {
+        sounds.playDrop();
+        state.moves++;
+        saveHistory();
+        updateStats();
+        checkCompletion();
+      }
+      dragTarget = null;
+      window.removeEventListener('pointermove', onDrag);
+      window.removeEventListener('pointerup', endDrag);
+    }
+
+    function getSVGCoordinates(e) {
+      const rect = svgCanvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * (1000 / rect.width);
+      const y = (e.clientY - rect.top) * (700 / rect.height);
+      return { x, y };
+    }
+
+    /* ========================================================================
+       TRANSFORMATION CONTROLS (ROTATE / FLIP)
+       ======================================================================== */
+    function selectPiece(piece) {
+      state.selectedPiece = piece;
+      renderCanvasPieces();
+      updateGeometryInspector(piece);
+
+      if(piece) {
+        pieceControls.style.display = 'flex';
+        document.getElementById('btn-flip').style.display = piece.canFlip ? 'block' : 'none';
+        updateControlsPosition();
+      } else {
+        pieceControls.style.display = 'none';
+      }
+    }
+
+    function updateControlsPosition() {
+      if(!state.selectedPiece) return;
+      document.getElementById('angle-display').textContent = `${state.selectedPiece.rot}°`;
+    }
+
+    function rotateSelected(deg) {
+      if(!state.selectedPiece) return;
+      sounds.playClick();
+      state.selectedPiece.rot = (state.selectedPiece.rot + deg + 360) % 360;
+      saveHistory();
+      renderCanvasPieces();
+      updateControlsPosition();
+      updateGeometryInspector(state.selectedPiece);
+      checkCompletion();
+    }
+
+    function flipSelected() {
+      if(!state.selectedPiece || !state.selectedPiece.canFlip) return;
+      sounds.playClick();
+      state.selectedPiece.flip = !state.selectedPiece.flip;
+      saveHistory();
+      renderCanvasPieces();
+      updateGeometryInspector(state.selectedPiece);
+      checkCompletion();
+    }
+
+    /* ========================================================================
+       GEOMETRY INSPECTOR
+       ======================================================================== */
+    function updateGeometryInspector(p) {
+      if(!p) {
+        geoCard.innerHTML = `<p style="color: var(--text-muted); font-size:0.8rem;">Select a piece on canvas to inspect geometric properties.</p>`;
+        return;
+      }
+      const typeKey = Object.keys(PIECE_TYPES).find(k => PIECE_TYPES[k].id === p.id);
+      const meta = PIECE_TYPES[typeKey];
+
+      geoCard.innerHTML = `
+        <div class="geo-property"><span>Shape Name:</span><strong>${meta.name}</strong></div>
+        <div class="geo-property"><span>Number of Sides:</span><strong>${meta.sides}</strong></div>
+        <div class="geo-property"><span>Interior Angles:</span><strong>${meta.angles}</strong></div>
+        <div class="geo-property"><span>Relative Area:</span><strong>${meta.area / 5000} Unit(s)</strong></div>
+        <div class="geo-property"><span>Current Rotation:</span><strong>${p.rot}°</strong></div>
+        <div class="geo-property"><span>Reflected (Flipped):</span><strong>${p.flip ? 'Yes' : 'No'}</strong></div>
+      `;
+    }
+
+    /* ========================================================================
+       PUZZLE MANAGEMENT & VALIDATION
+       ======================================================================== */
+    function loadPuzzle(puzzle) {
+      state.currentPuzzle = puzzle;
+      document.getElementById('info-name').textContent = puzzle ? puzzle.name : 'Free Play';
+      document.getElementById('info-diff').textContent = puzzle ? puzzle.diff : '-';
+      
+      // Reset pieces back to tray
+      state.pieces.forEach(p => p.inTray = true);
+      state.selectedPiece = null;
+      state.moves = 0;
+      
+      renderTray();
+      renderCanvasPieces();
+      renderSilhouette();
+      updateStats();
+      selectPiece(null);
+    }
+
+    function checkCompletion() {
+      if(!state.currentPuzzle) return;
+
+      let correctlyPlaced = 0;
+      state.currentPuzzle.pieces.forEach(target => {
+        const piece = state.pieces.find(p => p.id === target.id && !p.inTray);
+        if(piece) {
+          const dist = Math.hypot(piece.x - target.x, piece.y - target.y);
+          const rotMatch = (piece.rot % 360) === (target.rot % 360);
+          const flipMatch = piece.flip === target.flip;
+
+          if(dist < 15 && rotMatch && flipMatch) {
+            correctlyPlaced++;
+          }
+        }
+      });
+
+      updateStats(correctlyPlaced);
+
+      if(correctlyPlaced === 7) {
+        sounds.playWin();
+        triggerConfetti();
+        alert('🎉 Congratulations! Puzzle Solved Successfully!');
+      }
+    }
+
+    function updateStats(placedCount = 0) {
+      const placedOnCanvas = state.pieces.filter(p => !p.inTray).length;
+      document.getElementById('info-placed').textContent = `${placedOnCanvas} / 7`;
+      document.getElementById('info-moves').textContent = state.moves;
+      
+      const pct = state.currentPuzzle ? Math.round((placedCount / 7) * 100) : 0;
+      document.getElementById('info-progress').textContent = `${pct}%`;
+    }
+
+    /* Timer */
+    function startTimer() {
+      clearInterval(state.timerInterval);
+      state.timer = 0;
+      state.timerInterval = setInterval(() => {
+        state.timer++;
+        const mins = String(Math.floor(state.timer / 60)).padStart(2, '0');
+        const secs = String(state.timer % 60).padStart(2, '0');
+        document.getElementById('info-timer').textContent = `${mins}:${secs}`;
+      }, 1000);
+    }
+
+    /* Undo/Redo Engine */
+    function saveHistory() {
+      state.history.push(JSON.stringify(state.pieces));
+      state.redoStack = [];
+    }
+
+    function undo() {
+      if(state.history.length > 1) {
+        state.redoStack.push(state.history.pop());
+        state.pieces = JSON.parse(state.history[state.history.length - 1]);
+        renderTray();
+        renderCanvasPieces();
+        selectPiece(null);
+      }
+    }
+
+    function redo() {
+      if(state.redoStack.length > 0) {
+        const nextState = state.redoStack.pop();
+        state.history.push(nextState);
+        state.pieces = JSON.parse(nextState);
+        renderTray();
+        renderCanvasPieces();
+        selectPiece(null);
+      }
+    }
+
+    /* ========================================================================
+       KEYBOARD SHORTCUTS & EVENT LISTENERS
+       ======================================================================== */
+    function setupKeyboardControls() {
+      window.addEventListener('keydown', (e) => {
+        if(!state.selectedPiece) return;
+
+        switch(e.key.toLowerCase()) {
+          case 'r':
+            rotateSelected(e.shiftKey ? -45 : 45);
+            break;
+          case 'f':
+            flipSelected();
+            break;
+          case 'arrowleft':
+            state.selectedPiece.x -= 5;
+            renderCanvasPieces();
+            break;
+          case 'arrowright':
+            state.selectedPiece.x += 5;
+            renderCanvasPieces();
+            break;
+          case 'arrowup':
+            state.selectedPiece.y -= 5;
+            renderCanvasPieces();
+            break;
+          case 'arrowdown':
+            state.selectedPiece.y += 5;
+            renderCanvasPieces();
+            break;
+          case 'escape':
+            selectPiece(null);
+            break;
+        }
+      });
+    }
+
+    function setupEventListeners() {
+      // Rotation overlay buttons
+      document.getElementById('rot-ccw-45').onclick = () => rotateSelected(-45);
+      document.getElementById('rot-ccw-15').onclick = () => rotateSelected(-15);
+      document.getElementById('rot-cw-15').onclick = () => rotateSelected(15);
+      document.getElementById('rot-cw-45').onclick = () => rotateSelected(45);
+      document.getElementById('btn-flip').onclick = () => flipSelected();
+
+      // Top Toolbar Buttons
+      document.getElementById('btn-new').onclick = () => loadPuzzle(null);
+      document.getElementById('btn-random').onclick = () => {
+        const rand = PUZZLE_LIBRARY[Math.floor(Math.random() * PUZZLE_LIBRARY.length)];
+        loadPuzzle(rand);
+      };
+      
+      // Library Modal
+      const modalLib = document.getElementById('modal-library');
+      document.getElementById('btn-library').onclick = () => {
+        populateLibraryGrid();
+        modalLib.classList.add('active');
+      };
+      document.getElementById('close-library').onclick = () => modalLib.classList.remove('active');
+
+      // Help Modal
+      const modalHelp = document.getElementById('modal-help');
+      document.getElementById('btn-help').onclick = () => modalHelp.classList.add('active');
+      document.getElementById('close-help').onclick = () => modalHelp.classList.remove('active');
+
+      // Canvas background click deselects
+      svgCanvas.onclick = (e) => {
+        if(e.target === svgCanvas) selectPiece(null);
+      };
+
+      // Toggle options
+      document.getElementById('btn-outline').onclick = () => {
+        state.showOutline = !state.showOutline;
+        renderSilhouette();
+      };
+      document.getElementById('btn-undo').onclick = () => undo();
+      document.getElementById('btn-redo').onclick = () => redo();
+      document.getElementById('btn-reset').onclick = () => loadPuzzle(state.currentPuzzle);
+
+      // Sound Toggle
+      document.getElementById('btn-sound').onclick = (e) => {
+        sounds.enabled = !sounds.enabled;
+        e.target.textContent = sounds.enabled ? '🔊 Sound ON' : '🔇 Sound OFF';
+      };
+
+      // Theme Toggle
+      document.getElementById('btn-theme').onclick = (e) => {
+        state.isDarkMode = !state.isDarkMode;
+        document.body.classList.toggle('dark-mode', state.isDarkMode);
+        e.target.textContent = state.isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode';
+      };
+
+      // Hint System
+      document.getElementById('btn-hint').onclick = () => {
+        if(!state.currentPuzzle) return;
+        const target = state.currentPuzzle.pieces.find(tp => {
+          const piece = state.pieces.find(p => p.id === tp.id);
+          return piece.inTray || Math.hypot(piece.x - tp.x, piece.y - tp.y) > 20;
+        });
+        if(target) {
+          const piece = state.pieces.find(p => p.id === target.id);
+          piece.inTray = false;
+          piece.x = target.x;
+          piece.y = target.y;
+          piece.rot = target.rot;
+          piece.flip = target.flip;
+          renderTray();
+          renderCanvasPieces();
+          sounds.playSnap();
+          checkCompletion();
+        }
+      };
+
+      // Save/Load Progress
+      document.getElementById('btn-save').onclick = () => {
+        localStorage.setItem('tangram_studio_save', JSON.stringify({
+          puzzle: state.currentPuzzle,
+          pieces: state.pieces
+        }));
+        alert('Progress saved to browser local storage!');
+      };
+
+      document.getElementById('btn-load').onclick = () => {
+        const saved = localStorage.getItem('tangram_studio_save');
+        if(saved) {
+          const data = JSON.parse(saved);
+          state.currentPuzzle = data.puzzle;
+          state.pieces = data.pieces;
+          renderTray();
+          renderCanvasPieces();
+          renderSilhouette();
+          alert('Progress loaded successfully!');
+        } else {
+          alert('No saved progress found.');
+        }
+      };
+    }
+
+    function populateLibraryGrid() {
+      const grid = document.getElementById('library-grid');
+      grid.innerHTML = '';
+      PUZZLE_LIBRARY.forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'library-item';
+        card.innerHTML = `
+          <div style="font-weight:bold; font-size:0.9rem;">${p.name}</div>
+          <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">${p.cat} • ${p.diff}</div>
+        `;
+        card.onclick = () => {
+          loadPuzzle(p);
+          document.getElementById('modal-library').classList.remove('active');
+        };
+        grid.appendChild(card);
+      });
+    }
+
+    /* Confetti Celebration FX */
+    function triggerConfetti() {
+      const canvas = document.getElementById('confetti-canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+
+      const particles = Array.from({ length: 80 }).map(() => ({
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+        vx: (Math.random() - 0.5) * 12,
+        vy: (Math.random() - 0.5) * 12 - 4,
+        color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+        size: Math.random() * 8 + 4
+      }));
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let alive = false;
+        particles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.2; // gravity
+          if(p.y < canvas.height) alive = true;
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        if(alive) requestAnimationFrame(animate);
+      }
+      animate();
+    }
+
+    // Run Initialization
+    window.onload = initApp;
+  </script>
+</body>
+</html>

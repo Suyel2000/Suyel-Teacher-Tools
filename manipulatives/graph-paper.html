@@ -1,0 +1,1466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Interactive Graph Paper Manipulative</title>
+  <style>
+    :root {
+      --bg-primary: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-sidebar: #f1f5f9;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #cbd5e1;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #eff6ff;
+      --accent-green: #10b981;
+      --accent-purple: #8b5cf6;
+      --accent-orange: #f59e0b;
+      --accent-red: #ef4444;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --radius: 8px;
+    }
+
+    [data-theme="dark"] {
+      --bg-primary: #0f172a;
+      --bg-surface: #1e293b;
+      --bg-sidebar: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: #334155;
+      --primary-light: rgba(37, 99, 235, 0.2);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+    }
+
+    /* Layout */
+    .app-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* Header */
+    header.app-header {
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+      z-index: 20;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      font-size: 24px;
+      background: var(--primary-light);
+      padding: 6px;
+      border-radius: var(--radius);
+    }
+
+    .brand-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    /* Toolbar */
+    nav.app-toolbar {
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+      padding: 6px 12px;
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      white-space: nowrap;
+      z-index: 15;
+      align-items: center;
+    }
+
+    .tool-group {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      padding-right: 8px;
+      border-right: 1px solid var(--border-color);
+    }
+
+    .tool-group:last-child {
+      border-right: none;
+    }
+
+    /* Buttons */
+    .btn {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 6px 10px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+    }
+
+    .btn:hover {
+      background: var(--bg-sidebar);
+      border-color: var(--primary);
+    }
+
+    .btn.active {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+
+    .btn-icon-only {
+      padding: 6px 8px;
+    }
+
+    .btn-sm {
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    /* Main Area */
+    .main-wrapper {
+      display: flex;
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    aside.sidebar {
+      width: 320px;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+      transition: margin-left 0.25s ease;
+      overflow-y: auto;
+    }
+
+    aside.sidebar.collapsed {
+      margin-left: -320px;
+    }
+
+    .sidebar-section {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .section-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .form-group {
+      margin-bottom: 10px;
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: var(--text-main);
+    }
+
+    select, input[type="text"], input[type="number"] {
+      width: 100%;
+      padding: 6px 10px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      color: var(--text-main);
+      font-size: 13px;
+    }
+
+    .color-picker-group {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    input[type="color"] {
+      -webkit-appearance: none;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    input[type="color"]::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+
+    input[type="color"]::-webkit-color-swatch {
+      border: 1px solid var(--border-color);
+      border-radius: 50%;
+    }
+
+    .range-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .range-group input[type="range"] {
+      flex: 1;
+    }
+
+    /* Workspace / SVG Canvas */
+    main.workspace {
+      flex: 1;
+      position: relative;
+      background-color: var(--bg-primary);
+      cursor: crosshair;
+      overflow: hidden;
+    }
+
+    svg#graph-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Coordinates Floating Info */
+    .coord-hud {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      background: rgba(15, 23, 42, 0.8);
+      color: #ffffff;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-family: monospace;
+      pointer-events: none;
+      z-index: 5;
+      backdrop-filter: blur(4px);
+    }
+
+    /* Inspector Floating Box */
+    .inspector-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 10px;
+      box-shadow: var(--shadow-md);
+      font-size: 12px;
+    }
+
+    .inspector-card h4 {
+      font-size: 13px;
+      margin-bottom: 6px;
+      color: var(--primary);
+    }
+
+    .prop-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+      border-bottom: 1px dashed var(--border-color);
+    }
+
+    .prop-row:last-child {
+      border-bottom: none;
+    }
+
+    /* Challenge Panel */
+    .challenge-box {
+      background: var(--primary-light);
+      border: 1px solid var(--primary);
+      border-radius: var(--radius);
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+
+    .challenge-title {
+      font-weight: 700;
+      color: var(--primary);
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+
+    .challenge-desc {
+      font-size: 12px;
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+
+    .score-badge {
+      display: inline-block;
+      background: var(--accent-orange);
+      color: white;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+    }
+
+    /* Overlay Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: var(--bg-surface);
+      border-radius: 12px;
+      width: 90%;
+      max-width: 500px;
+      padding: 20px;
+      box-shadow: var(--shadow-lg);
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+
+    /* Print Styles */
+    @media print {
+      header, nav, aside, .coord-hud, .modal-overlay {
+        display: none !important;
+      }
+      body, .app-container, .main-wrapper, main.workspace {
+        height: 100% !important;
+        width: 100% !important;
+        background: white !important;
+      }
+      svg#graph-canvas {
+        width: 100% !important;
+        height: 100% !important;
+      }
+    }
+
+    /* Canvas for Confetti */
+    #confetti-canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 50;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-icon">📐</div>
+        <div>
+          <div class="brand-title">Interactive Graph Paper</div>
+          <div class="brand-subtitle">Draw • Plot • Explore • Discover Mathematics</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-sm" id="toggle-sidebar-btn">☰ Menu</button>
+        <button class="btn btn-sm" id="theme-btn">🌙 Theme</button>
+        <button class="btn btn-sm" id="sound-btn">🔊 Sound</button>
+        <button class="btn btn-sm" id="fullscreen-btn">⛶ Fullscreen</button>
+        <button class="btn btn-sm" id="help-btn">❓ Help</button>
+      </div>
+    </header>
+
+    <!-- Main Toolbar -->
+    <nav class="app-toolbar">
+      <div class="tool-group">
+        <button class="btn btn-icon-only btn-sm" id="btn-new" title="New Page">📄</button>
+        <button class="btn btn-icon-only btn-sm" id="btn-clear" title="Clear All">🧹</button>
+        <button class="btn btn-icon-only btn-sm" id="btn-undo" title="Undo">↩</button>
+        <button class="btn btn-icon-only btn-sm" id="btn-redo" title="Redo">↪</button>
+      </div>
+
+      <div class="tool-group">
+        <button class="btn tool-btn active" data-tool="select" title="Select / Move">🖐️ Select</button>
+        <button class="btn tool-btn" data-tool="point" title="Plot Point">📍 Point</button>
+        <button class="btn tool-btn" data-tool="line" title="Draw Line">📏 Line</button>
+        <button class="btn tool-btn" data-tool="segment" title="Line Segment">📐 Segment</button>
+        <button class="btn tool-btn" data-tool="ray" title="Ray">➡ Ray</button>
+        <button class="btn tool-btn" data-tool="polygon" title="Polygon Tool">🔺 Polygon</button>
+        <select id="shape-selector" style="width: auto; height: 31px;" title="Shape Tool">
+          <option value="square">Square</option>
+          <option value="rectangle">Rectangle</option>
+          <option value="triangle">Triangle</option>
+          <option value="rhombus">Rhombus</option>
+          <option value="parallelogram">Parallelogram</option>
+          <option value="trapezium">Trapezium</option>
+          <option value="pentagon">Pentagon</option>
+          <option value="hexagon">Hexagon</option>
+          <option value="circle">Circle</option>
+        </select>
+        <button class="btn tool-btn" data-tool="shape" title="Draw Selected Shape">🟩 Shape</button>
+        <button class="btn tool-btn" data-tool="free" title="Free Draw">✏️ Draw</button>
+        <button class="btn tool-btn" data-tool="text" title="Text Label">📝 Text</button>
+        <button class="btn tool-btn" data-tool="eraser" title="Eraser">🩹 Eraser</button>
+      </div>
+
+      <div class="tool-group">
+        <button class="btn tool-btn" data-tool="ruler" title="Digital Ruler">📏 Ruler</button>
+        <button class="btn tool-btn" data-tool="protractor" title="Protractor">🧭 Protractor</button>
+      </div>
+
+      <div class="tool-group">
+        <button class="btn btn-sm" id="btn-snap" title="Toggle Snap to Grid">🧲 Snap: ON</button>
+        <button class="btn btn-sm" id="btn-grid-toggle" title="Show/Hide Grid">🌐 Grid</button>
+        <button class="btn btn-sm" id="btn-axes-toggle" title="Show/Hide Axes">📈 Axes</button>
+      </div>
+
+      <div class="tool-group">
+        <button class="btn btn-icon-only btn-sm" id="btn-zoom-in" title="Zoom In">🔍+</button>
+        <button class="btn btn-icon-only btn-sm" id="btn-zoom-out" title="Zoom Out">🔎-</button>
+        <button class="btn btn-icon-only btn-sm" id="btn-reset-view" title="Reset View">📍 Reset</button>
+      </div>
+
+      <div class="tool-group">
+        <button class="btn btn-sm" id="btn-export-png" title="Export PNG Image">📷 Image</button>
+        <button class="btn btn-sm" id="btn-save" title="Save File">💾 Save</button>
+        <button class="btn btn-sm" id="btn-load" title="Load File">📂 Load</button>
+        <input type="file" id="file-input" accept=".json" style="display:none">
+        <button class="btn btn-sm" id="btn-print" title="Print Graph">🖨️ Print</button>
+      </div>
+    </nav>
+
+    <!-- Main Body Workspace -->
+    <div class="main-wrapper">
+      <!-- Sidebar Control Drawer -->
+      <aside class="sidebar" id="sidebar">
+        <!-- Section: Grid Settings -->
+        <div class="sidebar-section">
+          <div class="section-title">Grid Settings</div>
+          <div class="form-group">
+            <label for="grid-type-select">Grid Type</label>
+            <select id="grid-type-select">
+              <option value="square">Square Grid</option>
+              <option value="isometric">Isometric Grid</option>
+              <option value="dot">Dot Grid</option>
+              <option value="hexagonal">Hexagonal Grid</option>
+              <option value="triangle">Triangle Grid</option>
+              <option value="blank">Blank Canvas</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Grid Size: <span id="grid-size-val">30</span>px</label>
+            <div class="range-group">
+              <input type="range" id="grid-size-slider" min="15" max="60" value="30">
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: Style & Colors -->
+        <div class="sidebar-section">
+          <div class="section-title">Style & Colors</div>
+          <div class="form-group">
+            <label>Stroke Color</label>
+            <div class="color-picker-group">
+              <input type="color" id="stroke-color" value="#2563eb">
+              <span id="stroke-color-hex">#2563eb</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Fill Color</label>
+            <div class="color-picker-group">
+              <input type="color" id="fill-color" value="#93c5fd">
+              <span id="fill-color-hex">#93c5fd</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Fill Opacity: <span id="opacity-val">0.3</span></label>
+            <div class="range-group">
+              <input type="range" id="opacity-slider" min="0" max="1" step="0.1" value="0.3">
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: Transformations -->
+        <div class="sidebar-section">
+          <div class="section-title">Transformations</div>
+          <div class="form-group">
+            <label>Translate X: <span id="trans-x-val">0</span></label>
+            <input type="range" id="trans-x-slider" min="-10" max="10" value="0">
+          </div>
+          <div class="form-group">
+            <label>Translate Y: <span id="trans-y-val">0</span></label>
+            <input type="range" id="trans-y-slider" min="-10" max="10" value="0">
+          </div>
+          <div class="form-group">
+            <label>Rotate Angle: <span id="rot-angle-val">0</span>°</label>
+            <input type="range" id="rot-angle-slider" min="0" max="360" value="0">
+          </div>
+          <div class="form-group" style="display: flex; gap: 6px; margin-top: 8px;">
+            <button class="btn btn-sm" style="flex: 1" id="reflect-x-btn">Reflect X</button>
+            <button class="btn btn-sm" style="flex: 1" id="reflect-y-btn">Reflect Y</button>
+          </div>
+        </div>
+
+        <!-- Section: Object Inspector -->
+        <div class="sidebar-section">
+          <div class="section-title">Inspector</div>
+          <div id="inspector-content">
+            <p style="color: var(--text-muted); font-size: 12px;">Select an object on the graph paper to view its geometric properties.</p>
+          </div>
+        </div>
+
+        <!-- Section: Challenges -->
+        <div class="sidebar-section">
+          <div class="section-title">
+            <span>Coordinate Challenges</span>
+            <span class="score-badge" id="score-display">Score: 0</span>
+          </div>
+          <div class="challenge-box">
+            <div class="challenge-title" id="challenge-title">Ready to Practice?</div>
+            <div class="challenge-desc" id="challenge-desc">Click 'New Challenge' to start solving interactive geometry activities!</div>
+            <div style="display: flex; gap: 6px;">
+              <button class="btn btn-sm btn-primary" id="btn-next-challenge">New Challenge</button>
+              <button class="btn btn-sm" id="btn-check-challenge">Submit Answer</button>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- SVG Workspace Canvas -->
+      <main class="workspace" id="workspace">
+        <svg id="graph-canvas">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b" />
+            </marker>
+          </defs>
+          <g id="grid-layer"></g>
+          <g id="axes-layer"></g>
+          <g id="symmetry-layer"></g>
+          <g id="drawing-layer"></g>
+          <g id="points-layer"></g>
+          <g id="overlay-layer"></g>
+        </svg>
+
+        <div class="coord-hud" id="coord-hud">X: 0, Y: 0</div>
+        <canvas id="confetti-canvas"></canvas>
+      </main>
+    </div>
+  </div>
+
+  <!-- Help Modal -->
+  <div class="modal-overlay" id="help-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">📐 How to Use Graph Paper</div>
+        <button class="close-btn" id="close-help-btn">✕</button>
+      </div>
+      <div style="font-size: 13px; line-height: 1.6; color: var(--text-main);">
+        <p><strong>📍 Plotting Points:</strong> Select the Point tool and click on the grid. Points automatically auto-label (A, B, C...) and snap to coordinates.</p><br>
+        <p><strong>📏 Drawing Lines & Shapes:</strong> Choose Line, Segment, Ray, Polygon, or Shape tool. Click on the canvas to place vertices. Click initial point to close polygon.</p><br>
+        <p><strong>🖐️ Pan & Zoom:</strong> Use mouse wheel or pinch gesture to zoom in/out. Drag canvas with Select tool or middle mouse button to pan infinitely.</p><br>
+        <p><strong>🔄 Transformations:</strong> Select an object and use sliders in the left sidebar to Translate, Rotate, or Reflect dynamically!</p><br>
+        <p><strong>🏆 Challenges:</strong> Switch on Challenge Mode to test coordinate skills and earn scores!</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================================================
+       Interactive Graph Paper Manipulative Engine (ES6)
+       ========================================================================== */
+
+    (function() {
+      // Application State
+      const state = {
+        tool: 'select',
+        shapeType: 'square',
+        gridType: 'square',
+        gridSize: 30,
+        zoom: 1.0,
+        pan: { x: 0, y: 0 },
+        snap: true,
+        showGrid: true,
+        showAxes: true,
+        strokeColor: '#2563eb',
+        fillColor: '#93c5fd',
+        fillOpacity: 0.3,
+        sound: true,
+        theme: 'light',
+        
+        // Dynamic Objects
+        points: [],       // { id, label, x, y }
+        elements: [],     // { id, type, points: [id], color, fillColor, ... }
+        selectedId: null,
+        
+        // History for Undo/Redo
+        history: [],
+        historyIndex: -1,
+
+        // Drawing creation state
+        tempPoints: [],
+
+        // Active Challenge
+        challenge: null,
+        score: 0
+      };
+
+      // Point Label Auto-incrementer
+      let pointCounter = 0;
+      function getNextLabel() {
+        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        if (pointCounter < 26) {
+          return letters[pointCounter++];
+        } else {
+          const first = letters[Math.floor(pointCounter / 26) - 1];
+          const second = letters[pointCounter % 26];
+          pointCounter++;
+          return first + second;
+        }
+      }
+
+      // Audio Synthesizer (Web Audio API)
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      function playSound(type) {
+        if (!state.sound) return;
+        try {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+
+          const now = audioCtx.currentTime;
+          if (type === 'click') {
+            osc.frequency.setValueAtTime(600, now);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+            osc.start(now);
+            osc.stop(now + 0.05);
+          } else if (type === 'point') {
+            osc.frequency.setValueAtTime(400, now);
+            osc.frequency.exponentialRampToValueAtTime(800, now + 0.08);
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+            osc.start(now);
+            osc.stop(now + 0.08);
+          } else if (type === 'correct') {
+            osc.frequency.setValueAtTime(523.25, now); // C5
+            osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+            osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            osc.start(now);
+            osc.stop(now + 0.3);
+          }
+        } catch (e) {}
+      }
+
+      // DOM Elements
+      const svg = document.getElementById('graph-canvas');
+      const gridLayer = document.getElementById('grid-layer');
+      const axesLayer = document.getElementById('axes-layer');
+      const pointsLayer = document.getElementById('points-layer');
+      const drawingLayer = document.getElementById('drawing-layer');
+      const overlayLayer = document.getElementById('overlay-layer');
+      const coordHud = document.getElementById('coord-hud');
+      const workspace = document.getElementById('workspace');
+
+      // Initialize Pan to Canvas Center
+      function initViewport() {
+        const rect = workspace.getBoundingClientRect();
+        state.pan.x = rect.width / 2;
+        state.pan.y = rect.height / 2;
+      }
+
+      // Save History State
+      function saveState() {
+        state.history = state.history.slice(0, state.historyIndex + 1);
+        state.history.push(JSON.stringify({
+          points: state.points,
+          elements: state.elements,
+          pointCounter
+        }));
+        state.historyIndex++;
+      }
+
+      function undo() {
+        if (state.historyIndex > 0) {
+          state.historyIndex--;
+          const snapshot = JSON.parse(state.history[state.historyIndex]);
+          state.points = snapshot.points;
+          state.elements = snapshot.elements;
+          pointCounter = snapshot.pointCounter;
+          renderAll();
+          playSound('click');
+        }
+      }
+
+      function redo() {
+        if (state.historyIndex < state.history.length - 1) {
+          state.historyIndex++;
+          const snapshot = JSON.parse(state.history[state.historyIndex]);
+          state.points = snapshot.points;
+          state.elements = snapshot.elements;
+          pointCounter = snapshot.pointCounter;
+          renderAll();
+          playSound('click');
+        }
+      }
+
+      // Coordinate System Conversions
+      // Screen px -> Grid Math Coordinates (origin 0,0)
+      function screenToGrid(px, py) {
+        const gx = (px - state.pan.x) / (state.gridSize * state.zoom);
+        const gy = -(py - state.pan.y) / (state.gridSize * state.zoom); // Math Y inverted relative to Screen Y
+        if (state.snap) {
+          return { x: Math.round(gx), y: Math.round(gy) };
+        }
+        return { x: Math.round(gx * 100) / 100, y: Math.round(gy * 100) / 100 };
+      }
+
+      // Grid Math Coordinates -> Screen px
+      function gridToScreen(gx, gy) {
+        const px = state.pan.x + gx * (state.gridSize * state.zoom);
+        const py = state.pan.y - gy * (state.gridSize * state.zoom);
+        return { x: px, y: py };
+      }
+
+      // Render Grid
+      function renderGrid() {
+        gridLayer.innerHTML = '';
+        if (!state.showGrid || state.gridType === 'blank') return;
+
+        const rect = workspace.getBoundingClientRect();
+        const step = state.gridSize * state.zoom;
+
+        if (state.gridType === 'square' || state.gridType === 'dot') {
+          const startX = state.pan.x % step - step;
+          const startY = state.pan.y % step - step;
+
+          if (state.gridType === 'square') {
+            for (let x = startX; x < rect.width + step; x += step) {
+              const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+              line.setAttribute('x1', x); line.setAttribute('y1', 0);
+              line.setAttribute('x2', x); line.setAttribute('y2', rect.height);
+              line.setAttribute('stroke', 'var(--border-color)');
+              line.setAttribute('stroke-width', '0.75');
+              gridLayer.appendChild(line);
+            }
+            for (let y = startY; y < rect.height + step; y += step) {
+              const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+              line.setAttribute('x1', 0); line.setAttribute('y1', y);
+              line.setAttribute('x2', rect.width); line.setAttribute('y2', y);
+              line.setAttribute('stroke', 'var(--border-color)');
+              line.setAttribute('stroke-width', '0.75');
+              gridLayer.appendChild(line);
+            }
+          } else if (state.gridType === 'dot') {
+            for (let x = startX; x < rect.width + step; x += step) {
+              for (let y = startY; y < rect.height + step; y += step) {
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', x); circle.setAttribute('cy', y);
+                circle.setAttribute('r', '1.5');
+                circle.setAttribute('fill', 'var(--text-muted)');
+                gridLayer.appendChild(circle);
+              }
+            }
+          }
+        } else if (state.gridType === 'isometric' || state.gridType === 'triangle') {
+          // Simplified diagonal isometric grid lines
+          for (let i = -rect.width * 2; i < rect.width * 2; i += step * 1.5) {
+            const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line1.setAttribute('x1', i); line1.setAttribute('y1', 0);
+            line1.setAttribute('x2', i + rect.height * 1.732); line1.setAttribute('y2', rect.height);
+            line1.setAttribute('stroke', 'var(--border-color)');
+            line1.setAttribute('stroke-width', '0.75');
+            gridLayer.appendChild(line1);
+
+            const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line2.setAttribute('x1', i); line2.setAttribute('y1', 0);
+            line2.setAttribute('x2', i - rect.height * 1.732); line2.setAttribute('y2', rect.height);
+            line2.setAttribute('stroke', 'var(--border-color)');
+            line2.setAttribute('stroke-width', '0.75');
+            gridLayer.appendChild(line2);
+          }
+        }
+      }
+
+      // Render Axes
+      function renderAxes() {
+        axesLayer.innerHTML = '';
+        if (!state.showAxes) return;
+
+        const rect = workspace.getBoundingClientRect();
+        const step = state.gridSize * state.zoom;
+
+        // X-Axis
+        const xAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        xAxis.setAttribute('x1', 0); xAxis.setAttribute('y1', state.pan.y);
+        xAxis.setAttribute('x2', rect.width); xAxis.setAttribute('y2', state.pan.y);
+        xAxis.setAttribute('stroke', 'var(--text-main)');
+        xAxis.setAttribute('stroke-width', '2');
+        xAxis.setAttribute('marker-end', 'url(#arrow)');
+        axesLayer.appendChild(xAxis);
+
+        // Y-Axis
+        const yAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        yAxis.setAttribute('x1', state.pan.x); yAxis.setAttribute('y1', rect.height);
+        yAxis.setAttribute('x2', state.pan.x); yAxis.setAttribute('y2', 0);
+        yAxis.setAttribute('stroke', 'var(--text-main)');
+        yAxis.setAttribute('stroke-width', '2');
+        yAxis.setAttribute('marker-end', 'url(#arrow)');
+        axesLayer.appendChild(yAxis);
+
+        // Number Ticks
+        const minGX = Math.floor((-state.pan.x) / step);
+        const maxGX = Math.ceil((rect.width - state.pan.x) / step);
+        const minGY = Math.floor((state.pan.y - rect.height) / step);
+        const maxGY = Math.ceil((state.pan.y) / step);
+
+        for (let gx = minGX; gx <= maxGX; gx++) {
+          if (gx === 0) continue;
+          const pos = gridToScreen(gx, 0);
+          const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          tick.setAttribute('x1', pos.x); tick.setAttribute('y1', pos.y - 4);
+          tick.setAttribute('x2', pos.x); tick.setAttribute('y2', pos.y + 4);
+          tick.setAttribute('stroke', 'var(--text-main)');
+          axesLayer.appendChild(tick);
+
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('x', pos.x); text.setAttribute('y', pos.y + 16);
+          text.setAttribute('font-size', '10');
+          text.setAttribute('fill', 'var(--text-muted)');
+          text.setAttribute('text-anchor', 'middle');
+          text.textContent = gx;
+          axesLayer.appendChild(text);
+        }
+
+        for (let gy = minGY; gy <= maxGY; gy++) {
+          if (gy === 0) continue;
+          const pos = gridToScreen(0, gy);
+          const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          tick.setAttribute('x1', pos.x - 4); tick.setAttribute('y1', pos.y);
+          tick.setAttribute('x2', pos.x + 4); tick.setAttribute('y2', pos.y);
+          tick.setAttribute('stroke', 'var(--text-main)');
+          axesLayer.appendChild(tick);
+
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('x', pos.x - 8); text.setAttribute('y', pos.y + 3);
+          text.setAttribute('font-size', '10');
+          text.setAttribute('fill', 'var(--text-muted)');
+          text.setAttribute('text-anchor', 'end');
+          text.textContent = gy;
+          axesLayer.appendChild(text);
+        }
+      }
+
+      // Render Points & Elements
+      function renderElements() {
+        drawingLayer.innerHTML = '';
+        pointsLayer.innerHTML = '';
+
+        // Render Shapes / Lines
+        state.elements.forEach(elem => {
+          const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          group.dataset.id = elem.id;
+
+          if (elem.type === 'segment' || elem.type === 'line' || elem.type === 'ray') {
+            const p1 = state.points.find(p => p.id === elem.points[0]);
+            const p2 = state.points.find(p => p.id === elem.points[1]);
+            if (p1 && p2) {
+              const pos1 = gridToScreen(p1.x, p1.y);
+              const pos2 = gridToScreen(p2.x, p2.y);
+              const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+              line.setAttribute('x1', pos1.x); line.setAttribute('y1', pos1.y);
+              line.setAttribute('x2', pos2.x); line.setAttribute('y2', pos2.y);
+              line.setAttribute('stroke', elem.color || state.strokeColor);
+              line.setAttribute('stroke-width', '2.5');
+              if (elem.type === 'ray') line.setAttribute('marker-end', 'url(#arrow)');
+              group.appendChild(line);
+            }
+          } else if (elem.type === 'polygon' || elem.type === 'shape') {
+            const pts = elem.points.map(pid => state.points.find(p => p.id === pid)).filter(Boolean);
+            if (pts.length > 1) {
+              const screenPts = pts.map(p => {
+                const s = gridToScreen(p.x, p.y);
+                return `${s.x},${s.y}`;
+              }).join(' ');
+
+              const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+              poly.setAttribute('points', screenPts);
+              poly.setAttribute('stroke', elem.color || state.strokeColor);
+              poly.setAttribute('stroke-width', '2.5');
+              poly.setAttribute('fill', elem.fillColor || state.fillColor);
+              poly.setAttribute('fill-opacity', elem.fillOpacity || state.fillOpacity);
+              group.appendChild(poly);
+            }
+          } else if (elem.type === 'circle') {
+            const center = state.points.find(p => p.id === elem.points[0]);
+            const edge = state.points.find(p => p.id === elem.points[1]);
+            if (center && edge) {
+              const cPos = gridToScreen(center.x, center.y);
+              const radiusMath = Math.hypot(edge.x - center.x, edge.y - center.y);
+              const radiusPx = radiusMath * (state.gridSize * state.zoom);
+
+              const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+              circle.setAttribute('cx', cPos.x); circle.setAttribute('cy', cPos.y);
+              circle.setAttribute('r', radiusPx);
+              circle.setAttribute('stroke', elem.color || state.strokeColor);
+              circle.setAttribute('stroke-width', '2.5');
+              circle.setAttribute('fill', elem.fillColor || state.fillColor);
+              circle.setAttribute('fill-opacity', elem.fillOpacity || state.fillOpacity);
+              group.appendChild(circle);
+            }
+          }
+
+          if (state.selectedId === elem.id) {
+            group.setAttribute('filter', 'drop-shadow(0 0 6px rgba(37,99,235,0.8))');
+          }
+
+          drawingLayer.appendChild(group);
+        });
+
+        // Render Points
+        state.points.forEach(pt => {
+          const pos = gridToScreen(pt.x, pt.y);
+          const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          g.dataset.id = pt.id;
+          g.style.cursor = 'pointer';
+
+          const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          circle.setAttribute('cx', pos.x); circle.setAttribute('cy', pos.y);
+          circle.setAttribute('r', '6');
+          circle.setAttribute('fill', state.strokeColor);
+          circle.setAttribute('stroke', '#ffffff');
+          circle.setAttribute('stroke-width', '2');
+
+          const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          label.setAttribute('x', pos.x + 8); label.setAttribute('y', pos.y - 8);
+          label.setAttribute('font-size', '12');
+          label.setAttribute('font-weight', 'bold');
+          label.setAttribute('fill', 'var(--text-main)');
+          label.textContent = `${pt.label} (${pt.x}, ${pt.y})`;
+
+          g.appendChild(circle);
+          g.appendChild(label);
+          pointsLayer.appendChild(g);
+        });
+      }
+
+      function renderAll() {
+        renderGrid();
+        renderAxes();
+        renderElements();
+      }
+
+      // Add Point Helper
+      function addPoint(gx, gy) {
+        const existing = state.points.find(p => p.x === gx && p.y === gy);
+        if (existing) return existing;
+
+        const newPt = {
+          id: 'pt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+          label: getNextLabel(),
+          x: gx,
+          y: gy
+        };
+        state.points.push(newPt);
+        playSound('point');
+        return newPt;
+      }
+
+      // Pre-built Geometric Shapes
+      function createShape(type, cx, cy) {
+        let coords = [];
+        if (type === 'square') {
+          coords = [{x: cx, y: cy}, {x: cx+3, y: cy}, {x: cx+3, y: cy+3}, {x: cx, y: cy+3}];
+        } else if (type === 'rectangle') {
+          coords = [{x: cx, y: cy}, {x: cx+4, y: cy}, {x: cx+4, y: cy+2}, {x: cx, y: cy+2}];
+        } else if (type === 'triangle') {
+          coords = [{x: cx, y: cy}, {x: cx+3, y: cy}, {x: cx+1.5, y: cy+3}];
+        } else if (type === 'rhombus') {
+          coords = [{x: cx+2, y: cy}, {x: cx+4, y: cy+2}, {x: cx+2, y: cy+4}, {x: cx, y: cy+2}];
+        } else if (type === 'parallelogram') {
+          coords = [{x: cx, y: cy}, {x: cx+3, y: cy}, {x: cx+4, y: cy+2}, {x: cx+1, y: cy+2}];
+        } else if (type === 'trapezium') {
+          coords = [{x: cx, y: cy}, {x: cx+4, y: cy}, {x: cx+3, y: cy+2}, {x: cx+1, y: cy+2}];
+        } else if (type === 'pentagon') {
+          coords = [{x: cx+1.5, y: cy+3}, {x: cx+3, y: cy+1.8}, {x: cx+2.4, y: cy}, {x: cx+0.6, y: cy}, {x: cx, y: cy+1.8}];
+        } else if (type === 'hexagon') {
+          coords = [{x: cx+1, y: cy+3}, {x: cx+2, y: cy+3}, {x: cx+2.5, y: cy+1.5}, {x: cx+2, y: cy}, {x: cx+1, y: cy}, {x: cx+0.5, y: cy+1.5}];
+        }
+
+        const pointIds = coords.map(c => addPoint(Math.round(c.x), Math.round(c.y)).id);
+        const elem = {
+          id: 'elem_' + Date.now(),
+          type: 'polygon',
+          shapeName: type,
+          points: pointIds,
+          color: state.strokeColor,
+          fillColor: state.fillColor,
+          fillOpacity: state.fillOpacity
+        };
+        state.elements.push(elem);
+        state.selectedId = elem.id;
+        saveState();
+        renderAll();
+        updateInspector(elem);
+      }
+
+      // Calculate Inspector Math Metrics
+      function updateInspector(elem) {
+        const inspector = document.getElementById('inspector-content');
+        if (!elem) {
+          inspector.innerHTML = `<p style="color: var(--text-muted); font-size: 12px;">Select an object on the graph paper to view its geometric properties.</p>`;
+          return;
+        }
+
+        const pts = elem.points.map(pid => state.points.find(p => p.id === pid)).filter(Boolean);
+        if (elem.type === 'polygon' && pts.length >= 3) {
+          // Shoelace Area
+          let area = 0;
+          let perimeter = 0;
+          for (let i = 0; i < pts.length; i++) {
+            const j = (i + 1) % pts.length;
+            area += pts[i].x * pts[j].y;
+            area -= pts[j].x * pts[i].y;
+            perimeter += Math.hypot(pts[j].x - pts[i].x, pts[j].y - pts[i].y);
+          }
+          area = Math.abs(area) / 2;
+
+          inspector.innerHTML = `
+            <div class="inspector-card">
+              <h4>${elem.shapeName ? elem.shapeName.toUpperCase() : 'POLYGON'}</h4>
+              <div class="prop-row"><span>Vertices:</span> <strong>${pts.length}</strong></div>
+              <div class="prop-row"><span>Perimeter:</span> <strong>${perimeter.toFixed(2)} units</strong></div>
+              <div class="prop-row"><span>Area:</span> <strong>${area.toFixed(2)} sq. units</strong></div>
+              <div class="prop-row"><span>Coordinates:</span> <strong>${pts.map(p => `${p.label}(${p.x},${p.y})`).join(', ')}</strong></div>
+            </div>
+          `;
+        } else if (elem.type === 'segment' || elem.type === 'line') {
+          if (pts.length === 2) {
+            const len = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+            inspector.innerHTML = `
+              <div class="inspector-card">
+                <h4>LINE SEGMENT</h4>
+                <div class="prop-row"><span>Endpoints:</span> <strong>${pts[0].label}, ${pts[1].label}</strong></div>
+                <div class="prop-row"><span>Length:</span> <strong>${len.toFixed(2)} units</strong></div>
+              </div>
+            `;
+          }
+        }
+      }
+
+      // Event Interactions
+      let isDragging = false;
+      let dragStart = { x: 0, y: 0 };
+      let draggedPoint = null;
+
+      workspace.addEventListener('pointerdown', (e) => {
+        const rect = workspace.getBoundingClientRect();
+        const px = e.clientX - rect.left;
+        const py = e.clientY - rect.top;
+        const gCoord = screenToGrid(px, py);
+
+        if (state.tool === 'select') {
+          // Check click on point
+          const clickedPt = state.points.find(p => {
+            const s = gridToScreen(p.x, p.y);
+            return Math.hypot(s.x - px, s.y - py) < 10;
+          });
+
+          if (clickedPt) {
+            draggedPoint = clickedPt;
+            isDragging = true;
+          } else {
+            isDragging = true;
+            dragStart = { x: e.clientX - state.pan.x, y: e.clientY - state.pan.y };
+          }
+        } else if (state.tool === 'point') {
+          addPoint(gCoord.x, gCoord.y);
+          saveState();
+          renderAll();
+        } else if (state.tool === 'line' || state.tool === 'segment' || state.tool === 'ray') {
+          const pt = addPoint(gCoord.x, gCoord.y);
+          state.tempPoints.push(pt.id);
+          if (state.tempPoints.length === 2) {
+            const elem = {
+              id: 'elem_' + Date.now(),
+              type: state.tool,
+              points: [...state.tempPoints],
+              color: state.strokeColor
+            };
+            state.elements.push(elem);
+            state.tempPoints = [];
+            saveState();
+            renderAll();
+          }
+        } else if (state.tool === 'shape') {
+          createShape(state.shapeType, gCoord.x, gCoord.y);
+        } else if (state.tool === 'polygon') {
+          const pt = addPoint(gCoord.x, gCoord.y);
+          state.tempPoints.push(pt.id);
+          if (state.tempPoints.length > 2 && state.tempPoints[0] === pt.id) {
+            // Close polygon
+            state.tempPoints.pop();
+            const elem = {
+              id: 'elem_' + Date.now(),
+              type: 'polygon',
+              points: [...state.tempPoints],
+              color: state.strokeColor,
+              fillColor: state.fillColor,
+              fillOpacity: state.fillOpacity
+            };
+            state.elements.push(elem);
+            state.tempPoints = [];
+            saveState();
+            renderAll();
+          }
+        }
+      });
+
+      workspace.addEventListener('pointermove', (e) => {
+        const rect = workspace.getBoundingClientRect();
+        const px = e.clientX - rect.left;
+        const py = e.clientY - rect.top;
+        const gCoord = screenToGrid(px, py);
+
+        coordHud.textContent = `X: ${gCoord.x}, Y: ${gCoord.y}`;
+
+        if (isDragging) {
+          if (draggedPoint) {
+            draggedPoint.x = gCoord.x;
+            draggedPoint.y = gCoord.y;
+            renderAll();
+            if (state.selectedId) {
+              const elem = state.elements.find(el => el.id === state.selectedId);
+              updateInspector(elem);
+            }
+          } else {
+            state.pan.x = e.clientX - dragStart.x;
+            state.pan.y = e.clientY - dragStart.y;
+            renderAll();
+          }
+        }
+      });
+
+      workspace.addEventListener('pointerup', () => {
+        if (isDragging && draggedPoint) {
+          saveState();
+        }
+        isDragging = false;
+        draggedPoint = null;
+      });
+
+      // Zoom via Wheel
+      workspace.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+        state.zoom = Math.min(Math.max(state.zoom * zoomFactor, 0.4), 3.0);
+        renderAll();
+      }, { passive: false });
+
+      // Transformations Engine Controls
+      document.getElementById('trans-x-slider').addEventListener('input', (e) => {
+        const dx = parseInt(e.target.value);
+        document.getElementById('trans-x-val').textContent = dx;
+        if (state.selectedId) {
+          const elem = state.elements.find(el => el.id === state.selectedId);
+          if (elem) {
+            elem.points.forEach(pid => {
+              const pt = state.points.find(p => p.id === pid);
+              if (pt) pt.x += dx;
+            });
+            renderAll();
+          }
+        }
+      });
+
+      document.getElementById('reflect-x-btn').addEventListener('click', () => {
+        if (state.selectedId) {
+          const elem = state.elements.find(el => el.id === state.selectedId);
+          if (elem) {
+            elem.points.forEach(pid => {
+              const pt = state.points.find(p => p.id === pid);
+              if (pt) pt.y = -pt.y;
+            });
+            saveState();
+            renderAll();
+            playSound('click');
+          }
+        }
+      });
+
+      document.getElementById('reflect-y-btn').addEventListener('click', () => {
+        if (state.selectedId) {
+          const elem = state.elements.find(el => el.id === state.selectedId);
+          if (elem) {
+            elem.points.forEach(pid => {
+              const pt = state.points.find(p => p.id === pid);
+              if (pt) pt.x = -pt.x;
+            });
+            saveState();
+            renderAll();
+            playSound('click');
+          }
+        }
+      });
+
+      // Tool Switching Toolbar
+      document.querySelectorAll('.tool-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          state.tool = btn.dataset.tool;
+          state.tempPoints = [];
+          playSound('click');
+        });
+      });
+
+      document.getElementById('shape-selector').addEventListener('change', (e) => {
+        state.shapeType = e.target.value;
+      });
+
+      // Grid Type & Size
+      document.getElementById('grid-type-select').addEventListener('change', (e) => {
+        state.gridType = e.target.value;
+        renderAll();
+      });
+
+      document.getElementById('grid-size-slider').addEventListener('input', (e) => {
+        state.gridSize = parseInt(e.target.value);
+        document.getElementById('grid-size-val').textContent = state.gridSize;
+        renderAll();
+      });
+
+      // Colors
+      document.getElementById('stroke-color').addEventListener('input', (e) => {
+        state.strokeColor = e.target.value;
+        document.getElementById('stroke-color-hex').textContent = e.target.value;
+      });
+
+      document.getElementById('fill-color').addEventListener('input', (e) => {
+        state.fillColor = e.target.value;
+        document.getElementById('fill-color-hex').textContent = e.target.value;
+      });
+
+      // Toggles
+      document.getElementById('btn-snap').addEventListener('click', () => {
+        state.snap = !state.snap;
+        document.getElementById('btn-snap').textContent = state.snap ? '🧲 Snap: ON' : '🧲 Snap: OFF';
+      });
+
+      document.getElementById('btn-grid-toggle').addEventListener('click', () => {
+        state.showGrid = !state.showGrid;
+        renderAll();
+      });
+
+      document.getElementById('btn-axes-toggle').addEventListener('click', () => {
+        state.showAxes = !state.showAxes;
+        renderAll();
+      });
+
+      // Zoom & Reset Controls
+      document.getElementById('btn-zoom-in').addEventListener('click', () => {
+        state.zoom = Math.min(state.zoom * 1.2, 3.0);
+        renderAll();
+      });
+
+      document.getElementById('btn-zoom-out').addEventListener('click', () => {
+        state.zoom = Math.max(state.zoom / 1.2, 0.4);
+        renderAll();
+      });
+
+      document.getElementById('btn-reset-view').addEventListener('click', () => {
+        state.zoom = 1.0;
+        initViewport();
+        renderAll();
+      });
+
+      // Clear & New
+      document.getElementById('btn-clear').addEventListener('click', () => {
+        if (confirm('Clear entire graph canvas?')) {
+          state.points = [];
+          state.elements = [];
+          pointCounter = 0;
+          saveState();
+          renderAll();
+        }
+      });
+
+      document.getElementById('btn-undo').addEventListener('click', undo);
+      document.getElementById('btn-redo').addEventListener('click', redo);
+
+      // Challenge System
+      const challenges = [
+        { title: "Plot Coordinate (3, 4)", check: () => state.points.some(p => p.x === 3 && p.y === 4) },
+        { title: "Plot Point at (-2, -3)", check: () => state.points.some(p => p.x === -2 && p.y === -3) },
+        { title: "Draw a Square of Area 9", check: () => state.elements.some(e => e.type === 'polygon' && e.points.length === 4) },
+        { title: "Plot 3 Points in Quadrant I", check: () => state.points.filter(p => p.x > 0 && p.y > 0).length >= 3 }
+      ];
+
+      document.getElementById('btn-next-challenge').addEventListener('click', () => {
+        const rand = challenges[Math.floor(Math.random() * challenges.length)];
+        state.challenge = rand;
+        document.getElementById('challenge-title').textContent = rand.title;
+        document.getElementById('challenge-desc').textContent = "Complete the task on the graph paper and click Submit!";
+      });
+
+      document.getElementById('btn-check-challenge').addEventListener('click', () => {
+        if (state.challenge && state.challenge.check()) {
+          state.score += 10;
+          document.getElementById('score-display').textContent = `Score: ${state.score}`;
+          playSound('correct');
+          alert('🎉 Awesome! Task Completed Perfectly!');
+        } else {
+          alert('Not quite yet! Check your coordinates and try again.');
+        }
+      });
+
+      // File Save & Load
+      document.getElementById('btn-save').addEventListener('click', () => {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
+          points: state.points,
+          elements: state.elements
+        }));
+        const dlAnchor = document.createElement('a');
+        dlAnchor.setAttribute("href", dataStr);
+        dlAnchor.setAttribute("download", "graph_paper_drawing.json");
+        document.body.appendChild(dlAnchor);
+        dlAnchor.click();
+        dlAnchor.remove();
+      });
+
+      document.getElementById('btn-load').addEventListener('click', () => {
+        document.getElementById('file-input').click();
+      });
+
+      document.getElementById('file-input').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          const content = JSON.parse(evt.target.result);
+          state.points = content.points || [];
+          state.elements = content.elements || [];
+          renderAll();
+        };
+        reader.readAsText(file);
+      });
+
+      // Print & Help
+      document.getElementById('btn-print').addEventListener('click', () => {
+        window.print();
+      });
+
+      const helpModal = document.getElementById('help-modal');
+      document.getElementById('help-btn').addEventListener('click', () => helpModal.classList.add('active'));
+      document.getElementById('close-help-btn').addEventListener('click', () => helpModal.classList.remove('active'));
+
+      // Sidebar Toggle
+      document.getElementById('toggle-sidebar-btn').addEventListener('click', () => {
+        document.getElementById('sidebar').classList.toggle('collapsed');
+      });
+
+      // Initialization
+      window.addEventListener('resize', () => {
+        renderAll();
+      });
+
+      initViewport();
+      saveState();
+      renderAll();
+    })();
+  </script>
+</body>
+</html>

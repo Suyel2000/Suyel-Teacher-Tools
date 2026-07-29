@@ -1,0 +1,1670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Bar Graph Builder Manipulative</title>
+  <style>
+    /* ==========================================================================
+       CSS VARIABLES & THEME SETUP
+       ========================================================================== */
+    :root {
+      --bg-primary: #F8FAFC;
+      --bg-secondary: #FFFFFF;
+      --bg-card: #FFFFFF;
+      --text-primary: #1E293B;
+      --text-secondary: #64748B;
+      --text-muted: #94A3B8;
+      --border-color: #E2E8F0;
+      --accent-primary: #3B82F6;
+      --accent-hover: #2563EB;
+      --accent-soft: #EFF6FF;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --danger: #EF4444;
+      --purple: #8B5CF6;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 18px;
+      --radius-full: 9999px;
+      --font-main: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      --grid-line: #E2E8F0;
+      --axis-color: #475569;
+    }
+
+    [data-theme="dark"] {
+      --bg-primary: #0F172A;
+      --bg-secondary: #1E293B;
+      --bg-card: #1E293B;
+      --text-primary: #F8FAFC;
+      --text-secondary: #CBD5E1;
+      --text-muted: #64748B;
+      --border-color: #334155;
+      --accent-soft: rgba(59, 130, 246, 0.15);
+      --grid-line: #334155;
+      --axis-color: #94A3B8;
+    }
+
+    /* ==========================================================================
+       RESET & BASE STYLES
+       ========================================================================== */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      touch-action: manipulation;
+    }
+
+    body {
+      font-family: var(--font-main);
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      -webkit-user-select: none;
+      overflow-x: hidden;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* ==========================================================================
+       HEADER & NAVIGATION
+       ========================================================================== */
+    header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: var(--shadow-sm);
+      z-index: 10;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, var(--accent-primary), var(--purple));
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      box-shadow: var(--shadow-md);
+    }
+
+    .brand-title h1 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, var(--accent-primary), var(--purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-title p {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .header-controls {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    /* ==========================================================================
+       BUTTONS & CONTROLS
+       ========================================================================== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.5rem 0.85rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: var(--shadow-sm);
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: var(--accent-soft);
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary {
+      background: var(--accent-primary);
+      color: white;
+      border-color: var(--accent-primary);
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      color: white;
+    }
+
+    .btn-icon-only {
+      padding: 0.5rem;
+      border-radius: var(--radius-full);
+      width: 36px;
+      height: 36px;
+    }
+
+    /* ==========================================================================
+       TOOLBAR
+       ========================================================================== */
+    .toolbar-container {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.5rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+
+    .toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding-right: 0.75rem;
+      border-right: 1px solid var(--border-color);
+    }
+
+    .toolbar-group:last-child {
+      border-right: none;
+    }
+
+    /* ==========================================================================
+       MAIN APP LAYOUT
+       ========================================================================== */
+    .app-container {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    @media (max-width: 960px) {
+      .app-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+        overflow-y: auto;
+      }
+    }
+
+    /* ==========================================================================
+       LEFT PANEL - DATA ENTRY & CONTROLS
+       ========================================================================== */
+    .left-panel {
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 1rem;
+      gap: 1.25rem;
+    }
+
+    .panel-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .panel-card-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Data Table */
+    .data-table-wrapper {
+      overflow-x: auto;
+      margin-bottom: 0.75rem;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    .data-table th {
+      text-align: left;
+      padding: 0.5rem;
+      color: var(--text-secondary);
+      border-bottom: 2px solid var(--border-color);
+      font-weight: 600;
+    }
+
+    .data-table td {
+      padding: 0.4rem 0.25rem;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: middle;
+    }
+
+    .data-input {
+      width: 100%;
+      padding: 0.35rem 0.5rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 0.85rem;
+      font-weight: 500;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .data-input:focus {
+      border-color: var(--accent-primary);
+    }
+
+    .color-picker-wrapper {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      border: 2px solid var(--border-color);
+      cursor: pointer;
+      display: inline-block;
+      position: relative;
+    }
+
+    .color-picker-input {
+      position: absolute;
+      top: -10px;
+      left: -10px;
+      width: 50px;
+      height: 50px;
+      cursor: pointer;
+      opacity: 0;
+    }
+
+    /* Quick Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
+    }
+
+    .stat-box {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.6rem;
+      text-align: center;
+    }
+
+    .stat-val {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--accent-primary);
+    }
+
+    .stat-lbl {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    /* ==========================================================================
+       RIGHT PANEL - INTERACTIVE SVG GRAPH
+       ========================================================================== */
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-primary);
+      padding: 1rem;
+      gap: 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .graph-view-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-secondary);
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .option-select {
+      padding: 0.4rem 0.6rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 0.85rem;
+      font-weight: 600;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .graph-stage {
+      flex: 1;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      min-height: 400px;
+    }
+
+    svg.main-graph {
+      width: 100%;
+      height: 100%;
+      max-height: 550px;
+      overflow: visible;
+    }
+
+    /* SVG Elements Styling */
+    .grid-line {
+      stroke: var(--grid-line);
+      stroke-width: 1;
+      stroke-dasharray: 4 4;
+    }
+
+    .axis-line {
+      stroke: var(--axis-color);
+      stroke-width: 2.5;
+      stroke-linecap: round;
+    }
+
+    .axis-text {
+      fill: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 600;
+      font-family: var(--font-main);
+    }
+
+    .bar-rect {
+      transition: height 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), y 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), x 0.3s, width 0.3s;
+      cursor: grab;
+      filter: drop-shadow(0px 3px 4px rgba(0, 0, 0, 0.08));
+    }
+
+    .bar-rect:hover {
+      filter: drop-shadow(0px 6px 8px rgba(0, 0, 0, 0.15)) brightness(1.05);
+    }
+
+    .bar-rect:active {
+      cursor: grabbing;
+    }
+
+    .bar-drag-handle {
+      cursor: ns-resize;
+      fill: transparent;
+    }
+
+    .horizontal-drag-handle {
+      cursor: ew-resize;
+      fill: transparent;
+    }
+
+    .bar-val-text {
+      fill: var(--text-primary);
+      font-weight: 800;
+      font-size: 13px;
+      transition: all 0.3s;
+    }
+
+    /* ==========================================================================
+       PRACTICE / QUIZ BANNER
+       ========================================================================== */
+    .interactive-banner {
+      background: linear-gradient(135deg, var(--accent-primary), var(--purple));
+      color: white;
+      padding: 1rem 1.25rem;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-md);
+      display: none;
+      flex-direction: column;
+      gap: 0.75rem;
+      animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .banner-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .quiz-options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.5rem;
+    }
+
+    .quiz-opt-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      color: white;
+      padding: 0.5rem;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+      transition: background 0.2s;
+    }
+
+    .quiz-opt-btn:hover {
+      background: rgba(255, 255, 255, 0.35);
+    }
+
+    /* ==========================================================================
+       MODALS & OVERLAYS
+       ========================================================================== */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 1rem;
+    }
+
+    .modal-content {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-color);
+      width: 100%;
+      max-width: 550px;
+      box-shadow: var(--shadow-lg);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h2 {
+      font-size: 1.2rem;
+      font-weight: 800;
+    }
+
+    .template-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+
+    .template-item {
+      padding: 0.75rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--bg-primary);
+    }
+
+    .template-item:hover {
+      border-color: var(--accent-primary);
+      background: var(--accent-soft);
+    }
+
+    .template-item h4 {
+      font-size: 0.9rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .template-item p {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    /* Confetti Canvas overlay */
+    #confettiCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 200;
+    }
+
+    /* ==========================================================================
+       PRINT WORKSHEET STYLES
+       ========================================================================== */
+    @media print {
+      body {
+        background: white !important;
+        color: black !important;
+      }
+      header, .toolbar-container, .left-panel, .graph-view-bar, .interactive-banner {
+        display: none !important;
+      }
+      .app-container {
+        display: block !important;
+      }
+      .right-panel {
+        background: white !important;
+        padding: 0 !important;
+      }
+      .graph-stage {
+        border: none !important;
+        box-shadow: none !important;
+      }
+      .print-worksheet-header {
+        display: block !important;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid #000;
+        padding-bottom: 0.5rem;
+      }
+    }
+
+    .print-worksheet-header {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- CONFETTI CANVAS -->
+  <canvas id="confettiCanvas"></canvas>
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+      </div>
+      <div class="brand-title">
+        <h1>Bar Graph Builder</h1>
+        <p>Collect • Organize • Visualize • Analyze</p>
+      </div>
+    </div>
+    <div class="header-controls">
+      <button class="btn btn-icon-only" id="themeToggleBtn" title="Toggle Light/Dark Mode">🌙</button>
+      <button class="btn btn-icon-only" id="soundToggleBtn" title="Sound Effects ON/OFF">🔊</button>
+      <button class="btn" id="helpBtn">❓ Help</button>
+    </div>
+  </header>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar-container">
+    <div class="toolbar-group">
+      <button class="btn btn-primary" id="newGraphBtn">📄 New</button>
+      <button class="btn" id="templatesBtn">📋 Templates</button>
+    </div>
+    <div class="toolbar-group">
+      <button class="btn" id="addCategoryBtn">➕ Add Row</button>
+      <button class="btn" id="randomDataBtn">🎲 Randomize</button>
+      <button class="btn" id="clearDataBtn">🧹 Clear</button>
+    </div>
+    <div class="toolbar-group">
+      <button class="btn" id="practiceModeBtn">🎯 Practice</button>
+      <button class="btn" id="quizModeBtn">🏆 Quiz</button>
+      <button class="btn" id="teacherToolsBtn">👩‍🏫 Teacher Tools</button>
+    </div>
+    <div class="toolbar-group">
+      <button class="btn" id="saveGraphBtn">💾 Save</button>
+      <button class="btn" id="loadGraphBtn">📂 Load</button>
+      <button class="btn" id="printBtn">🖨 Print</button>
+    </div>
+  </div>
+
+  <!-- MAIN APP CONTAINER -->
+  <div class="app-container">
+
+    <!-- LEFT PANEL: DATA ENTRY & TABLE -->
+    <div class="left-panel">
+      
+      <!-- DATA ENTRY CARD -->
+      <div class="panel-card">
+        <div class="panel-card-title">
+          <span>Data Table</span>
+          <button class="btn btn-icon-only" id="quickAddBtn" title="Add Category">+</button>
+        </div>
+        <div class="data-table-wrapper">
+          <table class="data-table" id="dataTable">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th style="width: 70px;">Value</th>
+                <th style="width: 40px;">Color</th>
+                <th style="width: 35px;"></th>
+              </tr>
+            </thead>
+            <tbody id="dataTableBody">
+              <!-- Rows inserted dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- LIVE SURVEY QUICK VOTE CARD -->
+      <div class="panel-card" id="surveyCard">
+        <div class="panel-card-title">
+          <span>Live Class Survey</span>
+          <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">Click to vote</span>
+        </div>
+        <div id="surveyVoteButtons" style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <!-- Vote buttons inserted dynamically -->
+        </div>
+      </div>
+
+      <!-- ANALYSIS STATS CARD -->
+      <div class="panel-card">
+        <div class="panel-card-title">Graph Analysis</div>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-val" id="statMax">-</div>
+            <div class="stat-lbl">Highest</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val" id="statMin">-</div>
+            <div class="stat-lbl">Lowest</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val" id="statTotal">-</div>
+            <div class="stat-lbl">Total Sum</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val" id="statAvg">-</div>
+            <div class="stat-lbl">Average</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT PANEL: SVG GRAPH & CANVAS -->
+    <div class="right-panel">
+
+      <!-- PRINT WORKSHEET HEADER -->
+      <div class="print-worksheet-header">
+        <h1>Data Handling & Bar Graph Activity Sheet</h1>
+        <p>Name: ______________________  Date: ____________  Class: ________</p>
+      </div>
+
+      <!-- GRAPH CONTROLS BAR -->
+      <div class="graph-view-bar">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <label style="font-size: 0.85rem; font-weight: 700;">Type:</label>
+          <select class="option-select" id="graphTypeSelect">
+            <option value="vertical">Vertical Bar</option>
+            <option value="horizontal">Horizontal Bar</option>
+            <option value="double">Double Bar (Comparison)</option>
+            <option value="stacked">Stacked Bar</option>
+            <option value="pictograph">Pictograph (Icons)</option>
+          </select>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <label style="font-size: 0.85rem; font-weight: 700;">Scale Step:</label>
+          <select class="option-select" id="scaleSelect">
+            <option value="auto">Auto Scale</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+          </select>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <label style="font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+            <input type="checkbox" id="toggleGridCheck" checked> Grid
+          </label>
+          <label style="font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+            <input type="checkbox" id="toggleValuesCheck" checked> Values
+          </label>
+        </div>
+      </div>
+
+      <!-- INTERACTIVE PRACTICE / QUIZ BANNER -->
+      <div class="interactive-banner" id="interactiveBanner">
+        <div class="banner-header">
+          <span id="quizTitle">🎯 Practice Question</span>
+          <span id="quizScoreText">Score: 0 | Stars: ⭐ 0</span>
+        </div>
+        <p id="quizQuestionText" style="font-size: 1.05rem; font-weight: 600;">Which fruit has the highest value?</p>
+        <div class="quiz-options" id="quizOptionsContainer">
+          <!-- Quiz choices inserted dynamically -->
+        </div>
+      </div>
+
+      <!-- GRAPH SVG CONTAINER STAGE -->
+      <div class="graph-stage" id="graphStage">
+        <svg class="main-graph" id="mainSvg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet">
+          <!-- Rendered dynamically -->
+        </svg>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- MODALS -->
+
+  <!-- TEMPLATES MODAL -->
+  <div class="modal-overlay" id="templatesModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Choose a Dataset Template</h2>
+        <button class="btn btn-icon-only" id="closeTemplatesBtn">✕</button>
+      </div>
+      <div class="template-grid" id="templatesGrid">
+        <!-- Templates inserted dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- TEACHER TOOLS MODAL -->
+  <div class="modal-overlay" id="teacherModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>👩‍🏫 Teacher Options & Controls</h2>
+        <button class="btn btn-icon-only" id="closeTeacherBtn">✕</button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600;">
+          <input type="checkbox" id="lockDraggingCheck"> Lock Drag-to-Resize on Bars
+        </label>
+        <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600;">
+          <input type="checkbox" id="hideLabelsCheck"> Hide Category Labels (for Student Testing)
+        </label>
+        <hr style="border: 0; border-top: 1px solid var(--border-color);">
+        <button class="btn btn-primary" id="generateWorksheetBtn">📄 Print Clean Student Worksheet</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HELP MODAL -->
+  <div class="modal-overlay" id="helpModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>📊 How to Use Bar Graph Builder</h2>
+        <button class="btn btn-icon-only" id="closeHelpBtn">✕</button>
+      </div>
+      <div style="font-size: 0.9rem; line-height: 1.5; color: var(--text-primary); display: flex; flex-direction: column; gap: 0.75rem;">
+        <p><strong>1. Interactive Drag:</strong> Click and drag the top edge of any bar on the graph to increase or decrease its value in real-time!</p>
+        <p><strong>2. Data Entry:</strong> Edit category names, values, and bar colors directly in the Left Data Table.</p>
+        <p><strong>3. Live Survey:</strong> Use the "Live Class Survey" buttons to collect fast votes from students in class.</p>
+        <p><strong>4. Quiz & Practice Mode:</strong> Test graph reading skills with automatically generated questions aligned with Class 2–5 NEP 2020 math goals.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       JAVASCRIPT APPLICATION ENGINE
+       ========================================================================== -->
+  <script>
+    /* ==========================================================================
+       SOUND SYNTHESIZER ENGINE (Web Audio API)
+       ========================================================================== */
+    class SoundFX {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+      init() {
+        if (!this.ctx) {
+          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+      }
+      playTone(freq, type, duration, gainVal = 0.08) {
+        if (!this.enabled) return;
+        try {
+          this.init();
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + duration);
+        } catch (e) {}
+      }
+      click() { this.playTone(450, 'sine', 0.04, 0.05); }
+      pop() { this.playTone(600, 'sine', 0.08, 0.08); }
+      correct() {
+        this.playTone(523.25, 'triangle', 0.1, 0.08);
+        setTimeout(() => this.playTone(659.25, 'triangle', 0.12, 0.08), 90);
+        setTimeout(() => this.playTone(783.99, 'triangle', 0.2, 0.08), 180);
+      }
+      wrong() {
+        this.playTone(220, 'sawtooth', 0.15, 0.06);
+        setTimeout(() => this.playTone(180, 'sawtooth', 0.2, 0.06), 120);
+      }
+      fanfare() {
+        [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => {
+          setTimeout(() => this.playTone(f, 'square', 0.18, 0.06), i * 110);
+        });
+      }
+    }
+
+    const sound = new SoundFX();
+
+    /* ==========================================================================
+       CONFETTI SYSTEM
+       ========================================================================== */
+    function launchConfetti() {
+      const canvas = document.getElementById('confettiCanvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const particles = [];
+      const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
+
+      for (let i = 0; i < 80; i++) {
+        particles.push({
+          x: canvas.width / 2,
+          y: canvas.height / 2,
+          vx: (Math.random() - 0.5) * 14,
+          vy: (Math.random() - 0.7) * 14,
+          size: Math.random() * 8 + 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          rotation: Math.random() * 360,
+          vRot: (Math.random() - 0.5) * 10
+        });
+      }
+
+      let animationFrame;
+      function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let alive = false;
+        particles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.3; // gravity
+          p.rotation += p.vRot;
+          if (p.y < canvas.height) alive = true;
+
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate((p.rotation * Math.PI) / 180);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+          ctx.restore();
+        });
+
+        if (alive) {
+          animationFrame = requestAnimationFrame(render);
+        } else {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+      }
+      render();
+    }
+
+    /* ==========================================================================
+       PREDEFINED DATASETS / TEMPLATES
+       ========================================================================== */
+    const PRESET_TEMPLATES = [
+      {
+        title: '🍎 Favorite Fruits',
+        desc: 'Apples, Mangoes, Bananas & more',
+        data: [
+          { label: 'Apples', val1: 12, val2: 8, color: '#EF4444' },
+          { label: 'Mangoes', val1: 16, val2: 12, color: '#F59E0B' },
+          { label: 'Bananas', val1: 10, val2: 14, color: '#EAB308' },
+          { label: 'Grapes', val1: 7, val2: 9, color: '#8B5CF6' },
+          { label: 'Oranges', val1: 5, val2: 11, color: '#F97316' }
+        ]
+      },
+      {
+        title: '🐶 Favorite Pets',
+        desc: 'Dogs, Cats, Rabbits & Birds',
+        data: [
+          { label: 'Dogs', val1: 18, val2: 15, color: '#3B82F6' },
+          { label: 'Cats', val1: 14, val2: 16, color: '#10B981' },
+          { label: 'Rabbits', val1: 8, val2: 6, color: '#EC4899' },
+          { label: 'Birds', val1: 5, val2: 8, color: '#06B6D4' }
+        ]
+      },
+      {
+        title: '📚 Books Read in a Month',
+        desc: 'Student reading competition',
+        data: [
+          { label: 'Aarav', val1: 8, val2: 10, color: '#6366F1' },
+          { label: 'Ananya', val1: 14, val2: 12, color: '#EC4899' },
+          { label: 'Vihaan', val1: 6, val2: 8, color: '#10B981' },
+          { label: 'Diya', val1: 11, val2: 15, color: '#F59E0B' }
+        ]
+      },
+      {
+        title: '🚌 Modes of Transport',
+        desc: 'How students travel to school',
+        data: [
+          { label: 'School Bus', val1: 24, val2: 22, color: '#F59E0B' },
+          { label: 'Walking', val1: 10, val2: 12, color: '#10B981' },
+          { label: 'Bicycle', val1: 15, val2: 18, color: '#3B82F6' },
+          { label: 'Car', val1: 8, val2: 6, color: '#EF4444' }
+        ]
+      }
+    ];
+
+    /* ==========================================================================
+       APP STATE
+       ========================================================================== */
+    const state = {
+      categories: JSON.parse(JSON.stringify(PRESET_TEMPLATES[0].data)),
+      graphType: 'vertical',
+      scaleStep: 'auto',
+      showGrid: true,
+      showValues: true,
+      mode: 'builder', // 'builder', 'practice', 'quiz'
+      quizScore: 0,
+      quizStars: 0,
+      currentQuestion: null,
+      lockDragging: false,
+      hideLabels: false,
+      activeDragIndex: null,
+      activeDragSubIndex: null
+    };
+
+    /* ==========================================================================
+       DATA ANALYSIS & CALCULATIONS
+       ========================================================================== */
+    function getStats() {
+      const vals = state.categories.map(c => c.val1);
+      if (vals.length === 0) return { max: 0, min: 0, total: 0, avg: 0 };
+      const max = Math.max(...vals);
+      const min = Math.min(...vals);
+      const total = vals.reduce((a, b) => a + b, 0);
+      const avg = (total / vals.length).toFixed(1);
+      return { max, min, total, avg };
+    }
+
+    function calculateScaleMax() {
+      let maxVal = 0;
+      state.categories.forEach(c => {
+        if (state.graphType === 'double') {
+          maxVal = Math.max(maxVal, c.val1, c.val2 || 0);
+        } else if (state.graphType === 'stacked') {
+          maxVal = Math.max(maxVal, c.val1 + (c.val2 || 0));
+        } else {
+          maxVal = Math.max(maxVal, c.val1);
+        }
+      });
+
+      if (state.scaleStep !== 'auto') {
+        const step = parseInt(state.scaleStep, 10);
+        return Math.max(step * 5, Math.ceil((maxVal + 1) / step) * step);
+      }
+
+      // Auto scale logic
+      if (maxVal <= 10) return 10;
+      if (maxVal <= 20) return 20;
+      if (maxVal <= 50) return 50;
+      if (maxVal <= 100) return 100;
+      return Math.ceil(maxVal / 10) * 10 + 10;
+    }
+
+    /* ==========================================================================
+       UI RENDERERS
+       ========================================================================== */
+    function updateAnalysisUI() {
+      const stats = getStats();
+      document.getElementById('statMax').textContent = stats.max;
+      document.getElementById('statMin').textContent = stats.min;
+      document.getElementById('statTotal').textContent = stats.total;
+      document.getElementById('statAvg').textContent = stats.avg;
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('dataTableBody');
+      tbody.innerHTML = '';
+
+      state.categories.forEach((cat, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>
+            <input type="text" class="data-input" value="${cat.label}" data-idx="${idx}" data-field="label">
+          </td>
+          <td>
+            <input type="number" class="data-input" value="${cat.val1}" min="0" max="100" data-idx="${idx}" data-field="val1">
+          </td>
+          <td style="text-align: center;">
+            <div class="color-picker-wrapper" style="background-color: ${cat.color}">
+              <input type="color" class="color-picker-input" value="${cat.color}" data-idx="${idx}">
+            </div>
+          </td>
+          <td>
+            <button class="btn btn-icon-only" style="padding: 0.2rem; width:26px; height:26px; font-size: 0.75rem;" onclick="deleteCategory(${idx})">✕</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Bind input events
+      tbody.querySelectorAll('input').forEach(input => {
+        input.addEventListener('change', (e) => {
+          const idx = parseInt(e.target.dataset.idx, 10);
+          const field = e.target.dataset.field;
+          if (field === 'label') {
+            state.categories[idx].label = e.target.value;
+          } else if (field === 'val1') {
+            state.categories[idx].val1 = Math.max(0, parseInt(e.target.value, 10) || 0);
+          } else if (e.target.classList.contains('color-picker-input')) {
+            state.categories[idx].color = e.target.value;
+          }
+          renderAll();
+        });
+      });
+
+      renderSurveyButtons();
+    }
+
+    function renderSurveyButtons() {
+      const container = document.getElementById('surveyVoteButtons');
+      container.innerHTML = '';
+
+      state.categories.forEach((cat, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'btn';
+        btn.style.justifyContent = 'space-between';
+        btn.style.borderLeft = `5px solid ${cat.color}`;
+        btn.innerHTML = `
+          <span>${cat.label}</span>
+          <span style="background: var(--accent-soft); padding: 0.1rem 0.5rem; border-radius: 10px; font-weight:800;">+1 Vote</span>
+        `;
+        btn.onclick = () => {
+          state.categories[idx].val1 += 1;
+          sound.pop();
+          renderAll();
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    /* ==========================================================================
+       SVG GRAPH RENDER ENGINE
+       ========================================================================== */
+    function renderSVGGraph() {
+      const svg = document.getElementById('mainSvg');
+      svg.innerHTML = '';
+
+      const width = 800;
+      const height = 500;
+      const padL = 70;
+      const padR = 40;
+      const padT = 40;
+      const padB = 70;
+
+      const plotW = width - padL - padR;
+      const plotH = height - padT - padB;
+
+      const scaleMax = calculateScaleMax();
+      const numCats = state.categories.length;
+
+      // Draw Grid & Axes Lines
+      const gridGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      const axisGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      const barsGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+
+      const isHorizontal = state.graphType === 'horizontal';
+
+      if (!isHorizontal) {
+        // Vertical Grid
+        const numTicks = 5;
+        for (let i = 0; i <= numTicks; i++) {
+          const val = Math.round((scaleMax / numTicks) * i);
+          const y = padT + plotH - (i / numTicks) * plotH;
+
+          if (state.showGrid) {
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', padL);
+            line.setAttribute('x2', padL + plotW);
+            line.setAttribute('y1', y);
+            line.setAttribute('y2', y);
+            line.setAttribute('class', 'grid-line');
+            gridGroup.appendChild(line);
+          }
+
+          // Y Axis Ticks
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('x', padL - 10);
+          text.setAttribute('y', y + 4);
+          text.setAttribute('text-anchor', 'end');
+          text.setAttribute('class', 'axis-text');
+          text.textContent = val;
+          axisGroup.appendChild(text);
+        }
+
+        // Axis Lines
+        const xAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        xAxis.setAttribute('x1', padL);
+        xAxis.setAttribute('x2', padL + plotW);
+        xAxis.setAttribute('y1', padT + plotH);
+        xAxis.setAttribute('y2', padT + plotH);
+        xAxis.setAttribute('class', 'axis-line');
+        axisGroup.appendChild(xAxis);
+
+        const yAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        yAxis.setAttribute('x1', padL);
+        yAxis.setAttribute('x2', padL);
+        yAxis.setAttribute('y1', padT);
+        yAxis.setAttribute('y2', padT + plotH);
+        yAxis.setAttribute('class', 'axis-line');
+        axisGroup.appendChild(yAxis);
+
+        // Render Bars (Vertical)
+        if (numCats > 0) {
+          const colW = plotW / numCats;
+          const barW = Math.min(colW * 0.55, 70);
+
+          state.categories.forEach((cat, i) => {
+            const centerX = padL + i * colW + colW / 2;
+            const barH = (cat.val1 / scaleMax) * plotH;
+            const barY = padT + plotH - barH;
+            const barX = centerX - barW / 2;
+
+            // Bar Rect
+            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect.setAttribute('x', barX);
+            rect.setAttribute('y', barY);
+            rect.setAttribute('width', barW);
+            rect.setAttribute('height', Math.max(0, barH));
+            rect.setAttribute('rx', 8);
+            rect.setAttribute('fill', cat.color);
+            rect.setAttribute('class', 'bar-rect');
+
+            // Drag handle functionality
+            if (!state.lockDragging) {
+              rect.addEventListener('pointerdown', (e) => startBarDrag(e, i, 'val1', false));
+            }
+
+            barsGroup.appendChild(rect);
+
+            // Value Text
+            if (state.showValues) {
+              const valText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+              valText.setAttribute('x', centerX);
+              valText.setAttribute('y', barY - 8);
+              valText.setAttribute('text-anchor', 'middle');
+              valText.setAttribute('class', 'bar-val-text');
+              valText.textContent = cat.val1;
+              barsGroup.appendChild(valText);
+            }
+
+            // Category Label Text
+            if (!state.hideLabels) {
+              const labelText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+              labelText.setAttribute('x', centerX);
+              labelText.setAttribute('y', padT + plotH + 25);
+              labelText.setAttribute('text-anchor', 'middle');
+              labelText.setAttribute('class', 'axis-text');
+              labelText.style.fontSize = '13px';
+              labelText.textContent = cat.label;
+              barsGroup.appendChild(labelText);
+            }
+          });
+        }
+      } else {
+        // Horizontal Bar Graph
+        const numTicks = 5;
+        for (let i = 0; i <= numTicks; i++) {
+          const val = Math.round((scaleMax / numTicks) * i);
+          const x = padL + (i / numTicks) * plotW;
+
+          if (state.showGrid) {
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', x);
+            line.setAttribute('x2', x);
+            line.setAttribute('y1', padT);
+            line.setAttribute('y2', padT + plotH);
+            line.setAttribute('class', 'grid-line');
+            gridGroup.appendChild(line);
+          }
+
+          // X Axis Ticks
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('x', x);
+          text.setAttribute('y', padT + plotH + 20);
+          text.setAttribute('text-anchor', 'middle');
+          text.setAttribute('class', 'axis-text');
+          text.textContent = val;
+          axisGroup.appendChild(text);
+        }
+
+        // Axes Lines
+        const xAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        xAxis.setAttribute('x1', padL);
+        xAxis.setAttribute('x2', padL + plotW);
+        xAxis.setAttribute('y1', padT + plotH);
+        xAxis.setAttribute('y2', padT + plotH);
+        xAxis.setAttribute('class', 'axis-line');
+        axisGroup.appendChild(xAxis);
+
+        const yAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        yAxis.setAttribute('x1', padL);
+        yAxis.setAttribute('x2', padL);
+        yAxis.setAttribute('y1', padT);
+        yAxis.setAttribute('y2', padT + plotH);
+        yAxis.setAttribute('class', 'axis-line');
+        axisGroup.appendChild(yAxis);
+
+        // Render Horizontal Bars
+        if (numCats > 0) {
+          const rowH = plotH / numCats;
+          const barH = Math.min(rowH * 0.55, 50);
+
+          state.categories.forEach((cat, i) => {
+            const centerY = padT + i * rowH + rowH / 2;
+            const barW = (cat.val1 / scaleMax) * plotW;
+            const barY = centerY - barH / 2;
+
+            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect.setAttribute('x', padL);
+            rect.setAttribute('y', barY);
+            rect.setAttribute('width', Math.max(0, barW));
+            rect.setAttribute('height', barH);
+            rect.setAttribute('rx', 6);
+            rect.setAttribute('fill', cat.color);
+            rect.setAttribute('class', 'bar-rect');
+
+            if (!state.lockDragging) {
+              rect.addEventListener('pointerdown', (e) => startBarDrag(e, i, 'val1', true));
+            }
+
+            barsGroup.appendChild(rect);
+
+            // Value Text
+            if (state.showValues) {
+              const valText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+              valText.setAttribute('x', padL + barW + 10);
+              valText.setAttribute('y', centerY + 5);
+              valText.setAttribute('class', 'bar-val-text');
+              valText.textContent = cat.val1;
+              barsGroup.appendChild(valText);
+            }
+
+            // Category Label Text
+            if (!state.hideLabels) {
+              const labelText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+              labelText.setAttribute('x', padL - 10);
+              labelText.setAttribute('y', centerY + 4);
+              labelText.setAttribute('text-anchor', 'end');
+              labelText.setAttribute('class', 'axis-text');
+              labelText.textContent = cat.label;
+              barsGroup.appendChild(labelText);
+            }
+          });
+        }
+      }
+
+      svg.appendChild(gridGroup);
+      svg.appendChild(axisGroup);
+      svg.appendChild(barsGroup);
+    }
+
+    /* ==========================================================================
+       DRAG TO RESIZE INTERACTION
+       ========================================================================== */
+    function startBarDrag(e, catIndex, field, isHorizontal) {
+      e.preventDefault();
+      state.activeDragIndex = catIndex;
+      state.activeDragSubIndex = field;
+
+      const svg = document.getElementById('mainSvg');
+      const rect = svg.getBoundingClientRect();
+
+      const onPointerMove = (moveEvent) => {
+        const scaleMax = calculateScaleMax();
+        const padL = 70, padR = 40, padT = 40, padB = 70;
+        const plotW = 800 - padL - padR;
+        const plotH = 500 - padT - padB;
+
+        // Convert mouse/touch coords to SVG space (800x500)
+        const mouseX = ((moveEvent.clientX - rect.left) / rect.width) * 800;
+        const mouseY = ((moveEvent.clientY - rect.top) / rect.height) * 500;
+
+        let newVal = 0;
+        if (!isHorizontal) {
+          const clampedY = Math.max(padT, Math.min(padT + plotH, mouseY));
+          const heightRatio = (padT + plotH - clampedY) / plotH;
+          newVal = Math.round(heightRatio * scaleMax);
+        } else {
+          const clampedX = Math.max(padL, Math.min(padL + plotW, mouseX));
+          const widthRatio = (clampedX - padL) / plotW;
+          newVal = Math.round(widthRatio * scaleMax);
+        }
+
+        if (state.categories[catIndex][field] !== newVal) {
+          state.categories[catIndex][field] = newVal;
+          sound.click();
+          renderAll();
+        }
+      };
+
+      const onPointerUp = () => {
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('pointerup', onPointerUp);
+        state.activeDragIndex = null;
+      };
+
+      window.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('pointerup', onPointerUp);
+    }
+
+    /* ==========================================================================
+       PRACTICE & QUIZ ENGINE
+       ========================================================================== */
+    function generateQuestion() {
+      if (state.categories.length === 0) return null;
+
+      const types = ['highest', 'lowest', 'total', 'difference'];
+      const qType = types[Math.floor(Math.random() * types.length)];
+      const stats = getStats();
+
+      let qText = '';
+      let correctAnswer = '';
+      let choices = [];
+
+      if (qType === 'highest') {
+        qText = 'Which category has the HIGHEST value?';
+        const highestCat = state.categories.reduce((max, c) => c.val1 > max.val1 ? c : max, state.categories[0]);
+        correctAnswer = highestCat.label;
+        choices = state.categories.map(c => c.label);
+      } else if (qType === 'lowest') {
+        qText = 'Which category has the LOWEST value?';
+        const lowestCat = state.categories.reduce((min, c) => c.val1 < min.val1 ? c : min, state.categories[0]);
+        correctAnswer = lowestCat.label;
+        choices = state.categories.map(c => c.label);
+      } else if (qType === 'total') {
+        qText = 'What is the TOTAL sum of all categories?';
+        correctAnswer = stats.total.toString();
+        choices = [
+          stats.total.toString(),
+          (stats.total + 5).toString(),
+          Math.max(0, stats.total - 4).toString(),
+          (stats.total + 10).toString()
+        ];
+      } else if (qType === 'difference') {
+        qText = 'What is the DIFFERENCE between the Highest and Lowest values?';
+        const diff = stats.max - stats.min;
+        correctAnswer = diff.toString();
+        choices = [
+          diff.toString(),
+          (diff + 2).toString(),
+          Math.max(0, diff - 3).toString(),
+          (diff + 5).toString()
+        ];
+      }
+
+      // Shuffle choices
+      choices = [...new Set(choices)].sort(() => Math.random() - 0.5);
+
+      return { qText, correctAnswer, choices };
+    }
+
+    function startPracticeMode() {
+      state.mode = 'practice';
+      const question = generateQuestion();
+      if (!question) return;
+
+      state.currentQuestion = question;
+      const banner = document.getElementById('interactiveBanner');
+      banner.style.display = 'flex';
+
+      document.getElementById('quizTitle').textContent = '🎯 Practice Question';
+      document.getElementById('quizQuestionText').textContent = question.qText;
+
+      const optionsContainer = document.getElementById('quizOptionsContainer');
+      optionsContainer.innerHTML = '';
+
+      question.choices.forEach(choice => {
+        const btn = document.createElement('button');
+        btn.className = 'quiz-opt-btn';
+        btn.textContent = choice;
+        btn.onclick = () => checkAnswer(choice);
+        optionsContainer.appendChild(btn);
+      });
+    }
+
+    function checkAnswer(selected) {
+      if (!state.currentQuestion) return;
+
+      if (selected === state.currentQuestion.correctAnswer) {
+        sound.correct();
+        state.quizScore += 10;
+        state.quizStars += 1;
+        launchConfetti();
+        alert('🎉 Correct! Great job!');
+      } else {
+        sound.wrong();
+        alert(`❌ Oops! The correct answer was ${state.currentQuestion.correctAnswer}`);
+      }
+
+      document.getElementById('quizScoreText').textContent = `Score: ${state.quizScore} | Stars: ⭐ ${state.quizStars}`;
+      startPracticeMode();
+    }
+
+    /* ==========================================================================
+       ACTIONS & EVENT HANDLERS
+       ========================================================================== */
+    function addCategory() {
+      const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4'];
+      const newIdx = state.categories.length + 1;
+      state.categories.push({
+        label: `Item ${newIdx}`,
+        val1: Math.floor(Math.random() * 12) + 3,
+        val2: Math.floor(Math.random() * 10) + 2,
+        color: colors[newIdx % colors.length]
+      });
+      sound.pop();
+      renderAll();
+    }
+
+    function deleteCategory(index) {
+      state.categories.splice(index, 1);
+      sound.click();
+      renderAll();
+    }
+
+    function randomizeData() {
+      state.categories.forEach(c => {
+        c.val1 = Math.floor(Math.random() * 18) + 2;
+      });
+      sound.fanfare();
+      renderAll();
+    }
+
+    function clearData() {
+      state.categories = [];
+      sound.click();
+      renderAll();
+    }
+
+    function renderAll() {
+      updateAnalysisUI();
+      renderTable();
+      renderSVGGraph();
+    }
+
+    /* ==========================================================================
+       INITIALIZATION & BINDINGS
+       ========================================================================== */
+    document.addEventListener('DOMContentLoaded', () => {
+      renderAll();
+
+      // Control bindings
+      document.getElementById('quickAddBtn').onclick = addCategory;
+      document.getElementById('addCategoryBtn').onclick = addCategory;
+      document.getElementById('randomDataBtn').onclick = randomizeData;
+      document.getElementById('clearDataBtn').onclick = clearData;
+      document.getElementById('practiceModeBtn').onclick = startPracticeMode;
+      document.getElementById('quizModeBtn').onclick = startPracticeMode;
+
+      // New Graph Button
+      document.getElementById('newGraphBtn').onclick = () => {
+        state.categories = [
+          { label: 'Category A', val1: 10, val2: 5, color: '#3B82F6' },
+          { label: 'Category B', val1: 15, val2: 8, color: '#10B981' },
+          { label: 'Category C', val1: 7, val2: 12, color: '#F59E0B' }
+        ];
+        renderAll();
+      };
+
+      // Dropdowns & Checkboxes
+      document.getElementById('graphTypeSelect').onchange = (e) => {
+        state.graphType = e.target.value;
+        renderAll();
+      };
+
+      document.getElementById('scaleSelect').onchange = (e) => {
+        state.scaleStep = e.target.value;
+        renderAll();
+      };
+
+      document.getElementById('toggleGridCheck').onchange = (e) => {
+        state.showGrid = e.target.checked;
+        renderSVGGraph();
+      };
+
+      document.getElementById('toggleValuesCheck').onchange = (e) => {
+        state.showValues = e.target.checked;
+        renderSVGGraph();
+      };
+
+      // Theme & Sound Toggle
+      document.getElementById('themeToggleBtn').onclick = () => {
+        const isDark = document.body.getAttribute('data-theme') === 'dark';
+        document.body.setAttribute('data-theme', isDark ? 'light' : 'dark');
+        sound.click();
+      };
+
+      document.getElementById('soundToggleBtn').onclick = () => {
+        sound.enabled = !sound.enabled;
+        document.getElementById('soundToggleBtn').textContent = sound.enabled ? '🔊' : '🔇';
+      };
+
+      // Print Button
+      document.getElementById('printBtn').onclick = () => {
+        window.print();
+      };
+
+      // Modals Logic
+      const templatesModal = document.getElementById('templatesModal');
+      document.getElementById('templatesBtn').onclick = () => {
+        const grid = document.getElementById('templatesGrid');
+        grid.innerHTML = '';
+        PRESET_TEMPLATES.forEach(tpl => {
+          const item = document.createElement('div');
+          item.className = 'template-item';
+          item.innerHTML = `<h4>${tpl.title}</h4><p>${tpl.desc}</p>`;
+          item.onclick = () => {
+            state.categories = JSON.parse(JSON.stringify(tpl.data));
+            templatesModal.style.display = 'none';
+            sound.pop();
+            renderAll();
+          };
+          grid.appendChild(item);
+        });
+        templatesModal.style.display = 'flex';
+      };
+
+      document.getElementById('closeTemplatesBtn').onclick = () => {
+        templatesModal.style.display = 'none';
+      };
+
+      // Teacher Tools Modal
+      const teacherModal = document.getElementById('teacherModal');
+      document.getElementById('teacherToolsBtn').onclick = () => {
+        teacherModal.style.display = 'flex';
+      };
+      document.getElementById('closeTeacherBtn').onclick = () => {
+        teacherModal.style.display = 'none';
+      };
+
+      document.getElementById('lockDraggingCheck').onchange = (e) => {
+        state.lockDragging = e.target.checked;
+        renderSVGGraph();
+      };
+
+      document.getElementById('hideLabelsCheck').onchange = (e) => {
+        state.hideLabels = e.target.checked;
+        renderSVGGraph();
+      };
+
+      document.getElementById('generateWorksheetBtn').onclick = () => {
+        teacherModal.style.display = 'none';
+        window.print();
+      };
+
+      // Help Modal
+      const helpModal = document.getElementById('helpModal');
+      document.getElementById('helpBtn').onclick = () => {
+        helpModal.style.display = 'flex';
+      };
+      document.getElementById('closeHelpBtn').onclick = () => {
+        helpModal.style.display = 'none';
+      };
+    });
+  </script>
+</body>
+</html>

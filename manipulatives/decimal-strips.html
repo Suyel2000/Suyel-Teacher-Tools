@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Decimal Strips Manipulative</title>
+  <style>
+    :root {
+      --bg-primary: #f4f6f9;
+      --bg-card: #ffffff;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --border-color: #cbd5e1;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --accent: #8b5cf6;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --strip-bg: #e2e8f0;
+      --strip-border: #94a3b8;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --radius: 12px;
+      --font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    [data-theme="dark"] {
+      --bg-primary: #0f172a;
+      --bg-card: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: #334155;
+      --strip-bg: #334155;
+      --strip-border: #475569;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    /* Header & Top Bar */
+    header {
+      background-color: var(--bg-card);
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: var(--shadow);
+      border-bottom: 1px solid var(--border-color);
+      z-index: 10;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .brand-title svg {
+      width: 28px;
+      height: 28px;
+      fill: currentColor;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .btn {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    .btn:hover {
+      background-color: var(--border-color);
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary { background-color: var(--primary); color: white; border-color: var(--primary); }
+    .btn-primary:hover { background-color: var(--primary-hover); }
+
+    .btn-success { background-color: var(--success); color: white; border-color: var(--success); }
+    .btn-warning { background-color: var(--warning); color: white; border-color: var(--warning); }
+    .btn-danger { background-color: var(--danger); color: white; border-color: var(--danger); }
+    .btn-accent { background-color: var(--accent); color: white; border-color: var(--accent); }
+
+    .btn svg { width: 16px; height: 16px; fill: currentColor; }
+
+    /* Main Container */
+    .app-container {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 16px;
+      padding: 16px;
+      flex: 1;
+      max-width: 1600px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    @media (max-width: 1024px) {
+      .app-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Workspace Left Side */
+    .workspace {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card {
+      background-color: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border-color);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text-main);
+    }
+
+    .card-header-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    /* Division Selector Controls */
+    .division-selector {
+      display: flex;
+      background-color: var(--bg-primary);
+      padding: 3px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .division-btn {
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .division-btn.active {
+      background-color: var(--bg-card);
+      color: var(--primary);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    /* Strips Container */
+    .strips-area {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 320px;
+    }
+
+    .strip-wrapper {
+      background-color: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+      transition: border-color 0.2s;
+    }
+
+    .strip-wrapper.selected {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+    }
+
+    .strip-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+    }
+
+    .strip-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+    }
+
+    .strip-badge {
+      background-color: var(--primary);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+    }
+
+    .strip-overflow-badge {
+      background-color: var(--danger);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      animation: pulse 1s infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { opacity: 0.8; }
+      to { opacity: 1; transform: scale(1.05); }
+    }
+
+    /* SVG Track & Drag Drop Area */
+    .strip-track-container {
+      position: relative;
+      width: 100%;
+      height: 56px;
+      background-color: var(--strip-bg);
+      border: 2px dashed var(--strip-border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .strip-track-svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .strip-tiles-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+    }
+
+    .tile-on-strip {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-weight: 700;
+      font-size: 0.8rem;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+      position: relative;
+      border-right: 1px solid rgba(255,255,255,0.4);
+      cursor: grab;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .tile-on-strip:active { cursor: grabbing; }
+
+    .tile-on-strip .remove-tile-btn {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.4);
+      color: white;
+      font-size: 10px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .tile-on-strip:hover .remove-tile-btn {
+      display: flex;
+    }
+
+    /* Tiles Palette Drawer */
+    .palette-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+      gap: 10px;
+      max-height: 220px;
+      overflow-y: auto;
+      padding: 4px;
+    }
+
+    .palette-tile {
+      height: 54px;
+      border-radius: 8px;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      cursor: grab;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+      border: 1px solid rgba(255,255,255,0.2);
+      touch-action: none;
+    }
+
+    .palette-tile:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .palette-tile:active {
+      cursor: grabbing;
+      transform: scale(0.98);
+    }
+
+    .tile-dec { font-size: 0.9rem; line-height: 1; }
+    .tile-sub { font-size: 0.65rem; opacity: 0.9; margin-top: 2px; font-weight: 500; }
+
+    /* Side Panel Tabs */
+    .side-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .tabs {
+      display: flex;
+      background-color: var(--bg-primary);
+      padding: 4px;
+      border-radius: 8px;
+      gap: 2px;
+      border: 1px solid var(--border-color);
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 8px 4px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 700;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      background-color: var(--bg-card);
+      color: var(--primary);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .tab-content {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .tab-content.active {
+      display: flex;
+    }
+
+    /* Place Value Breakdown */
+    .place-value-box {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      text-align: center;
+    }
+
+    .place-card {
+      background-color: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 10px 4px;
+    }
+
+    .place-val {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .place-lbl {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    /* Visual 10x10 Grid */
+    .grid-visualizer {
+      width: 100%;
+      aspect-ratio: 1;
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      grid-template-rows: repeat(10, 1fr);
+      gap: 1px;
+      background-color: var(--border-color);
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .grid-cell {
+      background-color: var(--bg-card);
+      transition: background-color 0.2s;
+    }
+
+    .grid-cell.filled {
+      background-color: var(--accent);
+    }
+
+    /* Number Line */
+    .number-line-svg {
+      width: 100%;
+      height: 70px;
+    }
+
+    /* Practice & Quiz Task Styling */
+    .task-card {
+      background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(139,92,246,0.1));
+      border: 1px solid rgba(59,130,246,0.3);
+      border-radius: 10px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .task-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--primary);
+      font-weight: 800;
+    }
+
+    .task-prompt {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .quiz-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .quiz-opt-btn {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background-color: var(--bg-card);
+      color: var(--text-main);
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .quiz-opt-btn:hover {
+      border-color: var(--primary);
+      background-color: rgba(59,130,246,0.05);
+    }
+
+    .quiz-opt-btn.correct {
+      background-color: rgba(16,185,129,0.2);
+      border-color: var(--success);
+      color: var(--success);
+    }
+
+    .quiz-opt-btn.incorrect {
+      background-color: rgba(239,68,68,0.2);
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    /* Modals */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-body {
+      background-color: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 24px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    .close-modal-btn {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    /* Floating Drag Element */
+    #drag-ghost {
+      position: fixed;
+      pointer-events: none;
+      z-index: 1000;
+      opacity: 0.9;
+      transform: translate(-50%, -50%);
+      display: none;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      border-radius: 8px;
+    }
+
+    /* Confetti Canvas */
+    #confetti-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    /* Drop indicator overlay on strip */
+    .strip-track-container.drag-over {
+      border-color: var(--primary);
+      background-color: rgba(59,130,246,0.15);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Confetti Canvas -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- Drag Ghost element -->
+  <div id="drag-ghost"></div>
+
+  <!-- Header & Toolbar -->
+  <header>
+    <div class="brand-title">
+      <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+      <span>Decimal Strips Manipulative</span>
+    </div>
+
+    <div class="toolbar">
+      <button class="btn btn-primary" id="btn-add-strip" title="Add Strip">➕ Add Strip</button>
+      <button class="btn" id="btn-remove-strip" title="Remove Strip">➖ Strip</button>
+      <button class="btn btn-danger" id="btn-clear-all" title="Clear All">🗑 Clear</button>
+      <button class="btn" id="btn-undo" title="Undo">↩ Undo</button>
+      <button class="btn" id="btn-redo" title="Redo">↪ Redo</button>
+      <button class="btn btn-accent" id="btn-random" title="Random Decimals">🎲 Random</button>
+      <button class="btn" id="btn-toggle-grid" title="Show/Hide Grid">📏 Grid</button>
+      <button class="btn" id="btn-toggle-sound" title="Sound Effects">🔊 Sound ON</button>
+      <button class="btn" id="btn-toggle-theme" title="Dark/Light Mode">🌙 Theme</button>
+      <button class="btn btn-success" id="btn-help" title="Help Guide">❓ Help</button>
+    </div>
+  </header>
+
+  <!-- Main Layout -->
+  <div class="app-container">
+    
+    <!-- Workspace -->
+    <div class="workspace">
+      
+      <!-- Workspace Card -->
+      <div class="card">
+        <div class="card-header">
+          <span>Decimal Strips Workspace</span>
+          <div class="card-header-actions">
+            <span style="font-size: 0.8rem; color: var(--text-muted); font-weight:600;">Global Divisions:</span>
+            <div class="division-selector" id="global-division-selector">
+              <button class="division-btn" data-div="1">Whole</button>
+              <button class="division-btn active" data-div="10">1/10</button>
+              <button class="division-btn" data-div="100">1/100</button>
+              <button class="division-btn" data-div="1000">1/1000</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Strips Stack Container -->
+        <div class="strips-area" id="strips-container">
+          <!-- Strips dynamically injected here -->
+        </div>
+      </div>
+
+      <!-- Tile Palette Card -->
+      <div class="card">
+        <div class="card-header">
+          <span>Decimal Tiles Drawer</span>
+          <span style="font-size: 0.75rem; color: var(--text-muted);">Drag tiles onto any strip above</span>
+        </div>
+        <div class="palette-grid" id="palette-container">
+          <!-- Tiles injected dynamically -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Side Panel Inspector -->
+    <div class="side-panel">
+      
+      <!-- Tabs Header -->
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="inspector">Inspector</button>
+        <button class="tab-btn" data-tab="grid">10x10 Grid</button>
+        <button class="tab-btn" data-tab="practice">Practice</button>
+        <button class="tab-btn" data-tab="quiz">Quiz</button>
+      </div>
+
+      <!-- Tab Content 1: Inspector -->
+      <div class="tab-content active" id="tab-inspector">
+        <div class="card">
+          <div class="card-header">Strip Equivalents</div>
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="text-align:center; padding:12px; background:var(--bg-primary); border-radius:8px;">
+              <div style="font-size: 2rem; font-weight: 800; color: var(--primary);" id="inspect-decimal">0.00</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted); font-weight:700;" id="inspect-words">Zero Wholes</div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <div style="text-align:center; padding:10px; background:var(--bg-primary); border-radius:8px;">
+                <div style="font-size: 0.75rem; color:var(--text-muted); font-weight:700;">FRACTION</div>
+                <div style="font-size: 1.1rem; font-weight:800; color:var(--accent);" id="inspect-fraction">0 / 1</div>
+              </div>
+              <div style="text-align:center; padding:10px; background:var(--bg-primary); border-radius:8px;">
+                <div style="font-size: 0.75rem; color:var(--text-muted); font-weight:700;">PERCENTAGE</div>
+                <div style="font-size: 1.1rem; font-weight:800; color:var(--success);" id="inspect-percent">0%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">Place Value Breakdown</div>
+          <div class="place-value-box">
+            <div class="place-card">
+              <div class="place-val" id="pv-tenths">0</div>
+              <div class="place-lbl">Tenths</div>
+            </div>
+            <div class="place-card">
+              <div class="place-val" id="pv-hundredths">0</div>
+              <div class="place-lbl">Hundredths</div>
+            </div>
+            <div class="place-card">
+              <div class="place-val" id="pv-thousandths">0</div>
+              <div class="place-lbl">Thousandths</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">Number Line (0.0 to 1.0)</div>
+          <svg class="number-line-svg" id="number-line-svg" viewBox="0 0 300 60">
+            <!-- Rendered in JS -->
+          </svg>
+        </div>
+      </div>
+
+      <!-- Tab Content 2: 10x10 Grid -->
+      <div class="tab-content" id="tab-grid">
+        <div class="card">
+          <div class="card-header">Hundredths Visual Grid</div>
+          <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:10px;">
+            100 total squares = 1.0 Whole. Each square = 0.01 (1 Hundredth).
+          </p>
+          <div class="grid-visualizer" id="hundredths-grid">
+            <!-- 100 cells created via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Content 3: Practice Mode -->
+      <div class="tab-content" id="tab-practice">
+        <div class="card">
+          <div class="card-header">
+            <span>Practice Challenges</span>
+            <span style="font-size:0.8rem; font-weight:700; color:var(--success);" id="practice-score">Score: 0</span>
+          </div>
+          <div class="task-card">
+            <div class="task-title">Current Challenge</div>
+            <div class="task-prompt" id="practice-prompt">Build 0.75 on any strip</div>
+            <button class="btn btn-primary" id="btn-check-practice" style="margin-top:8px;">Check Answer</button>
+            <div id="practice-feedback" style="font-size:0.85rem; font-weight:700; text-align:center;"></div>
+          </div>
+          <button class="btn btn-accent" id="btn-next-practice" style="margin-top:10px; width:100%;">Next Challenge 🎲</button>
+        </div>
+      </div>
+
+      <!-- Tab Content 4: Quiz Mode -->
+      <div class="tab-content" id="tab-quiz">
+        <div class="card">
+          <div class="card-header">
+            <span>Decimal Quiz</span>
+            <span style="font-size:0.8rem; font-weight:700; color:var(--accent);" id="quiz-score">Score: 0/0</span>
+          </div>
+          <div class="task-card">
+            <div class="task-title" id="quiz-q-num">Question 1</div>
+            <div class="task-prompt" id="quiz-question">Which decimal is greater?</div>
+            <div class="quiz-options" id="quiz-options-container">
+              <!-- Quiz options injected here -->
+            </div>
+          </div>
+          <button class="btn btn-primary" id="btn-next-quiz" style="margin-top:10px; width:100%; display:none;">Next Question ➔</button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Help Modal -->
+  <div class="modal-overlay" id="help-modal">
+    <div class="modal-body">
+      <div class="modal-header">
+        <span>How to Use Decimal Strips</span>
+        <button class="close-modal-btn" id="close-modal">&times;</button>
+      </div>
+      <div style="font-size: 0.9rem; line-height: 1.5; color: var(--text-main); display:flex; flex-direction:column; gap:10px;">
+        <p><strong>🎯 Main Objective:</strong> Explore decimal values, fractions, percentages, and place value through interactive visual strips.</p>
+        <p><strong>1. Drag & Drop Tiles:</strong> Drag colorful decimal tiles from the bottom drawer onto any decimal strip.</p>
+        <p><strong>2. Change Divisions:</strong> Toggle between Whole, Tenths (0.1), Hundredths (0.01), and Thousandths (0.001) grid overlays to visualize precision.</p>
+        <p><strong>3. Observe Overflow:</strong> If the total sum on a strip exceeds 1.0, the total badge turns red with an overflow warning!</p>
+        <p><strong>4. Side Inspector:</strong> Select any strip to see its equivalent Fraction, Percentage, Expanded Place Value, and 10x10 Visual Grid representation.</p>
+        <p><strong>5. Interactive Modes:</strong> Switch to Practice or Quiz tabs on the right side to test your decimal math skills with interactive scoring!</p>
+      </div>
+      <button class="btn btn-primary" id="btn-close-modal-ok" style="align-self:flex-end;">Got it!</button>
+    </div>
+  </div>
+
+  <!-- Application Logic JS -->
+  <script>
+    // --- TILE PALETTE DATA ---
+    const TILE_DATA = [
+      { val: 1.0, frac: '1/1', pct: '100%', color: '#e63946' },
+      { val: 0.9, frac: '9/10', pct: '90%', color: '#f72585' },
+      { val: 0.8, frac: '4/5', pct: '80%', color: '#7209b7' },
+      { val: 0.75, frac: '3/4', pct: '75%', color: '#560bad' },
+      { val: 0.7, frac: '7/10', pct: '70%', color: '#3a0ca3' },
+      { val: 0.6, frac: '3/5', pct: '60%', color: '#4361ee' },
+      { val: 0.5, frac: '1/2', pct: '50%', color: '#4cc9f0' },
+      { val: 0.4, frac: '2/5', pct: '40%', color: '#06d6a0' },
+      { val: 0.3, frac: '3/10', pct: '30%', color: '#2a9d8f' },
+      { val: 0.25, frac: '1/4', pct: '25%', color: '#10b981' },
+      { val: 0.2, frac: '1/5', pct: '20%', color: '#84cc16' },
+      { val: 0.125, frac: '1/8', pct: '12.5%', color: '#f59e0b' },
+      { val: 0.1, frac: '1/10', pct: '10%', color: '#f97316' },
+      { val: 0.05, frac: '1/20', pct: '5%', color: '#ef4444' },
+      { val: 0.01, frac: '1/100', pct: '1%', color: '#d97706' },
+      { val: 0.001, frac: '1/1000', pct: '0.1%', color: '#8b5cf6' }
+    ];
+
+    // --- APPLICATION STATE ---
+    let state = {
+      strips: [
+        { id: 1, division: 10, tiles: [{ val: 0.5, frac: '1/2', pct: '50%', color: '#4cc9f0' }, { val: 0.25, frac: '1/4', pct: '25%', color: '#10b981' }] },
+        { id: 2, division: 10, tiles: [{ val: 0.4, frac: '2/5', pct: '40%', color: '#06d6a0' }] },
+        { id: 3, division: 10, tiles: [] },
+        { id: 4, division: 10, tiles: [] }
+      ],
+      selectedStripIndex: 0,
+      showGrid: true,
+      soundOn: true,
+      theme: 'light',
+      globalDivision: 10,
+      undoStack: [],
+      redoStack: []
+    };
+
+    // Practice State
+    let practiceState = {
+      score: 0,
+      currentTask: null
+    };
+
+    // Quiz State
+    let quizState = {
+      score: 0,
+      total: 0,
+      currentQ: 0,
+      answered: false
+    };
+
+    // --- WEB AUDIO API SYNTHESIZER ---
+    const AudioEngine = {
+      ctx: null,
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) this.ctx = new AudioContext();
+        }
+      },
+      playPop() {
+        if (!state.soundOn) return;
+        this.init(); if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(); osc.stop(this.ctx.currentTime + 0.08);
+      },
+      playSnap() {
+        if (!state.soundOn) return;
+        this.init(); if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(); osc.stop(this.ctx.currentTime + 0.1);
+      },
+      playSuccess() {
+        if (!state.soundOn) return;
+        this.init(); if (!this.ctx) return;
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+        notes.forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime + idx * 0.08);
+          gain.gain.setValueAtTime(0.2, this.ctx.currentTime + idx * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + idx * 0.08 + 0.3);
+          osc.connect(gain); gain.connect(this.ctx.destination);
+          osc.start(this.ctx.currentTime + idx * 0.08);
+          osc.stop(this.ctx.currentTime + idx * 0.08 + 0.3);
+        });
+      },
+      playError() {
+        if (!state.soundOn) return;
+        this.init(); if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(180, this.ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(110, this.ctx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(); osc.stop(this.ctx.currentTime + 0.2);
+      }
+    };
+
+    // --- UNDO / REDO HISTORY ---
+    function saveHistory() {
+      state.undoStack.push(JSON.stringify(state.strips));
+      if (state.undoStack.length > 20) state.undoStack.shift();
+      state.redoStack = [];
+    }
+
+    function undo() {
+      if (state.undoStack.length === 0) return;
+      state.redoStack.push(JSON.stringify(state.strips));
+      state.strips = JSON.parse(state.undoStack.pop());
+      renderStrips();
+      updateInspector();
+      AudioEngine.playPop();
+    }
+
+    function redo() {
+      if (state.redoStack.length === 0) return;
+      state.undoStack.push(JSON.stringify(state.strips));
+      state.strips = JSON.parse(state.redoStack.pop());
+      renderStrips();
+      updateInspector();
+      AudioEngine.playPop();
+    }
+
+    // --- DOM INITIALIZATION ---
+    document.addEventListener('DOMContentLoaded', () => {
+      initPalette();
+      renderStrips();
+      initSideTabs();
+      initGridVisualizer();
+      updateInspector();
+      initPracticeTask();
+      initQuizQuestion();
+      setupEventListeners();
+    });
+
+    // Render palette tiles
+    function initPalette() {
+      const container = document.getElementById('palette-container');
+      container.innerHTML = '';
+      TILE_DATA.forEach((tile) => {
+        const div = document.createElement('div');
+        div.className = 'palette-tile';
+        div.style.backgroundColor = tile.color;
+        div.setAttribute('data-tile', JSON.stringify(tile));
+        div.innerHTML = `
+          <span class="tile-dec">${tile.val}</span>
+          <span class="tile-sub">${tile.frac} | ${tile.pct}</span>
+        `;
+        
+        // Pointer events for drag and drop
+        div.addEventListener('pointerdown', (e) => startTileDrag(e, tile, null));
+        container.appendChild(div);
+      });
+    }
+
+    // Render workspace strips
+    function renderStrips() {
+      const container = document.getElementById('strips-container');
+      container.innerHTML = '';
+
+      state.strips.forEach((strip, index) => {
+        const sum = strip.tiles.reduce((acc, t) => acc + t.val, 0);
+        const roundedSum = Math.round(sum * 1000) / 1000;
+        const isOverflow = roundedSum > 1.0;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = `strip-wrapper ${index === state.selectedStripIndex ? 'selected' : ''}`;
+        wrapper.addEventListener('click', () => {
+          state.selectedStripIndex = index;
+          renderStrips();
+          updateInspector();
+        });
+
+        // Header info
+        const header = document.createElement('div');
+        header.className = 'strip-header';
+        
+        const info = document.createElement('div');
+        info.className = 'strip-info';
+        info.innerHTML = `
+          <span>Strip ${index + 1}</span>
+          <span class="${isOverflow ? 'strip-overflow-badge' : 'strip-badge'}">
+            Total: ${roundedSum} ${isOverflow ? '(OVERFLOW!)' : ''}
+          </span>
+        `;
+
+        const controls = document.createElement('div');
+        controls.className = 'card-header-actions';
+        controls.innerHTML = `
+          <button class="btn" style="padding:2px 6px; font-size:0.7rem;" onclick="clearStrip(${index}, event)">Clear</button>
+        `;
+
+        header.appendChild(info);
+        header.appendChild(controls);
+        wrapper.appendChild(header);
+
+        // Track container
+        const trackContainer = document.createElement('div');
+        trackContainer.className = 'strip-track-container';
+        trackContainer.setAttribute('data-strip-index', index);
+
+        // Grid overlay SVG
+        if (state.showGrid) {
+          const svg = createGridSVG(strip.division);
+          trackContainer.appendChild(svg);
+        }
+
+        // Tile elements layer
+        const tilesLayer = document.createElement('div');
+        tilesLayer.className = 'strip-tiles-layer';
+
+        strip.tiles.forEach((t, tIdx) => {
+          const tileEl = document.createElement('div');
+          tileEl.className = 'tile-on-strip';
+          tileEl.style.width = `${(t.val / 1.0) * 100}%`;
+          tileEl.style.backgroundColor = t.color;
+          tileEl.innerHTML = `
+            <span>${t.val}</span>
+            <div class="remove-tile-btn" title="Remove">&times;</div>
+          `;
+
+          // Remove tile click
+          tileEl.querySelector('.remove-tile-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            saveHistory();
+            strip.tiles.splice(tIdx, 1);
+            renderStrips();
+            updateInspector();
+            AudioEngine.playPop();
+          });
+
+          // Drag existing tile to re-order or move
+          tileEl.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            startTileDrag(e, t, { stripIndex: index, tileIndex: tIdx });
+          });
+
+          tilesLayer.appendChild(tileEl);
+        });
+
+        trackContainer.appendChild(tilesLayer);
+        wrapper.appendChild(trackContainer);
+        container.appendChild(wrapper);
+      });
+    }
+
+    // Create background SVG divisions grid
+    function createGridSVG(divisions) {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('class', 'strip-track-svg');
+      svg.setAttribute('width', '100%');
+      svg.setAttribute('height', '100%');
+
+      const count = divisions;
+      for (let i = 1; i < count; i++) {
+        const xPercent = (i / count) * 100;
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', `${xPercent}%`);
+        line.setAttribute('y1', '0');
+        line.setAttribute('x2', `${xPercent}%`);
+        line.setAttribute('y2', '100%');
+        line.setAttribute('stroke', i % (count / 10) === 0 ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)');
+        line.setAttribute('stroke-width', i % (count / 10) === 0 ? '1.5' : '1');
+        if (count === 1000 && i % 10 !== 0) continue; // optimize 1000 grid rendering
+        svg.appendChild(line);
+      }
+      return svg;
+    }
+
+    // --- DRAG AND DROP ENGINE (Pointer Events) ---
+    let dragData = null;
+
+    function startTileDrag(e, tile, source) {
+      dragData = {
+        tile,
+        source,
+        startX: e.clientX,
+        startY: e.clientY
+      };
+
+      const ghost = document.getElementById('drag-ghost');
+      ghost.style.backgroundColor = tile.color;
+      ghost.style.color = 'white';
+      ghost.style.padding = '8px 16px';
+      ghost.style.fontWeight = '700';
+      ghost.style.fontSize = '0.9rem';
+      ghost.innerText = `${tile.val} (${tile.frac})`;
+      ghost.style.display = 'block';
+      ghost.style.left = `${e.clientX}px`;
+      ghost.style.top = `${e.clientY}px`;
+
+      AudioEngine.playPop();
+
+      window.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('pointerup', onPointerUp);
+    }
+
+    function onPointerMove(e) {
+      if (!dragData) return;
+      const ghost = document.getElementById('drag-ghost');
+      ghost.style.left = `${e.clientX}px`;
+      ghost.style.top = `${e.clientY}px`;
+
+      // Highlight target strip
+      document.querySelectorAll('.strip-track-container').forEach((el) => {
+        const rect = el.getBoundingClientRect();
+        if (e.clientX >= rect.left && e.clientX <= rect.right &&
+            e.clientY >= rect.top && e.clientY <= rect.bottom) {
+          el.classList.add('drag-over');
+        } else {
+          el.classList.remove('drag-over');
+        }
+      });
+    }
+
+    function onPointerUp(e) {
+      if (!dragData) return;
+
+      const ghost = document.getElementById('drag-ghost');
+      ghost.style.display = 'none';
+
+      let droppedOnStripIndex = -1;
+
+      document.querySelectorAll('.strip-track-container').forEach((el) => {
+        el.classList.remove('drag-over');
+        const rect = el.getBoundingClientRect();
+        if (e.clientX >= rect.left && e.clientX <= rect.right &&
+            e.clientY >= rect.top && e.clientY <= rect.bottom) {
+          droppedOnStripIndex = parseInt(el.getAttribute('data-strip-index'));
+        }
+      });
+
+      if (droppedOnStripIndex >= 0) {
+        saveHistory();
+
+        // If moved from another strip
+        if (dragData.source) {
+          state.strips[dragData.source.stripIndex].tiles.splice(dragData.source.tileIndex, 1);
+        }
+
+        // Add to new strip
+        state.strips[droppedOnStripIndex].tiles.push({ ...dragData.tile });
+        state.selectedStripIndex = droppedOnStripIndex;
+
+        AudioEngine.playSnap();
+        renderStrips();
+        updateInspector();
+      } else if (dragData.source) {
+        // Dragged off strip = remove tile
+        saveHistory();
+        state.strips[dragData.source.stripIndex].tiles.splice(dragData.source.tileIndex, 1);
+        AudioEngine.playPop();
+        renderStrips();
+        updateInspector();
+      }
+
+      dragData = null;
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    }
+
+    function clearStrip(index, e) {
+      if (e) e.stopPropagation();
+      saveHistory();
+      state.strips[index].tiles = [];
+      renderStrips();
+      updateInspector();
+      AudioEngine.playPop();
+    }
+
+    // --- SIDE INSPECTOR & VISUALIZERS ---
+    function updateInspector() {
+      const currentStrip = state.strips[state.selectedStripIndex] || state.strips[0];
+      const sum = currentStrip.tiles.reduce((acc, t) => acc + t.val, 0);
+      const val = Math.round(sum * 1000) / 1000;
+
+      // Decimal & Fraction & Percent Readouts
+      document.getElementById('inspect-decimal').innerText = val.toFixed(3).replace(/\.?0+$/, '') || '0';
+      document.getElementById('inspect-fraction').innerText = decimalToFraction(val);
+      document.getElementById('inspect-percent').innerText = `${Math.round(val * 1000) / 10}%`;
+      document.getElementById('inspect-words').innerText = decimalToWords(val);
+
+      // Place Value Decomposition
+      const strVal = val.toFixed(3);
+      const parts = strVal.split('.');
+      const decimals = parts[1] || '000';
+
+      document.getElementById('pv-tenths').innerText = decimals[0] || '0';
+      document.getElementById('pv-hundredths').innerText = decimals[1] || '0';
+      document.getElementById('pv-thousandths').innerText = decimals[2] || '0';
+
+      // Update 10x10 Grid Shading
+      update10x10Grid(val);
+
+      // Update Number Line
+      updateNumberLine(val);
+    }
+
+    function decimalToFraction(val) {
+      if (val === 0) return '0 / 1';
+      const len = (val.toString().split('.')[1] || '').length;
+      let denominator = Math.pow(10, len);
+      let numerator = Math.round(val * denominator);
+
+      const gcd = (a, b) => b ? gcd(b, a % b) : a;
+      const divisor = gcd(numerator, denominator);
+
+      return `${numerator / divisor} / ${denominator / divisor}`;
+    }
+
+    function decimalToWords(val) {
+      if (val === 0) return 'Zero Wholes';
+      const tenths = Math.floor((val * 10) % 10);
+      const hundredths = Math.floor((val * 100) % 10);
+      const thousandths = Math.floor((val * 1000) % 10);
+
+      let parts = [];
+      if (tenths > 0) parts.push(`${tenths} Tenths`);
+      if (hundredths > 0) parts.push(`${hundredths} Hundredths`);
+      if (thousandths > 0) parts.push(`${thousandths} Thousandths`);
+
+      return parts.join(', ') || `${val} Wholes`;
+    }
+
+    // 10x10 Grid Visualizer
+    function initGridVisualizer() {
+      const grid = document.getElementById('hundredths-grid');
+      grid.innerHTML = '';
+      for (let i = 0; i < 100; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'grid-cell';
+        cell.setAttribute('id', `grid-cell-${i}`);
+        grid.appendChild(cell);
+      }
+    }
+
+    function update10x10Grid(val) {
+      const filledCount = Math.min(100, Math.round(val * 100));
+      for (let i = 0; i < 100; i++) {
+        const cell = document.getElementById(`grid-cell-${i}`);
+        if (cell) {
+          if (i < filledCount) cell.classList.add('filled');
+          else cell.classList.remove('filled');
+        }
+      }
+    }
+
+    // Number Line SVG Rendering
+    function updateNumberLine(val) {
+      const svg = document.getElementById('number-line-svg');
+      svg.innerHTML = '';
+
+      // Main axis line
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', '20'); line.setAttribute('y1', '30');
+      line.setAttribute('x2', '280'); line.setAttribute('y2', '30');
+      line.setAttribute('stroke', 'var(--text-main)');
+      line.setAttribute('stroke-width', '2');
+      svg.appendChild(line);
+
+      // Ticks (0.0 to 1.0)
+      for (let i = 0; i <= 10; i++) {
+        const x = 20 + (i / 10) * 260;
+        const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        tick.setAttribute('x1', x); tick.setAttribute('y1', '22');
+        tick.setAttribute('x2', x); tick.setAttribute('y2', '38');
+        tick.setAttribute('stroke', 'var(--text-main)');
+        tick.setAttribute('stroke-width', '1.5');
+        svg.appendChild(tick);
+
+        const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        txt.setAttribute('x', x); txt.setAttribute('y', '52');
+        txt.setAttribute('text-anchor', 'middle');
+        txt.setAttribute('font-size', '10');
+        txt.setAttribute('fill', 'var(--text-muted)');
+        txt.textContent = (i / 10).toFixed(1);
+        svg.appendChild(txt);
+      }
+
+      // Marker for active value
+      const clampedVal = Math.min(1.0, Math.max(0.0, val));
+      const markerX = 20 + clampedVal * 260;
+
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', markerX); circle.setAttribute('cy', '30');
+      circle.setAttribute('r', '7');
+      circle.setAttribute('fill', 'var(--accent)');
+      circle.setAttribute('stroke', 'white');
+      circle.setAttribute('stroke-width', '2');
+      svg.appendChild(circle);
+    }
+
+    // --- SIDE TABS INTERACTION ---
+    function initSideTabs() {
+      document.querySelectorAll('.tab-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+          document.querySelectorAll('.tab-content').forEach((c) => c.classList.remove('active'));
+
+          btn.classList.add('active');
+          const tabId = `tab-${btn.getAttribute('data-tab')}`;
+          document.getElementById(tabId).classList.add('active');
+          AudioEngine.playPop();
+        });
+      });
+    }
+
+    // --- PRACTICE MODE MODULE ---
+    const PRACTICE_TASKS = [
+      { prompt: 'Build 0.75 on any strip', target: 0.75 },
+      { prompt: 'Represent 0.5 using 2 tiles', target: 0.5 },
+      { prompt: 'Build exactly 1.0 whole', target: 1.0 },
+      { prompt: 'Represent 0.35 on any strip', target: 0.35 },
+      { prompt: 'Build 0.125 on any strip', target: 0.125 }
+    ];
+
+    function initPracticeTask() {
+      const task = PRACTICE_TASKS[Math.floor(Math.random() * PRACTICE_TASKS.length)];
+      practiceState.currentTask = task;
+      document.getElementById('practice-prompt').innerText = task.prompt;
+      document.getElementById('practice-feedback').innerText = '';
+    }
+
+    document.getElementById('btn-check-practice').addEventListener('click', () => {
+      const match = state.strips.some((s) => {
+        const sum = s.tiles.reduce((acc, t) => acc + t.val, 0);
+        return Math.abs(sum - practiceState.currentTask.target) < 0.001;
+      });
+
+      const feedback = document.getElementById('practice-feedback');
+      if (match) {
+        feedback.innerText = '🎉 Correct! Awesome job!';
+        feedback.style.color = 'var(--success)';
+        practiceState.score += 10;
+        document.getElementById('practice-score').innerText = `Score: ${practiceState.score}`;
+        AudioEngine.playSuccess();
+        triggerConfetti();
+      } else {
+        feedback.innerText = '❌ Not quite. Keep building!';
+        feedback.style.color = 'var(--danger)';
+        AudioEngine.playError();
+      }
+    });
+
+    document.getElementById('btn-next-practice').addEventListener('click', () => {
+      initPracticeTask();
+      AudioEngine.playPop();
+    });
+
+    // --- QUIZ MODE MODULE ---
+    const QUIZ_QUESTIONS = [
+      { q: 'Which decimal is equivalent to 3/4?', opts: ['0.75', '0.34', '0.50', '0.80'], correct: 0 },
+      { q: 'Which decimal is greater?', opts: ['0.45', '0.54', '0.09', '0.40'], correct: 1 },
+      { q: 'What is 0.2 + 0.3?', opts: ['0.6', '0.5', '0.23', '0.05'], correct: 1 },
+      { q: 'Convert 1/10 to a decimal.', opts: ['0.01', '0.1', '1.0', '0.001'], correct: 1 },
+      { q: 'Which sum equals 1.0 whole?', opts: ['0.5 + 0.25', '0.75 + 0.25', '0.6 + 0.3', '0.8 + 0.1'], correct: 1 }
+    ];
+
+    function initQuizQuestion() {
+      quizState.answered = false;
+      const qData = QUIZ_QUESTIONS[quizState.currentQ % QUIZ_QUESTIONS.length];
+      document.getElementById('quiz-q-num').innerText = `Question ${quizState.currentQ + 1}`;
+      document.getElementById('quiz-question').innerText = qData.q;
+
+      const optsContainer = document.getElementById('quiz-options-container');
+      optsContainer.innerHTML = '';
+
+      qData.opts.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'quiz-opt-btn';
+        btn.innerText = opt;
+        btn.addEventListener('click', () => handleQuizAnswer(idx, qData.correct, btn));
+        optsContainer.appendChild(btn);
+      });
+
+      document.getElementById('btn-next-quiz').style.display = 'none';
+    }
+
+    function handleQuizAnswer(selectedIdx, correctIdx, btnEl) {
+      if (quizState.answered) return;
+      quizState.answered = true;
+      quizState.total++;
+
+      const allBtns = document.querySelectorAll('.quiz-opt-btn');
+
+      if (selectedIdx === correctIdx) {
+        btnEl.classList.add('correct');
+        quizState.score++;
+        AudioEngine.playSuccess();
+        triggerConfetti();
+      } else {
+        btnEl.classList.add('incorrect');
+        allBtns[correctIdx].classList.add('correct');
+        AudioEngine.playError();
+      }
+
+      document.getElementById('quiz-score').innerText = `Score: ${quizState.score}/${quizState.total}`;
+      document.getElementById('btn-next-quiz').style.display = 'block';
+    }
+
+    document.getElementById('btn-next-quiz').addEventListener('click', () => {
+      quizState.currentQ++;
+      initQuizQuestion();
+      AudioEngine.playPop();
+    });
+
+    // --- EVENT LISTENERS & TOOLBAR ---
+    function setupEventListeners() {
+      // Toolbar buttons
+      document.getElementById('btn-add-strip').addEventListener('click', () => {
+        saveHistory();
+        state.strips.push({ id: Date.now(), division: state.globalDivision, tiles: [] });
+        renderStrips();
+        updateInspector();
+        AudioEngine.playPop();
+      });
+
+      document.getElementById('btn-remove-strip').addEventListener('click', () => {
+        if (state.strips.length > 1) {
+          saveHistory();
+          state.strips.pop();
+          if (state.selectedStripIndex >= state.strips.length) {
+            state.selectedStripIndex = state.strips.length - 1;
+          }
+          renderStrips();
+          updateInspector();
+          AudioEngine.playPop();
+        }
+      });
+
+      document.getElementById('btn-clear-all').addEventListener('click', () => {
+        saveHistory();
+        state.strips.forEach((s) => s.tiles = []);
+        renderStrips();
+        updateInspector();
+        AudioEngine.playPop();
+      });
+
+      document.getElementById('btn-undo').addEventListener('click', undo);
+      document.getElementById('btn-redo').addEventListener('click', redo);
+
+      document.getElementById('btn-random').addEventListener('click', () => {
+        saveHistory();
+        state.strips.forEach((s) => {
+          s.tiles = [];
+          const count = Math.floor(Math.random() * 3) + 1;
+          for (let i = 0; i < count; i++) {
+            const randomTile = TILE_DATA[Math.floor(Math.random() * TILE_DATA.length)];
+            s.tiles.push({ ...randomTile });
+          }
+        });
+        renderStrips();
+        updateInspector();
+        AudioEngine.playPop();
+      });
+
+      document.getElementById('btn-toggle-grid').addEventListener('click', () => {
+        state.showGrid = !state.showGrid;
+        renderStrips();
+        AudioEngine.playPop();
+      });
+
+      document.getElementById('btn-toggle-sound').addEventListener('click', (e) => {
+        state.soundOn = !state.soundOn;
+        e.target.innerText = state.soundOn ? '🔊 Sound ON' : '🔇 Sound OFF';
+      });
+
+      document.getElementById('btn-toggle-theme').addEventListener('click', () => {
+        state.theme = state.theme === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', state.theme);
+        AudioEngine.playPop();
+      });
+
+      // Global division selector
+      document.querySelectorAll('#global-division-selector .division-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#global-division-selector .division-btn').forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+          const divVal = parseInt(btn.getAttribute('data-div'));
+          state.globalDivision = divVal;
+          state.strips.forEach((s) => s.division = divVal);
+          renderStrips();
+          AudioEngine.playPop();
+        });
+      });
+
+      // Help Modal
+      const modal = document.getElementById('help-modal');
+      document.getElementById('btn-help').addEventListener('click', () => {
+        modal.classList.add('active');
+        AudioEngine.playPop();
+      });
+      document.getElementById('close-modal').addEventListener('click', () => modal.classList.remove('active'));
+      document.getElementById('btn-close-modal-ok').addEventListener('click', () => modal.classList.remove('active'));
+    }
+
+    // --- CONFETTI FIREWORKS SYSTEM ---
+    function triggerConfetti() {
+      const canvas = document.getElementById('confetti-canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const particles = [];
+      const colors = ['#f43f5e', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899'];
+
+      for (let i = 0; i < 80; i++) {
+        particles.push({
+          x: canvas.width / 2,
+          y: canvas.height / 2,
+          vx: (Math.random() - 0.5) * 12,
+          vy: (Math.random() - 0.7) * 12,
+          size: Math.random() * 8 + 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          gravity: 0.25,
+          alpha: 1
+        });
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let active = false;
+
+        particles.forEach((p) => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += p.gravity;
+          p.alpha -= 0.015;
+
+          if (p.alpha > 0) {
+            active = true;
+            ctx.save();
+            ctx.globalAlpha = p.alpha;
+            ctx.fillStyle = p.color;
+            ctx.fillRect(p.x, p.y, p.size, p.size);
+            ctx.restore();
+          }
+        });
+
+        if (active) requestAnimationFrame(animate);
+        else ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+
+      animate();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interactive Tally Marks Manipulative</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --secondary: #059669;
+      --accent: #d97706;
+      --danger: #dc2626;
+      --tally-color: #1e3a8a;
+      --tally-slash: #e11d48;
+      --shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+      --radius: 16px;
+    }
+
+    [data-theme="dark"] {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+      --primary: #3b82f6;
+      --primary-hover: #60a5fa;
+      --secondary: #10b981;
+      --accent: #f59e0b;
+      --danger: #ef4444;
+      --tally-color: #60a5fa;
+      --tally-slash: #fb7185;
+      --shadow: 0 10px 25px -5px rgba(0,0,0,0.5);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      transition: background-color 0.3s, color 0.3s;
+      overflow-x: hidden;
+    }
+
+    header {
+      background: var(--card-bg);
+      border-bottom: 2px solid var(--border);
+      padding: 12px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      z-index: 10;
+    }
+
+    .title-group h1 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .btn {
+      background: var(--card-bg);
+      border: 2px solid var(--border);
+      color: var(--text);
+      padding: 8px 14px;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .btn:active {
+      transform: scale(0.95);
+    }
+
+    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-primary:hover { background: var(--primary-hover); color: #fff; }
+    .btn-success { background: var(--secondary); color: #fff; border-color: var(--secondary); }
+    .btn-danger { background: var(--danger); color: #fff; border-color: var(--danger); }
+    .btn-accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    .btn.active {
+      outline: 3px solid var(--primary);
+      background: rgba(37, 99, 235, 0.1);
+    }
+
+    main {
+      flex: 1;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .mode-banner {
+      background: var(--card-bg);
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 14px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+
+    .stat-card .label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-card .value {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: var(--primary);
+      margin-top: 4px;
+    }
+
+    .tally-container {
+      background: var(--card-bg);
+      border: 3px solid var(--border);
+      border-radius: var(--radius);
+      min-height: 340px;
+      padding: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      align-content: flex-start;
+      gap: 20px;
+      position: relative;
+      box-shadow: var(--shadow);
+      overflow-y: auto;
+      max-height: 500px;
+    }
+
+    .tally-group {
+      width: 110px;
+      height: 90px;
+      background: rgba(0,0,0,0.02);
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      padding: 5px;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .tally-group:hover {
+      transform: scale(1.05);
+    }
+
+    .tally-svg line {
+      stroke: var(--tally-color);
+      stroke-width: 6;
+      stroke-linecap: round;
+      transition: all 0.2s ease;
+    }
+
+    .tally-svg line.slash {
+      stroke: var(--tally-slash);
+      stroke-dasharray: 100;
+      stroke-dashoffset: 0;
+      animation: drawSlash 0.3s ease-out forwards;
+    }
+
+    @keyframes drawSlash {
+      from { stroke-dashoffset: 100; }
+      to { stroke-dashoffset: 0; }
+    }
+
+    .draw-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 5;
+      cursor: crosshair;
+      display: none;
+    }
+
+    .draw-canvas.active {
+      display: block;
+    }
+
+    .skip-ribbon {
+      background: var(--card-bg);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .skip-badge {
+      background: var(--primary);
+      color: #fff;
+      font-weight: 800;
+      font-size: 1rem;
+      padding: 6px 14px;
+      border-radius: 20px;
+      display: inline-block;
+      animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    /* Modal Styling */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 24px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3);
+      border: 2px solid var(--border);
+    }
+
+    .modal h2 { margin-bottom: 12px; color: var(--primary); }
+    .modal p { margin-bottom: 10px; color: var(--text-muted); line-height: 1.5; }
+
+    #confetti-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 99;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 768px) {
+      .header-title { font-size: 1.1rem; }
+      .tally-group { width: 90px; height: 75px; }
+      .stat-card .value { font-size: 1.4rem; }
+    }
+  </style>
+</head>
+<body data-theme="light">
+
+  <canvas id="confetti-canvas"></canvas>
+
+  <header>
+    <div class="title-group">
+      <h1>📊 Tally Master</h1>
+    </div>
+    <div class="toolbar">
+      <button class="btn btn-primary" onclick="addTally(1)">➕ Add 1</button>
+      <button class="btn btn-primary" onclick="addTally(5)">➕ Add 5</button>
+      <button class="btn btn-danger" onclick="removeTally()">➖ Remove</button>
+      <button class="btn" onclick="clearAll()">🗑 Clear</button>
+      <button class="btn" id="btn-toggle-num" onclick="toggleHideNumber()">👁 Hide</button>
+      <button class="btn" onclick="setRandomNumber()">🔀 Random</button>
+      <button class="btn btn-accent" id="btn-practice" onclick="togglePracticeMode()">🎲 Practice</button>
+      <button class="btn btn-success" id="btn-challenge" onclick="toggleChallengeMode()">🏆 Challenge</button>
+      <button class="btn" id="btn-draw" onclick="toggleDrawMode()">✏️ Draw Mode</button>
+      <button class="btn" id="btn-sound" onclick="toggleSound()">🔊 Sound</button>
+      <button class="btn" onclick="toggleTheme()">🌙 Theme</button>
+      <button class="btn" onclick="toggleHelp()">❓ Help</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Dynamic Mode Banner -->
+    <div class="mode-banner hidden" id="mode-banner">
+      <div id="mode-info" style="font-weight: 700; font-size: 1.1rem;"></div>
+      <div id="mode-controls" style="display: flex; gap: 10px; align-items: center;"></div>
+    </div>
+
+    <!-- Educational Breakdown Cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="label">Total Tallies</div>
+        <div class="value" id="stat-total">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Groups of 5</div>
+        <div class="value" id="stat-groups">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Singles Remaining</div>
+        <div class="value" id="stat-singles">0</div>
+      </div>
+      <div class="stat-card hidden" id="card-challenge-score">
+        <div class="label">Score / Timer</div>
+        <div class="value" id="stat-score">0 | 30s</div>
+      </div>
+    </div>
+
+    <!-- Main Tally Viewing Area -->
+    <div class="tally-container" id="tally-box">
+      <canvas id="draw-layer" class="draw-canvas"></canvas>
+    </div>
+
+    <!-- Skip Counting Ribbon -->
+    <div class="skip-ribbon" id="skip-ribbon">
+      <span style="font-weight:700; color:var(--text-muted);">Skip Count:</span>
+      <span id="skip-badges"></span>
+    </div>
+  </main>
+
+  <!-- Help Modal -->
+  <div class="modal-overlay" id="help-modal">
+    <div class="modal">
+      <h2>How to Use Tally Master</h2>
+      <p>• <strong>Add/Remove:</strong> Tap ➕/➖ buttons to add individual or groups of tallies.</p>
+      <p>• <strong>Automatic Grouping:</strong> Every 5th tally automatically converts into a diagonal slash crossing 4 vertical lines.</p>
+      <p>• <strong>Practice Mode:</strong> Generate a target number and build the matching tallies!</p>
+      <p>• <strong>Challenge Mode:</strong> Look at the rendered tallies and test your fast-counting skills under a timer.</p>
+      <p>• <strong>Draw Mode:</strong> Tap or drag your finger across the tally area to naturally draw marks!</p>
+      <div style="text-align: right; margin-top: 15px;">
+        <button class="btn btn-primary" onclick="toggleHelp()">Got it!</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Global State
+    let count = 0;
+    let maxCount = 100;
+    let hideNumber = false;
+    let soundEnabled = true;
+    let currentMode = 'free'; // 'free', 'practice', 'challenge', 'draw'
+    
+    // Practice & Challenge State
+    let practiceTarget = 0;
+    let challengeTarget = 0;
+    let challengeScore = 0;
+    let timerVal = 30;
+    let timerInterval = null;
+
+    // Web Audio Synthesizer
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function playSound(type) {
+      if (!soundEnabled) return;
+      try {
+        if (!audioCtx) audioCtx = new AudioCtx();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        const now = audioCtx.currentTime;
+
+        if (type === 'add') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(320, now);
+          osc.frequency.exponentialRampToValueAtTime(640, now + 0.08);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.linearRampToValueAtTime(0, now + 0.08);
+          osc.start(now); osc.stop(now + 0.08);
+        } else if (type === 'remove') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(500, now);
+          osc.frequency.exponentialRampToValueAtTime(250, now + 0.08);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.linearRampToValueAtTime(0, now + 0.08);
+          osc.start(now); osc.stop(now + 0.08);
+        } else if (type === 'correct') {
+          [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.type = 'sine';
+            o.frequency.value = freq;
+            o.connect(g); g.connect(audioCtx.destination);
+            g.gain.setValueAtTime(0.15, now + i * 0.06);
+            g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.2);
+            o.start(now + i * 0.06); o.stop(now + i * 0.06 + 0.2);
+          });
+        } else if (type === 'error') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(180, now);
+          osc.frequency.linearRampToValueAtTime(100, now + 0.25);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.linearRampToValueAtTime(0, now + 0.25);
+          osc.start(now); osc.stop(now + 0.25);
+        }
+      } catch(e) {}
+    }
+
+    // Core Manipulation Logic
+    function addTally(val = 1) {
+      if (count + val > maxCount) return;
+      count += val;
+      playSound('add');
+      checkMilestones();
+      updateUI();
+    }
+
+    function removeTally() {
+      if (count <= 0) return;
+      count--;
+      playSound('remove');
+      updateUI();
+    }
+
+    function clearAll() {
+      count = 0;
+      playSound('remove');
+      updateUI();
+    }
+
+    function setRandomNumber() {
+      count = Math.floor(Math.random() * 50) + 1;
+      playSound('add');
+      updateUI();
+    }
+
+    function toggleHideNumber() {
+      hideNumber = !hideNumber;
+      document.getElementById('btn-toggle-num').innerText = hideNumber ? '👁 Show' : '👁 Hide';
+      updateUI();
+    }
+
+    function toggleTheme() {
+      const currentTheme = document.body.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.body.setAttribute('data-theme', newTheme);
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      document.getElementById('btn-sound').innerText = soundEnabled ? '🔊 Sound' : '🔇 Muted';
+    }
+
+    function toggleHelp() {
+      document.getElementById('help-modal').classList.toggle('open');
+    }
+
+    // SVG Tally Rendering
+    function renderTallies() {
+      const tallyBox = document.getElementById('tally-box');
+      // Remove SVG groups, keep draw canvas layer
+      const groups = tallyBox.querySelectorAll('.tally-group');
+      groups.forEach(g => g.remove());
+
+      const numFullGroups = Math.floor(count / 5);
+      const remainder = count % 5;
+
+      for (let g = 0; g < numFullGroups; g++) {
+        tallyBox.appendChild(createTallySVG(5));
+      }
+      if (remainder > 0) {
+        tallyBox.appendChild(createTallySVG(remainder));
+      }
+    }
+
+    function createTallySVG(numLines) {
+      const div = document.createElement('div');
+      div.className = 'tally-group';
+      
+      let svgHTML = `<svg class="tally-svg" viewBox="0 0 110 90" width="100%" height="100%">`;
+      
+      const xPositions = [22, 42, 62, 82];
+      for (let i = 0; i < Math.min(numLines, 4); i++) {
+        svgHTML += `<line x1="${xPositions[i]}" y1="15" x2="${xPositions[i]}" y2="75" />`;
+      }
+      if (numLines === 5) {
+        svgHTML += `<line class="slash" x1="12" y1="78" x2="92" y2="12" />`;
+      }
+      
+      svgHTML += `</svg>`;
+      div.innerHTML = svgHTML;
+      return div;
+    }
+
+    function updateUI() {
+      // Statistics Display
+      document.getElementById('stat-total').innerText = hideNumber ? '???' : count;
+      document.getElementById('stat-groups').innerText = Math.floor(count / 5);
+      document.getElementById('stat-singles').innerText = count % 5;
+
+      // Skip Counting Ribbon
+      const skipContainer = document.getElementById('skip-badges');
+      skipContainer.innerHTML = '';
+      const fullGroups = Math.floor(count / 5);
+      for (let i = 1; i <= fullGroups; i++) {
+        const badge = document.createElement('span');
+        badge.className = 'skip-badge';
+        badge.innerText = i * 5;
+        skipContainer.appendChild(badge);
+      }
+
+      renderTallies();
+    }
+
+    function checkMilestones() {
+      if ([10, 25, 50, 75, 100].includes(count)) {
+        triggerConfetti();
+        playSound('correct');
+      }
+    }
+
+    // Practice Mode
+    function togglePracticeMode() {
+      if (currentMode === 'practice') {
+        currentMode = 'free';
+        document.getElementById('mode-banner').classList.add('hidden');
+        document.getElementById('btn-practice').classList.remove('active');
+        clearAll();
+      } else {
+        if (currentMode === 'challenge') {
+          toggleChallengeMode();
+        }
+        currentMode = 'practice';
+        document.getElementById('btn-practice').classList.add('active');
+        document.getElementById('btn-challenge').classList.remove('active');
+        document.getElementById('mode-banner').classList.remove('hidden');
+        startPracticeRound();
+      }
+    }
+
+    function startPracticeRound() {
+      clearAll();
+      practiceTarget = Math.floor(Math.random() * 30) + 1;
+      document.getElementById('mode-info').innerHTML = `Target Goal: <span style="color:var(--primary); font-size:1.4rem;">${practiceTarget}</span>`;
+      document.getElementById('mode-controls').innerHTML = `
+        <button class="btn btn-success" onclick="checkPractice()">Check Answer</button>
+      `;
+    }
+
+    function checkPractice() {
+      if (count === practiceTarget) {
+        playSound('correct');
+        triggerConfetti();
+        alert('🎉 Perfect! Excellent job!');
+        startPracticeRound();
+      } else {
+        playSound('error');
+        alert(`Not quite! Target is ${practiceTarget}, but you built ${count}. Try again!`);
+      }
+    }
+
+    // Challenge Mode Logic
+    function toggleChallengeMode() {
+      if (currentMode === 'challenge') {
+        currentMode = 'free';
+        clearInterval(timerInterval);
+        hideNumber = false;
+        document.getElementById('btn-toggle-num').innerText = '👁 Hide';
+        document.getElementById('mode-banner').classList.add('hidden');
+        document.getElementById('card-challenge-score').classList.add('hidden');
+        document.getElementById('btn-challenge').classList.remove('active');
+        clearAll();
+      } else {
+        if (currentMode === 'practice') {
+          togglePracticeMode();
+        }
+        currentMode = 'challenge';
+        document.getElementById('btn-challenge').classList.add('active');
+        document.getElementById('btn-practice').classList.remove('active');
+        document.getElementById('mode-banner').classList.remove('hidden');
+        document.getElementById('card-challenge-score').classList.remove('hidden');
+        challengeScore = 0;
+        startChallengeRound();
+      }
+    }
+
+    function startChallengeRound() {
+      challengeTarget = Math.floor(Math.random() * 40) + 1;
+      count = challengeTarget;
+      hideNumber = true;
+      document.getElementById('btn-toggle-num').innerText = '👁 Show';
+      updateUI();
+
+      timerVal = 30;
+      updateScoreDisplay();
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        timerVal--;
+        updateScoreDisplay();
+        if (timerVal <= 0) {
+          clearInterval(timerInterval);
+          playSound('error');
+          alert(`⏱️ Time is up! Your Final Score: ${challengeScore}`);
+          toggleChallengeMode();
+        }
+      }, 1000);
+
+      document.getElementById('mode-info').innerHTML = `How many tallies do you see?`;
+      document.getElementById('mode-controls').innerHTML = `
+        <input type="number" id="challenge-input" style="width:80px; padding:8px; border-radius:8px; border:2px solid var(--border); font-weight:bold; font-size:1rem;" placeholder="?" onkeydown="if(event.key==='Enter') submitChallenge()" />
+        <button class="btn btn-success" onclick="submitChallenge()">Submit</button>
+      `;
+      setTimeout(() => {
+        const input = document.getElementById('challenge-input');
+        if (input) input.focus();
+      }, 100);
+    }
+
+    function submitChallenge() {
+      const inputEl = document.getElementById('challenge-input');
+      if (!inputEl) return;
+      const val = parseInt(inputEl.value);
+      if (val === challengeTarget) {
+        playSound('correct');
+        challengeScore += 10;
+        startChallengeRound();
+      } else {
+        playSound('error');
+        alert(`Oops! The correct count was ${challengeTarget}.`);
+        startChallengeRound();
+      }
+    }
+
+    function updateScoreDisplay() {
+      document.getElementById('stat-score').innerText = `${challengeScore} pts | ${timerVal}s`;
+    }
+
+    // Freehand Drawing Mode Logic
+    function toggleDrawMode() {
+      const canvas = document.getElementById('draw-layer');
+      const btn = document.getElementById('btn-draw');
+      if (currentMode === 'draw') {
+        currentMode = 'free';
+        canvas.classList.remove('active');
+        btn.classList.remove('active');
+      } else {
+        currentMode = 'draw';
+        canvas.classList.add('active');
+        btn.classList.add('active');
+        initDrawCanvas();
+      }
+    }
+
+    function initDrawCanvas() {
+      const canvas = document.getElementById('draw-layer');
+      const container = document.getElementById('tally-box');
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
+
+      let drawing = false;
+      let startX = 0, startY = 0;
+
+      canvas.onpointerdown = (e) => {
+        drawing = true;
+        startX = e.offsetX;
+        startY = e.offsetY;
+      };
+
+      canvas.onpointerup = (e) => {
+        if (!drawing) return;
+        drawing = false;
+        const dist = Math.hypot(e.offsetX - startX, e.offsetY - startY);
+        if (dist > 10 || dist < 5) {
+          addTally(1);
+        }
+      };
+    }
+
+    // Simple Confetti Cannon
+    function triggerConfetti() {
+      const canvas = document.getElementById('confetti-canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const particles = Array.from({ length: 60 }, () => ({
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+        vx: (Math.random() - 0.5) * 12,
+        vy: (Math.random() - 0.5) * 12 - 4,
+        color: ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][Math.floor(Math.random() * 5)],
+        size: Math.random() * 8 + 4
+      }));
+
+      let frames = 0;
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.2; // Gravity
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        if (frames++ < 50) requestAnimationFrame(animate);
+        else ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      animate();
+    }
+
+    // Initial Setup
+    updateUI();
+  </script>
+</body>
+</html>

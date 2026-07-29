@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Percentage Strips</title>
+  <style>
+    /* ==========================================================================
+       DESIGN SYSTEM & THEME (Single-Viewport Clean Layout)
+       ========================================================================== */
+    :root {
+      --bg-app: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-strip: #f1f5f9;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border: #cbd5e1;
+      --border-focus: #4f46e5;
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --primary-light: #e0e7ff;
+      --danger: #ef4444;
+      --danger-light: #fee2e2;
+      --success: #10b981;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08);
+      --radius: 10px;
+    }
+
+    [data-theme="dark"] {
+      --bg-app: #0f172a;
+      --bg-card: #1e293b;
+      --bg-strip: #020617;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+      --border-focus: #818cf8;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --primary-light: #1e1b4b;
+      --danger: #f87171;
+      --danger-light: #450a0a;
+      --success: #34d399;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-app);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Streamlined Header */
+    header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 0.6rem 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 56px;
+      flex-shrink: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--primary);
+    }
+
+    .brand svg {
+      width: 24px;
+      height: 24px;
+      fill: currentColor;
+    }
+
+    /* Controls Header Toolbar */
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.4rem 0.7rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-main);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #ffffff !important;
+      border-color: var(--primary);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-active {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .btn-icon {
+      padding: 0.4rem;
+      border-radius: 6px;
+    }
+
+    .btn svg {
+      width: 15px;
+      height: 15px;
+      fill: currentColor;
+    }
+
+    /* Main Dashboard Layout (Single Page Viewport) */
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1fr 310px;
+      flex: 1;
+      height: calc(100vh - 56px);
+      overflow: hidden;
+    }
+
+    /* Left Interactive Canvas */
+    .workspace {
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+      gap: 0.75rem;
+      overflow-y: auto;
+    }
+
+    /* Challenge Notification Banner */
+    .challenge-bar {
+      background: linear-gradient(135deg, var(--primary), #06b6d4);
+      color: #fff;
+      padding: 0.6rem 1rem;
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Ruler Indicator */
+    .ruler-bar {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.4rem 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .ruler-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .ruler-svg {
+      width: 100%;
+      height: 18px;
+    }
+
+    /* Strip Containers */
+    .strips-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      flex: 1;
+    }
+
+    .strip-card {
+      background: var(--bg-card);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.6rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      box-shadow: var(--shadow-sm);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .strip-card.selected {
+      border-color: var(--border-focus);
+    }
+
+    .strip-card.overflow {
+      border-color: var(--danger);
+    }
+
+    .strip-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .strip-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .badge {
+      background: var(--primary-light);
+      color: var(--primary);
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+    }
+
+    .badge.overflow {
+      background: var(--danger-light);
+      color: var(--danger);
+    }
+
+    .strip-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .select-grid {
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: var(--bg-app);
+      color: var(--text-main);
+      font-size: 0.75rem;
+      outline: none;
+    }
+
+    /* Percentage Strip SVG / Drag Drop Area */
+    .percentage-strip {
+      width: 100%;
+      height: 52px;
+      background: var(--bg-strip);
+      border-radius: 6px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      border: 1.5px dashed var(--border);
+    }
+
+    .percentage-strip.drag-over {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    .placed-tile {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-weight: 700;
+      position: relative;
+      cursor: grab;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+      box-shadow: inset -1px 0 0 rgba(255,255,255,0.3);
+      transition: width 0.2s ease;
+    }
+
+    .placed-tile .tile-pct {
+      font-size: 0.85rem;
+      line-height: 1;
+    }
+
+    .placed-tile .tile-sub {
+      font-size: 0.65rem;
+      opacity: 0.9;
+      line-height: 1;
+      margin-top: 1px;
+    }
+
+    .placed-tile .remove-btn {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.4);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .placed-tile:hover .remove-btn {
+      opacity: 1;
+    }
+
+    /* Right Sidebar (Palette & Inspector) */
+    .sidebar {
+      background: var(--bg-card);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 0.85rem;
+      gap: 0.85rem;
+      overflow-y: auto;
+    }
+
+    .panel {
+      background: var(--bg-app);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.75rem;
+    }
+
+    .panel-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* Equivalence Inspector Grid */
+    .inspector-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.4rem;
+    }
+
+    .inspector-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.4rem;
+      text-align: center;
+    }
+
+    .inspector-card .lbl {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .inspector-card .val {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    /* Comparison Box */
+    .comparison-text {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-align: center;
+      color: var(--text-main);
+    }
+
+    /* Percentage Tile Palette */
+    .palette-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.4rem;
+    }
+
+    .palette-tile {
+      padding: 0.45rem 0.3rem;
+      border-radius: 6px;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      cursor: grab;
+      box-shadow: var(--shadow-sm);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    .palette-tile:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .palette-tile:active {
+      transform: scale(0.96);
+    }
+
+    .palette-tile .pct {
+      font-size: 0.85rem;
+    }
+
+    .palette-tile .sub {
+      font-size: 0.65rem;
+      opacity: 0.9;
+    }
+
+    /* Dragging Ghost */
+    .drag-ghost {
+      position: fixed;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.9;
+      transform: translate(-50%, -50%) scale(1.05);
+      border-radius: 6px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.25);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 700;
+      width: 90px;
+      height: 45px;
+    }
+
+    /* Confetti Canvas */
+    #confettiCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 999;
+    }
+  </style>
+</head>
+<body data-theme="light">
+
+  <canvas id="confettiCanvas"></canvas>
+
+  <!-- Clean Top Header Bar -->
+  <header>
+    <div class="brand">
+      <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14H7v-2h3v2zm0-4H7v-2h3v2zm0-4H7V7h3v2zm7 8h-5v-2h5v2zm0-4h-5v-2h5v2zm0-4h-5V7h5v2z"/></svg>
+      <span>Percentage Strips</span>
+    </div>
+
+    <div class="header-controls">
+      <button class="btn" onclick="addStrip()">➕ Add Strip</button>
+      <button class="btn" onclick="clearAllStrips()">🗑 Clear</button>
+      <button class="btn" onclick="undo()" id="undoBtn">↩ Undo</button>
+      
+      <div style="width: 1px; height: 20px; background: var(--border); margin: 0 0.2rem;"></div>
+
+      <button class="btn" id="practiceBtn" onclick="togglePracticeMode()">🎯 Practice</button>
+      <button class="btn" id="quizBtn" onclick="toggleQuizMode()">🏆 Quiz</button>
+      <button class="btn" id="labelBtn" onclick="toggleLabelMode()">🏷 Label: <span id="labelTxt">Fraction</span></button>
+      <button class="btn" id="gridBtn" onclick="toggleGrid()">📏 Grid: On</button>
+
+      <button class="btn btn-icon" id="soundBtn" onclick="toggleSound()" title="Toggle Sound">🔊</button>
+      <button class="btn btn-icon" onclick="toggleTheme()" title="Toggle Dark/Light Mode">🌙</button>
+    </div>
+  </header>
+
+  <!-- Dashboard Main Layout -->
+  <div class="dashboard">
+
+    <!-- Workspace Panel -->
+    <div class="workspace">
+
+      <!-- Challenge Card (Active in Practice/Quiz) -->
+      <div class="challenge-bar" id="challengeBar" style="display: none;">
+        <div>
+          <span id="challengeTitle" style="font-weight: 800;">Task:</span>
+          <span id="challengePrompt" style="margin-left: 0.4rem;">Represent 75% on any strip.</span>
+        </div>
+        <div style="display: flex; gap: 0.4rem; align-items: center;">
+          <span id="scoreBadge" class="badge" style="background: rgba(255,255,255,0.25); color: #fff; font-size: 0.8rem; display:none;">Score: 0</span>
+          <button class="btn btn-primary" style="padding: 0.2rem 0.6rem; font-size: 0.75rem;" onclick="checkChallenge()">Check Answer</button>
+          <button class="btn" style="padding: 0.2rem 0.6rem; font-size: 0.75rem; background: rgba(255,255,255,0.2); color:#fff; border:none;" onclick="generateChallenge()">Skip 🎲</button>
+        </div>
+      </div>
+
+      <!-- Ruler Reference -->
+      <div class="ruler-bar">
+        <div class="ruler-labels">
+          <span>0%</span>
+          <span>25% (1/4)</span>
+          <span>50% (1/2)</span>
+          <span>75% (3/4)</span>
+          <span>100% (1 Whole)</span>
+        </div>
+        <svg class="ruler-svg" id="rulerSvg"></svg>
+      </div>
+
+      <!-- Strips Workspace Stack -->
+      <div class="strips-container" id="stripsStack">
+        <!-- Strips dynamically rendered here -->
+      </div>
+
+    </div>
+
+    <!-- Sidebar Panel (Palette & Inspector) -->
+    <div class="sidebar">
+
+      <!-- Equivalence Inspector -->
+      <div class="panel">
+        <div class="panel-title">
+          <span>Equivalence Inspector</span>
+          <span id="activeStripLbl">Strip 1</span>
+        </div>
+        <div class="inspector-grid">
+          <div class="inspector-card">
+            <div class="lbl">PERCENT</div>
+            <div class="val" id="eqPercent">0%</div>
+          </div>
+          <div class="inspector-card">
+            <div class="lbl">FRACTION</div>
+            <div class="val" id="eqFraction">0</div>
+          </div>
+          <div class="inspector-card">
+            <div class="lbl">DECIMAL</div>
+            <div class="val" id="eqDecimal">0.00</div>
+          </div>
+          <div class="inspector-card">
+            <div class="lbl">RATIO</div>
+            <div class="val" id="eqRatio">0:100</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Strip Comparison -->
+      <div class="panel">
+        <div class="panel-title">Strip Comparison</div>
+        <div class="comparison-text" id="comparisonOutput">
+          Add tiles to compare strips!
+        </div>
+      </div>
+
+      <!-- Tile Palette -->
+      <div class="panel" style="flex: 1; display: flex; flex-direction: column;">
+        <div class="panel-title">Percentage Tiles</div>
+        <div class="palette-grid" id="tilePalette">
+          <!-- Dynamically populated percentage tiles -->
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- JavaScript Engine -->
+  <script>
+    /* ==========================================================================
+       TILE DEFINITIONS & APP STATE
+       ========================================================================== */
+    const TILES = [
+      { pct: 100, fraction: "1/1", decimal: "1.00", color: "#ef4444" },
+      { pct: 90,  fraction: "9/10", decimal: "0.90", color: "#f97316" },
+      { pct: 80,  fraction: "4/5", decimal: "0.80", color: "#f59e0b" },
+      { pct: 75,  fraction: "3/4", decimal: "0.75", color: "#eab308" },
+      { pct: 66.6667, label: "66⅔%", fraction: "2/3", decimal: "0.67", color: "#84cc16" },
+      { pct: 60,  fraction: "3/5", decimal: "0.60", color: "#22c55e" },
+      { pct: 50,  fraction: "1/2", decimal: "0.50", color: "#10b981" },
+      { pct: 40,  fraction: "2/5", decimal: "0.40", color: "#14b8a6" },
+      { pct: 33.3333, label: "33⅓%", fraction: "1/3", decimal: "0.33", color: "#06b6d4" },
+      { pct: 30,  fraction: "3/10", decimal: "0.30", color: "#0ea5e9" },
+      { pct: 25,  fraction: "1/4", decimal: "0.25", color: "#3b82f6" },
+      { pct: 20,  fraction: "1/5", decimal: "0.20", color: "#6366f1" },
+      { pct: 12.5, fraction: "1/8", decimal: "0.125", color: "#8b5cf6" },
+      { pct: 10,  fraction: "1/10", decimal: "0.10", color: "#a855f7" },
+      { pct: 5,   fraction: "1/20", decimal: "0.05", color: "#d946ef" },
+      { pct: 1,   fraction: "1/100", decimal: "0.01", color: "#ec4899" }
+    ];
+
+    let state = {
+      strips: [
+        { id: 1, division: "none", tiles: [] },
+        { id: 2, division: "none", tiles: [] },
+        { id: 3, division: "none", tiles: [] }
+      ],
+      selectedIndex: 0,
+      labelMode: "fraction", // 'fraction', 'decimal', 'pct'
+      showGrid: true,
+      sound: true,
+      mode: "explore", // 'explore', 'practice', 'quiz'
+      score: 0,
+      challenge: null
+    };
+
+    let undoHistory = [];
+
+    /* Web Audio API */
+    let audioCtx = null;
+    function playSound(type) {
+      if (!state.sound) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        const now = audioCtx.currentTime;
+
+        if (type === 'snap') {
+          osc.frequency.setValueAtTime(450, now);
+          osc.frequency.exponentialRampToValueAtTime(750, now + 0.06);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
+          osc.start(now); osc.stop(now + 0.06);
+        } else if (type === 'remove') {
+          osc.frequency.setValueAtTime(400, now);
+          osc.frequency.exponentialRampToValueAtTime(180, now + 0.08);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+          osc.start(now); osc.stop(now + 0.08);
+        } else if (type === 'win') {
+          osc.frequency.setValueAtTime(523, now);
+          osc.frequency.setValueAtTime(659, now + 0.08);
+          osc.frequency.setValueAtTime(784, now + 0.16);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+          osc.start(now); osc.stop(now + 0.3);
+        }
+      } catch(e) {}
+    }
+
+    function saveUndoState() {
+      undoHistory.push(JSON.parse(JSON.stringify(state.strips)));
+      if (undoHistory.length > 20) undoHistory.shift();
+    }
+
+    function undo() {
+      if (undoHistory.length === 0) return;
+      state.strips = undoHistory.pop();
+      render();
+      playSound('remove');
+    }
+
+    /* ==========================================================================
+       RENDERING ENGINE
+       ========================================================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      renderPalette();
+      renderRuler();
+      render();
+      setupPointerEvents();
+    });
+
+    function renderPalette() {
+      const container = document.getElementById('tilePalette');
+      container.innerHTML = '';
+      TILES.forEach(tile => {
+        const div = document.createElement('div');
+        div.className = 'palette-tile';
+        div.style.backgroundColor = tile.color;
+        div.setAttribute('data-pct', tile.pct);
+
+        let subLabel = tile.fraction;
+        if (state.labelMode === 'decimal') subLabel = tile.decimal;
+        if (state.labelMode === 'pct') subLabel = tile.pct + '%';
+
+        div.innerHTML = `
+          <div class="pct">${tile.label || tile.pct + '%'}</div>
+          <div class="sub">${subLabel}</div>
+        `;
+        // Click to add tile to active strip
+        div.onclick = () => {
+          saveUndoState();
+          state.strips[state.selectedIndex].tiles.push({ ...tile });
+          playSound('snap');
+          render();
+        };
+        container.appendChild(div);
+      });
+    }
+
+    function render() {
+      renderStrips();
+      renderInspector();
+      renderComparison();
+    }
+
+    function renderStrips() {
+      const container = document.getElementById('stripsStack');
+      container.innerHTML = '';
+
+      state.strips.forEach((strip, index) => {
+        const sum = strip.tiles.reduce((acc, t) => acc + t.pct, 0);
+        const isSelected = state.selectedIndex === index;
+        const isOverflow = sum > 100;
+
+        const card = document.createElement('div');
+        card.className = `strip-card ${isSelected ? 'selected' : ''} ${isOverflow ? 'overflow' : ''}`;
+        card.onclick = (e) => {
+          if (!e.target.classList.contains('remove-btn') && !e.target.classList.contains('select-grid')) {
+            state.selectedIndex = index;
+            render();
+          }
+        };
+
+        const header = document.createElement('div');
+        header.className = 'strip-header';
+        header.innerHTML = `
+          <div class="strip-meta">
+            <span>Strip ${index + 1}</span>
+            <span class="badge ${isOverflow ? 'overflow' : ''}">${formatPct(sum)} / 100%</span>
+          </div>
+          <div class="strip-actions">
+            <select class="select-grid" onchange="setGrid(${index}, this.value)">
+              <option value="none" ${strip.division === 'none' ? 'selected' : ''}>Grid: Off</option>
+              <option value="2" ${strip.division === '2' ? 'selected' : ''}>Halves (1/2)</option>
+              <option value="3" ${strip.division === '3' ? 'selected' : ''}>Thirds (1/3)</option>
+              <option value="4" ${strip.division === '4' ? 'selected' : ''}>Fourths (1/4)</option>
+              <option value="5" ${strip.division === '5' ? 'selected' : ''}>Fifths (1/5)</option>
+              <option value="10" ${strip.division === '10' ? 'selected' : ''}>Tenths (1/10)</option>
+            </select>
+            ${state.strips.length > 1 ? `<button class="btn" style="padding:0.1rem 0.4rem; font-size:0.75rem;" onclick="removeStrip(${index}, event)">✕</button>` : ''}
+          </div>
+        `;
+
+        const stripEl = document.createElement('div');
+        stripEl.className = 'percentage-strip';
+        stripEl.setAttribute('data-index', index);
+
+        // SVG Grid overlay
+        if (state.showGrid && strip.division !== 'none') {
+          stripEl.appendChild(createGridSvg(strip.division));
+        }
+
+        // Render tiles inside strip
+        strip.tiles.forEach((t, tIdx) => {
+          const tileEl = document.createElement('div');
+          tileEl.className = 'placed-tile';
+          tileEl.style.width = `${t.pct}%`;
+          tileEl.style.backgroundColor = t.color;
+
+          let subTxt = t.fraction;
+          if (state.labelMode === 'decimal') subTxt = t.decimal;
+          if (state.labelMode === 'pct') subTxt = formatPct(t.pct);
+
+          tileEl.innerHTML = `
+            <span class="remove-btn" onclick="removeTile(${index}, ${tIdx}, event)">✕</span>
+            <div class="tile-pct">${t.label || formatPct(t.pct)}</div>
+            <div class="tile-sub">${subTxt}</div>
+          `;
+          stripEl.appendChild(tileEl);
+        });
+
+        card.appendChild(header);
+        card.appendChild(stripEl);
+        container.appendChild(card);
+      });
+    }
+
+    function createGridSvg(division) {
+      const numLines = parseInt(division);
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("style", "position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;");
+
+      let pathData = "";
+      for (let i = 1; i < numLines; i++) {
+        const xPct = (i / numLines) * 100;
+        pathData += `M ${xPct}% 0 V 100% `;
+      }
+      svg.innerHTML = `<path d="${pathData}" stroke="rgba(0,0,0,0.25)" stroke-width="1.5" stroke-dasharray="3,3" />`;
+      return svg;
+    }
+
+    function renderRuler() {
+      const svg = document.getElementById('rulerSvg');
+      let pathData = "";
+      for (let i = 0; i <= 10; i++) {
+        const x = (i / 10) * 100;
+        const h = (i % 5 === 0) ? 14 : 7;
+        pathData += `M ${x}% 0 V ${h} `;
+      }
+      svg.innerHTML = `<path d="${pathData}" stroke="currentColor" stroke-width="1.5" opacity="0.5" />`;
+    }
+
+    function renderInspector() {
+      const activeStrip = state.strips[state.selectedIndex] || state.strips[0];
+      const sum = activeStrip ? activeStrip.tiles.reduce((acc, t) => acc + t.pct, 0) : 0;
+
+      document.getElementById('activeStripLbl').innerText = `Strip ${state.selectedIndex + 1}`;
+      document.getElementById('eqPercent').innerText = formatPct(sum);
+      document.getElementById('eqFraction').innerText = getReducedFraction(sum);
+      document.getElementById('eqDecimal').innerText = (sum / 100).toFixed(2);
+      document.getElementById('eqRatio').innerText = `${Math.round(sum)}:${Math.max(0, 100 - Math.round(sum))}`;
+    }
+
+    function renderComparison() {
+      const box = document.getElementById('comparisonOutput');
+      if (state.strips.length < 2) {
+        box.innerText = "Add more strips to compare!";
+        return;
+      }
+      const sum1 = state.strips[0].tiles.reduce((a, b) => a + b.pct, 0);
+      const sum2 = state.strips[1].tiles.reduce((a, b) => a + b.pct, 0);
+
+      if (sum1 === sum2) {
+        box.innerHTML = `Strip 1 (${formatPct(sum1)}) <span style="color:var(--primary)">=</span> Strip 2 (${formatPct(sum2)})`;
+      } else if (sum1 > sum2) {
+        box.innerHTML = `Strip 1 (${formatPct(sum1)}) <span style="color:var(--primary); font-size:1.1rem;">></span> Strip 2 (${formatPct(sum2)})`;
+      } else {
+        box.innerHTML = `Strip 1 (${formatPct(sum1)}) <span style="color:var(--primary); font-size:1.1rem;"><</span> Strip 2 (${formatPct(sum2)})`;
+      }
+    }
+
+    /* Helper Calculations */
+    function formatPct(val) {
+      if (Math.abs(val - 66.6667) < 0.01) return "66⅔%";
+      if (Math.abs(val - 33.3333) < 0.01) return "33⅓%";
+      return parseFloat(val.toFixed(2)) + "%";
+    }
+
+    function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+    function getReducedFraction(pct) {
+      const rounded = Math.round(pct * 100);
+      const div = gcd(rounded, 10000);
+      const num = rounded / div;
+      const den = 10000 / div;
+      return num === 0 ? "0" : `${num}/${den}`;
+    }
+
+    /* ==========================================================================
+       DRAG AND DROP ENGINE (Pointer Events)
+       ========================================================================== */
+    let dragState = null;
+
+    function setupPointerEvents() {
+      document.addEventListener('pointerdown', e => {
+        const tileEl = e.target.closest('.palette-tile');
+        if (tileEl) {
+          const pct = parseFloat(tileEl.getAttribute('data-pct'));
+          const tileData = TILES.find(t => Math.abs(t.pct - pct) < 0.001);
+          if (tileData) {
+            dragState = {
+              data: { ...tileData },
+              ghost: createGhost(tileData, e.clientX, e.clientY)
+            };
+          }
+        }
+      });
+
+      document.addEventListener('pointermove', e => {
+        if (!dragState) return;
+        dragState.ghost.style.left = `${e.clientX}px`;
+        dragState.ghost.style.top = `${e.clientY}px`;
+
+        const elements = document.elementsFromPoint(e.clientX, e.clientY);
+        const stripEl = elements.find(el => el.classList && el.classList.contains('percentage-strip'));
+        document.querySelectorAll('.percentage-strip').forEach(s => s.classList.remove('drag-over'));
+        if (stripEl) stripEl.classList.add('drag-over');
+      });
+
+      document.addEventListener('pointerup', e => {
+        if (!dragState) return;
+        const elements = document.elementsFromPoint(e.clientX, e.clientY);
+        const stripEl = elements.find(el => el.classList && el.classList.contains('percentage-strip'));
+
+        if (stripEl) {
+          const idx = parseInt(stripEl.getAttribute('data-index'));
+          saveUndoState();
+          state.strips[idx].tiles.push(dragState.data);
+          state.selectedIndex = idx;
+          playSound('snap');
+          render();
+        }
+        if (dragState.ghost) dragState.ghost.remove();
+        document.querySelectorAll('.percentage-strip').forEach(s => s.classList.remove('drag-over'));
+        dragState = null;
+      });
+    }
+
+    function createGhost(tile, x, y) {
+      const ghost = document.createElement('div');
+      ghost.className = 'drag-ghost';
+      ghost.style.backgroundColor = tile.color;
+      ghost.style.left = `${x}px`;
+      ghost.style.top = `${y}px`;
+      ghost.innerHTML = `<div>${tile.label || tile.pct + '%'}</div>`;
+      document.body.appendChild(ghost);
+      return ghost;
+    }
+
+    /* ==========================================================================
+       USER ACTIONS & MODES
+       ========================================================================== */
+    function addStrip() {
+      if (state.strips.length >= 5) return;
+      saveUndoState();
+      state.strips.push({ id: Date.now(), division: "none", tiles: [] });
+      render();
+      playSound('snap');
+    }
+
+    function removeStrip(idx, e) {
+      e.stopPropagation();
+      if (state.strips.length <= 1) return;
+      saveUndoState();
+      state.strips.splice(idx, 1);
+      if (state.selectedIndex >= state.strips.length) state.selectedIndex = state.strips.length - 1;
+      render();
+      playSound('remove');
+    }
+
+    function removeTile(stripIdx, tileIdx, e) {
+      e.stopPropagation();
+      saveUndoState();
+      state.strips[stripIdx].tiles.splice(tileIdx, 1);
+      render();
+      playSound('remove');
+    }
+
+    function clearAllStrips() {
+      saveUndoState();
+      state.strips.forEach(s => s.tiles = []);
+      render();
+      playSound('remove');
+    }
+
+    function setGrid(stripIdx, val) {
+      saveUndoState();
+      state.strips[stripIdx].division = val;
+      render();
+    }
+
+    function toggleLabelMode() {
+      if (state.labelMode === 'fraction') state.labelMode = 'decimal';
+      else if (state.labelMode === 'decimal') state.labelMode = 'pct';
+      else state.labelMode = 'fraction';
+
+      const cap = state.labelMode.charAt(0).toUpperCase() + state.labelMode.slice(1);
+      document.getElementById('labelTxt').innerText = cap;
+      renderPalette();
+      render();
+    }
+
+    function toggleGrid() {
+      state.showGrid = !state.showGrid;
+      document.getElementById('gridBtn').innerText = `📏 Grid: ${state.showGrid ? 'On' : 'Off'}`;
+      render();
+    }
+
+    function toggleTheme() {
+      const cur = document.body.getAttribute('data-theme');
+      document.body.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+    }
+
+    function toggleSound() {
+      state.sound = !state.sound;
+      document.getElementById('soundBtn').style.opacity = state.sound ? "1" : "0.4";
+    }
+
+    /* Practice & Quiz Modes */
+    function togglePracticeMode() {
+      state.mode = state.mode === 'practice' ? 'explore' : 'practice';
+      updateModeUI();
+    }
+
+    function toggleQuizMode() {
+      state.mode = state.mode === 'quiz' ? 'explore' : 'quiz';
+      if (state.mode === 'quiz') state.score = 0;
+      updateModeUI();
+    }
+
+    function updateModeUI() {
+      const bar = document.getElementById('challengeBar');
+      const scoreBadge = document.getElementById('scoreBadge');
+      
+      document.getElementById('practiceBtn').classList.toggle('btn-active', state.mode === 'practice');
+      document.getElementById('quizBtn').classList.toggle('btn-active', state.mode === 'quiz');
+
+      if (state.mode === 'explore') {
+        bar.style.display = 'none';
+      } else {
+        bar.style.display = 'flex';
+        scoreBadge.style.display = state.mode === 'quiz' ? 'inline-block' : 'none';
+        scoreBadge.innerText = `Score: ${state.score}`;
+        generateChallenge();
+      }
+    }
+
+    const TASKS = [
+      { prompt: "Show 50% on Strip 1.", target: 50 },
+      { prompt: "Build 75% using multiple tiles.", target: 75 },
+      { prompt: "Make 100% (a complete whole) on Strip 1.", target: 100 },
+      { prompt: "Represent 30% on any strip.", target: 30 },
+      { prompt: "Build 40% on Strip 1.", target: 40 }
+    ];
+
+    function generateChallenge() {
+      const rand = TASKS[Math.floor(Math.random() * TASKS.length)];
+      state.challenge = rand;
+      document.getElementById('challengeTitle').innerText = state.mode === 'quiz' ? 'Quiz Task:' : 'Practice:';
+      document.getElementById('challengePrompt').innerText = rand.prompt;
+    }
+
+    function checkChallenge() {
+      if (!state.challenge) return;
+      const target = state.challenge.target;
+      const matched = state.strips.some(s => Math.abs(s.tiles.reduce((a,b) => a + b.pct, 0) - target) < 0.01);
+
+      if (matched) {
+        playSound('win');
+        triggerConfetti();
+        if (state.mode === 'quiz') {
+          state.score += 10;
+          document.getElementById('scoreBadge').innerText = `Score: ${state.score}`;
+        }
+        setTimeout(generateChallenge, 1200);
+      } else {
+        alert("Not quite right yet. Adjust your strip total and try again!");
+      }
+    }
+
+    /* Celebration Confetti */
+    function triggerConfetti() {
+      const canvas = document.getElementById('confettiCanvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const particles = [];
+      const colors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
+      for (let i = 0; i < 60; i++) {
+        particles.push({
+          x: canvas.width / 2, y: canvas.height / 2,
+          vx: (Math.random() - 0.5) * 10, vy: (Math.random() - 0.5) * 10 - 3,
+          size: Math.random() * 6 + 4, color: colors[Math.floor(Math.random() * colors.length)],
+          life: 80
+        });
+      }
+
+      function anim() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let active = false;
+        particles.forEach(p => {
+          if (p.life > 0) {
+            active = true;
+            p.x += p.vx; p.y += p.vy; p.vy += 0.2; p.life--;
+            ctx.fillStyle = p.color;
+            ctx.fillRect(p.x, p.y, p.size, p.size);
+          }
+        });
+        if (active) requestAnimationFrame(anim);
+      }
+      anim();
+    }
+  </script>
+</body>
+</html>

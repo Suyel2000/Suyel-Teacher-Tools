@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Times Tables Practice (2–10)</title>
+  <style>
+    /* --- CSS VARIABLES & RESET --- */
+    :root {
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --border-color: #cbd5e1;
+      
+      --correct-green: #10b981;
+      --correct-bg: #ecfdf5;
+      --error-red: #ef4444;
+      --error-bg: #fef2f2;
+      --hint-yellow: #f59e0b;
+      
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+      --shadow-md: 0 6px 12px -2px rgba(0,0,0,0.08);
+      --shadow-lg: 0 12px 24px -4px rgba(0,0,0,0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+      overflow-x: hidden;
+    }
+
+    /* --- LAYOUT CONTAINER --- */
+    .app-container {
+      width: 100%;
+      max-width: 960px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* --- HEADER & TABLE SELECTOR --- */
+    header {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      box-shadow: var(--shadow-md);
+      text-align: center;
+    }
+
+    .app-title {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .table-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-table {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2px solid var(--border-color);
+      background: var(--card-bg);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-main);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-table:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    .btn-table.active {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+      box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+    }
+
+    /* --- DASHBOARD / SCORE PANEL --- */
+    .score-panel {
+      background: var(--card-bg);
+      border-radius: var(--radius-md);
+      padding: 12px 20px;
+      box-shadow: var(--shadow-sm);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+      text-align: center;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .stat-value {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    /* PROGRESS BAR */
+    .progress-container {
+      width: 100%;
+      height: 10px;
+      background: #e2e8f0;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #10b981, #059669);
+      transition: width 0.3s ease;
+    }
+
+    /* --- MAIN PRACTICE AREA --- */
+    .main-content {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .equations-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    @media (min-width: 640px) {
+      .equations-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .equation-row {
+      background: var(--card-bg);
+      border-radius: var(--radius-md);
+      padding: 10px 16px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 2px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .equation-text {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .drop-zone {
+      width: 90px;
+      height: 48px;
+      border: 2px dashed var(--border-color);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      font-weight: 800;
+      background: #f1f5f9;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .drop-zone.drag-over {
+      border-color: var(--primary);
+      background: #e0e7ff;
+      transform: scale(1.03);
+    }
+
+    .drop-zone.correct {
+      border: 2px solid var(--correct-green);
+      background: var(--correct-bg);
+      color: var(--correct-green);
+      animation: bounce 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .drop-zone.incorrect-shake {
+      border-color: var(--error-red);
+      background: var(--error-bg);
+      animation: shake 0.4s ease-in-out;
+    }
+
+    .drop-zone.hint-active {
+      border-color: var(--hint-yellow);
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+    }
+
+    .tick-mark {
+      color: var(--correct-green);
+      margin-left: 6px;
+      font-size: 1rem;
+      display: inline-block;
+    }
+
+    /* --- DRAGGABLE CARDS TRAY --- */
+    .tray-section {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .tray-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .cards-tray {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      min-height: 56px;
+    }
+
+    .answer-card {
+      min-width: 65px;
+      height: 48px;
+      padding: 0 12px;
+      background: #ffffff;
+      border: 2px solid var(--primary);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--primary);
+      cursor: grab;
+      touch-action: none;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.2s ease;
+    }
+
+    .answer-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .answer-card.selected {
+      border-color: var(--hint-yellow);
+      background: #fef3c7;
+      transform: scale(1.05);
+    }
+
+    .answer-card.dragging {
+      opacity: 0.2;
+    }
+
+    /* Floating Mirror Clone during Drag */
+    .drag-clone {
+      position: fixed;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.95;
+      transform: scale(1.1);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--primary-hover);
+      background: #e0e7ff;
+      cursor: grabbing;
+    }
+
+    /* --- CONTROLS / TOOLBAR --- */
+    .controls-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .btn-action {
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      background: var(--card-bg);
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-main);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-action:hover {
+      background: #f1f5f9;
+      border-color: #94a3b8;
+    }
+
+    .btn-action.primary {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+
+    .btn-action.primary:hover {
+      background: var(--primary-hover);
+    }
+
+    /* --- TOAST & ENCOURAGEMENT --- */
+    .toast-popup {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: #1e293b;
+      color: #ffffff;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-weight: 700;
+      font-size: 1rem;
+      box-shadow: var(--shadow-lg);
+      pointer-events: none;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+      opacity: 0;
+      z-index: 1000;
+    }
+
+    .toast-popup.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* --- CELEBRATION MODAL --- */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      z-index: 9000;
+      padding: 16px;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: #ffffff;
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      text-align: center;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: var(--shadow-lg);
+      transform: scale(0.8);
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .modal-overlay.active .modal-card {
+      transform: scale(1);
+    }
+
+    .modal-title {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+
+    .modal-subtitle {
+      font-size: 1rem;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .modal-stats {
+      background: var(--bg-color);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-around;
+    }
+
+    .canvas-confetti {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9500;
+    }
+
+    /* --- ANIMATIONS --- */
+    @keyframes bounce {
+      0% { transform: scale(0.9); }
+      50% { transform: scale(1.12); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+
+    /* Accessibility Focus */
+    button:focus-visible, .answer-card:focus-visible, .drop-zone:focus-visible {
+      outline: 3px solid var(--hint-yellow);
+      outline-offset: 2px;
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="confettiCanvas" class="canvas-confetti"></canvas>
+  <div id="toastPopup" class="toast-popup">Great Job! 🎉</div>
+
+  <div class="app-container">
+    
+    <!-- HEADER -->
+    <header>
+      <div class="app-title">
+        <span>✖️</span>
+        <span>Times Tables Practice</span>
+      </div>
+      <div class="table-buttons" id="tableSelector" aria-label="Select Multiplication Table">
+        <!-- Buttons 2 through 10 injected via JS -->
+      </div>
+    </header>
+
+    <!-- SCORE DASHBOARD -->
+    <div class="score-panel">
+      <div class="stat-item">
+        <span class="stat-label">Current Table</span>
+        <span class="stat-value" id="lblTable">Table of 2</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Progress</span>
+        <span class="stat-value" id="lblProgress">0 / 10</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Attempts</span>
+        <span class="stat-value" id="lblAttempts">0</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Accuracy</span>
+        <span class="stat-value" id="lblAccuracy">100%</span>
+      </div>
+    </div>
+
+    <div class="progress-container" aria-label="Completion Progress">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <!-- PRACTICE AREA -->
+    <main class="main-content">
+      <div class="equations-grid" id="equationsContainer">
+        <!-- 10 Equation rows injected via JS -->
+      </div>
+
+      <!-- ANSWER CARDS TRAY -->
+      <section class="tray-section">
+        <div class="tray-title">Drag or click a number to place into box</div>
+        <div class="cards-tray" id="cardsTray">
+          <!-- 10 Shuffled Draggable Cards injected via JS -->
+        </div>
+      </section>
+
+      <!-- TOOLBAR CONTROLS -->
+      <div class="controls-grid">
+        <button class="btn-action" id="btnShuffle" title="Shuffle remaining cards">🔀 Shuffle</button>
+        <button class="btn-action" id="btnReset" title="Reset activity">🔄 Reset</button>
+        <button class="btn-action" id="btnPrev">◀ Previous</button>
+        <button class="btn-action" id="btnNext">Next ▶</button>
+        <button class="btn-action" id="btnToggleAnswers">👁️ Show Answers</button>
+        <button class="btn-action" id="btnSound">🔊 Sound</button>
+        <button class="btn-action" id="btnFullscreen">⛶ Fullscreen</button>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- CELEBRATION MODAL -->
+  <div class="modal-overlay" id="celebrationModal">
+    <div class="modal-card">
+      <div class="modal-title">🎉 Excellent! 🎉</div>
+      <div class="modal-subtitle" id="modalSubtitle">You mastered the Table of 7!</div>
+      <div class="modal-stats">
+        <div>
+          <div class="stat-label">Attempts</div>
+          <div class="stat-value" id="modalAttempts">10</div>
+        </div>
+        <div>
+          <div class="stat-label">Accuracy</div>
+          <div class="stat-value" id="modalAccuracy">100%</div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button class="btn-action" id="modalBtnReset">🔄 Practice Again</button>
+        <button class="btn-action primary" id="modalBtnNext">Next Table ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* --- AUDIO SYNTHESIZER (Web Audio API) --- */
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      playCorrect() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const osc1 = this.ctx.createOscillator();
+        const osc2 = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc1.type = 'sine';
+        osc2.type = 'sine';
+        
+        osc1.frequency.setValueAtTime(523.25, now); // C5
+        osc2.frequency.setValueAtTime(659.25, now + 0.08); // E5
+
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc1.start(now);
+        osc1.stop(now + 0.15);
+        osc2.start(now + 0.08);
+        osc2.stop(now + 0.35);
+      }
+
+      playError() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(160, now);
+        osc.frequency.linearRampToValueAtTime(110, now + 0.2);
+
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.2);
+      }
+
+      playWin() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+        
+        notes.forEach((freq, i) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + i * 0.09);
+          
+          gain.gain.setValueAtTime(0.18, now + i * 0.09);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.09 + 0.3);
+          
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          
+          osc.start(now + i * 0.09);
+          osc.stop(now + i * 0.09 + 0.32);
+        });
+      }
+
+      playClick() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, now);
+
+        gain.gain.setValueAtTime(0.04, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.04);
+      }
+    }
+
+    /* --- CONFETTI ANIMATION ENGINE --- */
+    class ConfettiEngine {
+      constructor(canvasId) {
+        this.canvas = document.getElementById(canvasId);
+        this.ctx = this.canvas.getContext('2d');
+        this.particles = [];
+        this.animId = null;
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+      }
+
+      resize() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+      }
+
+      start() {
+        this.particles = [];
+        const colors = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#8b5cf6'];
+        
+        for (let i = 0; i < 120; i++) {
+          this.particles.push({
+            x: this.canvas.width / 2,
+            y: this.canvas.height / 2,
+            vx: (Math.random() - 0.5) * 18,
+            vy: (Math.random() - 0.7) * 18,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            size: Math.random() * 8 + 4,
+            rotation: Math.random() * 360,
+            vRot: (Math.random() - 0.5) * 10,
+            opacity: 1
+          });
+        }
+
+        if (this.animId) cancelAnimationFrame(this.animId);
+        this.loop();
+      }
+
+      loop() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        let active = 0;
+        this.particles.forEach(p => {
+          if (p.opacity <= 0) return;
+          active++;
+
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.3; // Gravity
+          p.vx *= 0.98; // Friction
+          p.rotation += p.vRot;
+          p.opacity -= 0.008;
+
+          this.ctx.save();
+          this.ctx.translate(p.x, p.y);
+          this.ctx.rotate((p.rotation * Math.PI) / 180);
+          this.ctx.globalAlpha = Math.max(0, p.opacity);
+          this.ctx.fillStyle = p.color;
+          this.ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+          this.ctx.restore();
+        });
+
+        if (active > 0) {
+          this.animId = requestAnimationFrame(() => this.loop());
+        } else {
+          this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+      }
+    }
+
+    /* --- GAME STATE & LOGIC --- */
+    const sound = new SoundEngine();
+    const confetti = new ConfettiEngine('confettiCanvas');
+
+    const ENCOURAGEMENTS = ["Great Job! 🎉", "Fantastic! 🌟", "Excellent! ⚡", "Keep Going! 🔥", "Amazing! 🚀", "Super! 👏"];
+
+    let currentTable = 2;
+    let completedCount = 0;
+    let totalAttempts = 0;
+    let correctAttempts = 0;
+    let showingAnswers = false;
+    let selectedCard = null; // For click-to-place accessibility fallback
+
+    // Map tracking failed attempts per index for hints
+    let failedAttemptsMap = {};
+
+    // DOM Elements
+    const tableSelectorEl = document.getElementById('tableSelector');
+    const equationsContainerEl = document.getElementById('equationsContainer');
+    const cardsTrayEl = document.getElementById('cardsTray');
+    
+    const lblTable = document.getElementById('lblTable');
+    const lblProgress = document.getElementById('lblProgress');
+    const lblAttempts = document.getElementById('lblAttempts');
+    const lblAccuracy = document.getElementById('lblAccuracy');
+    const progressBar = document.getElementById('progressBar');
+    const toastPopup = document.getElementById('toastPopup');
+    
+    const celebrationModal = document.getElementById('celebrationModal');
+
+    // Initialize Application
+    function init() {
+      buildTableButtons();
+      loadTable(2);
+      setupGlobalControls();
+    }
+
+    // Build Table Selection Buttons (2 to 10)
+    function buildTableButtons() {
+      tableSelectorEl.innerHTML = '';
+      for (let i = 2; i <= 10; i++) {
+        const btn = document.createElement('button');
+        btn.className = `btn-table ${i === currentTable ? 'active' : ''}`;
+        btn.textContent = i;
+        btn.ariaLabel = `Table of ${i}`;
+        btn.addEventListener('click', () => {
+          sound.playClick();
+          loadTable(i);
+        });
+        tableSelectorEl.appendChild(btn);
+      }
+    }
+
+    // Load Specific Table Activity
+    function loadTable(tableNum) {
+      currentTable = tableNum;
+      completedCount = 0;
+      totalAttempts = 0;
+      correctAttempts = 0;
+      showingAnswers = false;
+      selectedCard = null;
+      failedAttemptsMap = {};
+
+      document.getElementById('btnToggleAnswers').textContent = "👁️ Show Answers";
+
+      // Update Active Button UI
+      document.querySelectorAll('.btn-table').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.textContent) === currentTable);
+      });
+
+      lblTable.textContent = `Table of ${currentTable}`;
+      updateStats();
+
+      // Render 10 Equations & Shuffled Cards
+      renderEquations();
+      renderCards();
+    }
+
+    // Render Equation Rows
+    function renderEquations() {
+      equationsContainerEl.innerHTML = '';
+      for (let i = 1; i <= 10; i++) {
+        const expectedVal = currentTable * i;
+        
+        const row = document.createElement('div');
+        row.className = 'equation-row';
+
+        const textSpan = document.createElement('span');
+        textSpan.className = 'equation-text';
+        textSpan.textContent = `${currentTable} × ${i} =`;
+
+        const dropZone = document.createElement('div');
+        dropZone.className = 'drop-zone';
+        dropZone.dataset.index = i;
+        dropZone.dataset.expected = expectedVal;
+        dropZone.tabIndex = 0;
+        dropZone.ariaLabel = `${currentTable} times ${i} drop zone`;
+
+        // Click-to-place accessibility support
+        dropZone.addEventListener('click', () => handleDropZoneClick(dropZone));
+
+        row.appendChild(textSpan);
+        row.appendChild(dropZone);
+        equationsContainerEl.appendChild(row);
+      }
+    }
+
+    // Render Draggable Answer Cards
+    function renderCards() {
+      cardsTrayEl.innerHTML = '';
+      
+      // Generate array 1..10 and shuffle
+      const multipliers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+      shuffleArray(multipliers);
+
+      multipliers.forEach(multiplier => {
+        const val = currentTable * multiplier;
+        const card = document.createElement('div');
+        card.className = 'answer-card';
+        card.textContent = val;
+        card.dataset.value = val;
+        card.tabIndex = 0;
+        card.ariaLabel = `Answer card ${val}`;
+
+        attachPointerDrag(card);
+
+        // Click-to-select fallback
+        card.addEventListener('click', (e) => {
+          if (e.pointerType === 'touch' || e.pointerType === 'mouse') {
+            // Handled via drag if dragged, but tap triggers selection fallback
+            handleCardSelect(card);
+          }
+        });
+
+        cardsTrayEl.appendChild(card);
+      });
+    }
+
+    /* --- POINTER EVENT DRAG AND DROP ENGINE --- */
+    function attachPointerDrag(card) {
+      let clone = null;
+      let startX = 0, startY = 0;
+      let isDragging = false;
+
+      card.addEventListener('pointerdown', (e) => {
+        if (card.classList.contains('used')) return;
+        sound.playClick();
+
+        card.setPointerCapture(e.pointerId);
+        startX = e.clientX;
+        startY = e.clientY;
+        isDragging = true;
+
+        const rect = card.getBoundingClientRect();
+        const offsetX = e.clientX - rect.left;
+        const offsetY = e.clientY - rect.top;
+
+        // Create Clone Floating Element
+        clone = card.cloneNode(true);
+        clone.classList.add('drag-clone');
+        clone.style.width = `${rect.width}px`;
+        clone.style.height = `${rect.height}px`;
+        clone.style.left = `${rect.left}px`;
+        clone.style.top = `${rect.top}px`;
+        document.body.appendChild(clone);
+
+        card.classList.add('dragging');
+
+        const onPointerMove = (evt) => {
+          if (!isDragging || !clone) return;
+
+          const cx = evt.clientX - offsetX;
+          const cy = evt.clientY - offsetY;
+
+          clone.style.left = `${cx}px`;
+          clone.style.top = `${cy}px`;
+
+          // Detect Drop Zone Under Pointer
+          clone.style.pointerEvents = 'none';
+          const elementUnder = document.elementFromPoint(evt.clientX, evt.clientY);
+          
+          document.querySelectorAll('.drop-zone').forEach(dz => dz.classList.remove('drag-over'));
+          const dropZone = elementUnder?.closest('.drop-zone');
+          if (dropZone && !dropZone.classList.contains('correct')) {
+            dropZone.classList.add('drag-over');
+          }
+        };
+
+        const onPointerUp = (evt) => {
+          if (!isDragging) return;
+          isDragging = false;
+
+          card.releasePointerCapture(evt.pointerId);
+          card.removeEventListener('pointermove', onPointerMove);
+          card.removeEventListener('pointerup', onPointerUp);
+          card.removeEventListener('pointercancel', onPointerUp);
+
+          document.querySelectorAll('.drop-zone').forEach(dz => dz.classList.remove('drag-over'));
+
+          if (clone) {
+            const elementUnder = document.elementFromPoint(evt.clientX, evt.clientY);
+            const dropZone = elementUnder?.closest('.drop-zone');
+
+            if (dropZone && !dropZone.classList.contains('correct')) {
+              verifyDrop(card, dropZone, clone);
+            } else {
+              // Return safely
+              animateCloneReturn(clone, card);
+            }
+          }
+        };
+
+        card.addEventListener('pointermove', onPointerMove);
+        card.addEventListener('pointerup', onPointerUp);
+        card.addEventListener('pointercancel', onPointerUp);
+      });
+    }
+
+    // Animate clone back to card origin on failed drop
+    function animateCloneReturn(clone, originalCard) {
+      const rect = originalCard.getBoundingClientRect();
+      clone.style.transition = 'all 0.25s ease-out';
+      clone.style.left = `${rect.left}px`;
+      clone.style.top = `${rect.top}px`;
+      clone.style.transform = 'scale(1)';
+
+      setTimeout(() => {
+        if (clone && clone.parentNode) clone.parentNode.removeChild(clone);
+        originalCard.classList.remove('dragging');
+      }, 250);
+    }
+
+    // Verify Drop Mechanics
+    function verifyDrop(cardEl, dropZoneEl, cloneEl) {
+      totalAttempts++;
+      const val = parseInt(cardEl.dataset.value);
+      const expected = parseInt(dropZoneEl.dataset.expected);
+      const index = dropZoneEl.dataset.index;
+
+      if (val === expected) {
+        // --- CORRECT DROP ---
+        correctAttempts++;
+        completedCount++;
+        sound.playCorrect();
+
+        dropZoneEl.textContent = val;
+        dropZoneEl.classList.add('correct');
+        
+        const tick = document.createElement('span');
+        tick.className = 'tick-mark';
+        tick.textContent = '✓';
+        dropZoneEl.appendChild(tick);
+
+        cardEl.style.visibility = 'hidden';
+        cardEl.classList.add('used');
+
+        if (cloneEl && cloneEl.parentNode) cloneEl.parentNode.removeChild(cloneEl);
+
+        showToast(ENCOURAGEMENTS[Math.floor(Math.random() * ENCOURAGEMENTS.length)]);
+        updateStats();
+
+        // Check Table Completion
+        if (completedCount === 10) {
+          setTimeout(triggerCelebration, 500);
+        }
+
+      } else {
+        // --- INCORRECT DROP ---
+        sound.playError();
+        
+        failedAttemptsMap[index] = (failedAttemptsMap[index] || 0) + 1;
+        
+        dropZoneEl.classList.add('incorrect-shake');
+        setTimeout(() => dropZoneEl.classList.remove('incorrect-shake'), 400);
+
+        // Highlight Hint if failed >= 2 times
+        if (failedAttemptsMap[index] >= 2) {
+          dropZoneEl.classList.add('hint-active');
+        }
+
+        updateStats();
+        animateCloneReturn(cloneEl, cardEl);
+      }
+    }
+
+    /* --- ACCESSIBILITY / CLICK-TO-PLACE FALLBACK --- */
+    function handleCardSelect(card) {
+      if (card.classList.contains('used')) return;
+      
+      if (selectedCard === card) {
+        selectedCard.classList.remove('selected');
+        selectedCard = null;
+        return;
+      }
+
+      if (selectedCard) selectedCard.classList.remove('selected');
+      selectedCard = card;
+      selectedCard.classList.add('selected');
+      sound.playClick();
+    }
+
+    function handleDropZoneClick(dropZone) {
+      if (!selectedCard || dropZone.classList.contains('correct')) return;
+      
+      const fakeClone = document.createElement('div'); // Dummy for compatibility
+      verifyDrop(selectedCard, dropZone, fakeClone);
+      
+      if (selectedCard) {
+        selectedCard.classList.remove('selected');
+        selectedCard = null;
+      }
+    }
+
+    /* --- STATS & PROGRESS --- */
+    function updateStats() {
+      lblProgress.textContent = `${completedCount} / 10`;
+      lblAttempts.textContent = totalAttempts;
+      
+      const pct = totalAttempts === 0 ? 100 : Math.round((correctAttempts / totalAttempts) * 100);
+      lblAccuracy.textContent = `${pct}%`;
+
+      const progressPct = (completedCount / 10) * 100;
+      progressBar.style.width = `${progressPct}%`;
+    }
+
+    // Toast Notification
+    function showToast(msg) {
+      toastPopup.textContent = msg;
+      toastPopup.classList.add('show');
+      setTimeout(() => toastPopup.classList.remove('show'), 1600);
+    }
+
+    // Trigger Completion Celebration Modal
+    function triggerCelebration() {
+      sound.playWin();
+      confetti.start();
+
+      document.getElementById('modalSubtitle').textContent = `You completed the Table of ${currentTable}!`;
+      document.getElementById('modalAttempts').textContent = totalAttempts;
+      
+      const pct = Math.round((correctAttempts / totalAttempts) * 100);
+      document.getElementById('modalAccuracy').textContent = `${pct}%`;
+
+      celebrationModal.classList.add('active');
+    }
+
+    /* --- GLOBAL CONTROLS & TOOLBAR --- */
+    function setupGlobalControls() {
+      // Shuffle Remaining
+      document.getElementById('btnShuffle').addEventListener('click', () => {
+        sound.playClick();
+        const cards = Array.from(cardsTrayEl.children).filter(c => !c.classList.contains('used'));
+        shuffleArray(cards);
+        cards.forEach(c => cardsTrayEl.appendChild(c));
+      });
+
+      // Reset
+      document.getElementById('btnReset').addEventListener('click', () => {
+        sound.playClick();
+        loadTable(currentTable);
+      });
+
+      // Prev / Next
+      document.getElementById('btnPrev').addEventListener('click', () => {
+        sound.playClick();
+        loadTable(currentTable > 2 ? currentTable - 1 : 10);
+      });
+
+      document.getElementById('btnNext').addEventListener('click', () => {
+        sound.playClick();
+        loadTable(currentTable < 10 ? currentTable + 1 : 2);
+      });
+
+      // Toggle Answers Demonstration Mode
+      document.getElementById('btnToggleAnswers').addEventListener('click', () => {
+        sound.playClick();
+        showingAnswers = !showingAnswers;
+        document.getElementById('btnToggleAnswers').textContent = showingAnswers ? "🙈 Hide Answers" : "👁️ Show Answers";
+
+        document.querySelectorAll('.drop-zone').forEach(zone => {
+          if (!zone.classList.contains('correct')) {
+            zone.textContent = showingAnswers ? zone.dataset.expected : '';
+          }
+        });
+      });
+
+      // Mute / Unmute Sound
+      document.getElementById('btnSound').addEventListener('click', () => {
+        sound.muted = !sound.muted;
+        document.getElementById('btnSound').textContent = sound.muted ? "🔇 Muted" : "🔊 Sound";
+      });
+
+      // Fullscreen Toggle
+      document.getElementById('btnFullscreen').addEventListener('click', () => {
+        sound.playClick();
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        } else {
+          document.exitFullscreen().catch(() => {});
+        }
+      });
+
+      // Modal Buttons
+      document.getElementById('modalBtnReset').addEventListener('click', () => {
+        sound.playClick();
+        celebrationModal.classList.remove('active');
+        loadTable(currentTable);
+      });
+
+      document.getElementById('modalBtnNext').addEventListener('click', () => {
+        sound.playClick();
+        celebrationModal.classList.remove('active');
+        loadTable(currentTable < 10 ? currentTable + 1 : 2);
+      });
+    }
+
+    // Helper: Array Shuffle
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }
+
+    // Run on Load
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

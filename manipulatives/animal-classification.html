@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animal Classification - Interactive Game</title>
+    <style>
+        /* Modern CSS Reset & Root Variables */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        :root {
+            --bg-sky: #70d6ff;
+            --herbivore-main: #2ea043;
+            --herbivore-bg: #e6f4ea;
+            --herbivore-border: #238636;
+            --carnivore-main: #da3633;
+            --carnivore-bg: #ffebe9;
+            --carnivore-border: #b62324;
+            --omnivore-main: #d97706;
+            --omnivore-bg: #fff8e6;
+            --omnivore-border: #b45309;
+            --wood-dark: #5c3214;
+            --wood-light: #8b4513;
+            --wood-gradient: linear-gradient(180deg, #9c5221 0%, #6e330c 100%);
+            --wood-shelf: linear-gradient(180deg, #d29054 0%, #a66027 100%);
+            --font-family: 'Fredoka', 'Comic Sans MS', 'Chalkboard SE', 'Segoe UI', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background: #87ceeb linear-gradient(180deg, #70c1ff 0%, #b4ecb4 60%, #4caf50 100%) fixed;
+            min-height: 100vh;
+            color: #2c3e50;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            overflow-x: hidden;
+        }
+
+        /* Container Layout */
+        .game-wrapper {
+            width: 100%;
+            max-width: 1280px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            position: relative;
+        }
+
+        /* Header Banner & Title */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(8px);
+            padding: 8px 16px;
+            border-radius: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .title-banner {
+            background: var(--wood-gradient);
+            border: 4px solid #3d1e08;
+            border-radius: 20px;
+            padding: 8px 28px;
+            box-shadow: 0 6px 0 #2a1405, inset 0 2px 4px rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-align: center;
+            margin: 0 auto;
+        }
+
+        .title-text {
+            color: #fff;
+            font-size: 1.8rem;
+            font-weight: 800;
+            text-shadow: 2px 2px 0 #2a1405, -1px -1px 0 #2a1405, 1px -1px 0 #2a1405, -1px 1px 0 #2a1405;
+            letter-spacing: 1px;
+        }
+
+        .paw-icon {
+            width: 32px;
+            height: 32px;
+            fill: #ffcc00;
+            filter: drop-shadow(1px 2px 0 #2a1405);
+        }
+
+        /* Controls & Progress */
+        .stats-container {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: #ffffff;
+            padding: 8px 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 2px solid #e2e8f0;
+        }
+
+        .stat-item {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #334155;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .stat-value {
+            color: #2563eb;
+            font-size: 1.2rem;
+        }
+
+        .progress-bar-container {
+            width: 140px;
+            height: 16px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #cbd5e1;
+            position: relative;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+            transition: width 0.4s ease-out;
+            border-radius: 8px;
+        }
+
+        .btn-reset {
+            background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            border: 3px solid #1e40af;
+            border-radius: 12px;
+            padding: 8px 18px;
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #1e3a8a, 0 4px 10px rgba(0,0,0,0.2);
+            transition: all 0.1s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-reset:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 #1e3a8a, 0 6px 12px rgba(0,0,0,0.25);
+            background: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%);
+        }
+
+        .btn-reset:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #1e3a8a;
+        }
+
+        .instructions-bar {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #475569;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            margin: -4px auto 4px auto;
+        }
+
+        /* Category Panels Layout */
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            width: 100%;
+        }
+
+        .category-card {
+            background: #ffffff;
+            border-radius: 20px;
+            border: 4px solid #ccc;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .category-card.drag-over {
+            transform: scale(1.02);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.2);
+        }
+
+        /* Category Color Themes */
+        .category-card[data-category="herbivore"] {
+            border-color: var(--herbivore-border);
+            background: var(--herbivore-bg);
+        }
+        .category-card[data-category="herbivore"] .category-header {
+            background: var(--herbivore-main);
+        }
+        .category-card[data-category="herbivore"].drag-over {
+            background: #d4edda;
+        }
+
+        .category-card[data-category="carnivore"] {
+            border-color: var(--carnivore-border);
+            background: var(--carnivore-bg);
+        }
+        .category-card[data-category="carnivore"] .category-header {
+            background: var(--carnivore-main);
+        }
+        .category-card[data-category="carnivore"].drag-over {
+            background: #f8d7da;
+        }
+
+        .category-card[data-category="omnivore"] {
+            border-color: var(--omnivore-border);
+            background: var(--omnivore-bg);
+        }
+        .category-card[data-category="omnivore"] .category-header {
+            background: var(--omnivore-main);
+        }
+        .category-card[data-category="omnivore"].drag-over {
+            background: #fff3cd;
+        }
+
+        .category-header {
+            color: white;
+            padding: 10px 12px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+        }
+
+        .category-title-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .category-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .category-subtext {
+            background: rgba(255, 255, 255, 0.9);
+            color: #1e293b;
+            font-size: 0.82rem;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 12px;
+            margin-top: 4px;
+            display: inline-block;
+        }
+
+        /* Food Icons Decoration Row */
+        .food-icons-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 10px;
+            background: rgba(255,255,255,0.4);
+            border-bottom: 2px dashed rgba(0,0,0,0.08);
+            min-height: 48px;
+        }
+
+        .food-icon-item {
+            width: 32px;
+            height: 32px;
+            filter: drop-shadow(0 2px 3px rgba(0,0,0,0.15));
+            transition: transform 0.2s ease;
+        }
+
+        .food-icon-item:hover {
+            transform: scale(1.15) rotate(5deg);
+        }
+
+        /* Sorting Drop Zone Area */
+        .drop-zone {
+            flex: 1;
+            min-height: 180px;
+            margin: 10px;
+            padding: 10px;
+            border: 3px dashed rgba(0,0,0,0.2);
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.6);
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            gap: 8px;
+            position: relative;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        .drop-zone-placeholder {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #94a3b8;
+            font-size: 1.1rem;
+            font-weight: 700;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            opacity: 0.7;
+        }
+
+        /* Animal Cards Container / Wooden Shelf */
+        .shelf-container {
+            background: var(--wood-shelf);
+            border: 4px solid #5c3214;
+            border-radius: 20px;
+            padding: 16px;
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.3), 0 8px 16px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .shelf-title {
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 800;
+            text-shadow: 1px 1px 2px #3d1e08;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .animal-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+            gap: 12px;
+            min-height: 140px;
+        }
+
+        /* Individual Animal Card */
+        .animal-card {
+            background: #ffffff;
+            border-radius: 14px;
+            border: 2px solid #e2e8f0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            padding: 12px 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+            position: relative;
+            touch-action: manipulation;
+        }
+
+        .animal-card:hover {
+            transform: translateY(-4px) scale(1.03);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+            border-color: #3b82f6;
+        }
+
+        .animal-card:active {
+            cursor: grabbing;
+        }
+
+        .animal-card.selected {
+            border: 3px solid #f59e0b;
+            box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.3), 0 8px 16px rgba(0,0,0,0.15);
+            transform: translateY(-4px) scale(1.05);
+            background: #fffdf5;
+        }
+
+        .animal-card.dragging {
+            opacity: 0.4;
+            transform: scale(0.95);
+        }
+
+        .animal-name {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #1e293b;
+            text-align: center;
+            line-height: 1.1;
+            pointer-events: none;
+        }
+
+        /* Sorted Mini Chip Card Inside Drop Zone */
+        .sorted-chip {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            border: 1px solid rgba(0,0,0,0.1);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .sorted-chip-name {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #334155;
+        }
+
+        /* Feedback Toast Notifications */
+        .toast-feedback {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            padding: 12px 28px;
+            border-radius: 30px;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: white;
+            z-index: 1000;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toast-feedback.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast-correct {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border: 3px solid #34d399;
+        }
+
+        .toast-incorrect {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            border: 3px solid #f87171;
+        }
+
+        /* Completion Overlay & Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            padding: 16px;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .completion-modal {
+            background: #ffffff;
+            border-radius: 28px;
+            padding: 32px 24px;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            border: 6px solid #f59e0b;
+            transform: scale(0.8);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+
+        .modal-overlay.active .completion-modal {
+            transform: scale(1);
+        }
+
+        .completion-title {
+            font-size: 2.2rem;
+            color: #d97706;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .completion-subtitle {
+            font-size: 1.15rem;
+            color: #475569;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .completion-score-badge {
+            background: #fef3c7;
+            border: 2px dashed #f59e0b;
+            border-radius: 16px;
+            padding: 12px 24px;
+            display: inline-block;
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #b45309;
+            margin-bottom: 24px;
+        }
+
+        /* Confetti Canvas */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 2001;
+        }
+
+        /* Animations */
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+
+        .shake-animation {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 900px) {
+            .categories-grid {
+                grid-template-columns: 1fr;
+            }
+            .title-text {
+                font-size: 1.4rem;
+            }
+            .drop-zone {
+                min-height: 120px;
+            }
+            .animal-cards-grid {
+                grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-wrapper">
+        <!-- Top Navigation Bar & Stats -->
+        <header class="top-bar">
+            <div class="title-banner">
+                <svg class="paw-icon" viewBox="0 0 24 24">
+                    <path d="M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5M6,10A2,2 0 0,1 4,8A2,2 0 0,1 6,6A2,2 0 0,1 8,8A2,2 0 0,1 6,10M18,10A2,2 0 0,1 16,8A2,2 0 0,1 18,6A2,2 0 0,1 20,8A2,2 0 0,1 18,10M7,15A2,2 0 0,1 5,13A2,2 0 0,1 7,11A2,2 0 0,1 9,13A2,2 0 0,1 7,15M17,15A2,2 0 0,1 15,13A2,2 0 0,1 17,11A2,2 0 0,1 19,13A2,2 0 0,1 17,15M12,13C14.21,13 16,14.79 16,17C16,19.21 14.21,21 12,21C9.79,21 8,19.21 8,17C8,14.79 9.79,13 12,13Z" />
+                </svg>
+                <h1 class="title-text">Animal Classification</h1>
+            </div>
+
+            <div class="stats-container">
+                <div class="stat-item">
+                    <span>Score:</span>
+                    <span id="score-text" class="stat-value">0 / 30</span>
+                </div>
+                <div class="progress-bar-container" title="Progress Bar">
+                    <div id="progress-bar-fill" class="progress-bar-fill"></div>
+                </div>
+            </div>
+
+            <button id="btn-reset" class="btn-reset" aria-label="Reset Game">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                </svg>
+                <span>Reset</span>
+            </button>
+        </header>
+
+        <div class="instructions-bar" id="instruction-text">
+            💡 Drag each animal to its group, or tap an animal then tap the group!
+        </div>
+
+        <!-- 3 Category Drop Panels -->
+        <main class="categories-grid">
+            <!-- HERBIVORE -->
+            <section class="category-card" data-category="herbivore" aria-label="Herbivore Category">
+                <div class="category-header">
+                    <div class="category-title-row">
+                        <span class="category-title">🟢 Herbivore</span>
+                    </div>
+                    <div class="category-subtext">Animals that eat plants</div>
+                </div>
+                <div class="food-icons-row" id="herbivore-food-icons"></div>
+                <div class="drop-zone" id="zone-herbivore" data-category="herbivore" role="region" aria-label="Herbivore Drop Zone">
+                    <div class="drop-zone-placeholder">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg>
+                        <span>Drop here</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CARNIVORE -->
+            <section class="category-card" data-category="carnivore" aria-label="Carnivore Category">
+                <div class="category-header">
+                    <div class="category-title-row">
+                        <span class="category-title">🔴 Carnivore</span>
+                    </div>
+                    <div class="category-subtext">Animals that eat other animals</div>
+                </div>
+                <div class="food-icons-row" id="carnivore-food-icons"></div>
+                <div class="drop-zone" id="zone-carnivore" data-category="carnivore" role="region" aria-label="Carnivore Drop Zone">
+                    <div class="drop-zone-placeholder">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg>
+                        <span>Drop here</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- OMNIVORE -->
+            <section class="category-card" data-category="omnivore" aria-label="Omnivore Category">
+                <div class="category-header">
+                    <div class="category-title-row">
+                        <span class="category-title">🟠 Omnivore</span>
+                    </div>
+                    <div class="category-subtext">Animals that eat both plants & animals</div>
+                </div>
+                <div class="food-icons-row" id="omnivore-food-icons"></div>
+                <div class="drop-zone" id="zone-omnivore" data-category="omnivore" role="region" aria-label="Omnivore Drop Zone">
+                    <div class="drop-zone-placeholder">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg>
+                        <span>Drop here</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Unsorted Animals Tray Shelf -->
+        <section class="shelf-container" aria-label="Animals Tray Shelf">
+            <div class="shelf-title">
+                <span>🐾 Choose an animal to classify:</span>
+                <span id="remaining-count">30 Animals Remaining</span>
+            </div>
+            <div id="animal-tray" class="animal-cards-grid" role="list"></div>
+        </section>
+    </div>
+
+    <!-- Feedback Toast -->
+    <div id="toast" class="toast-feedback" role="alert" aria-live="assertive"></div>
+
+    <!-- Completion Modal Window -->
+    <div id="modal-overlay" class="modal-overlay">
+        <div class="completion-modal">
+            <h2 class="completion-title">🎉 Excellent! 🎉</h2>
+            <p class="completion-subtitle">You classified all 30 animals correctly!</p>
+            <div class="completion-score-badge">Final Score: 30 / 30</div>
+            <div>
+                <button id="btn-play-again" class="btn-reset" style="margin: 0 auto; padding: 12px 32px; font-size: 1.15rem;">
+                    🔄 Play Again
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <script>
+        /* Inline SVG Vectors Repository for Food Icons */
+        const FOOD_SVGS = {
+            leaf: `<svg viewBox="0 0 64 64" class="food-icon-item"><path fill="#4caf50" d="M52,12 C40,12 20,24 16,40 C14,48 18,54 26,52 C42,48 52,28 52,12 Z"/><path fill="#388e3c" d="M16,40 C28,36 44,22 52,12 C36,22 20,38 16,40 Z"/><path fill="none" stroke="#2e7d32" stroke-width="3" d="M12,56 Q20,48 26,44"/></svg>`,
+            grass: `<svg viewBox="0 0 64 64" class="food-icon-item"><path fill="#66bb6a" d="M10,54 Q18,20 30,10 Q24,30 22,54 Z"/><path fill="#81c784" d="M26,54 Q36,16 50,14 Q40,32 36,54 Z"/><path fill="#4caf50" d="M42,54 Q48,28 58,22 Q52,38 48,54 Z"/></svg>`,
+            meat: `<svg viewBox="0 0 64 64" class="food-icon-item"><path fill="#e53935" d="M16,28 C10,20 20,8 32,12 C44,8 54,20 48,32 C54,44 42,56 30,52 C18,54 8,42 16,28 Z"/><ellipse cx="30" cy="32" rx="8" ry="5" fill="#ffffff" opacity="0.8"/></svg>`,
+            drumstick: `<svg viewBox="0 0 64 64" class="food-icon-item"><path fill="#ffb74d" d="M20,44 C12,36 16,20 32,16 C44,28 36,48 20,44 Z" fill="#fb8c00"/><circle cx="14" cy="50" r="5" fill="#fff3e0"/><circle cx="10" cy="44" r="5" fill="#fff3e0"/><path stroke="#fff3e0" stroke-width="6" stroke-linecap="round" d="M12,47 L24,38"/></svg>`,
+            apple: `<svg viewBox="0 0 64 64" class="food-icon-item"><path fill="#e53935" d="M32,16 C24,8 12,16 14,34 C16,48 28,54 32,54 C36,54 48,48 50,34 C52,16 40,8 32,16 Z"/><path fill="#4caf50" d="M32,16 Q38,8 44,12 Q38,18 32,16 Z"/><path fill="none" stroke="#5d4037" stroke-width="3" d="M32,16 Q30,10 32,6"/></svg>`,
+            wheat: `<svg viewBox="0 0 64 64" class="food-icon-item"><path stroke="#fbc02d" stroke-width="3" d="M32,58 L32,10"/><path fill="#fbc02d" d="M32,12 Q24,16 32,22 Q40,16 32,12 Z M32,22 Q22,26 32,32 Q42,26 32,22 Z M32,32 Q24,36 32,42 Q40,36 32,32 Z"/></svg>`,
+            fish: `<svg viewBox="0 0 64 64" class="food-icon-item"><path fill="#4fc3f7" d="M12,32 C24,16 48,20 54,32 C48,44 24,48 12,32 Z"/><path fill="#0288d1" d="M12,32 L4,22 L4,42 Z"/><circle cx="44" cy="28" r="2.5" fill="#fff"/><circle cx="45" cy="28" r="1" fill="#000"/></svg>`
+        };
+
+        /* Authoritative Dataset for all 30 Animals */
+        const ANIMALS_DATA = [
+            // Herbivores (10)
+            { id: 1, name: "Cow", category: "herbivore" },
+            { id: 2, name: "Elephant", category: "herbivore" },
+            { id: 3, name: "Deer", category: "herbivore" },
+            { id: 4, name: "Goat", category: "herbivore" },
+            { id: 5, name: "Rabbit", category: "herbivore" },
+            { id: 6, name: "Horse", category: "herbivore" },
+            { id: 7, name: "Giraffe", category: "herbivore" },
+            { id: 8, name: "Zebra", category: "herbivore" },
+            { id: 9, name: "Hippopotamus", category: "herbivore" },
+            { id: 10, name: "Tortoise", category: "herbivore" },
+
+            // Carnivores (10)
+            { id: 11, name: "Lion", category: "carnivore" },
+            { id: 12, name: "Tiger", category: "carnivore" },
+            { id: 13, name: "Wolf", category: "carnivore" },
+            { id: 14, name: "Cheetah", category: "carnivore" },
+            { id: 15, name: "Crocodile", category: "carnivore" },
+            { id: 16, name: "Snake", category: "carnivore" },
+            { id: 17, name: "Eagle", category: "carnivore" },
+            { id: 18, name: "Shark", category: "carnivore" },
+            { id: 19, name: "Leopard", category: "carnivore" },
+            { id: 20, name: "Polar Bear", category: "carnivore" },
+
+            // Omnivores (10)
+            { id: 21, name: "Bear", category: "omnivore" },
+            { id: 22, name: "Fox", category: "omnivore" },
+            { id: 23, name: "Dog", category: "omnivore" },
+            { id: 24, name: "Cat", category: "omnivore" },
+            { id: 25, name: "Pig", category: "omnivore" },
+            { id: 26, name: "Hen", category: "omnivore" },
+            { id: 27, name: "Duck", category: "omnivore" },
+            { id: 28, name: "Crow", category: "omnivore" },
+            { id: 29, name: "Monkey", category: "omnivore" },
+            { id: 30, name: "Squirrel", category: "omnivore" }
+        ];
+
+        // Application State Variables
+        let currentAnimals = [];
+        let score = 0;
+        let selectedAnimalId = null;
+        let isProcessing = false;
+
+        // DOM Element References
+        const animalTrayEl = document.getElementById('animal-tray');
+        const scoreTextEl = document.getElementById('score-text');
+        const progressBarFillEl = document.getElementById('progress-bar-fill');
+        const remainingCountEl = document.getElementById('remaining-count');
+        const btnReset = document.getElementById('btn-reset');
+        const btnPlayAgain = document.getElementById('btn-play-again');
+        const toastEl = document.getElementById('toast');
+        const modalOverlayEl = document.getElementById('modal-overlay');
+        const dropZones = document.querySelectorAll('.drop-zone');
+
+        // Initialize Food Icons in Panels Header
+        function populateFoodIcons() {
+            document.getElementById('herbivore-food-icons').innerHTML = FOOD_SVGS.leaf + FOOD_SVGS.grass + FOOD_SVGS.leaf;
+            document.getElementById('carnivore-food-icons').innerHTML = FOOD_SVGS.meat + FOOD_SVGS.drumstick + FOOD_SVGS.fish;
+            document.getElementById('omnivore-food-icons').innerHTML = FOOD_SVGS.leaf + FOOD_SVGS.apple + FOOD_SVGS.wheat + FOOD_SVGS.meat + FOOD_SVGS.fish;
+        }
+
+        // Shuffle Array Utility
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // Start / Reset Game Session
+        function initGame() {
+            score = 0;
+            selectedAnimalId = null;
+            isProcessing = false;
+            updateStats();
+
+            // Clear drop zones
+            dropZones.forEach(zone => {
+                zone.innerHTML = `
+                    <div class="drop-zone-placeholder">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg>
+                        <span>Drop here</span>
+                    </div>`;
+            });
+
+            // Randomize cards
+            currentAnimals = shuffleArray(ANIMALS_DATA);
+            renderAnimalTray();
+            modalOverlayEl.classList.remove('active');
+        }
+
+        // Render Cards in Bottom Tray
+        function renderAnimalTray() {
+            animalTrayEl.innerHTML = '';
+            currentAnimals.forEach(animal => {
+                const card = document.createElement('div');
+                card.className = 'animal-card';
+                card.draggable = true;
+                card.dataset.id = animal.id;
+                card.tabIndex = 0;
+                card.setAttribute('role', 'button');
+                card.setAttribute('aria-label', `${animal.name}. Tap to select, or drag to classification zone.`);
+
+                card.innerHTML = `
+                    <span class="animal-name">${animal.name}</span>
+                `;
+
+                // Event Listeners for Desktop Drag
+                card.addEventListener('dragstart', handleDragStart);
+                card.addEventListener('dragend', handleDragEnd);
+
+                // Event Listeners for Touch / Click
+                card.addEventListener('click', () => handleCardClick(animal.id));
+                card.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleCardClick(animal.id);
+                    }
+                });
+
+                animalTrayEl.appendChild(card);
+            });
+        }
+
+        // Update Score and Progress Bar Display
+        function updateStats() {
+            scoreTextEl.textContent = `${score} / 30`;
+            const percentage = (score / 30) * 100;
+            progressBarFillEl.style.width = `${percentage}%`;
+            remainingCountEl.textContent = `${30 - score} Animals Remaining`;
+        }
+
+        // Card Click / Tap Selection Handler
+        function handleCardClick(id) {
+            if (isProcessing) return;
+
+            if (selectedAnimalId === id) {
+                // Deselect
+                selectedAnimalId = null;
+                clearSelectedStyles();
+            } else {
+                selectedAnimalId = id;
+                clearSelectedStyles();
+                const selectedCard = animalTrayEl.querySelector(`[data-id="${id}"]`);
+                if (selectedCard) {
+                    selectedCard.classList.add('selected');
+                }
+            }
+        }
+
+        function clearSelectedStyles() {
+            const cards = animalTrayEl.querySelectorAll('.animal-card');
+            cards.forEach(c => c.classList.remove('selected'));
+        }
+
+        // HTML5 Drag and Drop Handlers
+        function handleDragStart(e) {
+            const id = parseInt(e.currentTarget.dataset.id, 10);
+            selectedAnimalId = id;
+            e.dataTransfer.setData('text/plain', id.toString());
+            e.currentTarget.classList.add('dragging');
+            clearSelectedStyles();
+            e.currentTarget.classList.add('selected');
+        }
+
+        function handleDragEnd(e) {
+            e.currentTarget.classList.remove('dragging');
+        }
+
+        // Drop Zones Event Setup
+        dropZones.forEach(zone => {
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('drag-over');
+                zone.closest('.category-card').classList.add('drag-over');
+            });
+
+            zone.addEventListener('dragleave', () => {
+                zone.classList.remove('drag-over');
+                zone.closest('.category-card').classList.remove('drag-over');
+            });
+
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('drag-over');
+                zone.closest('.category-card').classList.remove('drag-over');
+
+                const targetCategory = zone.dataset.category;
+                if (selectedAnimalId !== null) {
+                    processClassification(selectedAnimalId, targetCategory);
+                }
+            });
+
+            // Tap/Click Category Panel for Mobile & Smartboards
+            zone.closest('.category-card').addEventListener('click', (e) => {
+                if (selectedAnimalId !== null && !isProcessing) {
+                    const targetCategory = zone.dataset.category;
+                    processClassification(selectedAnimalId, targetCategory);
+                }
+            });
+        });
+
+        // Validation & Classification Core Logic
+        function processClassification(animalId, targetCategory) {
+            const animal = ANIMALS_DATA.find(a => a.id === animalId);
+            if (!animal) return;
+
+            isProcessing = true;
+            const cardEl = animalTrayEl.querySelector(`[data-id="${animalId}"]`);
+            const targetZone = document.getElementById(`zone-${targetCategory}`);
+
+            if (animal.category === targetCategory) {
+                // ✅ CORRECT CLASSIFICATION
+                showToast("✅ Correct!", "toast-correct");
+                score++;
+                updateStats();
+
+                // Move Card to Sorted Drop Zone as Chip
+                if (cardEl) {
+                    cardEl.remove();
+                }
+
+                // Remove placeholder if present
+                const placeholder = targetZone.querySelector('.drop-zone-placeholder');
+                if (placeholder) {
+                    placeholder.style.display = 'none';
+                }
+
+                // Append Sorted Mini Chip Card
+                const chip = document.createElement('div');
+                chip.className = 'sorted-chip';
+                chip.innerHTML = `
+                    <span class="sorted-chip-name">${animal.name}</span>
+                `;
+                targetZone.appendChild(chip);
+
+                // Remove from remaining list
+                currentAnimals = currentAnimals.filter(a => a.id !== animalId);
+                selectedAnimalId = null;
+
+                // Check Game Completion
+                if (score === 30) {
+                    setTimeout(triggerCompletion, 600);
+                }
+            } else {
+                // ❌ INCORRECT CLASSIFICATION
+                showToast("❌ Try Again!", "toast-incorrect");
+
+                if (cardEl) {
+                    cardEl.classList.add('shake-animation');
+                    setTimeout(() => {
+                        cardEl.classList.remove('shake-animation');
+                    }, 400);
+                }
+
+                // Highlight wrong panel briefly
+                const targetPanel = targetZone.closest('.category-card');
+                targetPanel.style.borderColor = "#ef4444";
+                setTimeout(() => {
+                    targetPanel.style.borderColor = "";
+                }, 500);
+            }
+
+            setTimeout(() => {
+                isProcessing = false;
+            }, 300);
+        }
+
+        // Toast Feedback Message
+        function showToast(message, className) {
+            toastEl.textContent = message;
+            toastEl.className = `toast-feedback ${className} show`;
+            setTimeout(() => {
+                toastEl.classList.remove('show');
+            }, 1200);
+        }
+
+        // Completion Fireworks / Confetti
+        function triggerCompletion() {
+            modalOverlayEl.classList.add('active');
+            startConfetti();
+        }
+
+        // Simple Custom Canvas Confetti Engine
+        function startConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = [];
+            const colors = ['#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#8b5cf6'];
+
+            for (let i = 0; i < 120; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    speedY: Math.random() * 3 + 2,
+                    speedX: Math.random() * 2 - 1,
+                    rotation: Math.random() * 360
+                });
+            }
+
+            let animationFrame;
+            function render() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    p.y += p.speedY;
+                    p.x += p.speedX;
+                    p.rotation += 2;
+
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate((p.rotation * Math.PI) / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                    ctx.restore();
+
+                    if (p.y > canvas.height) {
+                        p.y = -10;
+                        p.x = Math.random() * canvas.width;
+                    }
+                });
+
+                if (modalOverlayEl.classList.contains('active')) {
+                    animationFrame = requestAnimationFrame(render);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    cancelAnimationFrame(animationFrame);
+                }
+            }
+            render();
+        }
+
+        // Event Listeners for Reset & Restart
+        btnReset.addEventListener('click', initGame);
+        btnPlayAgain.addEventListener('click', initGame);
+
+        // Window Resize Handling for Canvas
+        window.addEventListener('resize', () => {
+            const canvas = document.getElementById('confetti-canvas');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Initialize on Window Load
+        window.onload = function() {
+            populateFoodIcons();
+            initGame();
+        };
+    </script>
+</body>
+</html>

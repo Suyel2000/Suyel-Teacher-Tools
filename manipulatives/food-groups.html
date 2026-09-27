@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Group Sorter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background: #8BC34A; /* Lush green grass background */
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(255,255,255,0.2) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(255,255,255,0.15) 0%, transparent 25%),
+                radial-gradient(circle at 50% 50%, rgba(139, 195, 74, 1) 0%, rgba(104, 159, 56, 1) 100%);
+            min-height: 100vh;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        .font-game {
+            font-family: 'Fredoka One', cursive, sans-serif;
+        }
+
+        /* Wooden panel container */
+        .wood-panel {
+            background: #EED29F;
+            background-image: linear-gradient(to bottom, #f3dcb0, #e6c587);
+            border: 6px solid #8D5B28;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.6), 0 8px 16px rgba(0,0,0,0.25);
+            border-radius: 24px;
+        }
+
+        .wood-tray {
+            background: #D9A05B;
+            border: 4px solid #734212;
+            box-shadow: inset 0 4px 8px rgba(0,0,0,0.3), 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 20px;
+        }
+
+        /* Banner title box */
+        .title-banner {
+            background: linear-gradient(180deg, #FFF9C4 0%, #FFF176 100%);
+            border: 5px solid #F57F17;
+            box-shadow: 0 6px 0 #AF6000, 0 10px 15px rgba(0,0,0,0.2);
+            text-shadow: 2px 2px 0px #FFF, -2px -2px 0px #FFF, 2px -2px 0px #FFF, -2px 2px 0px #FFF, 0 3px 5px rgba(0,0,0,0.3);
+        }
+
+        /* Card styles */
+        .food-card {
+            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+            cursor: grab;
+            touch-action: none;
+        }
+
+        .food-card:active {
+            cursor: grabbing;
+        }
+
+        .food-card.dragging {
+            opacity: 0.6;
+            transform: scale(1.05) rotate(3deg);
+        }
+
+        .food-card.selected-tap {
+            border-color: #2196F3 !important;
+            box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.5), 0 8px 16px rgba(0,0,0,0.2) !important;
+            transform: translateY(-6px) scale(1.03);
+            animation: pulse-border 1.2s infinite;
+        }
+
+        @keyframes pulse-border {
+            0%, 100% { border-color: #2196F3; }
+            50% { border-color: #FF9800; }
+        }
+
+        /* Drop zone styles */
+        .drop-zone {
+            transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .drop-zone.drag-over {
+            background-color: rgba(255, 255, 255, 0.85) !important;
+            border-color: #2196F3 !important;
+            transform: scale(1.01);
+        }
+
+        /* Incorrect drop shake */
+        .shake-anim {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0) scale(0.98); }
+            20%, 80% { transform: translate3d(4px, 0, 0) scale(0.98); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0) scale(0.98); }
+            40%, 60% { transform: translate3d(6px, 0, 0) scale(0.98); }
+        }
+
+        /* Correct pop animation */
+        .pop-anim {
+            animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Custom scrollbar for dropped foods */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.05);
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+        }
+
+        /* Toast Popup */
+        #toast {
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        #toast.show {
+            opacity: 1;
+            transform: translate(-50%, 0) scale(1);
+        }
+        #toast.hide {
+            opacity: 0;
+            transform: translate(-50%, 20px) scale(0.8);
+            pointer-events: none;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .food-card, .shake-anim, .pop-anim, #toast {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="p-2 sm:p-4 md:p-6 text-gray-800 flex flex-col items-center min-h-screen">
+
+    <!-- Top Bar Navigation & Stats -->
+    <header class="w-full max-w-7xl flex flex-wrap items-center justify-between gap-3 mb-4">
+        <!-- Title Banner -->
+        <div class="flex items-center gap-2">
+            <div class="title-banner px-6 py-2 rounded-3xl flex items-center gap-3">
+                <span class="text-3xl sm:text-4xl">🍎</span>
+                <h1 class="font-game text-2xl sm:text-3xl md:text-4xl text-amber-900 tracking-wide">
+                    Food Group Sorter
+                </h1>
+                <span class="text-3xl sm:text-4xl">🥕</span>
+            </div>
+        </div>
+
+        <!-- Score, Progress & Reset Controls -->
+        <div class="flex items-center gap-3 ml-auto">
+            <!-- Score Badge -->
+            <div class="bg-white/90 backdrop-blur border-3 border-amber-500 px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
+                <span class="text-xl">⭐</span>
+                <div class="flex flex-col">
+                    <span class="text-xs uppercase tracking-wider font-bold text-gray-500">Score</span>
+                    <span id="score-text" class="font-game text-xl text-amber-700 leading-none">0</span>
+                </div>
+            </div>
+
+            <!-- Progress Badge -->
+            <div class="bg-white/90 backdrop-blur border-3 border-blue-500 px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
+                <span class="text-xl">📊</span>
+                <div class="flex flex-col">
+                    <span class="text-xs uppercase tracking-wider font-bold text-gray-500">Progress</span>
+                    <span id="progress-text" class="font-game text-xl text-blue-700 leading-none">0 / 28</span>
+                </div>
+            </div>
+
+            <!-- Reset Button -->
+            <button id="btn-reset" onclick="resetGame()" class="bg-gradient-to-b from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-game px-5 py-2.5 rounded-2xl shadow-lg active:translate-y-0.5 transition flex items-center gap-2 text-lg border-2 border-blue-300">
+                <svg class="w-5 h-5 stroke-current stroke-2 fill-none" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                Reset
+            </button>
+        </div>
+    </header>
+
+    <!-- Subtitle Instruction -->
+    <p class="text-white text-shadow font-semibold text-center text-sm sm:text-base mb-3 bg-black/20 px-4 py-1 rounded-full backdrop-blur-sm">
+        💡 Drag each food card into its correct category column or tap a card then tap a drop box!
+    </p>
+
+    <!-- MAIN GAME AREA: 4 Horizontal Columns -->
+    <main class="w-full max-w-7xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        
+        <!-- Category 1: Energy Giving Foods (Carbohydrates) -->
+        <div class="flex flex-col bg-amber-50 border-4 border-orange-500 rounded-3xl overflow-hidden shadow-xl">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-orange-500 to-amber-500 p-3 text-center text-white shadow-md">
+                <h2 class="font-game text-xl sm:text-2xl leading-tight text-white drop-shadow">Energy Giving Foods</h2>
+                <p class="text-xs font-bold text-amber-100 tracking-wide uppercase">(Carbohydrates)</p>
+            </div>
+            <!-- Header Banner Illustration -->
+            <div class="bg-orange-100/60 p-2 flex justify-center items-center gap-2 border-b-2 border-orange-200 h-16">
+                <!-- Mini Rice, Bread, Potato SVG illustration -->
+                <svg class="h-12 w-auto" viewBox="0 0 120 50" fill="none">
+                    <!-- Rice bowl -->
+                    <ellipse cx="25" cy="35" rx="18" ry="10" fill="#D7CCC8"/>
+                    <path d="M10 32 C10 42, 40 42, 40 32 Z" fill="#795548"/>
+                    <ellipse cx="25" cy="28" rx="13" ry="7" fill="#FFFFFF"/>
+                    <!-- Bread -->
+                    <path d="M50 20 C50 15, 65 15, 65 20 L65 38 C65 40, 50 40, 50 38 Z" fill="#D72"/>
+                    <path d="M52 18 C52 14, 63 14, 63 18 L63 36 C63 38, 52 38, 52 36 Z" fill="#FFB74D"/>
+                    <!-- Potato -->
+                    <ellipse cx="90" cy="30" rx="14" ry="10" fill="#A1887F" transform="rotate(-15 90 30)"/>
+                </svg>
+            </div>
+            <!-- Drop Container -->
+            <div id="drop-carbs" data-category="carbs" class="drop-zone flex-1 m-3 p-3 border-3 border-dashed border-orange-300 rounded-2xl bg-white/70 min-h-[160px] max-h-[300px] overflow-y-auto custom-scrollbar flex flex-wrap content-start gap-2 justify-center">
+                <div class="drop-placeholder w-full h-full flex items-center justify-center text-orange-300 font-game text-lg pointer-events-none select-none">
+                    Drop here
+                </div>
+            </div>
+        </div>
+
+        <!-- Category 2: Body Building Foods (Proteins) -->
+        <div class="flex flex-col bg-rose-50 border-4 border-red-500 rounded-3xl overflow-hidden shadow-xl">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-red-500 to-rose-600 p-3 text-center text-white shadow-md">
+                <h2 class="font-game text-xl sm:text-2xl leading-tight text-white drop-shadow">Body Building Foods</h2>
+                <p class="text-xs font-bold text-rose-100 tracking-wide uppercase">(Proteins)</p>
+            </div>
+            <!-- Header Banner Illustration -->
+            <div class="bg-rose-100/60 p-2 flex justify-center items-center gap-2 border-b-2 border-rose-200 h-16">
+                <svg class="h-12 w-auto" viewBox="0 0 120 50" fill="none">
+                    <!-- Egg -->
+                    <path d="M15 35 C8 35 8 20 18 15 C28 20 28 35 15 35 Z" fill="#FFF" stroke="#E0E0E0" stroke-width="2"/>
+                    <!-- Fish -->
+                    <path d="M40 28 C55 18 75 28 85 25 L85 35 C75 32 55 42 40 28 Z" fill="#4FC3F7"/>
+                    <polygon points="85,25 95,18 92,30 95,40 85,35" fill="#29B6F6"/>
+                    <circle cx="48" cy="26" r="2" fill="#000"/>
+                    <!-- Leg Piece -->
+                    <path d="M98 32 C98 25 112 25 112 32 C112 38 98 38 98 32 Z" fill="#8D6E63"/>
+                    <circle cx="95" cy="32" r="4" fill="#D7CCC8"/>
+                </svg>
+            </div>
+            <!-- Drop Container -->
+            <div id="drop-proteins" data-category="proteins" class="drop-zone flex-1 m-3 p-3 border-3 border-dashed border-red-300 rounded-2xl bg-white/70 min-h-[160px] max-h-[300px] overflow-y-auto custom-scrollbar flex flex-wrap content-start gap-2 justify-center">
+                <div class="drop-placeholder w-full h-full flex items-center justify-center text-red-300 font-game text-lg pointer-events-none select-none">
+                    Drop here
+                </div>
+            </div>
+        </div>
+
+        <!-- Category 3: Fat Giving Foods (Fats) -->
+        <div class="flex flex-col bg-purple-50 border-4 border-purple-500 rounded-3xl overflow-hidden shadow-xl">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-purple-600 to-indigo-600 p-3 text-center text-white shadow-md">
+                <h2 class="font-game text-xl sm:text-2xl leading-tight text-white drop-shadow">Fat Giving Foods</h2>
+                <p class="text-xs font-bold text-purple-100 tracking-wide uppercase">(Fats)</p>
+            </div>
+            <!-- Header Banner Illustration -->
+            <div class="bg-purple-100/60 p-2 flex justify-center items-center gap-2 border-b-2 border-purple-200 h-16">
+                <svg class="h-12 w-auto" viewBox="0 0 120 50" fill="none">
+                    <!-- Butter Bottle/Cube -->
+                    <rect x="15" y="20" width="22" height="18" rx="3" fill="#FFF176"/>
+                    <rect x="18" y="15" width="16" height="5" fill="#FBC02D"/>
+                    <!-- Almonds -->
+                    <ellipse cx="60" cy="28" rx="10" ry="6" fill="#8D6E63" transform="rotate(-30 60 28)"/>
+                    <ellipse cx="72" cy="30" rx="9" ry="5" fill="#A1887F" transform="rotate(20 72 30)"/>
+                    <!-- Oil Bottle -->
+                    <path d="M95 18 L105 18 L108 24 L108 40 L92 40 L92 24 Z" fill="#FFD54F"/>
+                    <rect x="97" y="14" width="6" height="4" fill="#795548"/>
+                </svg>
+            </div>
+            <!-- Drop Container -->
+            <div id="drop-fats" data-category="fats" class="drop-zone flex-1 m-3 p-3 border-3 border-dashed border-purple-300 rounded-2xl bg-white/70 min-h-[160px] max-h-[300px] overflow-y-auto custom-scrollbar flex flex-wrap content-start gap-2 justify-center">
+                <div class="drop-placeholder w-full h-full flex items-center justify-center text-purple-300 font-game text-lg pointer-events-none select-none">
+                    Drop here
+                </div>
+            </div>
+        </div>
+
+        <!-- Category 4: Vitamins & Minerals (Protective Foods) -->
+        <div class="flex flex-col bg-sky-50 border-4 border-sky-500 rounded-3xl overflow-hidden shadow-xl">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-sky-500 to-blue-600 p-3 text-center text-white shadow-md">
+                <h2 class="font-game text-xl sm:text-2xl leading-tight text-white drop-shadow">Vitamins & Minerals</h2>
+                <p class="text-xs font-bold text-sky-100 tracking-wide uppercase">(Protective Foods)</p>
+            </div>
+            <!-- Header Banner Illustration -->
+            <div class="bg-sky-100/60 p-2 flex justify-center items-center gap-2 border-b-2 border-sky-200 h-16">
+                <svg class="h-12 w-auto" viewBox="0 0 120 50" fill="none">
+                    <!-- Apple -->
+                    <circle cx="20" cy="28" r="12" fill="#E53935"/>
+                    <path d="M20 16 Q22 12 25 10" stroke="#5D4037" stroke-width="2"/>
+                    <ellipse cx="25" cy="14" rx="4" ry="2" fill="#4CAF50"/>
+                    <!-- Banana -->
+                    <path d="M45 35 C55 35 65 25 65 15 C60 22 50 28 42 28 Z" fill="#FFEB3B"/>
+                    <!-- Carrot -->
+                    <polygon points="80,38 95,20 100,24" fill="#FF9800"/>
+                    <path d="M98 21 L108 15 M97 22 L105 12" stroke="#4CAF50" stroke-width="2"/>
+                </svg>
+            </div>
+            <!-- Drop Container -->
+            <div id="drop-vitamins" data-category="vitamins" class="drop-zone flex-1 m-3 p-3 border-3 border-dashed border-sky-300 rounded-2xl bg-white/70 min-h-[160px] max-h-[300px] overflow-y-auto custom-scrollbar flex flex-wrap content-start gap-2 justify-center">
+                <div class="drop-placeholder w-full h-full flex items-center justify-center text-sky-300 font-game text-lg pointer-events-none select-none">
+                    Drop here
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- LOWER TRAY: Food Bank Cards -->
+    <section class="w-full max-w-7xl wood-panel p-4 sm:p-6 mb-4">
+        <div class="flex items-center justify-between mb-3 px-2">
+            <h3 class="font-game text-xl sm:text-2xl text-amber-900 tracking-wide flex items-center gap-2">
+                <span>🧺</span> Food Cards Bank
+            </h3>
+            <span class="text-xs sm:text-sm font-bold text-amber-800 bg-amber-200/80 px-3 py-1 rounded-full">
+                <span id="bank-count">28</span> items remaining
+            </span>
+        </div>
+
+        <!-- Scrollable/Wrap Food Card Grid -->
+        <div id="food-bank" class="wood-tray p-3 sm:p-4 min-h-[180px] flex flex-wrap gap-2 justify-center items-center">
+            <!-- Food cards dynamically injected here -->
+        </div>
+    </section>
+
+    <!-- Toast Notification Popup -->
+    <div id="toast" class="hide fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900/90 text-white font-game text-lg px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 border-2 border-white/20 backdrop-blur">
+        <span id="toast-icon">✨</span>
+        <span id="toast-message">Message</span>
+    </div>
+
+    <!-- Celebration Modal -->
+    <div id="celebration-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-gradient-to-b from-yellow-100 to-amber-50 border-8 border-yellow-400 rounded-3xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl relative transform scale-90 transition-transform duration-300" id="modal-card">
+            <div class="text-6xl mb-3 animate-bounce">🎉</div>
+            <h2 class="font-game text-3xl sm:text-4xl text-amber-900 mb-2">Great Job!</h2>
+            <p class="text-amber-800 text-lg font-semibold mb-4">You sorted all the foods correctly!</p>
+
+            <div class="bg-white/80 rounded-2xl p-4 border-2 border-amber-200 mb-6 flex justify-around items-center">
+                <div>
+                    <p class="text-xs text-gray-500 uppercase font-bold">Total Score</p>
+                    <p id="final-score" class="font-game text-3xl text-amber-600">28</p>
+                </div>
+                <div class="h-10 w-0.5 bg-amber-200"></div>
+                <div>
+                    <p class="text-xs text-gray-500 uppercase font-bold">Accuracy</p>
+                    <p id="final-accuracy" class="font-game text-3xl text-green-600">100%</p>
+                </div>
+            </div>
+
+            <button onclick="resetGame(); closeModal();" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-game text-xl py-3 px-6 rounded-2xl shadow-lg border-2 border-green-300 active:scale-98 transition">
+                Play Again 🔄
+            </button>
+        </div>
+    </div>
+
+    <!-- Canvas for Confetti -->
+    <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50"></canvas>
+
+    <script>
+
+        // Game Data Definition (28 Items)
+        const FOOD_ITEMS = [
+            // Energy Giving / Carbohydrates (7 items)
+            { id: 'rice', name: 'Rice', category: 'carbs' },
+            { id: 'bread', name: 'Bread', category: 'carbs' },
+            { id: 'chapati', name: 'Chapati', category: 'carbs' },
+            { id: 'noodles', name: 'Noodles', category: 'carbs' },
+            { id: 'potato', name: 'Potato', category: 'carbs' },
+            { id: 'corn', name: 'Corn', category: 'carbs' },
+            { id: 'oats', name: 'Oats', category: 'carbs' },
+
+            // Body Building / Proteins (7 items)
+            { id: 'egg', name: 'Egg', category: 'proteins' },
+            { id: 'fish', name: 'Fish', category: 'proteins' },
+            { id: 'chicken', name: 'Chicken', category: 'proteins' },
+            { id: 'beans', name: 'Beans', category: 'proteins' },
+            { id: 'lentils', name: 'Lentils (Dal)', category: 'proteins' },
+            { id: 'milk', name: 'Milk', category: 'proteins' },
+            { id: 'yogurt', name: 'Yogurt/Curd', category: 'proteins' },
+
+            // Fat Giving / Fats (4 items)
+            { id: 'butter', name: 'Butter', category: 'fats' },
+            { id: 'oil', name: 'Oil', category: 'fats' },
+            { id: 'peanuts', name: 'Peanuts', category: 'fats' },
+            { id: 'almonds', name: 'Almonds', category: 'fats' },
+
+            // Vitamins & Minerals / Protective Foods (10 items)
+            { id: 'banana', name: 'Banana', category: 'vitamins' },
+            { id: 'apple', name: 'Apple', category: 'vitamins' },
+            { id: 'orange', name: 'Orange', category: 'vitamins' },
+            { id: 'tomato', name: 'Tomato', category: 'vitamins' },
+            { id: 'carrot', name: 'Carrot', category: 'vitamins' },
+            { id: 'broccoli', name: 'Broccoli', category: 'vitamins' },
+            { id: 'spinach', name: 'Spinach', category: 'vitamins' },
+            { id: 'cucumber', name: 'Cucumber', category: 'vitamins' },
+            { id: 'capsicum', name: 'Capsicum', category: 'vitamins' },
+            { id: 'cabbage', name: 'Cabbage', category: 'vitamins' },
+            { id: 'peas', name: 'Peas', category: 'vitamins' }
+        ];
+
+        // State Tracking
+        let score = 0;
+        let sortedCount = 0;
+        let totalItems = FOOD_ITEMS.length;
+        let selectedFoodCard = null; // For click/tap selection
+
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function playSound(type) {
+            try {
+                if (!audioCtx) audioCtx = new AudioCtx();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'correct') {
+                    // Happy chord/chime
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.1); // E5
+                    osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.25); // G5
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                } else if (type === 'wrong') {
+                    // Low error buzz
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.linearRampToValueAtTime(110, now + 0.25);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'win') {
+                    // Fanfare flourish
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, idx) => {
+                        const noteOsc = audioCtx.createOscillator();
+                        const noteGain = audioCtx.createGain();
+                        noteOsc.connect(noteGain);
+                        noteGain.connect(audioCtx.destination);
+                        
+                        noteOsc.frequency.setValueAtTime(freq, now + idx * 0.12);
+                        noteGain.gain.setValueAtTime(0.3, now + idx * 0.12);
+                        noteGain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.12 + 0.3);
+                        
+                        noteOsc.start(now + idx * 0.12);
+                        noteOsc.stop(now + idx * 0.12 + 0.3);
+                    });
+                }
+            } catch (e) {
+                // Audio context fallback gracefully
+            }
+        }
+
+        function initGame() {
+            score = 0;
+            sortedCount = 0;
+            selectedFoodCard = null;
+
+            document.getElementById('score-text').textContent = score;
+            document.getElementById('progress-text').textContent = `0 / ${totalItems}`;
+
+            // Reset drop containers
+            document.querySelectorAll('.drop-zone').forEach(zone => {
+                zone.innerHTML = `
+                    <div class="drop-placeholder w-full h-full flex items-center justify-center text-gray-400 font-game text-lg pointer-events-none select-none opacity-60">
+                        Drop here
+                    </div>
+                `;
+            });
+
+            // Shuffle cards
+            const shuffled = [...FOOD_ITEMS].sort(() => Math.random() - 0.5);
+            const bankContainer = document.getElementById('food-bank');
+            bankContainer.innerHTML = '';
+
+            shuffled.forEach(item => {
+                const card = createFoodCard(item);
+                bankContainer.appendChild(card);
+            });
+
+            updateBankCount();
+        }
+
+        function createFoodCard(item) {
+            const card = document.createElement('div');
+            card.className = 'food-card bg-white border-2 border-blue-400 hover:border-blue-500 rounded-xl px-2 py-1 flex items-center justify-center shadow-sm select-none cursor-pointer relative';
+            card.setAttribute('draggable', 'true');
+            card.setAttribute('data-id', item.id);
+            card.setAttribute('data-category', item.category);
+            card.setAttribute('tabindex', '0');
+            card.setAttribute('aria-label', `${item.name} food card`);
+
+            card.innerHTML = `
+                <span class="font-bold text-xs sm:text-sm text-black text-center leading-tight pointer-events-none">
+                    ${item.name}
+                </span>
+            `;
+
+            // Drag events
+            card.addEventListener('dragstart', handleDragStart);
+            card.addEventListener('dragend', handleDragEnd);
+
+            // Click / Touch events for Tap-to-Select
+            card.addEventListener('click', (e) => handleCardClick(e, card));
+
+            return card;
+        }
+
+        function handleDragStart(e) {
+            e.dataTransfer.setData('text/plain', JSON.stringify({
+                id: this.dataset.id,
+                category: this.dataset.category
+            }));
+            this.classList.add('dragging');
+            
+            // Clear tap selection if active
+            if (selectedFoodCard) {
+                selectedFoodCard.classList.remove('selected-tap');
+                selectedFoodCard = null;
+            }
+        }
+
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+        }
+
+        function handleCardClick(e, card) {
+            e.stopPropagation();
+
+            if (selectedFoodCard === card) {
+                // Deselect
+                card.classList.remove('selected-tap');
+                selectedFoodCard = null;
+                showToast('Deselected food card', 'ℹ️');
+            } else {
+                if (selectedFoodCard) {
+                    selectedFoodCard.classList.remove('selected-tap');
+                }
+                selectedFoodCard = card;
+                card.classList.add('selected-tap');
+                const foodName = card.querySelector('span').textContent.trim();
+                showToast(`Selected ${foodName}. Now tap a category column!`, '👉');
+            }
+        }
+
+        // Setup Drop Zones
+        const dropZones = document.querySelectorAll('.drop-zone');
+        dropZones.forEach(zone => {
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('drag-over');
+            });
+
+            zone.addEventListener('dragleave', () => {
+                zone.classList.remove('drag-over');
+            });
+
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('drag-over');
+                const dataRaw = e.dataTransfer.getData('text/plain');
+                if (!dataRaw) return;
+                const data = JSON.parse(dataRaw);
+                const card = document.querySelector(`.food-card[data-id="${data.id}"]`);
+                if (card) {
+                    evaluatePlacement(card, zone);
+                }
+            });
+
+            // Tap zone placement
+            zone.addEventListener('click', () => {
+                if (selectedFoodCard) {
+                    evaluatePlacement(selectedFoodCard, zone);
+                }
+            });
+        });
+
+        function evaluatePlacement(card, zone) {
+            const cardCategory = card.dataset.category;
+            const targetCategory = zone.dataset.category;
+
+            if (cardCategory === targetCategory) {
+                // Correct Placement
+                playSound('correct');
+                
+                // Clear placeholder if present
+                const placeholder = zone.querySelector('.drop-placeholder');
+                if (placeholder) placeholder.remove();
+
+                // Style card inside drop zone
+                card.classList.remove('selected-tap', 'dragging');
+                card.classList.add('pop-anim', 'bg-emerald-50', 'border-emerald-500');
+                card.removeAttribute('draggable');
+                card.style.cursor = 'default';
+
+                zone.appendChild(card);
+
+                // Update score
+                score += 1;
+                sortedCount += 1;
+                document.getElementById('score-text').textContent = score;
+                document.getElementById('progress-text').textContent = `${sortedCount} / ${totalItems}`;
+
+                showToast('Correct! Great job!', '✅');
+                
+                selectedFoodCard = null;
+                updateBankCount();
+
+                // Check for completion
+                if (sortedCount === totalItems) {
+                    setTimeout(() => {
+                        triggerWinSequence();
+                    }, 500);
+                }
+
+            } else {
+                // Incorrect Placement
+                playSound('wrong');
+                
+                card.classList.add('shake-anim', 'border-red-500');
+                showToast('Try again! Wrong group.', '❌');
+
+                setTimeout(() => {
+                    card.classList.remove('shake-anim', 'border-red-500');
+                }, 500);
+            }
+        }
+
+        function updateBankCount() {
+            const bank = document.getElementById('food-bank');
+            const remaining = bank.querySelectorAll('.food-card').length;
+            document.getElementById('bank-count').textContent = remaining;
+        }
+
+        let toastTimeout = null;
+        function showToast(msg, icon = '💡') {
+            const toast = document.getElementById('toast');
+            const msgEl = document.getElementById('toast-message');
+            const iconEl = document.getElementById('toast-icon');
+
+            msgEl.textContent = msg;
+            iconEl.textContent = icon;
+
+            toast.classList.remove('hide');
+            toast.classList.add('show');
+
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+                toast.classList.add('hide');
+            }, 2500);
+        }
+
+        function resetGame() {
+            initGame();
+            showToast('Game Reset! Start sorting.', '🔄');
+        }
+
+        function triggerWinSequence() {
+            playSound('win');
+            launchConfetti();
+
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('final-accuracy').textContent = '100%';
+
+            const modal = document.getElementById('celebration-modal');
+            const card = document.getElementById('modal-card');
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                card.classList.remove('scale-90');
+                card.classList.add('scale-100');
+            }, 50);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('celebration-modal');
+            const card = document.getElementById('modal-card');
+            
+            card.classList.remove('scale-100');
+            card.classList.add('scale-90');
+            modal.classList.add('opacity-0');
+
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function launchConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = [];
+            const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800'];
+
+            for (let i = 0; i < 150; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: Math.random() * 4 + 2,
+                    rotation: Math.random() * 360,
+                    rSpeed: (Math.random() - 0.5) * 5
+                });
+            }
+
+            let animationFrame;
+            const startTime = Date.now();
+
+            function render() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let alive = false;
+
+                particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.rotation += p.rSpeed;
+
+                    if (p.y < canvas.height) alive = true;
+
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate((p.rotation * Math.PI) / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                    ctx.restore();
+                });
+
+                if (alive && Date.now() - startTime < 4000) {
+                    animationFrame = requestAnimationFrame(render);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    cancelAnimationFrame(animationFrame);
+                }
+            }
+
+            render();
+        }
+
+        // Window Load Initialization
+        window.onload = function() {
+            initGame();
+
+            // Deselect on clicking backdrop
+            document.body.addEventListener('click', (e) => {
+                if (selectedFoodCard && !e.target.closest('.food-card') && !e.target.closest('.drop-zone')) {
+                    selectedFoodCard.classList.remove('selected-tap');
+                    selectedFoodCard = null;
+                }
+            });
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transport Sorter - Interactive Educational Game</title>
+    <style>
+        /* Modern reset and font setup */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        :root {
+            --land-green: #2ecc71;
+            --land-dark: #27ae60;
+            --land-bg: #e8f8f5;
+            --air-blue: #3498db;
+            --air-dark: #2980b9;
+            --air-bg: #ebf5fb;
+            --water-orange: #e67e22;
+            --water-dark: #d35400;
+            --water-bg: #fef5e7;
+            --wood-dark: #5c3a21;
+            --wood-medium: #8b5a2b;
+            --wood-light: #c68c53;
+            --font-family: 'Fredoka', 'Comic Sans MS', 'Chalkboard SE', 'Arial Rounded MT Bold', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            min-height: 100vh;
+            background: linear-gradient(180deg, #87CEEB 0%, #B0E0E6 40%, #E0F6FF 60%, #90EE90 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px;
+            color: #2c3e50;
+            overflow-x: hidden;
+        }
+
+        /* Container setup */
+        .game-wrapper {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin: 0 auto;
+        }
+
+        /* Header & Title Banner */
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            position: relative;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .title-banner {
+            background: linear-gradient(180deg, var(--wood-light) 0%, var(--wood-medium) 40%, var(--wood-dark) 100%);
+            border: 4px solid #3d2314;
+            border-radius: 20px;
+            padding: 10px 28px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.4);
+            text-align: center;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .title-banner h1 {
+            color: #FFF8DC;
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            text-shadow: 3px 3px 0px #3d2314, -1px -1px 0 #3d2314;
+            letter-spacing: 1.5px;
+        }
+
+        .btn-reset {
+            background: linear-gradient(180deg, #3498db, #1d6fa5);
+            color: white;
+            border: 3px solid #104e7a;
+            border-radius: 14px;
+            padding: 10px 20px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            font-family: var(--font-family);
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-reset:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+            background: linear-gradient(180deg, #5dade2, #2471a3);
+        }
+
+        .btn-reset:active {
+            transform: translateY(1px);
+        }
+
+        /* Instructions Banner */
+        .instruction-box {
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 12px;
+            padding: 8px 16px;
+            text-align: center;
+            font-size: clamp(0.95rem, 2vw, 1.15rem);
+            font-weight: 600;
+            color: #34495e;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 2px solid #d6eaf8;
+        }
+
+        .instruction-box span {
+            color: #d35400;
+        }
+
+        /* Scoreboard & Progress Section */
+        .stats-panel {
+            background: white;
+            border-radius: 16px;
+            padding: 12px 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            border: 3px solid #e0e0e0;
+        }
+
+        .score-display {
+            display: flex;
+            gap: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .score-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #f8f9fa;
+            padding: 6px 12px;
+            border-radius: 10px;
+            border: 1.5px solid #e2e8f0;
+        }
+
+        .progress-container {
+            flex: 1;
+            min-width: 200px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .progress-label {
+            font-weight: bold;
+            font-size: 1rem;
+            white-space: nowrap;
+        }
+
+        .progress-bar-bg {
+            flex: 1;
+            height: 22px;
+            background: #e2e8f0;
+            border-radius: 11px;
+            overflow: hidden;
+            border: 2px solid #cbd5e1;
+            position: relative;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #2ecc71, #27ae60);
+            border-radius: 9px;
+            transition: width 0.4s ease-in-out;
+        }
+
+        .progress-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            top: 0;
+            left: 0;
+            line-height: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #1e293b;
+            text-shadow: 0 0 2px rgba(255,255,255,0.8);
+        }
+
+        /* Feedback Toast Notification */
+        .toast-feedback {
+            min-height: 32px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.3s ease;
+            opacity: 0;
+        }
+
+        .toast-feedback.show-correct {
+            opacity: 1;
+            color: #27ae60;
+        }
+
+        .toast-feedback.show-wrong {
+            opacity: 1;
+            color: #e74c3c;
+        }
+
+        /* Category Columns */
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            width: 100%;
+        }
+
+        .category-panel {
+            border-radius: 20px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 380px;
+            border: 4px solid;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+            position: relative;
+        }
+
+        /* Land category style */
+        .category-panel.land {
+            background-color: var(--land-bg);
+            border-color: var(--land-green);
+        }
+        .category-panel.land .panel-header {
+            background: var(--land-green);
+            color: white;
+        }
+
+        /* Air category style */
+        .category-panel.air {
+            background-color: var(--air-bg);
+            border-color: var(--air-blue);
+        }
+        .category-panel.air .panel-header {
+            background: var(--air-blue);
+            color: white;
+        }
+
+        /* Water category style */
+        .category-panel.water {
+            background-color: var(--water-bg);
+            border-color: var(--water-orange);
+        }
+        .category-panel.water .panel-header {
+            background: var(--water-orange);
+            color: white;
+        }
+
+        .panel-header {
+            border-radius: 12px;
+            padding: 10px 12px;
+            text-align: center;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.12);
+        }
+
+        .panel-header h2 {
+            font-size: clamp(1.1rem, 2.2vw, 1.4rem);
+            margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .panel-header p {
+            font-size: clamp(0.75rem, 1.4vw, 0.9rem);
+            opacity: 0.95;
+            font-weight: 500;
+        }
+
+        /* Drop Zones */
+        .drop-zone {
+            flex: 1;
+            border: 3px dashed rgba(0, 0, 0, 0.2);
+            border-radius: 14px;
+            padding: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            content-visibility: auto;
+            align-content: flex-start;
+            gap: 8px;
+            transition: all 0.2s ease;
+            position: relative;
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .drop-zone::before {
+            content: "Drop Here";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: rgba(0, 0, 0, 0.25);
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+
+        .drop-zone.has-items::before {
+            opacity: 0;
+        }
+
+        /* Drag over highlighting */
+        .category-panel.drag-over {
+            transform: scale(1.02);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .category-panel.land.drag-over { background-color: #d4efdf; }
+        .category-panel.air.drag-over { background-color: #d6eaf8; }
+        .category-panel.water.drag-over { background-color: #edbb99; }
+
+        .category-panel.wrong-highlight {
+            animation: shakePanel 0.4s cubic-bezier(.36,.07,.19,.97) both;
+            border-color: #e74c3c !important;
+            background-color: #fadbd8 !important;
+        }
+
+        /* Unsorted Transport Tray */
+        .tray-section {
+            background: linear-gradient(180deg, var(--wood-light) 0%, var(--wood-medium) 100%);
+            border: 4px solid var(--wood-dark);
+            border-radius: 20px;
+            padding: 16px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.25), inset 0 2px 4px rgba(255,255,255,0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .tray-title {
+            color: #FFF8DC;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px #3d2314;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .tray-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            min-height: 120px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 14px;
+            border: 2px inset rgba(0,0,0,0.2);
+        }
+
+        /* Transport Cards (Unsorted) */
+        .transport-card {
+            background: white;
+            border-radius: 14px;
+            border: 2px solid #e2e8f0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+            width: 100px;
+            height: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 6px;
+            cursor: grab;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            touch-action: manipulation;
+        }
+
+        .transport-card:hover {
+            transform: translateY(-4px) scale(1.04);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.18);
+            border-color: #3498db;
+        }
+
+        .transport-card:active {
+            cursor: grabbing;
+        }
+
+        /* Card selection state for mobile/tap mode */
+        .transport-card.selected {
+            border: 3.5px solid #f1c40f !important;
+            box-shadow: 0 0 15px rgba(241, 196, 15, 0.8) !important;
+            transform: scale(1.08) translateY(-4px);
+            background: #fffde7;
+            z-index: 10;
+        }
+
+        .transport-card svg, .transport-card .card-icon {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 4px;
+            pointer-events: none;
+        }
+
+        .card-label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-align: center;
+            color: #2c3e50;
+            line-height: 1.1;
+            pointer-events: none;
+            word-break: break-word;
+        }
+
+        /* Sorted Compact Chips */
+        .sorted-chip {
+            background: white;
+            border-radius: 10px;
+            padding: 6px 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border: 1.5px solid rgba(0,0,0,0.08);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            width: calc(50% - 4px);
+        }
+
+        .sorted-chip svg, .sorted-chip .card-icon {
+            width: 22px;
+            height: 22px;
+            flex-shrink: 0;
+        }
+
+        .sorted-chip span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Keyframe Animations */
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes shakeCard {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px) rotate(-3deg); }
+            40%, 80% { transform: translateX(8px) rotate(3deg); }
+        }
+
+        @keyframes shakePanel {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+
+        .shake {
+            animation: shakeCard 0.4s ease-in-out;
+            border-color: #e74c3c !important;
+        }
+
+        /* Completion Overlay Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background: white;
+            border-radius: 24px;
+            padding: 32px;
+            text-align: center;
+            max-width: 480px;
+            width: 90%;
+            border: 6px solid #f1c40f;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            transform: scale(0.8);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+
+        .modal-overlay.active .modal-card {
+            transform: scale(1);
+        }
+
+        .modal-card h2 {
+            font-size: 2.2rem;
+            color: #27ae60;
+            margin-bottom: 12px;
+        }
+
+        .modal-card p {
+            font-size: 1.2rem;
+            color: #34495e;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        .modal-score {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #d35400;
+            background: #fef5e7;
+            padding: 10px 20px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-bottom: 24px;
+            border: 2px dashed #e67e22;
+        }
+
+        .btn-play-again {
+            background: linear-gradient(180deg, #2ecc71, #27ae60);
+            color: white;
+            border: 3px solid #1e8449;
+            border-radius: 16px;
+            padding: 12px 30px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            font-family: var(--font-family);
+            cursor: pointer;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+            transition: all 0.2s ease;
+        }
+
+        .btn-play-again:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+        }
+
+        /* Canvas for confetti */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 101;
+        }
+
+        /* Responsive adaptations */
+        @media (max-width: 900px) {
+            .categories-grid {
+                grid-template-columns: 1fr;
+            }
+            .category-panel {
+                min-height: 180px;
+            }
+            .sorted-chip {
+                width: calc(33.33% - 6px);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .sorted-chip {
+                width: calc(50% - 4px);
+            }
+            .transport-card {
+                width: 85px;
+                height: 85px;
+            }
+            .transport-card svg, .transport-card .card-icon {
+                width: 38px;
+                height: 38px;
+            }
+            .card-label {
+                font-size: 0.72rem;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, .transport-card, .category-panel, .modal-card {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-wrapper">
+        <!-- Top Banner Header -->
+        <header class="header-bar">
+            <div class="title-banner">
+                <h1>Transport Sorter</h1>
+            </div>
+            <button class="btn-reset" id="reset-btn" aria-label="Reset Game">
+                🔄 Reset Game
+            </button>
+        </header>
+
+        <!-- Instructions -->
+        <div class="instruction-box">
+            Sort each vehicle into the correct mode of transport! 
+            <span>Tap a vehicle, then tap a group</span> OR <span>drag and drop</span> onto a drop zone.
+        </div>
+
+        <!-- Scoreboard & Progress -->
+        <section class="stats-panel" aria-label="Game progress and score">
+            <div class="score-display">
+                <div class="score-item">⭐ Score: <span id="score-text">0 / 30</span></div>
+                <div class="score-item">📦 Sorted: <span id="sorted-text">0 / 30</span></div>
+            </div>
+            <div class="progress-container">
+                <span class="progress-label">Progress:</span>
+                <div class="progress-bar-bg" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="30" id="progress-bar-element">
+                    <div class="progress-bar-fill" id="progress-fill"></div>
+                    <div class="progress-text" id="progress-text">0 / 30</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Toast Feedback Message -->
+        <div class="toast-feedback" id="toast-message" aria-live="polite"></div>
+
+        <!-- Category Drop Panels -->
+        <main class="categories-grid" id="categories-container">
+            <!-- Land Transport -->
+            <div class="category-panel land" data-category="land" tabindex="0" aria-label="Land Transport Category Zone">
+                <div class="panel-header">
+                    <h2>🟢 Land Transport</h2>
+                    <p>Vehicles that travel mainly on land.</p>
+                </div>
+                <div class="drop-zone" id="zone-land"></div>
+            </div>
+
+            <!-- Air Transport -->
+            <div class="category-panel air" data-category="air" tabindex="0" aria-label="Air Transport Category Zone">
+                <div class="panel-header">
+                    <h2>🔵 Air Transport</h2>
+                    <p>Vehicles that travel through the air.</p>
+                </div>
+                <div class="drop-zone" id="zone-air"></div>
+            </div>
+
+            <!-- Water Transport -->
+            <div class="category-panel water" data-category="water" tabindex="0" aria-label="Water Transport Category Zone">
+                <div class="panel-header">
+                    <h2>🟠 Water Transport</h2>
+                    <p>Vehicles that travel on water.</p>
+                </div>
+                <div class="drop-zone" id="zone-water"></div>
+            </div>
+        </main>
+
+        <!-- Unsorted Cards Tray -->
+        <section class="tray-section" aria-label="Unsorted Transports Tray">
+            <div class="tray-title">
+                <span>🚚 Vehicles to Sort</span>
+                <span id="tray-count" style="font-size: 0.95rem; opacity: 0.9;">30 remaining</span>
+            </div>
+            <div class="tray-grid" id="unsorted-tray"></div>
+        </section>
+    </div>
+
+    <!-- Completion Modal -->
+    <div class="modal-overlay" id="completion-modal">
+        <div class="modal-card">
+            <h2>🎉 Excellent! 🎉</h2>
+            <p>You sorted all 30 modes of transport correctly!</p>
+            <div class="modal-score">Final Score: 30 / 30</div>
+            <br>
+            <button class="btn-play-again" id="play-again-btn">🎮 Play Again</button>
+        </div>
+    </div>
+
+    <!-- Confetti Canvas -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <script>
+        /**
+         * Authoritative JavaScript dataset of 30 transport items.
+         * Category must be exactly 'land', 'air', or 'water'.
+         */
+        const transports = [
+            // LAND TRANSPORT (10)
+            { id: 1, name: "Car", category: "land", icon: "🚗" },
+            { id: 2, name: "Bus", category: "land", icon: "🚌" },
+            { id: 3, name: "Motorcycle", category: "land", icon: "🏍️" },
+            { id: 4, name: "Bicycle", category: "land", icon: "🚲" },
+            { id: 5, name: "Truck", category: "land", icon: "🚚" },
+            { id: 6, name: "Train", category: "land", icon: "🚆" },
+            { id: 7, name: "Ambulance", category: "land", icon: "🚑" },
+            { id: 8, name: "Fire Engine", category: "land", icon: "🚒" },
+            { id: 9, name: "Tractor", category: "land", icon: "🚜" },
+            { id: 10, name: "Auto Rickshaw", category: "land", icon: "🛺" },
+
+            // AIR TRANSPORT (10)
+            { id: 11, name: "Airplane", category: "air", icon: "✈️" },
+            { id: 12, name: "Helicopter", category: "air", icon: "🚁" },
+            { id: 13, name: "Hot Air Balloon", category: "air", icon: "🎈" },
+            { id: 14, name: "Rocket", category: "air", icon: "🚀" },
+            { id: 15, name: "Glider", category: "air", icon: "🪂" },
+            { id: 16, name: "Jet", category: "air", icon: "🛩️" },
+            { id: 17, name: "Cargo Plane", category: "air", icon: "🛩️" },
+            { id: 18, name: "Fighter Jet", category: "air", icon: "🚀" },
+            { id: 19, name: "Airship", category: "air", icon: "🛸" },
+            { id: 20, name: "Paraglider", category: "air", icon: "🪂" },
+
+            // WATER TRANSPORT (10)
+            { id: 21, name: "Boat", category: "water", icon: "⛵" },
+            { id: 22, name: "Sailboat", category: "water", icon: "⛵" },
+            { id: 23, name: "Ship", category: "water", icon: "🚢" },
+            { id: 24, name: "Ferry", category: "water", icon: "⛴️" },
+            { id: 25, name: "Submarine", category: "water", icon: "🤿" },
+            { id: 26, name: "Yacht", category: "water", icon: "🛥️" },
+            { id: 27, name: "Speed Boat", category: "water", icon: "🚤" },
+            { id: 28, name: "Canoe", category: "water", icon: "🛶" },
+            { id: 29, name: "Fishing Boat", category: "water", icon: "🎣" },
+            { id: 30, name: "Cruise Ship", category: "water", icon: "🚢" }
+        ];
+
+        // Custom SVG icons mapping for clean primary visual representation
+        function getTransportSvg(item) {
+            // Emojis wrapped in crisp scalable SVG text for high portability and offline performance
+            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="card-icon">
+                <circle cx="50" cy="50" r="45" fill="#F0F4F8" />
+                <text x="50%" y="55%" dominant-baseline="central" text-anchor="middle" font-size="52">${item.icon}</text>
+            </svg>`;
+        }
+
+        // State variables
+        let sortedCount = 0;
+        let score = 0;
+        let selectedCardId = null;
+        let draggedCardId = null;
+        let activeTransports = [];
+
+        // DOM elements references
+        const unsortedTray = document.getElementById('unsorted-tray');
+        const scoreText = document.getElementById('score-text');
+        const sortedText = document.getElementById('sorted-text');
+        const progressFill = document.getElementById('progress-fill');
+        const progressText = document.getElementById('progress-text');
+        const progressBarElement = document.getElementById('progress-bar-element');
+        const toastMessage = document.getElementById('toast-message');
+        const trayCount = document.getElementById('tray-count');
+        const completionModal = document.getElementById('completion-modal');
+        const resetBtn = document.getElementById('reset-btn');
+        const playAgainBtn = document.getElementById('play-again-btn');
+        const categoryPanels = document.querySelectorAll('.category-panel');
+
+        /**
+         * Initialize or reset game state
+         */
+        function initGame() {
+            // Reset scores & counters
+            score = 0;
+            sortedCount = 0;
+            selectedCardId = null;
+            draggedCardId = null;
+
+            // Clear drop zones
+            document.getElementById('zone-land').innerHTML = '';
+            document.getElementById('zone-air').innerHTML = '';
+            document.getElementById('zone-water').innerHTML = '';
+            document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('has-items'));
+
+            // Clear toast & modal
+            showToast('', '');
+            completionModal.classList.remove('active');
+
+            // Copy & Shuffle dataset
+            activeTransports = [...transports];
+            shuffleArray(activeTransports);
+
+            // Render unsorted transport tray
+            renderTray();
+
+            // Update UI Counters
+            updateStats();
+        }
+
+        /**
+         * Utility: Fisher-Yates shuffle algorithm
+         */
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        /**
+         * Render cards inside the unsorted tray
+         */
+        function renderTray() {
+            unsortedTray.innerHTML = '';
+            const remaining = activeTransports.filter(t => !t.sorted);
+
+            remaining.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'transport-card';
+                card.id = `card-${item.id}`;
+                card.setAttribute('draggable', 'true');
+                card.setAttribute('tabindex', '0');
+                card.setAttribute('role', 'button');
+                card.setAttribute('aria-label', `${item.name}. Tap or drag to sort.`);
+                card.dataset.id = item.id;
+
+                if (selectedCardId === item.id) {
+                    card.classList.add('selected');
+                }
+
+                card.innerHTML = `
+                    ${getTransportSvg(item)}
+                    <span class="card-label">${item.name}</span>
+                `;
+
+                // Drag Events
+                card.addEventListener('dragstart', handleDragStart);
+                card.addEventListener('dragend', handleDragEnd);
+
+                // Tap / Click Selection Events
+                card.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    handleCardSelect(item.id);
+                });
+
+                // Keyboard interaction
+                card.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleCardSelect(item.id);
+                    }
+                });
+
+                unsortedTray.appendChild(card);
+            });
+
+            trayCount.textContent = `${remaining.length} remaining`;
+        }
+
+        /**
+         * Handle card selection via click/tap
+         */
+        function handleCardSelect(id) {
+            if (selectedCardId === id) {
+                // Deselect
+                selectedCardId = null;
+            } else {
+                selectedCardId = id;
+            }
+            // Refresh tray selection styling
+            document.querySelectorAll('.transport-card').forEach(c => {
+                if (parseInt(c.dataset.id) === selectedCardId) {
+                    c.classList.add('selected');
+                } else {
+                    c.classList.remove('selected');
+                }
+            });
+        }
+
+        /* Drag & Drop Handlers */
+        function handleDragStart(e) {
+            draggedCardId = parseInt(this.dataset.id);
+            e.dataTransfer.setData('text/plain', draggedCardId);
+            e.dataTransfer.effectAllowed = 'move';
+            this.style.opacity = '0.5';
+        }
+
+        function handleDragEnd(e) {
+            this.style.opacity = '1';
+            draggedCardId = null;
+            categoryPanels.forEach(p => p.classList.remove('drag-over'));
+        }
+
+        // Setup Category Panels drop listeners
+        categoryPanels.forEach(panel => {
+            const targetCategory = panel.dataset.category;
+
+            panel.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                panel.classList.add('drag-over');
+            });
+
+            panel.addEventListener('dragleave', () => {
+                panel.classList.remove('drag-over');
+            });
+
+            panel.addEventListener('drop', (e) => {
+                e.preventDefault();
+                panel.classList.remove('drag-over');
+                const id = parseInt(e.dataTransfer.getData('text/plain') || draggedCardId);
+                if (id) {
+                    attemptSort(id, targetCategory);
+                }
+            });
+
+            // Tap/Click on category panel when a card is selected
+            panel.addEventListener('click', () => {
+                if (selectedCardId !== null) {
+                    attemptSort(selectedCardId, targetCategory);
+                }
+            });
+
+            // Keyboard accessibility for panels
+            panel.addEventListener('keydown', (e) => {
+                if ((e.key === 'Enter' || e.key === ' ') && selectedCardId !== null) {
+                    e.preventDefault();
+                    attemptSort(selectedCardId, targetCategory);
+                }
+            });
+        });
+
+        /**
+         * Validate transport classification
+         */
+        function attemptSort(transportId, targetCategory) {
+            const item = activeTransports.find(t => t.id === transportId);
+            if (!item || item.sorted) return;
+
+            // Authoritative Rule Check
+            if (item.category === targetCategory) {
+                // ✅ CORRECT PLACEMENT
+                item.sorted = true;
+                score += 1;
+                sortedCount += 1;
+                selectedCardId = null;
+
+                showToast("✅ Correct!", "correct");
+                addSortedChip(item, targetCategory);
+                renderTray();
+                updateStats();
+
+                // Check Completion
+                if (sortedCount === transports.length) {
+                    setTimeout(triggerCompletion, 400);
+                }
+            } else {
+                // ❌ INCORRECT PLACEMENT
+                showToast("❌ Try Again!", "wrong");
+
+                // Highlight card with shake animation
+                const cardEl = document.getElementById(`card-${item.id}`);
+                if (cardEl) {
+                    cardEl.classList.add('shake');
+                    setTimeout(() => cardEl.classList.remove('shake'), 450);
+                }
+
+                // Highlight category panel in red briefly
+                const targetPanel = document.querySelector(`.category-panel[data-category="${targetCategory}"]`);
+                if (targetPanel) {
+                    targetPanel.classList.add('wrong-highlight');
+                    setTimeout(() => targetPanel.classList.remove('wrong-highlight'), 450);
+                }
+            }
+        }
+
+        /**
+         * Append compact sorted chip inside category zone
+         */
+        function addSortedChip(item, category) {
+            const zone = document.getElementById(`zone-${category}`);
+            zone.classList.add('has-items');
+
+            const chip = document.createElement('div');
+            chip.className = 'sorted-chip';
+            chip.innerHTML = `
+                ${getTransportSvg(item)}
+                <span>${item.name}</span>
+            `;
+            zone.appendChild(chip);
+        }
+
+        /**
+         * Display transient feedback message
+         */
+        function showToast(msg, type) {
+            toastMessage.textContent = msg;
+            toastMessage.className = 'toast-feedback';
+            if (type === 'correct') {
+                toastMessage.classList.add('show-correct');
+            } else if (type === 'wrong') {
+                toastMessage.classList.add('show-wrong');
+            }
+        }
+
+        /**
+         * Update numbers and progress bar UI
+         */
+        function updateStats() {
+            scoreText.textContent = `${score} / ${transports.length}`;
+            sortedText.textContent = `${sortedCount} / ${transports.length}`;
+
+            const percent = Math.round((sortedCount / transports.length) * 100);
+            progressFill.style.width = `${percent}%`;
+            progressText.textContent = `${sortedCount} / ${transports.length}`;
+            progressBarElement.setAttribute('aria-valuenow', sortedCount);
+        }
+
+        /**
+         * End game celebration screen
+         */
+        function triggerCompletion() {
+            completionModal.classList.add('active');
+            startConfetti();
+        }
+
+        /* Lightweight Confetti Animation */
+        function startConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = [];
+            const colors = ['#f1c40f', '#2ecc71', '#3498db', '#e74c3c', '#9b59b6', '#e67e22'];
+
+            for (let i = 0; i < 120; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    vy: Math.random() * 3 + 2,
+                    vx: Math.random() * 2 - 1,
+                    rotation: Math.random() * 360,
+                    rSpeed: Math.random() * 4 - 2
+                });
+            }
+
+            let animationFrame;
+            function render() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let stillActive = false;
+
+                particles.forEach(p => {
+                    p.y += p.vy;
+                    p.x += p.vx;
+                    p.rotation += p.rSpeed;
+
+                    if (p.y < canvas.height) stillActive = true;
+
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate((p.rotation * Math.PI) / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                    ctx.restore();
+                });
+
+                if (stillActive && completionModal.classList.contains('active')) {
+                    animationFrame = requestAnimationFrame(render);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+
+            render();
+        }
+
+        // Event listeners for reset and replay buttons
+        resetBtn.addEventListener('click', initGame);
+        playAgainBtn.addEventListener('click', initGame);
+
+        // Deselect card when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.transport-card') && !e.target.closest('.category-panel')) {
+                selectedCardId = null;
+                document.querySelectorAll('.transport-card').forEach(c => c.classList.remove('selected'));
+            }
+        });
+
+        // Initialize game on window load
+        window.onload = function() {
+            initGame();
+        };
+    </script>
+</body>
+</html>

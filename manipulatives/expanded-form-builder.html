@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F5F8FD">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Expanded Form Builder</title>
+<style>
+  :root{
+    --bg:#F5F8FD; --ink:#18223F; --muted:#5B6585; --line:#D9E0EE;
+    --ok:#0F9D63; --ok-d:#0A7348; --ok-soft:#DDF5EA;
+    --bad:#D63A5C; --bad-soft:#FCE4EA;
+
+    /* place-value colour families */
+    --c1:#2F6FED;    --c1d:#1D4DB5;    --c1s:#E4ECFF;     /* ones      – blue   */
+    --c10:#16A571;   --c10d:#0B7650;   --c10s:#DDF4EA;    /* tens      – green  */
+    --c100:#E8680F;  --c100d:#A84506;  --c100s:#FFE9D6;   /* hundreds  – orange */
+    --c1000:#8A4DE6; --c1000d:#5D2DAE; --c1000s:#EDE3FD;  /* thousands – violet */
+  }
+  .p1{--c:var(--c1);--cd:var(--c1d);--cs:var(--c1s)}
+  .p10{--c:var(--c10);--cd:var(--c10d);--cs:var(--c10s)}
+  .p100{--c:var(--c100);--cd:var(--c100d);--cs:var(--c100s)}
+  .p1000{--c:var(--c1000);--cd:var(--c1000d);--cs:var(--c1000s)}
+
+  *{box-sizing:border-box}
+  html{
+    height:100%;
+    font-size:clamp(14px, calc(0.9vw + 0.9vh + 6px), 24px);
+  }
+  body{
+    margin:0; height:100%;
+    background:var(--bg); color:var(--ink);
+    font-family:ui-rounded,"SF Pro Rounded","Nunito","Trebuchet MS","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+    font-weight:700;
+    overscroll-behavior:none;
+    -webkit-user-select:none; user-select:none;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+  }
+  button{font-family:inherit}
+  :focus-visible{outline:.2rem solid #1B5CFF; outline-offset:.15rem}
+
+  /* ---------- Layout ---------- */
+  .app{
+    height:100vh; height:100dvh;
+    max-width:74rem; margin:0 auto;
+    padding:max(.4rem,env(safe-area-inset-top)) max(.6rem,env(safe-area-inset-right)) max(.4rem,env(safe-area-inset-bottom)) max(.6rem,env(safe-area-inset-left));
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    grid-template-rows:auto auto auto minmax(0,1fr) auto;
+    grid-template-areas:"head" "levels" "stage" "tray" "controls";
+    gap:.35rem;
+  }
+  .head{grid-area:head; text-align:center; position:relative}
+  .levels{grid-area:levels}
+  .stage{grid-area:stage}
+  .tray{grid-area:tray}
+  .controls{grid-area:controls}
+
+  h1{margin:0; font-size:1.1rem; font-weight:900; letter-spacing:.01em; line-height:1.15}
+  .sub{margin:0; font-size:.72rem; color:var(--muted); font-weight:700}
+
+  .fs{
+    position:absolute; right:0; top:50%; transform:translateY(-50%);
+    width:2rem; height:2rem; padding:0; display:none; place-items:center;
+    background:#fff; border:.12rem solid var(--line); border-radius:.6rem; color:var(--ink);
+    font-size:1rem; line-height:1; cursor:pointer;
+  }
+  .fs.show{display:grid}
+
+  /* ---------- Level selector ---------- */
+  .levels{display:flex; gap:.35rem; justify-content:center}
+  .lv{
+    flex:0 1 6rem;
+    display:flex; align-items:center; justify-content:center; gap:.3rem;
+    padding:.22rem .5rem; line-height:1.1; white-space:nowrap;
+    font-size:.88rem; font-weight:900; color:var(--ink);
+    background:#fff; border:.12rem solid var(--line); border-radius:.7rem;
+    box-shadow:0 .12rem 0 var(--line);
+    cursor:pointer; transition:transform .1s, box-shadow .1s, background .15s;
+  }
+  .lv small{font-size:.6rem; font-weight:800; color:var(--muted)}
+  .lv[aria-pressed="true"]{background:var(--ink); border-color:var(--ink); color:#fff; box-shadow:0 .12rem 0 #0A1026}
+  .lv[aria-pressed="true"] small{color:#C5CEEA}
+  .lv:active{transform:translateY(.08rem); box-shadow:0 .02rem 0 var(--line)}
+
+  /* ---------- Challenge + workspace ---------- */
+  .stage{
+    display:flex; flex-direction:column; justify-content:center; gap:.25rem;
+    background:#fff; border-radius:1rem; padding:.4rem .6rem;
+    box-shadow:0 .12rem 0 rgba(24,34,63,.07), 0 .8rem 1.6rem -1rem rgba(24,34,63,.35);
+  }
+  .challenge{display:flex; align-items:baseline; justify-content:center; gap:.7rem; line-height:1}
+  .make{font-size:.85rem; font-weight:900; letter-spacing:.14em; color:var(--muted)}
+  .target{font-size:min(2.6rem, 11vw); font-weight:900; letter-spacing:.04em; font-variant-numeric:tabular-nums}
+  .target.anim{animation:pop .4s cubic-bezier(.3,1.6,.5,1)}
+  .target span{color:var(--c)}
+
+  .workspace{
+    min-height:3.5rem; padding:.3rem .5rem;
+    display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:.3rem .45rem;
+    background:#F8FAFF; border:.18rem dashed #B4C0DE; border-radius:1rem;
+    transition:background .15s, border-color .15s;
+  }
+  .workspace.over{border-style:solid; border-color:var(--ink); background:#EAF0FF}
+  .workspace.ok{border-style:solid; border-color:var(--ok); background:var(--ok-soft)}
+  .workspace.bad{border-style:solid; border-color:var(--bad); background:var(--bad-soft); animation:shake .4s}
+  .hint{color:var(--muted); font-size:.9rem; font-weight:800}
+
+  .chip{
+    position:relative; border:0; cursor:pointer;
+    min-width:3rem; height:2.5rem; padding:0 .6rem;
+    font-size:min(1.4rem, 5vw); font-weight:900; color:#fff; background:var(--c);
+    border-radius:.8rem;
+    box-shadow:inset 0 .15rem 0 rgba(255,255,255,.3), 0 .22rem 0 var(--cd);
+    font-variant-numeric:tabular-nums;
+  }
+  .chip.pop{animation:pop .35s cubic-bezier(.3,1.6,.5,1)}
+  .chip::after{
+    content:"×"; position:absolute; top:-.4rem; right:-.4rem;
+    width:1.1rem; height:1.1rem; border-radius:50%;
+    background:#fff; color:var(--cd); border:.12rem solid var(--cd);
+    font-size:.8rem; line-height:.85rem; font-weight:900; text-align:center;
+  }
+  .op{font-size:min(1.3rem,5vw); font-weight:900; color:var(--muted)}
+  .sum{font-size:min(1.4rem,5vw); font-weight:900; color:var(--ink); font-variant-numeric:tabular-nums}
+  .workspace.ok .sum{color:var(--ok-d)}
+  .workspace.bad .sum{color:var(--bad)}
+
+  .feedback{min-height:1.2rem; text-align:center; font-size:.95rem; font-weight:900; line-height:1.3}
+  .feedback.ok{color:var(--ok-d)}
+  .feedback.bad{color:var(--bad)}
+  .feedback.hint{color:var(--muted)}
+  .feedback span{font-weight:700; color:var(--ink)}
+
+  /* ---------- Strips ---------- */
+  .tray{
+    container-type:inline-size; container-name:tray;
+    display:flex; flex-direction:column; justify-content:flex-start; gap:.3rem;
+    min-height:0; overflow-y:auto; overflow-x:hidden;
+    padding:.25rem .3rem .25rem 0;
+  }
+  .tray{justify-content:safe center}
+  .group{
+    --rows:1;
+    flex:1 1 0;
+    min-height:calc(var(--rows) * 1.9rem + .6rem);
+    max-height:calc(var(--rows) * 4.6rem + .6rem);
+    display:flex; align-items:stretch; gap:.45rem;
+    padding:.3rem .4rem; background:var(--cs); border-radius:.9rem;
+  }
+  .tag{
+    flex:0 0 3.4rem; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    color:var(--cd); line-height:1.15; text-align:center;
+  }
+  .tag .num{font-size:1.05rem; font-weight:900}
+  .tag .nm{font-size:.68rem; font-weight:800}
+  .grid{
+    --k:15.5;
+    flex:1; min-width:0; container-type:inline-size;
+    display:grid; grid-template-columns:repeat(9,minmax(0,1fr)); grid-auto-rows:minmax(0,1fr);
+    gap:.3rem;
+    padding-bottom:.18rem;
+  }
+  .strip{
+    position:relative; display:grid; place-items:center;
+    min-height:0; padding:0; border:0; cursor:grab;
+    color:#fff; background:var(--c);
+    font-size:1.2rem; font-weight:900; line-height:1; letter-spacing:.01em;
+    font-variant-numeric:tabular-nums;
+    border-radius:.7rem;
+    box-shadow:inset 0 .14rem 0 rgba(255,255,255,.3), 0 .2rem 0 var(--cd);
+    touch-action:none;
+    transition:transform .1s, box-shadow .1s, opacity .15s;
+  }
+  @supports (width:1cqw){
+    .strip{font-size:min(calc(var(--k) * 1cqw / var(--ch)), 2.1rem)}
+  }
+  @media (hover:hover){ .strip:hover{transform:translateY(-.1rem)} }
+  .strip:active{transform:translateY(.14rem); box-shadow:inset 0 .14rem 0 rgba(255,255,255,.3), 0 .04rem 0 var(--cd)}
+  .strip.sel{outline:.2rem solid var(--ink); outline-offset:.12rem}
+  .strip.sel::after{
+    content:"✓"; position:absolute; top:-.45rem; right:-.35rem;
+    width:1.1rem; height:1.1rem; border-radius:50%;
+    background:var(--ink); color:#fff; font-size:.7rem; line-height:1.1rem; text-align:center;
+  }
+  .strip.dragging{opacity:.3}
+  .tray.locked .strip{pointer-events:none}
+  .tray.locked .strip:not(.sel){opacity:.4}
+
+  .ghost{
+    position:fixed; z-index:50; left:0; top:0; margin:0; pointer-events:none;
+    display:grid; place-items:center;
+    transform:translate(-50%,-50%) scale(1.1) rotate(-3deg);
+    box-shadow:0 .9rem 1.4rem -.4rem rgba(24,34,63,.45), inset 0 .14rem 0 rgba(255,255,255,.3), 0 .2rem 0 var(--cd);
+  }
+
+  /* narrow tray: two compact rows of five per place value */
+  @container tray (max-width:30rem){
+    .grid{grid-template-columns:repeat(5,minmax(0,1fr)); --k:27}
+    .group{--rows:2}
+    .nm{display:none}
+    .tag{flex-basis:2.6rem}
+  }
+  /* small & short screens with 4 places: keep one row of nine per place so all fits */
+  @media (max-height:820px){
+    .sub{display:none}
+  }
+  @media (max-height:900px){
+    @container tray (max-width:30rem){
+      .group[data-places="4"]{--rows:1}
+      .group[data-places="4"] .grid{grid-template-columns:repeat(9,minmax(0,1fr)); --k:15.5}
+    }
+  }
+
+  /* ---------- Controls ---------- */
+  .controls{display:flex; justify-content:center; gap:.5rem}
+  .btn{
+    flex:0 1 7.5rem; min-height:2.3rem; padding:.3rem .6rem; white-space:nowrap;
+    font-size:.9rem; font-weight:900; color:var(--ink);
+    background:#fff; border:.12rem solid var(--ink); border-radius:.8rem;
+    box-shadow:0 .14rem 0 var(--ink); cursor:pointer;
+    transition:transform .1s, box-shadow .1s, background .15s;
+  }
+  .btn:active{transform:translateY(.1rem); box-shadow:0 .03rem 0 var(--ink)}
+  .btn.primary{background:var(--ink); color:#fff}
+  .btn.go{background:var(--ok); border-color:var(--ok-d); color:#fff; box-shadow:0 .14rem 0 var(--ok-d); animation:pulse 1.2s ease-in-out infinite}
+  .btn:disabled{opacity:.4; cursor:default; box-shadow:none; transform:none; animation:none}
+
+  /* ---------- Landscape on short screens (phones, small boards) ---------- */
+  @media (orientation:landscape) and (max-height:560px){
+    .app{
+      grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);
+      grid-template-rows:auto auto minmax(0,1fr) auto;
+      grid-template-areas:"head tray" "levels tray" "stage tray" "controls tray";
+      column-gap:.8rem; row-gap:.4rem;
+    }
+    .sub{display:none}
+    h1{font-size:1rem}
+    .target{font-size:2.2rem}
+    .workspace{min-height:3.2rem}
+    .chip{height:2.3rem}
+    .btn{min-height:2.1rem; padding:.2rem .4rem; flex-basis:6rem}
+  }
+
+  /* ---------- Animation ---------- */
+  @keyframes pop{0%{transform:scale(.6)}100%{transform:scale(1)}}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-.4rem)}40%{transform:translateX(.4rem)}60%{transform:translateX(-.3rem)}80%{transform:translateX(.3rem)}}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+  @keyframes confetti{
+    0%{transform:translate(0,0) rotate(0); opacity:1}
+    65%{transform:translate(var(--dx),var(--dy)) rotate(var(--rot)); opacity:1}
+    100%{transform:translate(calc(var(--dx) * 1.1),calc(var(--dy) + 9rem)) rotate(calc(var(--rot) * 1.5)); opacity:0}
+  }
+  .conf{position:fixed; z-index:60; pointer-events:none; border-radius:.15rem; animation:confetti 1.2s cubic-bezier(.2,.7,.3,1) forwards}
+
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation:none !important; transition:none !important}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="head">
+    <h1>🔢 Expanded Form Builder</h1>
+    <button class="fs" id="fsBtn" type="button" aria-label="Full screen" title="Full screen">⛶</button>
+    <p class="sub">Build the number using place-value strips</p>
+  </header>
+
+  <nav class="levels" aria-label="Choose a level">
+    <button class="lv" data-d="2" aria-pressed="false">2 Digit</button>
+    <button class="lv" data-d="3" aria-pressed="true">3 Digit</button>
+    <button class="lv" data-d="4" aria-pressed="false">4 Digit</button>
+  </nav>
+
+  <section class="stage" id="stage" aria-label="Challenge">
+    <div class="challenge">
+      <span class="make">MAKE</span>
+      <span class="target" id="target" aria-live="polite">447</span>
+    </div>
+    <div class="workspace" id="workspace" aria-label="Workspace"></div>
+    <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+  </section>
+
+  <section class="tray" id="tray" aria-label="Number strips"></section>
+
+  <footer class="controls">
+    <button class="btn" id="clearBtn">Clear</button>
+    <button class="btn primary" id="checkBtn">Check Answer</button>
+    <button class="btn" id="newBtn">New Number</button>
+  </footer>
+</div>
+
+<noscript>This activity needs JavaScript to run.</noscript>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- Data ---------- */
+  var LEVELS = {
+    2: { places: [10, 1] },
+    3: { places: [100, 10, 1] },
+    4: { places: [1000, 100, 10, 1] }
+  };
+  var NAMES = { 1: 'ones', 10: 'tens', 100: 'hundreds', 1000: 'thousands' };
+  var CONF_COLORS = ['#2F6FED', '#16A571', '#E8680F', '#8A4DE6', '#F2B705', '#D63A5C'];
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var state = {
+    digits: 3,
+    target: 0,
+    sel: {},          // place value -> chosen strip value (one strip per place)
+    solved: false,
+    checked: null,    // null | 'ok' | 'bad'
+    checkedSum: 0,
+    lastAdded: null
+  };
+  var recent = { 2: [], 3: [], 4: [] };   // recently used targets, per level
+
+  var $ = function (id) { return document.getElementById(id); };
+  var ws = $('workspace'), tray = $('tray'), stage = $('stage'), fb = $('feedback');
+  var targetEl = $('target'), checkBtn = $('checkBtn'), clearBtn = $('clearBtn'), newBtn = $('newBtn');
+
+  var rnd = function (n) { return Math.floor(Math.random() * n); };
+  var placeOf = function (value) { return Math.pow(10, String(value).length - 1); };
+
+  /* ---------- Number logic ---------- */
+  function generate(d) {
+    var places = LEVELS[d].places;
+    var minDistinct = d === 4 ? 3 : 2;
+    var n = null, i;
+    for (i = 0; i < 600 && n === null; i++) {
+      var digs = places.map(function (p, idx) {
+        return idx === 0 ? 1 + rnd(9) : (Math.random() < 0.15 ? 0 : rnd(10));
+      });
+      var nonzero = digs.filter(function (x) { return x > 0; }).length;
+      if (nonzero < 2) continue;                              // always at least two strips to add
+      if (new Set(digs).size < minDistinct) continue;         // good mixture of digits
+      var val = digs.reduce(function (s, x, idx) { return s + x * places[idx]; }, 0);
+      if (recent[d].indexOf(val) !== -1) continue;            // never repeat recent questions
+      n = val;
+    }
+    if (n === null) {                                         // safety net (practically unreachable)
+      var lo = Math.pow(10, d - 1), hi = Math.pow(10, d) - 1;
+      do { n = lo + rnd(hi - lo + 1); } while (n === state.target);
+    }
+    recent[d].push(n);
+    if (recent[d].length > 10) recent[d].shift();
+    return n;
+  }
+
+  // 447 -> [400, 40, 7]  (zero-value places are left out)
+  function breakDown(n) {
+    return LEVELS[state.digits].places.map(function (p) {
+      return Math.floor(n / p) % 10 * p;
+    }).filter(function (v) { return v > 0; });
+  }
+
+  function total() {
+    return Object.keys(state.sel).reduce(function (s, k) { return s + state.sel[k]; }, 0);
+  }
+  function selectedValues() {
+    return Object.keys(state.sel).map(function (k) { return state.sel[k]; }).sort(function (a, b) { return b - a; });
+  }
+
+  /* ---------- Rendering ---------- */
+  function buildTray() {
+    var places = [1000, 100, 10, 1];   // every level shows all strips
+    tray.innerHTML = '';
+    places.forEach(function (p) {
+      var group = document.createElement('div');
+      group.className = 'group p' + p;
+      group.dataset.places = places.length;
+
+      var tag = document.createElement('div');
+      tag.className = 'tag';
+      tag.innerHTML = '<span class="num">' + p + 's</span><span class="nm">' + NAMES[p] + '</span>';
+      group.appendChild(tag);
+
+      var grid = document.createElement('div');
+      grid.className = 'grid';
+      grid.style.setProperty('--ch', String(p).length);
+      for (var k = 1; k <= 9; k++) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'strip';
+        btn.dataset.value = k * p;
+        btn.textContent = k * p;
+        btn.setAttribute('aria-pressed', 'false');
+        attachStrip(btn, k * p);
+        grid.appendChild(btn);
+      }
+      group.appendChild(grid);
+      tray.appendChild(group);
+    });
+  }
+
+  function renderTarget() {
+    var str = String(state.target), len = str.length;
+    targetEl.innerHTML = '';
+    for (var i = 0; i < len; i++) {
+      var s = document.createElement('span');
+      s.className = 'p' + Math.pow(10, len - 1 - i);
+      s.textContent = str[i];
+      targetEl.appendChild(s);
+    }
+    targetEl.setAttribute('aria-label', str);
+    targetEl.classList.remove('anim');
+    void targetEl.offsetWidth;
+    targetEl.classList.add('anim');
+  }
+
+  function renderWorkspace() {
+    var vals = selectedValues();
+    ws.className = 'workspace' + (state.checked ? ' ' + state.checked : '');
+    ws.innerHTML = '';
+    if (!vals.length) {
+      var h = document.createElement('span');
+      h.className = 'hint';
+      h.textContent = 'Tap or drag strips here';
+      ws.appendChild(h);
+      return;
+    }
+    vals.forEach(function (v, i) {
+      if (i > 0) ws.appendChild(textSpan('op', '+'));
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'chip p' + placeOf(v) + (state.lastAdded === v ? ' pop' : '');
+      chip.textContent = v;
+      chip.setAttribute('aria-label', 'Remove ' + v);
+      chip.disabled = state.solved;
+      chip.addEventListener('click', function () { removeStrip(v); });
+      ws.appendChild(chip);
+    });
+    ws.appendChild(textSpan('op', '='));
+    ws.appendChild(textSpan('sum', state.checked ? state.checkedSum : '?'));
+    state.lastAdded = null;
+  }
+
+  function textSpan(cls, text) {
+    var s = document.createElement('span');
+    s.className = cls;
+    s.textContent = text;
+    return s;
+  }
+
+  function refreshTray() {
+    var strips = tray.querySelectorAll('.strip');
+    for (var i = 0; i < strips.length; i++) {
+      var v = Number(strips[i].dataset.value);
+      var on = state.sel[placeOf(v)] === v;
+      strips[i].classList.toggle('sel', on);
+      strips[i].setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    tray.classList.toggle('locked', state.solved);
+  }
+
+  function refreshButtons() {
+    checkBtn.disabled = state.solved;
+    clearBtn.disabled = state.solved;
+    newBtn.classList.toggle('go', state.solved);
+  }
+
+  function setFeedback(type, html) {
+    fb.className = 'feedback' + (type ? ' ' + type : '');
+    fb.innerHTML = html || '';
+  }
+
+  function renderAll() {
+    renderWorkspace();
+    refreshTray();
+    refreshButtons();
+  }
+
+  /* ---------- Selection ---------- */
+  function resetFeedback() {
+    if (state.checked) { state.checked = null; }
+    setFeedback('', '');
+  }
+
+  function addStrip(value) {            // drag-drop: always put it in the workspace
+    if (state.solved) return;
+    resetFeedback();
+    state.sel[placeOf(value)] = value;
+    state.lastAdded = value;
+    renderAll();
+  }
+  function toggleStrip(value) {         // tap: select / unselect
+    if (state.solved) return;
+    resetFeedback();
+    var p = placeOf(value);
+    if (state.sel[p] === value) { delete state.sel[p]; }
+    else { state.sel[p] = value; state.lastAdded = value; }
+    renderAll();
+  }
+  function removeStrip(value) {
+    if (state.solved) return;
+    resetFeedback();
+    delete state.sel[placeOf(value)];
+    renderAll();
+  }
+
+  /* ---------- Tap + drag (mouse, pen, touch) ---------- */
+  function overStage(x, y) {
+    var r = stage.getBoundingClientRect(), m = 14;
+    return x >= r.left - m && x <= r.right + m && y >= r.top - m && y <= r.bottom + m;
+  }
+
+  function attachStrip(btn, value) {
+    var pid = null, sx = 0, sy = 0, dragging = false, ghost = null;
+
+    function cleanup() {
+      if (ghost) { ghost.remove(); ghost = null; }
+      btn.classList.remove('dragging');
+      ws.classList.remove('over');
+      dragging = false;
+    }
+
+    btn.addEventListener('pointerdown', function (e) {
+      if (state.solved || pid !== null) return;
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      pid = e.pointerId; sx = e.clientX; sy = e.clientY; dragging = false;
+      try { btn.setPointerCapture(pid); } catch (err) {}
+    });
+
+    btn.addEventListener('pointermove', function (e) {
+      if (e.pointerId !== pid) return;
+      if (!dragging && Math.hypot(e.clientX - sx, e.clientY - sy) > 8) {
+        dragging = true;
+        var r = btn.getBoundingClientRect();
+        ghost = document.createElement('div');
+        ghost.className = 'strip ghost p' + placeOf(value);
+        ghost.textContent = value;
+        ghost.style.width = r.width + 'px';
+        ghost.style.height = r.height + 'px';
+        ghost.style.fontSize = getComputedStyle(btn).fontSize;
+        document.body.appendChild(ghost);
+        btn.classList.add('dragging');
+      }
+      if (dragging) {
+        ghost.style.left = e.clientX + 'px';
+        ghost.style.top = e.clientY + 'px';
+        ws.classList.toggle('over', overStage(e.clientX, e.clientY));
+      }
+    });
+
+    function finish(e, cancelled) {
+      if (e.pointerId !== pid) return;
+      try { btn.releasePointerCapture(pid); } catch (err) {}
+      var wasDragging = dragging;
+      var inside = wasDragging && overStage(e.clientX, e.clientY);
+      cleanup();
+      pid = null;
+      if (cancelled) return;
+      if (wasDragging) { if (inside) addStrip(value); }
+      else { toggleStrip(value); }
+    }
+    btn.addEventListener('pointerup', function (e) { finish(e, false); });
+    btn.addEventListener('pointercancel', function (e) { finish(e, true); });
+
+    // keyboard (Enter / Space fire a click with detail 0)
+    btn.addEventListener('click', function (e) { if (e.detail === 0) toggleStrip(value); });
+    btn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  }
+
+  /* ---------- Actions ---------- */
+  function newNumber() {
+    state.target = generate(state.digits);
+    state.sel = {};
+    state.solved = false;
+    state.checked = null;
+    state.lastAdded = null;
+    setFeedback('', '');
+    renderTarget();
+    renderAll();
+  }
+
+  function setLevel(d) {
+    state.digits = d;
+    var btns = document.querySelectorAll('.lv');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].setAttribute('aria-pressed', Number(btns[i].dataset.d) === d ? 'true' : 'false');
+    }
+    buildTray();
+    newNumber();
+  }
+
+  function check() {
+    if (state.solved) return;
+    var vals = selectedValues();
+    if (!vals.length) {
+      setFeedback('hint', 'Pick some strips to build the number.');
+      return;
+    }
+    var sum = total();
+    state.checkedSum = sum;
+    if (sum === state.target) {
+      state.solved = true;
+      state.checked = 'ok';
+      setFeedback('ok', '🎉 Excellent! Great Job!');
+      renderAll();
+      celebrate();
+    } else {
+      state.checked = 'bad';
+      setFeedback('bad', 'Try Again! <span>' + sum + ' is not ' + state.target + '.</span>');
+      renderAll();
+    }
+  }
+
+  function clearAll() {
+    if (state.solved) return;
+    state.sel = {};
+    resetFeedback();
+    renderAll();
+  }
+
+  function celebrate() {
+    if (reduceMotion) return;
+    var r = ws.getBoundingClientRect();
+    var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    for (var i = 0; i < 28; i++) {
+      var s = document.createElement('i');
+      s.className = 'conf';
+      var size = 6 + Math.random() * 8;
+      s.style.left = cx + 'px';
+      s.style.top = cy + 'px';
+      s.style.width = size + 'px';
+      s.style.height = size * (Math.random() < .5 ? 1 : .5) + 'px';
+      s.style.background = CONF_COLORS[rnd(CONF_COLORS.length)];
+      s.style.setProperty('--dx', ((Math.random() * 2 - 1) * Math.min(220, r.width / 2 + 60)) + 'px');
+      s.style.setProperty('--dy', (-(50 + Math.random() * 150)) + 'px');
+      s.style.setProperty('--rot', ((Math.random() * 2 - 1) * 540) + 'deg');
+      document.body.appendChild(s);
+      (function (el) { setTimeout(function () { el.remove(); }, 1300); })(s);
+    }
+  }
+
+  /* ---------- Wire up ---------- */
+  var lvBtns = document.querySelectorAll('.lv');
+  for (var i = 0; i < lvBtns.length; i++) {
+    lvBtns[i].addEventListener('click', function () { setLevel(Number(this.dataset.d)); });
+  }
+  checkBtn.addEventListener('click', check);
+  clearBtn.addEventListener('click', clearAll);
+  newBtn.addEventListener('click', newNumber);
+
+  var fsBtn = $('fsBtn');
+  var root = document.documentElement;
+  var canFs = !!(root.requestFullscreen || root.webkitRequestFullscreen);
+  if (canFs) {
+    fsBtn.classList.add('show');
+    fsBtn.addEventListener('click', function () {
+      var on = document.fullscreenElement || document.webkitFullscreenElement;
+      if (on) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); }
+      else { (root.requestFullscreen || root.webkitRequestFullscreen).call(root); }
+    });
+  }
+
+  setLevel(3);
+})();
+</script>
+</body>
+</html>

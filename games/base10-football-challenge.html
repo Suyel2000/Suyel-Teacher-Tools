@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Base-10 Football Challenge – Score the Correct Number!</title>
+<meta name="description" content="A classroom maths game: read Base-10 blocks and kick the football with the matching number into the goal.">
+<style>
+/* =====================================================================
+   BASE-10 FOOTBALL CHALLENGE
+   Palette: navy (text/chrome), pitch greens, chalk white, sun yellow,
+   plus the four Base-10 block colours (blue, green, yellow, red).
+   ===================================================================== */
+:root{
+  --navy:#112a4f; --navy-2:#1d3d73; --ink:#15233b; --muted:#4b5b78;
+  --grass:#2f9d4f; --grass-dark:#1f7a3d;
+  --sun:#ffc933; --sun-dark:#e3a400;
+  --mint:#e6f2e9; --card:#ffffff; --line:#cddfd2;
+  --blue:#2f6fdd; --green:#2fb36b; --yellow:#f6c026; --red:#ea4b4b;
+  --ok:#14773f; --warn:#b4500a;
+  --radius:22px;
+  --focus:#0b57d0;
+  font-family: ui-rounded,"SF Pro Rounded","Nunito","Trebuchet MS","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; color:var(--ink); min-height:100vh; min-height:100svh;
+  background:linear-gradient(180deg,#dcefe1 0,#eef7f0 320px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+button{font:inherit; color:inherit}
+
+/* Visible keyboard focus everywhere: white gap + blue ring works on any background */
+:focus-visible{outline:3px solid var(--focus); outline-offset:3px; box-shadow:0 0 0 3px #fff}
+
+/* ---------- Top bar ---------- */
+.topbar{
+  background:var(--navy); color:#fff;
+  padding:.6rem clamp(.75rem,3vw,1.5rem);
+  padding-top:calc(.6rem + env(safe-area-inset-top,0px));
+  display:flex; align-items:center; gap:.75rem; flex-wrap:wrap;
+  border-bottom:5px solid var(--sun);
+}
+.topbar h1{
+  margin:0; flex:1 1 280px; font-size:clamp(1.05rem,2.7vw,1.75rem);
+  font-weight:900; letter-spacing:.02em; line-height:1.15;
+}
+.topbar .tag{display:block; font-size:clamp(.8rem,1.6vw,1rem); font-weight:700; color:var(--sun); letter-spacing:0; margin-top:.15rem}
+.top-actions{display:flex; gap:.5rem}
+
+/* ---------- Buttons ---------- */
+.btn{
+  min-height:56px; min-width:60px; padding:0 1.4rem; border:0; border-radius:16px;
+  font-size:1.15rem; font-weight:800; cursor:pointer; line-height:1.1;
+  display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+  box-shadow:0 5px 0 rgba(0,0,0,.22); transition:transform .08s, box-shadow .08s, filter .15s;
+}
+.btn:hover{filter:brightness(1.05)}
+.btn:active{transform:translateY(3px); box-shadow:0 2px 0 rgba(0,0,0,.22)}
+.btn:focus-visible{box-shadow:0 0 0 3px #fff,0 5px 0 rgba(0,0,0,.22)}
+.btn-primary{background:var(--sun); color:var(--navy)}
+.btn-secondary{background:#fff; color:var(--navy); border:3px solid var(--navy)}
+.btn-ghost{background:rgba(255,255,255,.14); color:#fff; border:2px solid rgba(255,255,255,.55); min-height:48px; padding:0 1rem; font-size:1rem; box-shadow:none}
+.btn-ghost:active{transform:none}
+.btn-ghost:focus-visible{box-shadow:0 0 0 3px #fff}
+.btn-big{min-height:72px; font-size:1.5rem; padding:0 2.4rem}
+
+main{max-width:1280px; margin:0 auto; padding:clamp(.75rem,2.5vw,1.5rem)}
+
+.card{
+  background:var(--card); border:3px solid var(--line); border-radius:var(--radius);
+  padding:clamp(.9rem,2.2vw,1.5rem); box-shadow:0 6px 0 rgba(17,42,79,.08);
+}
+.card h2{margin:0; font-size:clamp(1.3rem,2.4vw,1.8rem); font-weight:900; color:var(--navy)}
+.muted{color:var(--muted); font-weight:600}
+
+/* =====================================================================
+   START SCREEN
+   ===================================================================== */
+.start-grid{display:grid; gap:1.25rem; grid-template-columns:1fr; max-width:1040px; margin:0 auto}
+@media (min-width:860px){ .start-grid{grid-template-columns:1fr 1fr} .start-grid .span2{grid-column:1 / -1} }
+
+.steps{list-style:none; counter-reset:s; margin:1rem 0 0; padding:0; display:grid; gap:.7rem}
+.steps li{counter-increment:s; display:flex; align-items:center; gap:.9rem; font-size:clamp(1.05rem,2vw,1.3rem); font-weight:700}
+.steps li::before{
+  content:counter(s); flex:none; width:44px; height:44px; border-radius:50%;
+  background:var(--navy); color:#fff; display:grid; place-items:center; font-weight:900; font-size:1.25rem;
+}
+
+.key{display:flex; flex-wrap:wrap; align-items:flex-end; gap:1rem 1.4rem; margin-top:1rem}
+.key figure{margin:0; display:flex; flex-direction:column; align-items:center; gap:.4rem; text-align:center}
+.key figcaption{font-weight:800; font-size:1rem; line-height:1.2}
+.key figcaption small{display:block; font-weight:600; color:var(--muted); font-size:.85rem}
+.key svg{filter:drop-shadow(1px 2px 1.5px rgba(0,0,0,.28))}
+
+fieldset.levels{border:0; margin:0; padding:0}
+fieldset.levels legend{padding:0; font-size:clamp(1.3rem,2.4vw,1.8rem); font-weight:900; color:var(--navy); margin-bottom:.8rem}
+.level-options{display:grid; gap:.7rem; grid-template-columns:1fr}
+@media (min-width:560px){ .level-options{grid-template-columns:repeat(3,1fr)} }
+.level-opt{position:relative}
+.level-opt input{position:absolute; opacity:0; inset:0; width:100%; height:100%; margin:0; cursor:pointer}
+.level-opt label{
+  display:flex; flex-direction:column; gap:.2rem; padding:.9rem 1rem; min-height:84px; justify-content:center;
+  border:3px solid var(--line); border-radius:18px; background:#f8fbf9; font-weight:900; font-size:1.3rem; color:var(--navy);
+}
+.level-opt label small{font-weight:600; color:var(--muted); font-size:.95rem}
+.level-opt input:checked + label{border-color:var(--navy); background:#fff7d6; box-shadow:0 0 0 3px var(--sun) inset}
+.level-opt input:checked + label::after{content:"✔ Selected"; font-size:.85rem; font-weight:800; color:var(--ok)}
+.level-opt input:focus-visible + label{outline:3px solid var(--focus); outline-offset:3px; box-shadow:0 0 0 3px #fff}
+.start-cta{display:flex; justify-content:center; margin-top:.4rem}
+
+/* =====================================================================
+   GAME SCREEN: scoreboard
+   ===================================================================== */
+.statbar{display:grid; gap:.5rem; grid-template-columns:repeat(3,1fr)}
+@media (min-width:760px){ .statbar{grid-template-columns:minmax(150px,1.2fr) repeat(5,1fr)} }
+.level-pill{
+  grid-column:1 / -1; display:flex; align-items:center; justify-content:center; gap:.4rem;
+  color:#fff; border-radius:16px; font-weight:900; font-size:1.2rem; padding:.5rem 1rem; min-height:56px;
+}
+@media (min-width:760px){ .level-pill{grid-column:auto} }
+.level-pill.lv0{background:#1b7f43} .level-pill.lv1{background:#2457c5} .level-pill.lv2{background:#6b34b0}
+.stat{background:#fff; border:3px solid var(--line); border-radius:16px; padding:.35rem .7rem; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:62px}
+.stat-label{font-size:.85rem; font-weight:800; color:var(--muted)}
+.stat-value{font-size:clamp(1.3rem,2.6vw,1.8rem); font-weight:900; font-variant-numeric:tabular-nums; line-height:1.1; color:var(--navy)}
+.stat-value.bump{animation:bump .35s ease-out}
+@keyframes bump{40%{transform:scale(1.3)}}
+
+.progress{margin:.7rem 0 1rem; display:flex; align-items:center; gap:.8rem}
+.progress #qLabel{font-weight:800; white-space:nowrap; font-size:1rem}
+.pips{list-style:none; margin:0; padding:0; display:flex; gap:5px; flex:1}
+.pip{
+  flex:1; height:26px; border-radius:9px; background:#d7e3da; color:#5a6b86; font-size:.8rem; font-weight:800;
+  display:grid; place-items:center; border:2px solid transparent; transition:background .25s;
+}
+.pip.current{background:#fff; border-color:var(--navy); color:var(--navy)}
+.pip.goal{background:var(--ok); color:#fff}
+.pip.miss{background:var(--warn); color:#fff}
+
+/* =====================================================================
+   GAME SCREEN: play area
+   ===================================================================== */
+.play{display:grid; grid-template-columns:minmax(0,1fr); gap:1.1rem; align-items:start}
+@media (min-width:900px){ .play{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)} }
+
+/* --- Base-10 workspace (the main learning element) --- */
+.workspace{
+  background-color:#fff;
+  background-image:linear-gradient(rgba(17,42,79,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(17,42,79,.045) 1px,transparent 1px);
+  background-size:24px 24px;
+}
+.workspace .head{display:flex; flex-direction:column; gap:.2rem; margin-bottom:.9rem}
+.blocks{display:grid; gap:.6rem}
+.blocks.pop{animation:pop .3s ease-out}
+@keyframes pop{from{opacity:.2; transform:scale(.97)}}
+.place-row{
+  display:grid; grid-template-columns:1fr; gap:.4rem; padding:.6rem .8rem; border-radius:16px; border:2px solid;
+  align-items:center;
+}
+@media (min-width:640px){ .place-row{grid-template-columns:128px 1fr; gap:.8rem} }
+.place-blue{background:#eef4ff; border-color:#bcd2f7}
+.place-green{background:#eaf8f0; border-color:#b3e3c8}
+.place-yellow{background:#fff8dc; border-color:#f1dc8a}
+.place-red{background:#ffeeee; border-color:#f3b8b8}
+.place-label{font-weight:900; font-size:1.05rem; display:flex; align-items:center; gap:.45rem; color:var(--navy)}
+.swatch{width:16px; height:16px; border-radius:5px; flex:none; border:2px solid rgba(0,0,0,.35)}
+.place-blue .swatch{background:var(--blue)} .place-green .swatch{background:var(--green)}
+.place-yellow .swatch{background:var(--yellow)} .place-red .swatch{background:var(--red)}
+.place-blocks{min-width:0}
+.bgrid{display:grid; justify-content:start; align-items:end}
+.blk{display:block; line-height:0}
+.blk svg{display:block; filter:drop-shadow(1px 3px 2px rgba(0,0,0,.28))}
+.none{
+  display:flex; align-items:center; justify-content:center; border:3px dashed #8fa0bd; border-radius:12px;
+  color:#4b5b78; font-weight:800; font-size:1rem; padding:0 1rem; max-width:240px; background:rgba(255,255,255,.6);
+}
+
+/* --- Pitch panel --- */
+.pitch-wrap{display:flex; justify-content:center}
+.pitch{
+  position:relative; overflow:hidden; border-radius:24px; border:4px solid #fff;
+  box-shadow:0 0 0 3px var(--line), 0 10px 0 rgba(17,42,79,.1);
+  aspect-ratio:400/560;
+  width:min(100%, max(300px, min(520px, calc((100svh - 240px) * .714))));
+  background:var(--grass-dark);
+}
+.pitch > *{position:absolute}
+.pitch-bg{inset:0; width:100%; height:100%; z-index:0}
+.goal{left:17%; width:66%; top:3.8%; aspect-ratio:300/114; height:auto; pointer-events:none; overflow:visible}
+.goal-back{z-index:1; transform-origin:50% 100%}
+.goal-back.bulge{animation:bulge .55s ease-out}
+@keyframes bulge{35%{transform:scale(1.035,1.02)}}
+.goal-front{z-index:4; filter:drop-shadow(0 3px 2px rgba(0,0,0,.3))}
+.options{
+  z-index:2; left:6%; right:6%; top:47%; bottom:3%;
+  display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:2%; place-items:center;
+}
+.fly-layer{inset:0; z-index:3; pointer-events:none}
+.fly{position:absolute; left:0; top:0; will-change:transform; filter:drop-shadow(0 6px 5px rgba(0,0,0,.35))}
+.fly svg{width:100%; height:100%; display:block}
+.confetti{inset:0; z-index:5; pointer-events:none; overflow:hidden}
+.confetti i{position:absolute; width:9px; height:9px; border-radius:2px}
+
+.ball-btn{
+  position:relative; height:100%; max-width:100%; aspect-ratio:1/1; min-width:60px; min-height:60px;
+  padding:0; border:0; background:none; border-radius:50%; cursor:pointer; -webkit-tap-highlight-color:transparent;
+}
+.ball-btn .ball-svg{width:100%; height:100%; display:block; filter:drop-shadow(0 7px 5px rgba(0,0,0,.38)); transition:transform .18s}
+.ball-btn:hover .ball-svg,.ball-btn:focus-visible .ball-svg{transform:translateY(-5px) scale(1.05)}
+.ball-btn:active .ball-svg{transform:scale(.97)}
+.ball-btn:focus-visible{outline:4px solid #fff; outline-offset:4px; box-shadow:0 0 0 8px var(--focus)}
+.ball-btn .mark{
+  display:none; position:absolute; top:2%; right:2%; width:34%; max-width:40px; aspect-ratio:1; border-radius:50%;
+  background:var(--warn); color:#fff; font-weight:900; font-size:1.1rem; place-items:center; border:3px solid #fff;
+}
+.ball-btn[aria-disabled="true"]{cursor:default}
+.ball-btn[aria-disabled="true"] .ball-svg{opacity:.45; filter:grayscale(.7) drop-shadow(0 4px 3px rgba(0,0,0,.25)); transform:none}
+.ball-btn[aria-disabled="true"] .mark{display:grid}
+.ball-btn.shake{animation:shake .45s}
+@keyframes shake{20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+
+.banner{
+  z-index:6; left:50%; top:34%; width:min(86%,340px); text-align:center; pointer-events:none;
+  background:#fff; border:4px solid var(--ok); border-radius:20px; padding:.6rem .9rem .7rem;
+  box-shadow:0 8px 0 rgba(0,0,0,.18); opacity:0; transform:translate(-50%,-50%) scale(.8);
+  transition:opacity .2s, transform .25s cubic-bezier(.3,1.5,.5,1);
+}
+.banner.show{opacity:1; transform:translate(-50%,-50%) scale(1)}
+.banner.miss{border-color:var(--warn)}
+.banner .b-title{display:block; font-size:clamp(1.4rem,5.2vw,1.9rem); font-weight:900; color:var(--ok)}
+.banner.miss .b-title{color:var(--warn)}
+.banner .b-sub{display:block; font-size:clamp(.9rem,3.2vw,1.05rem); font-weight:700; color:var(--ink); margin-top:.15rem; line-height:1.25}
+
+/* =====================================================================
+   RESULTS OVERLAY
+   ===================================================================== */
+.overlay{position:fixed; inset:0; z-index:50; background:rgba(10,25,50,.74); display:grid; place-items:center; padding:1rem; overflow:auto}
+.results{width:min(100%,520px); text-align:center; animation:pop .3s ease-out}
+.results .trophy{font-size:3.4rem; line-height:1}
+.results h2{font-size:clamp(1.7rem,5vw,2.3rem); margin:.3rem 0}
+.stars{font-size:2.2rem; letter-spacing:.2rem; margin:.2rem 0 .6rem}
+.res-stats{display:grid; grid-template-columns:1fr 1fr; gap:.7rem; margin:.8rem 0}
+.res-stats .stat{min-height:84px}
+.res-stats .stat-value{font-size:2.2rem}
+.res-msg{font-size:1.15rem; font-weight:700; margin:.4rem 0 1rem}
+.res-actions{display:flex; flex-wrap:wrap; gap:.7rem; justify-content:center}
+.res-actions .btn{flex:1 1 150px}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important}
+}
+</style>
+</head>
+<body>
+
+<!-- Shared SVG definitions (gradients / clip path). Kept 0×0 rather than display:none so references resolve in every browser. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="gf-blue"   x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b92ee"/><stop offset="1" stop-color="#2a63cf"/></linearGradient>
+    <linearGradient id="gf-green"  x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#53d08c"/><stop offset="1" stop-color="#25a15f"/></linearGradient>
+    <linearGradient id="gf-yellow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd860"/><stop offset="1" stop-color="#eeb511"/></linearGradient>
+    <linearGradient id="gf-red"    x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f77272"/><stop offset="1" stop-color="#dd3b3b"/></linearGradient>
+    <radialGradient id="ballShade" cx=".35" cy=".3" r=".8">
+      <stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#14213d" stop-opacity=".3"/>
+    </radialGradient>
+    <linearGradient id="postGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff"/><stop offset=".6" stop-color="#f1f5f9"/><stop offset="1" stop-color="#b9c4d3"/></linearGradient>
+    <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".6" stop-color="#f1f5f9"/><stop offset="1" stop-color="#b9c4d3"/></linearGradient>
+    <linearGradient id="runoff" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#14532d"/><stop offset="1" stop-color="#1b6a38"/></linearGradient>
+    <clipPath id="ballClip"><circle cx="50" cy="50" r="47"/></clipPath>
+  </defs>
+</svg>
+
+<header class="topbar">
+  <h1>⚽ BASE-10 FOOTBALL CHALLENGE<span class="tag">Score the Correct Number!</span></h1>
+  <div class="top-actions">
+    <button class="btn btn-ghost" id="homeBtn" type="button" hidden aria-label="Back to home screen">🏠 Home</button>
+    <button class="btn btn-ghost" id="soundBtn" type="button" aria-pressed="true" aria-label="Sound is on. Press to turn sound off.">🔊 Sound ON</button>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- ============ START SCREEN ============ -->
+  <section id="screenStart" class="screen" aria-label="Start">
+    <div class="start-grid">
+      <div class="card">
+        <h2>How to Play</h2>
+        <ol class="steps">
+          <li>Look at the Base-10 blocks.</li>
+          <li>Find the number they represent.</li>
+          <li>Click the football with the correct number.</li>
+          <li>Score a goal! ⚽</li>
+        </ol>
+      </div>
+
+      <div class="card">
+        <h2>What each block is worth</h2>
+        <div class="key" id="blockKey"></div>
+      </div>
+
+      <div class="card span2">
+        <fieldset class="levels">
+          <legend>Choose a level</legend>
+          <div class="level-options">
+            <div class="level-opt"><input type="radio" name="level" id="lvl0" value="0" checked><label for="lvl0">🟢 2-Digit<small>Numbers 10 to 99</small></label></div>
+            <div class="level-opt"><input type="radio" name="level" id="lvl1" value="1"><label for="lvl1">🔵 3-Digit<small>Numbers 100 to 999</small></label></div>
+            <div class="level-opt"><input type="radio" name="level" id="lvl2" value="2"><label for="lvl2">🟣 4-Digit<small>Numbers 1,000 to 9,999</small></label></div>
+          </div>
+        </fieldset>
+        <div class="start-cta" style="margin-top:1.2rem">
+          <button class="btn btn-primary btn-big" id="startBtn" type="button">▶ START GAME</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ GAME SCREEN ============ -->
+  <section id="screenGame" class="screen" aria-label="Game" hidden>
+    <div class="statbar" aria-label="Scoreboard">
+      <div class="level-pill" id="levelPill"></div>
+      <div class="stat"><span class="stat-label">Score</span><span class="stat-value" id="vScore">0</span></div>
+      <div class="stat"><span class="stat-label">Attempts</span><span class="stat-value" id="vAttempts">0</span></div>
+      <div class="stat"><span class="stat-label">Goals</span><span class="stat-value" id="vGoals">0</span></div>
+      <div class="stat"><span class="stat-label">Missed</span><span class="stat-value" id="vMissed">0</span></div>
+      <div class="stat"><span class="stat-label">Accuracy</span><span class="stat-value" id="vAcc">–</span></div>
+    </div>
+    <div class="progress">
+      <span id="qLabel">Question 1 of 10</span>
+      <ol class="pips" id="pips" aria-label="Question progress"></ol>
+    </div>
+
+    <div class="play">
+      <section class="card workspace" aria-labelledby="wsTitle">
+        <div class="head">
+          <h2 id="wsTitle">🔢 Build the Number</h2>
+          <span class="muted">Count the blocks. Which number do they make?</span>
+        </div>
+        <div class="blocks" id="blocks" role="img"></div>
+      </section>
+
+      <div class="pitch-wrap">
+        <div class="pitch" id="pitch">
+          <!-- Pitch: grass stripes + white markings (SVG, no images) -->
+          <svg class="pitch-bg" viewBox="0 0 400 560" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+            <rect width="400" height="112" fill="url(#runoff)"/>
+            <g id="stripes"></g>
+            <g fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".85">
+              <rect x="14" y="112" width="372" height="470"/>
+              <rect x="50" y="112" width="300" height="123"/>
+              <rect x="120" y="112" width="160" height="53"/>
+              <path d="M145.8 235 A68 68 0 0 0 254.2 235"/>
+              <line x1="14" y1="520" x2="386" y2="520"/>
+              <circle cx="200" cy="520" r="60"/>
+            </g>
+            <circle cx="200" cy="194" r="3.5" fill="#fff" opacity=".9"/>
+            <circle cx="200" cy="520" r="3.5" fill="#fff" opacity=".9"/>
+            <ellipse cx="200" cy="116" rx="132" ry="6" fill="#000" opacity=".16"/>
+          </svg>
+
+          <svg class="goal goal-back" id="goalBack" viewBox="0 0 300 114" aria-hidden="true" focusable="false"></svg>
+          <div class="options" id="options" role="group" aria-label="Choose the football with the matching number"></div>
+          <div class="fly-layer" id="flyLayer"></div>
+          <svg class="goal goal-front" viewBox="0 0 300 114" aria-hidden="true" focusable="false">
+            <rect x="2" y="4" width="296" height="8" rx="4" fill="url(#barGrad)" stroke="#a9b6c7" stroke-width="1"/>
+            <rect x="2" y="4" width="8" height="106" rx="3" fill="url(#postGrad)" stroke="#a9b6c7" stroke-width="1"/>
+            <rect x="290" y="4" width="8" height="106" rx="3" fill="url(#postGrad)" stroke="#a9b6c7" stroke-width="1"/>
+          </svg>
+          <div class="confetti" id="confetti" aria-hidden="true"></div>
+          <div class="banner" id="banner" role="status" aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ============ RESULTS ============ -->
+<div class="overlay" id="results" hidden>
+  <div class="card results" role="dialog" aria-modal="true" aria-labelledby="resTitle">
+    <div class="trophy" aria-hidden="true">🏆</div>
+    <h2 id="resTitle">LEVEL COMPLETE!</h2>
+    <div class="stars" id="resStars" aria-hidden="true"></div>
+    <div class="res-stats">
+      <div class="stat"><span class="stat-label">Goals</span><span class="stat-value" id="resGoals">0/10</span></div>
+      <div class="stat"><span class="stat-label">Accuracy</span><span class="stat-value" id="resAcc">0%</span></div>
+    </div>
+    <p class="res-msg" id="resMsg"></p>
+    <div class="res-actions">
+      <button class="btn btn-secondary" id="againBtn" type="button">🔄 Play Again</button>
+      <button class="btn btn-primary" id="nextBtn" type="button">➡️ Next Level</button>
+      <button class="btn btn-secondary" id="resHomeBtn" type="button">🏠 Home</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+/* =====================================================================
+   0. HELPERS
+   ===================================================================== */
+const $  = (s, r = document) => r.querySelector(s);
+const rand = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = rand(0, i); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const fmt = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');          // 4275 -> "4,275"
+const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+const TOTAL = 10;                                                             // questions per level
+const LEVELS = [
+  { name: '2-Digit', icon: '🟢', lo: 10,   hi: 99   },
+  { name: '3-Digit', icon: '🔵', lo: 100,  hi: 999  },
+  { name: '4-Digit', icon: '🟣', lo: 1000, hi: 9999 }
+];
+
+/* =====================================================================
+   1. BASE-10 BLOCK SVG COMPONENTS
+   One generic "box of unit cubes" renderer (nx × ny × nz units) so every
+   block uses the SAME unit size and is mathematically consistent:
+     one = 1×1×1 · ten = 1×10×1 · hundred = 10×10×1 · thousand = 10×10×10
+   ===================================================================== */
+const PLACES = [
+  { key: 'thousands', name: 'Thousands', single: 'thousand cube', plural: 'thousand cubes', color: 'blue',   nx: 10, ny: 10, nz: 10 },
+  { key: 'hundreds',  name: 'Hundreds',  single: 'hundred flat',  plural: 'hundred flats',  color: 'green',  nx: 10, ny: 10, nz: 1  },
+  { key: 'tens',      name: 'Tens',      single: 'ten rod',       plural: 'ten rods',       color: 'yellow', nx: 1,  ny: 10, nz: 1  },
+  { key: 'ones',      name: 'Ones',      single: 'one cube',      plural: 'one cubes',      color: 'red',    nx: 1,  ny: 1,  nz: 1  }
+];
+const COLORS = {
+  blue:   { front: 'url(#gf-blue)',   top: '#a9c9ff', side: '#2558b8', edge: '#17408a', grid: '#17408a' },
+  green:  { front: 'url(#gf-green)',  top: '#a4ebc5', side: '#1f8a52', edge: '#146a3c', grid: '#146a3c' },
+  yellow: { front: 'url(#gf-yellow)', top: '#ffe99a', side: '#c99509', edge: '#8a6400', grid: '#8a6400' },
+  red:    { front: 'url(#gf-red)',    top: '#ffb0b0', side: '#b52c2c', edge: '#8a1c1c', grid: '#8a1c1c' }
+};
+const DEPTH = 0.3;                                                            // oblique depth per unit
+
+function blockSVG(place, u) {
+  const { nx, ny, nz, color } = place, C = COLORS[color];
+  const D = nz * u * DEPTH, W = nx * u, H = ny * u;
+  const w = W + D, h = H + D, sw = Math.max(.7, u * .08);
+  const f = n => n.toFixed(2);
+  let front = '', top = '', side = '';
+  // grid lines on the front face
+  for (let i = 1; i < nx; i++) front += `M${f(i*u)} ${f(D)}L${f(i*u)} ${f(D+H)}`;
+  for (let j = 1; j < ny; j++) front += `M0 ${f(D+j*u)}L${f(W)} ${f(D+j*u)}`;
+  // grid lines on the top face
+  for (let k = 1; k < nz; k++) { const t = k / nz; top += `M${f(t*D)} ${f(D-t*D)}L${f(W+t*D)} ${f(D-t*D)}`; }
+  for (let i = 1; i < nx; i++) top += `M${f(i*u)} ${f(D)}L${f(i*u+D)} 0`;
+  // grid lines on the right face
+  for (let j = 1; j < ny; j++) side += `M${f(W)} ${f(D+j*u)}L${f(W+D)} ${f(j*u)}`;
+  for (let k = 1; k < nz; k++) { const t = k / nz; side += `M${f(W+t*D)} ${f(D-t*D)}L${f(W+t*D)} ${f(D-t*D+H)}`; }
+  const grid = (d, op) => d ? `<path d="${d}" fill="none" stroke="${C.grid}" stroke-opacity="${op}" stroke-width="${f(sw*.8)}"/>` : '';
+  const edge = `stroke="${C.edge}" stroke-width="${f(sw)}" stroke-linejoin="round"`;
+  return `<svg width="${f(w)}" height="${f(h)}" viewBox="0 0 ${f(w)} ${f(h)}" aria-hidden="true" focusable="false">` +
+    `<polygon points="${f(W)},${f(D)} ${f(W+D)},0 ${f(W+D)},${f(H)} ${f(W)},${f(H+D)}" fill="${C.side}" ${edge}/>` + grid(side, .5) +
+    `<polygon points="0,${f(D)} ${f(W)},${f(D)} ${f(W+D)},0 ${f(D)},0" fill="${C.top}" ${edge}/>` + grid(top, .4) +
+    `<rect x="0" y="${f(D)}" width="${f(W)}" height="${f(H)}" fill="${C.front}" ${edge}/>` + grid(front, .55) +
+    `</svg>`;
+}
+const blockSize = (place, u) => { const D = place.nz * u * DEPTH; return { w: place.nx * u + D, h: place.ny * u + D }; };
+
+/* =====================================================================
+   2. FOOTBALL SVG (white/black panels, seams, shading, numeral label)
+   ===================================================================== */
+const BALL_BASE = (() => {
+  const rad = Math.PI / 180, cx = 50, cy = 50;
+  const pent = (x, y, r, start) => [0,1,2,3,4].map(m => [x + r*Math.cos((start+72*m)*rad), y + r*Math.sin((start+72*m)*rad)]);
+  const pts = a => a.map(p => p[0].toFixed(2) + ',' + p[1].toFixed(2)).join(' ');
+  const pt  = p => p[0].toFixed(2) + ' ' + p[1].toFixed(2);
+  const centre = pent(cx, cy, 15, -90);
+  let patches = `<polygon points="${pts(centre)}" fill="#14213d"/>`, seams = '';
+  const outer = [];
+  for (let k = 0; k < 5; k++) {
+    const a = -90 + 72 * k, ox = cx + 45*Math.cos(a*rad), oy = cy + 45*Math.sin(a*rad);
+    const pp = pent(ox, oy, 14, a + 180);                                     // vertex 0 points to the centre
+    outer.push(pp);
+    patches += `<polygon points="${pts(pp)}" fill="#14213d"/>`;
+    seams += `M${pt(centre[k])}L${pt(pp[0])}`;
+  }
+  for (let k = 0; k < 5; k++) seams += `M${pt(outer[k][4])}L${pt(outer[(k+1)%5][1])}`;
+  return `<circle cx="50" cy="50" r="47" fill="#fff"/>` +
+    `<g clip-path="url(#ballClip)">${patches}<path d="${seams}" fill="none" stroke="#14213d" stroke-width="1.6" stroke-linecap="round"/></g>` +
+    `<circle cx="50" cy="50" r="47" fill="url(#ballShade)"/>` +
+    `<circle cx="50" cy="50" r="47" fill="none" stroke="#14213d" stroke-width="2.5"/>`;
+})();
+
+function ballSVG(value) {
+  const len = String(value).length;
+  const fs = len === 2 ? 36 : len === 3 ? 30 : 26;
+  const pw = len === 2 ? 62 : len === 3 ? 70 : 80;
+  const tl = len === 2 ? 44 : len === 3 ? 54 : 62;                              // fixed text width so it always fits the pill
+  return `<svg class="ball-svg" viewBox="0 0 100 100" aria-hidden="true" focusable="false">${BALL_BASE}` +
+    `<rect x="${50 - pw/2}" y="31" width="${pw}" height="38" rx="19" fill="#fff" stroke="#14213d" stroke-width="2.5"/>` +
+    `<text x="50" y="50" dy=".36em" text-anchor="middle" textLength="${tl}" lengthAdjust="spacingAndGlyphs" font-size="${fs}" font-weight="900" fill="#14213d" font-family="inherit">${fmt(value)}</text></svg>`;
+}
+
+/* =====================================================================
+   3. STATIC SVG BUILDERS (pitch stripes, goal net, start-screen key)
+   ===================================================================== */
+(function buildPitchStripes() {
+  let s = '';
+  for (let i = 0; i < 9; i++) s += `<rect x="0" y="${112 + i*56}" width="400" height="56" fill="${i % 2 ? '#2f9d4f' : '#36a957'}"/>`;
+  $('#stripes').innerHTML = s;
+})();
+
+(function buildGoalNet() {
+  // Perspective goal: front frame (x 6..294, y 8..108) and a smaller, higher back frame (x 34..266, y 22..98)
+  const L = (x1, y1, x2, y2) => `M${x1} ${y1}L${x2} ${y2}`;
+  let net = '';
+  for (let i = 0; i <= 22; i++) { const t = i / 22; net += L((34 + 232*t).toFixed(1), 22, (34 + 232*t).toFixed(1), 98); }            // back panel verticals
+  for (let j = 0; j <= 8; j++)  { const t = j / 8;  net += L(34, (22 + 76*t).toFixed(1), 266, (22 + 76*t).toFixed(1)); }             // back panel horizontals
+  for (let i = 0; i <= 22; i++) { const t = i / 22; net += L((6 + 288*t).toFixed(1), 8, (34 + 232*t).toFixed(1), 22); }             // roof net
+  for (let j = 0; j <= 8; j++)  { const t = j / 8;  net += L(6, (8 + 100*t).toFixed(1), 34, (22 + 76*t).toFixed(1)); net += L(294, (8 + 100*t).toFixed(1), 266, (22 + 76*t).toFixed(1)); } // side nets
+  $('#goalBack').innerHTML =
+    `<polygon points="6,8 294,8 266,22 34,22" fill="rgba(255,255,255,.12)"/>` +
+    `<polygon points="6,8 34,22 34,98 6,108" fill="rgba(0,0,0,.2)"/>` +
+    `<polygon points="294,8 266,22 266,98 294,108" fill="rgba(0,0,0,.2)"/>` +
+    `<rect x="34" y="22" width="232" height="76" fill="rgba(8,40,20,.38)"/>` +
+    `<path d="${net}" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width=".8"/>` +
+    `<path d="M34 22H266M34 22V98M266 22V98" fill="none" stroke="#fff" stroke-width="2.5" stroke-opacity=".9" stroke-linecap="round"/>`;
+})();
+
+(function buildBlockKey() {
+  const items = [
+    [PLACES[3], '1', 'one'],
+    [PLACES[2], '10', 'ten'],
+    [PLACES[1], '100', 'hundred'],
+    [PLACES[0], '1,000', 'thousand']
+  ];
+  $('#blockKey').innerHTML = items.map(([p, v, nm]) =>
+    `<figure>${blockSVG(p, 6.5)}<figcaption>${v}<small>${nm}</small></figcaption></figure>`).join('');
+})();
+
+/* =====================================================================
+   4. SOUND (Web Audio, optional)
+   ===================================================================== */
+const Sound = {
+  ctx: null, on: true,
+  ensure() {
+    if (!this.on) return null;
+    try {
+      if (!this.ctx) { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null; this.ctx = new AC(); }
+      if (this.ctx.state === 'suspended') this.ctx.resume();
+      return this.ctx;
+    } catch (e) { return null; }
+  },
+  tone(freq, start, dur, type = 'sine', vol = .15, freqEnd) {
+    const c = this.ctx, t = c.currentTime + start, o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    if (freqEnd) o.frequency.exponentialRampToValueAtTime(freqEnd, t + dur);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + dur + .05);
+  },
+  noise(start, dur, vol) {
+    const c = this.ctx, len = Math.floor(c.sampleRate * dur), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(), t = c.currentTime + start;
+    f.type = 'bandpass'; f.frequency.value = 1400; s.buffer = buf;
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    s.connect(f); f.connect(g); g.connect(c.destination); s.start(t);
+  },
+  kick() { if (this.ensure()) this.tone(170, 0, .13, 'sine', .22, 55); },
+  goal() {
+    if (!this.ensure()) return;
+    [523, 659, 784, 1047].forEach((f, i) => this.tone(f, i * .1, .28, 'triangle', .13));
+    this.noise(.05, .9, .1);                                                   // crowd cheer
+  },
+  miss() {
+    if (!this.ensure()) return;
+    this.tone(330, 0, .22, 'sine', .1); this.tone(247, .18, .3, 'sine', .1);
+  }
+};
+
+/* =====================================================================
+   5. GAME STATE
+   ===================================================================== */
+const state = {
+  level: 0, target: 0, options: [], qDone: 0,
+  score: 0, attempts: 0, goals: 0, missed: 0,
+  results: [], answered: false, locked: false,
+  used: new Set(), token: 0, screen: 'start'
+};
+
+/* =====================================================================
+   6. NUMBER + DISTRACTOR GENERATION
+   ===================================================================== */
+function randomNumber(level) {
+  const len = level + 2;
+  for (let tries = 0; tries < 200; tries++) {
+    const d = [rand(1, 9)];
+    for (let k = 1; k < len; k++) d.push(rand(0, 9));
+    // Regularly include an empty place (a zero) so children learn "no blocks = 0"
+    if (Math.random() < (len === 2 ? .12 : .3)) d[rand(1, len - 1)] = 0;
+    const n = Number(d.join(''));
+    if (new Set(d).size < 2) continue;                                         // avoid 33, 444 ... (swaps give nothing)
+    if (state.used.has(n)) continue;                                           // never repeat in a round (so never back-to-back)
+    return n;
+  }
+  return rand(LEVELS[level].lo, LEVELS[level].hi);
+}
+
+function makeDistractors(n, level) {
+  const { lo, hi } = LEVELS[level];
+  const digits = String(n).split('').map(Number), len = digits.length;
+  const valid = v => v >= lo && v <= hi && v !== n;
+  const toNum = a => Number(a.join(''));
+  const LOOK = { 6: 9, 9: 6, 1: 7, 7: 1, 3: 8, 8: 3, 2: 5, 5: 2, 0: 6 };      // similar-looking digits
+  const swaps = [], changes = [];
+  // (a) interchange two digits (tens<->ones, hundreds<->tens, ...)
+  for (let i = 0; i < len; i++) for (let j = i + 1; j < len; j++) {
+    if (digits[i] === digits[j]) continue;
+    const a = digits.slice(); [a[i], a[j]] = [a[j], a[i]];
+    if (a[0] !== 0 && valid(toNum(a))) swaps.push(toNum(a));
+  }
+  // (b) change one place value (±1, ±2), copy a neighbouring digit, or use a look-alike digit
+  for (let i = 0; i < len; i++) {
+    const cands = [digits[i] + 1, digits[i] - 1, digits[i] + 2, digits[i] - 2, digits[(i + 1) % len], digits[(i + len - 1) % len], LOOK[digits[i]]];
+    cands.forEach(c => {
+      if (c === undefined || c < 0 || c > 9 || c === digits[i]) return;
+      const a = digits.slice(); a[i] = c;
+      if (a[0] !== 0 && valid(toNum(a))) changes.push(toNum(a));
+    });
+  }
+  const picked = [];
+  const take = (arr, count) => { shuffle([...new Set(arr)]).forEach(v => { if (picked.length < 3 && count > 0 && !picked.includes(v)) { picked.push(v); count--; } }); };
+  take(swaps, len === 2 ? 1 : (Math.random() < .6 ? 2 : 1));
+  take(changes, 3);                                                            // fill up with place-value changes
+  take(swaps, 3);
+  // last-resort fallbacks (e.g. numbers like 40 or 100 with few swaps)
+  [10, -10, 1, -1, 100, -100, 20, -20].forEach(dv => { if (picked.length < 3 && valid(n + dv) && !picked.includes(n + dv)) picked.push(n + dv); });
+  return picked.slice(0, 3);
+}
+
+function placeNames(len) { return ['thousands', 'hundreds', 'tens', 'ones'].slice(4 - len); }
+
+function hintFor(chosen, target) {
+  const a = String(chosen).split(''), b = String(target).split(''), names = placeNames(b.length);
+  const diff = [];
+  if (a.length === b.length) a.forEach((c, i) => { if (c !== b[i]) diff.push(names[i]); });
+  let look;
+  if (!diff.length || diff.length >= b.length) look = 'Look carefully at all the blocks.';
+  else if (diff.length === 1) look = `Look carefully at the ${diff[0]}.`;
+  else look = `Look carefully at the ${diff.slice(0, -1).join(', ')} and ${diff[diff.length - 1]}.`;
+  const lead = (diff.length && diff.length <= 2) ? 'Almost!' : 'Try again!';
+  return `${lead} ${look}`;
+}
+
+/* =====================================================================
+   7. RENDERING: BASE-10 WORKSPACE
+   ===================================================================== */
+function counts(n) { return { thousands: Math.floor(n / 1000), hundreds: Math.floor(n / 100) % 10, tens: Math.floor(n / 10) % 10, ones: n % 10 }; }
+
+function renderBlocks(animate) {
+  const lvl = state.level, c = counts(state.target);
+  const box = $('#blocks');
+  const places = PLACES.slice(2 - lvl);                                        // L1: tens+ones · L2: +hundreds · L3: +thousands
+  box.innerHTML = places.map(p => `<div class="place-row place-${p.color}" data-key="${p.key}"><div class="place-label"><span class="swatch"></span>${p.name}</div><div class="place-blocks"></div></div>`).join('');
+
+  const wsW = box.clientWidth || 520;
+  const factor = clamp(wsW / 540, .72, 1.3);                                   // scale blocks with the available space
+  const u = [17, 10, 7.6][lvl] * factor;
+  const gap = Math.max(6, u * .9);
+
+  places.forEach(p => {
+    const row = $(`.place-row[data-key="${p.key}"]`, box), holder = $('.place-blocks', row);
+    const n = c[p.key], { w, h } = blockSize(p, u);
+    row.style.minHeight = (h + 20) + 'px';
+    if (!n) { holder.innerHTML = `<div class="none" style="height:${Math.round(Math.max(h, 44))}px">No blocks</div>`; return; }
+    const avail = holder.clientWidth || wsW - 170;
+    const cap = p.key === 'tens' ? 10 : 5;                                     // groups of five make counting easier
+    const perRow = clamp(Math.floor((avail + gap) / (w + gap)), 1, cap);
+    let html = `<div class="bgrid" style="grid-template-columns:repeat(${perRow},max-content);gap:${gap}px">`;
+    const one = blockSVG(p, u);
+    for (let i = 0; i < n; i++) html += `<span class="blk">${one}</span>`;
+    holder.innerHTML = html + '</div>';
+  });
+
+  // Accessible description of the blocks (block counts, never the numeral)
+  const parts = places.map(p => c[p.key] === 0 ? `no ${p.name.toLowerCase()}` : `${c[p.key]} ${c[p.key] === 1 ? p.single : p.plural}`);
+  box.setAttribute('aria-label', 'Base-10 blocks: ' + parts.join(', '));
+  if (animate) { box.classList.remove('pop'); void box.offsetWidth; box.classList.add('pop'); }
+}
+
+/* =====================================================================
+   8. RENDERING: FOOTBALLS, SCOREBOARD, PROGRESS
+   ===================================================================== */
+function renderOptions() {
+  const box = $('#options'); box.innerHTML = '';
+  state.options.forEach((v, i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'ball-btn'; b.dataset.value = v;
+    b.setAttribute('aria-label', `Football ${i + 1}: ${fmt(v)}`);
+    b.setAttribute('aria-keyshortcuts', String(i + 1));
+    b.innerHTML = ballSVG(v) + '<span class="mark" aria-hidden="true">✖</span>';
+    b.addEventListener('click', () => choose(b));
+    box.appendChild(b);
+  });
+}
+
+function setStat(id, val) {
+  const el = $(id); val = String(val);
+  if (el.textContent !== val) { el.textContent = val; el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+}
+function updateStats() {
+  setStat('#vScore', state.score); setStat('#vAttempts', state.attempts);
+  setStat('#vGoals', state.goals); setStat('#vMissed', state.missed);
+  setStat('#vAcc', state.attempts ? Math.round(state.goals / state.attempts * 100) + '%' : '–');
+  $('#qLabel').textContent = `Question ${Math.min(state.qDone + 1, TOTAL)} of ${TOTAL}`;
+  const L = LEVELS[state.level], pill = $('#levelPill');
+  pill.className = 'level-pill lv' + state.level; pill.textContent = `${L.icon} Level: ${L.name}`;
+  [...$('#pips').children].forEach((li, i) => {
+    const r = state.results[i];
+    li.className = 'pip' + (r === 'goal' ? ' goal' : r === 'miss' ? ' miss' : (i === state.qDone ? ' current' : ''));
+    li.textContent = r === 'goal' ? '✓' : r === 'miss' ? '✕' : (i + 1);
+    li.setAttribute('aria-label', `Question ${i + 1}: ` + (r === 'goal' ? 'goal' : r === 'miss' ? 'missed' : i === state.qDone ? 'current' : 'not yet played'));
+  });
+}
+function buildPips() {
+  $('#pips').innerHTML = Array.from({ length: TOTAL }, () => '<li class="pip"></li>').join('');
+}
+
+/* =====================================================================
+   9. BANNER + CONFETTI
+   ===================================================================== */
+let bannerTimer = 0;
+function showBanner(type, title, sub, ms) {
+  const b = $('#banner');
+  b.className = 'banner ' + type;
+  b.innerHTML = `<span class="b-title">${title}</span><span class="b-sub">${sub}</span>`;
+  void b.offsetWidth; b.classList.add('show');
+  clearTimeout(bannerTimer);
+  if (ms) bannerTimer = setTimeout(hideBanner, ms);
+}
+function hideBanner() { clearTimeout(bannerTimer); $('#banner').classList.remove('show'); }
+
+function confetti() {
+  if (reduced()) return;
+  const cont = $('#confetti'), pr = $('#pitch').getBoundingClientRect(), gr = $('#goalBack').getBoundingClientRect();
+  const ox = gr.left - pr.left + gr.width / 2, oy = gr.top - pr.top + gr.height * .55;
+  const cols = ['#ffc933', '#2f6fdd', '#2fb36b', '#ea4b4b', '#ffffff'];
+  for (let i = 0; i < 26; i++) {
+    const p = document.createElement('i');
+    p.style.cssText = `left:${ox}px;top:${oy}px;background:${cols[i % cols.length]}`;
+    cont.appendChild(p);
+    const ang = Math.random() * Math.PI * 2, dist = 70 + Math.random() * 130;
+    p.animate([
+      { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
+      { transform: `translate(${Math.cos(ang) * dist}px,${Math.sin(ang) * dist + 80}px) rotate(${Math.random() * 540}deg)`, opacity: 0 }
+    ], { duration: 1000 + Math.random() * 500, easing: 'cubic-bezier(.2,.7,.4,1)' }).onfinish = () => p.remove();
+  }
+}
+
+/* =====================================================================
+   10. BALL ANIMATION (curved kick along a quadratic Bézier path)
+   ===================================================================== */
+function animate(duration, step, token) {
+  return new Promise(res => {
+    const t0 = performance.now();
+    (function frame(now) {
+      if (token !== state.token) return res();
+      const t = clamp((now - t0) / duration, 0, 1);
+      step(t);
+      t < 1 ? requestAnimationFrame(frame) : res();
+    })(t0);
+  });
+}
+
+async function flyBall(btn, outcome, token) {
+  const pitch = $('#pitch'), layer = $('#flyLayer');
+  const pr = pitch.getBoundingClientRect(), br = btn.getBoundingClientRect(), gr = $('#goalBack').getBoundingClientRect();
+  const size = Math.min(br.width, br.height);
+  const x0 = br.left - pr.left + br.width / 2, y0 = br.top - pr.top + br.height / 2;
+  const gx = gr.left - pr.left, gy = gr.top - pr.top, gw = gr.width, gh = gr.height;
+  const side = Math.random() < .5 ? -1 : 1;
+  let x1, y1;
+  if (outcome === 'goal') { x1 = gx + gw * (.5 + (Math.random() - .5) * .38); y1 = gy + gh * .6; }       // into the net
+  else { x1 = side < 0 ? gx - gw * .1 : gx + gw * 1.1; y1 = gy + gh * .42; }                              // wide of the post
+  const endScale = clamp(pr.width * .085 / size, .18, .42);
+  const bend = (x0 < pr.width / 2 ? -1 : 1) * pr.width * .14;                                           // curve of the kick
+  const cx = x0 + (x1 - x0) * .45 + bend, cy = y0 + (y1 - y0) * .38;
+  const spin = (Math.random() < .5 ? -1 : 1) * 620;
+  const dur = reduced() ? 250 : 950;
+
+  const el = document.createElement('div');
+  el.className = 'fly'; el.style.width = el.style.height = size + 'px'; el.innerHTML = ballSVG(btn.dataset.value);
+  layer.appendChild(el);
+  btn.style.visibility = 'hidden';
+  const place = (x, y, s, r) => { el.style.transform = `translate(${x - size / 2}px,${y - size / 2}px) scale(${s}) rotate(${r}deg)`; };
+  place(x0, y0, 1, 0);
+
+  await animate(dur, t => {
+    const e = 1 - Math.pow(1 - t, 1.8);
+    const x = (1 - e) * (1 - e) * x0 + 2 * (1 - e) * e * cx + e * e * x1;
+    const y = (1 - e) * (1 - e) * y0 + 2 * (1 - e) * e * cy + e * e * y1;
+    place(x, y, 1 + (endScale - 1) * e, spin * e);
+  }, token);
+  if (token !== state.token) { el.remove(); return null; }
+
+  if (outcome === 'goal') {
+    $('#goalBack').classList.remove('bulge'); void $('#goalBack').offsetWidth; $('#goalBack').classList.add('bulge');
+    await animate(reduced() ? 50 : 280, t => place(x1, y1 + 14 * (1 - Math.pow(1 - t, 2)), endScale, spin), token);   // ball settles in the net
+    return el;
+  }
+  // miss: ball carries on past the post and fades out
+  await animate(reduced() ? 50 : 360, t => {
+    el.style.opacity = String(1 - t);
+    place(x1 + side * pr.width * .13 * t, y1 - pr.height * .09 * t, endScale * (1 - .2 * t), spin + 200 * t);
+  }, token);
+  el.remove(); btn.style.visibility = '';
+  return null;
+}
+
+/* =====================================================================
+   11. GAME FLOW
+   ===================================================================== */
+async function choose(btn) {
+  if (state.locked || btn.getAttribute('aria-disabled') === 'true' || state.screen !== 'game') return;
+  state.locked = true;
+  Sound.ensure();
+  const value = Number(btn.dataset.value), correct = value === state.target, first = !state.answered;
+  const token = state.token;
+  hideBanner();
+
+  // Only the FIRST choice on a question counts as an attempt (retries are practice).
+  if (first) {
+    state.answered = true; state.attempts++;
+    if (correct) { state.goals++; state.score++; state.results[state.qDone] = 'goal'; }
+    else         { state.missed++; state.results[state.qDone] = 'miss'; }
+    updateStats();
+  }
+
+  Sound.kick();
+  const fly = await flyBall(btn, correct ? 'goal' : 'miss', token);
+  if (token !== state.token) return;
+
+  if (correct) {
+    Sound.goal(); confetti();
+    showBanner('goal', '⚽ GOAL! 🎉', first ? 'Excellent! You recognised the number correctly.' : 'That\'s it! You found the right number.');
+    await sleep(reduced() ? 900 : 1700);
+    if (token !== state.token) return;
+    if (fly) { fly.style.transition = 'opacity .3s'; fly.style.opacity = '0'; }
+    state.qDone++;
+    updateStats();
+    if (state.qDone >= TOTAL) { await sleep(250); if (token === state.token) showResults(); }
+    else nextQuestion();
+  } else {
+    Sound.miss();
+    btn.setAttribute('aria-disabled', 'true');
+    btn.setAttribute('aria-label', `Football ${fmt(value)}: not the right number`);
+    btn.classList.remove('shake'); void btn.offsetWidth; btn.classList.add('shake');
+    showBanner('miss', 'MISSED! ❌', hintFor(value, state.target), 3200);
+    state.locked = false;                                                      // allow another try
+  }
+}
+
+function nextQuestion() {
+  state.token++;
+  $('#flyLayer').innerHTML = ''; hideBanner();
+  state.target = randomNumber(state.level);
+  state.used.add(state.target);
+  state.options = shuffle([state.target, ...makeDistractors(state.target, state.level)]);
+  state.answered = false; state.locked = false;
+  renderBlocks(true); renderOptions(); updateStats();
+}
+
+function startGame(level) {
+  state.level = level; state.token++;
+  Object.assign(state, { qDone: 0, score: 0, attempts: 0, goals: 0, missed: 0, results: Array(TOTAL).fill(null), used: new Set() });
+  $('#results').hidden = true;
+  show('game'); buildPips(); nextQuestion();
+  $(`#lvl${level}`).checked = true;
+}
+
+function show(screen) {
+  state.screen = screen; state.token++;
+  $('#screenStart').hidden = screen !== 'start';
+  $('#screenGame').hidden  = screen !== 'game';
+  $('#homeBtn').hidden     = screen !== 'game';
+  $('#results').hidden = true;
+  if (screen === 'start') { $('#flyLayer').innerHTML = ''; hideBanner(); }
+  window.scrollTo(0, 0);
+}
+
+/* ---------- Results ---------- */
+let lastFocus = null;
+function showResults() {
+  const acc = Math.round(state.goals / TOTAL * 100);
+  $('#resGoals').textContent = `${state.goals}/${TOTAL}`;
+  $('#resAcc').textContent = acc + '%';
+  const stars = acc >= 90 ? 3 : acc >= 70 ? 2 : 1;
+  $('#resStars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
+  $('#resStars').setAttribute('aria-label', stars + ' out of 3 stars');
+  $('#resMsg').textContent = acc >= 90 ? 'Superstar! You read the blocks brilliantly.' :
+    acc >= 70 ? 'Great work! Keep counting the blocks carefully.' : 'Good effort! Try again and look at each place value.';
+  const last = state.level >= LEVELS.length - 1;
+  $('#nextBtn').hidden = last;
+  $('#resTitle').textContent = last ? 'LEVEL COMPLETE! 🎉 All levels done!' : 'LEVEL COMPLETE!';
+  lastFocus = document.activeElement;
+  $('#results').hidden = false;
+  (last ? $('#againBtn') : $('#nextBtn')).focus();
+}
+
+/* =====================================================================
+   12. EVENTS
+   ===================================================================== */
+$('#startBtn').addEventListener('click', () => { Sound.ensure(); startGame(Number(document.querySelector('input[name="level"]:checked').value)); });
+$('#homeBtn').addEventListener('click', () => show('start'));
+$('#resHomeBtn').addEventListener('click', () => show('start'));
+$('#againBtn').addEventListener('click', () => startGame(state.level));
+$('#nextBtn').addEventListener('click', () => startGame(Math.min(state.level + 1, LEVELS.length - 1)));
+
+$('#soundBtn').addEventListener('click', () => {
+  Sound.on = !Sound.on;
+  const b = $('#soundBtn');
+  b.textContent = Sound.on ? '🔊 Sound ON' : '🔇 Sound OFF';
+  b.setAttribute('aria-pressed', String(Sound.on));
+  b.setAttribute('aria-label', Sound.on ? 'Sound is on. Press to turn sound off.' : 'Sound is off. Press to turn sound on.');
+  if (Sound.on) Sound.ensure();
+});
+
+document.addEventListener('keydown', e => {
+  // Keep keyboard focus inside the results dialog
+  if (!$('#results').hidden && e.key === 'Tab') {
+    const f = [...$('#results').querySelectorAll('button')].filter(b => !b.hidden);
+    const first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    return;
+  }
+  // Shortcut: keys 1–4 kick the matching football
+  if (state.screen === 'game' && $('#results').hidden && /^[1-4]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    const b = $('#options').children[Number(e.key) - 1]; if (b) b.click();
+  }
+});
+
+// Re-scale the blocks when the workspace width changes (rotate phone, resize window, smart-board)
+let lastW = 0;
+new ResizeObserver(entries => {
+  const w = Math.round(entries[0].contentRect.width);
+  if (state.screen === 'game' && state.target && Math.abs(w - lastW) > 8) { lastW = w; renderBlocks(false); }
+}).observe($('#blocks'));
+
+})();
+</script>
+</body>
+</html>

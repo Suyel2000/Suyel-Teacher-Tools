@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Build &amp; Compare Numbers</title>
+<style>
+:root{--ink:#1f2a44;--mute:#5b6784;--bg:#eef3fa;--line:#d9e2f0;--rh:60px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--ink);font-family:"Nunito","Segoe UI",system-ui,-apple-system,sans-serif}
+button{font:inherit;cursor:pointer;color:inherit}
+:focus-visible{outline:4px solid #1f2a44;outline-offset:2px}
+#app{height:100dvh;max-width:1500px;margin:auto;display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:8px;padding:8px 12px}
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 14px}
+h1{margin:0;font-size:clamp(16px,2.4vw,26px);font-weight:900}
+.levels{display:flex;gap:6px;flex-wrap:wrap}
+.lv{--c:#3b82f6;background:#fff;border:3px solid var(--c);border-radius:999px;padding:5px 12px;font-weight:800;font-size:clamp(11px,1.5vw,15px);min-height:40px;line-height:1.1}
+.lv small{display:block;font-weight:700;opacity:.8}
+.lv[aria-pressed=true]{background:var(--c);color:#fff;box-shadow:0 4px 10px rgba(0,0,0,.2)}
+.lv.pulse{animation:pulse .6s 3}
+.stats{display:flex;gap:6px}
+.pill{background:#fff;border-radius:999px;padding:6px 12px;font-weight:900;font-size:clamp(12px,1.6vw,17px);box-shadow:0 2px 6px rgba(31,42,68,.1)}
+main{display:grid;grid-template-columns:minmax(0,1fr) clamp(138px,18vw,220px) minmax(0,1fr);gap:10px;min-height:0}
+.card{background:#fff;border-radius:20px;box-shadow:0 6px 18px rgba(31,42,68,.1)}
+.panel{display:flex;flex-direction:column;gap:6px;padding:8px 10px;min-height:0;min-width:0}
+.lbl{font-weight:800;color:var(--mute);font-size:clamp(11px,1.5vw,15px);text-align:center}
+.big{font-weight:900;font-size:clamp(28px,7vh,58px);line-height:1;text-align:center;letter-spacing:1px}
+.ws{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:space-evenly;background:#f7faff;border:2px dashed var(--line);border-radius:14px;padding:6px;overflow:hidden}
+.row{display:flex;align-items:flex-end;padding:4px 8px;border-radius:12px;background:var(--lane);box-shadow:inset 0 1px 3px rgba(31,42,68,.08)}
+.row svg{flex:none;overflow:visible;filter:drop-shadow(0 1.5px 1.5px rgba(15,23,42,.3))}
+.row svg+svg{margin-left:var(--g,3px)}
+.row .ph{opacity:.16;filter:grayscale(.4)}
+.row.glow{animation:glow .7s 3;background:#fde047}
+.pop{animation:pop .3s ease-out;transform-origin:50% 100%}
+.defs{position:absolute;width:0;height:0}
+.built{text-align:center;font-weight:900;font-size:clamp(13px,2vw,20px)}
+.built b{display:inline-block;min-width:3ch;padding:1px 8px;border-radius:8px;background:#fee2e2;color:#b91c1c}
+.built.done b{background:#dcfce7;color:#15803d}
+.ctrl{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.pc{display:flex;gap:3px}
+.pc button{min-height:44px;border-radius:12px;border:3px solid var(--c);font-weight:900;font-size:clamp(10px,1.35vw,14px)}
+.pl{flex:1;background:var(--c);color:#fff;padding:0 2px}
+.mn{width:38px;background:#fff;color:var(--c);font-size:20px;line-height:1}
+.c-t{--c:#2563eb}.c-h{--c:#16a34a}.c-n{--c:#ca8a04}.c-o{--c:#dc2626}
+.pc button:disabled{opacity:.35;cursor:not-allowed}
+.mid{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:8px;min-height:0}
+#box{width:min(100%,150px);aspect-ratio:1;border:5px dashed #a5b4d4;border-radius:22px;display:grid;place-items:center;font-size:clamp(40px,9vh,80px);font-weight:900;color:#a5b4d4;transition:.2s}
+#box svg{width:70%;color:var(--ink)}
+#box.hot{border-color:#7c3aed;background:#f3e8ff;transform:scale(1.06)}
+#box.ok{border-style:solid;border-color:#16a34a;background:#dcfce7;animation:pop .4s}
+#box.bad{animation:shake .4s}
+.signs{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;width:100%}
+.sign{aspect-ratio:1;border:0;border-radius:14px;padding:6px;color:#fff;touch-action:none;box-shadow:0 4px 0 rgba(0,0,0,.2);user-select:none;-webkit-user-select:none}
+.sign svg{width:100%;height:100%;display:block}
+.sign[data-s="<"]{background:#f97316}.sign[data-s="="]{background:#0ea5e9}.sign[data-s=">"]{background:#ec4899}
+.sign.dim{opacity:.4;filter:grayscale(.5)}
+.sign.lift{opacity:.3}
+.ghost{position:fixed;z-index:60;pointer-events:none;transform:translate(-50%,-50%) scale(1.15);box-shadow:0 10px 24px rgba(0,0,0,.35)}
+#msg{min-height:2.6em;text-align:center;font-weight:900;font-size:clamp(12px,1.7vw,18px);line-height:1.2}
+#msg.good{color:#15803d}#msg.warn{color:#c2410c}
+footer{display:flex;align-items:center;justify-content:center;gap:12px;font-weight:700;font-size:clamp(11px,1.5vw,16px)}
+footer p{margin:0;text-align:center}
+.ghostbtn{background:#fff;border:2px solid var(--line);border-radius:999px;padding:6px 14px;font-weight:800;min-height:40px}
+#end{position:fixed;inset:0;background:rgba(31,42,68,.55);display:grid;place-items:center;z-index:100;padding:12px}
+#end[hidden]{display:none}
+.res{background:#fff;border-radius:24px;padding:20px 28px;text-align:center;max-width:420px;width:100%;animation:pop .4s}
+.res h2{margin:0 0 4px;font-size:clamp(24px,5vh,36px)}
+.res .sc{font-size:clamp(26px,6vh,40px);font-weight:900;color:#7c3aed}
+.res ul{list-style:none;padding:0;margin:12px 0;font-weight:800;font-size:18px;line-height:1.8}
+.res button{border:0;border-radius:14px;padding:12px 18px;font-weight:900;font-size:16px;color:#fff;background:#3b82f6;margin:3px;min-height:48px}
+.res button+button{background:#7c3aed}
+@keyframes pop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+@keyframes glow{50%{background:#fde047}}
+@keyframes pulse{50%{transform:scale(1.12)}}
+@media (max-height:520px){#app{gap:4px;padding:4px 8px}.lbl{display:none}.lv{min-height:34px;padding:2px 10px}.pill{padding:3px 10px}.mid{gap:6px}#msg{min-height:2.2em}}
+@media (max-width:640px){.mn{width:30px}.pc button{border-width:2px}.big{font-size:clamp(24px,6vh,40px)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>Build &amp; Compare Numbers</h1>
+    <div class="levels" id="levels" role="group" aria-label="Choose level">
+      <button class="lv" data-l="1" style="--c:#2563eb">🔵 Level 1<small>2-Digit Numbers</small></button>
+      <button class="lv" data-l="2" style="--c:#16a34a">🟢 Level 2<small>3-Digit Numbers</small></button>
+      <button class="lv" data-l="3" style="--c:#7c3aed">🟣 Level 3<small>4-Digit Numbers</small></button>
+    </div>
+    <div class="stats"><span class="pill" id="score"></span><span class="pill" id="qn"></span></div>
+  </header>
+  <main>
+    <section class="card panel" id="pL" aria-label="Left number"></section>
+    <section class="card mid" aria-label="Comparison">
+      <div id="box" aria-live="polite">?</div>
+      <div class="signs" id="signs"></div>
+      <div id="msg" aria-live="polite"></div>
+    </section>
+    <section class="card panel" id="pR" aria-label="Right number"></section>
+  </main>
+  <footer>
+    <p>Build both numbers using Base-10 blocks. Then drag the correct sign between them: <b>&lt;</b>, <b>&gt;</b> or <b>=</b>. (You can also tap a sign.)</p>
+    <button class="ghostbtn" id="restart">Restart</button>
+  </footer>
+</div>
+<div id="end" hidden><div class="res" role="dialog" aria-labelledby="rt">
+  <h2 id="rt">🎉 Great Work!</h2><div class="sc" id="rs"></div>
+  <ul id="rl"></ul>
+  <button id="again">Restart</button><button id="chg">Change Level</button>
+</div></div>
+
+<script>
+/* ===== Data: place values, colours, block geometry ===== */
+const PL=[{k:'t',v:1000,n:'THOUSAND'},{k:'h',v:100,n:'HUNDRED'},{k:'n',v:10,n:'TEN'},{k:'o',v:1,n:'ONE'}];
+const PM=Object.fromEntries(PL.map(p=>[p.k,p]));
+const LV={1:[10,99],2:[100,999],3:[1000,9999]}, SPAN={1:15,2:150,3:1500};
+const COL={t:['#7dd3fc','#2563eb','#1e3a8a'],h:['#86efac','#16a34a','#14532d'],n:['#fef08a','#eab308','#a16207'],o:['#fca5a5','#dc2626','#7f1d1d']};  // [light, base, dark]
+/* viewBox units (10 = one unit cube edge): [front w, front h, depth, vertical lines?, horizontal lines?]
+   True scale: flat = 10x10, rod = 1x10, unit = 1x1, thousand cube = 10x10x10 */
+const BD={t:[100,100,40,1,1],h:[100,100,5,1,1],n:[10,100,5,0,1],o:[10,10,5,0,0]};
+const SG={'<':'<polyline points="70,18 30,50 70,82"/>','>':'<polyline points="30,18 70,50 30,82"/>','=':'<line x1="22" y1="36" x2="78" y2="36"/><line x1="22" y1="64" x2="78" y2="64"/>'};
+const SN={'<':'Less than','=':'Equal to','>':'Greater than'};
+
+/* Shared gradients (front / top / side) for each block colour */
+document.body.insertAdjacentHTML('afterbegin','<svg class="defs" aria-hidden="true"><defs>'+Object.entries(COL).map(([k,[l,m,d]])=>
+ `<linearGradient id="gf-${k}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${l}"/><stop offset=".45" stop-color="${m}"/><stop offset="1" stop-color="${d}" stop-opacity=".85"/></linearGradient>
+  <linearGradient id="gt-${k}" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="${l}"/><stop offset="1" stop-color="#fff"/></linearGradient>
+  <linearGradient id="gs-${k}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${m}"/><stop offset="1" stop-color="${d}"/></linearGradient>`).join('')+'</defs></svg>');
+
+/* Inline SVG Base-10 block: shaded front, top and side faces, embossed unit grid, scaled by st.s px per unit */
+function blk(k,cls=''){
+  const [w,h,d,gx,gy]=BD[k],W=w+d,H=h+d,sc=st.s,E='stroke-linecap="round" fill="none"';
+  let v='',r='',c='';
+  if(gx)for(let i=1;i<10;i++)v+=`M${i*w/10} ${d}v${h}`;
+  if(gy)for(let i=1;i<10;i++)r+=`M0 ${d+i*h/10}h${w}`;
+  if(gx&&gy&&d>10)for(let i=1;i<10;i++){   // cube: unit lines on top and side faces
+    c+=`M${i*w/10} ${d}l${d} ${-d}M${i*d/10} ${d-i*d/10}h${w}M${w+i*d/10} ${d-i*d/10}v${h}M${w} ${d+i*h/10}l${d} ${-d}`;
+  }
+  const grid=v+r;
+  return `<svg class="${cls}" width="${(W*sc).toFixed(1)}" height="${(H*sc).toFixed(1)}" viewBox="0 0 ${W} ${H}" aria-hidden="true">
+<polygon points="0,${d} ${d},0 ${W},0 ${w},${d}" fill="url(#gt-${k})" stroke="${COL[k][2]}" stroke-opacity=".5" stroke-width="1" stroke-linejoin="round"/>
+<polygon points="${w},${d} ${W},0 ${W},${h} ${w},${H}" fill="url(#gs-${k})" stroke="${COL[k][2]}" stroke-opacity=".6" stroke-width="1" stroke-linejoin="round"/>
+<rect y="${d}" width="${w}" height="${h}" rx="${w>50?2:1}" fill="url(#gf-${k})" stroke="${COL[k][2]}" stroke-opacity=".7" stroke-width="1.2"/>
+<path d="${grid}${c}" stroke="#000" stroke-opacity=".22" stroke-width="1" ${E}/>
+<path d="${grid}${c}" transform="translate(.9,.9)" stroke="#fff" stroke-opacity=".45" stroke-width=".9" ${E}/>
+<path d="M1.5 ${H-1.5}V${d+1.5}H${w-1.5}" stroke="#fff" stroke-opacity=".55" stroke-width="1.4" ${E}/>
+</svg>`;
+}
+const sign=s=>`<svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${SG[s]}</svg>`;
+
+/* ===== State ===== */
+const $=id=>document.getElementById(id);
+const fmt=n=>n.toLocaleString('en-US');
+const val=c=>c.t*1000+c.h*100+c.n*10+c.o;
+const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=rnd(0,i);[a[i],a[j]]=[a[j],a[i]]}return a};
+const st={s:.5,W:300,level:1,q:1,score:0,first:0,hist:new Set(),bag:[],busy:false,tmsg:false,hint:null};
+const places=()=>PL.slice(3-st.level);          // active places for the level
+const S={L:{},R:{}};                              // per-side: target, counts, prev counts
+
+/* ===== Random pair generation (never repeats, balanced <, >, =) ===== */
+function nextType(){if(!st.bag.length)st.bag=shuffle(['<','<','>','>','=']);return st.bag.pop()}
+function genPair(type){
+  const [lo,hi]=LV[st.level];
+  for(let i=0;i<500;i++){
+    let a=rnd(lo,hi),b;
+    if(type==='=')b=a;
+    else b=Math.random()<.5?a+rnd(1,SPAN[st.level])*(Math.random()<.5?-1:1):rnd(lo,hi);   // half "close" pairs
+    if(b<lo||b>hi||(type!=='='&&a===b))continue;
+    if((type==='>'&&a<b)||(type==='<'&&a>b))[a,b]=[b,a];
+    const k=st.level+':'+a+','+b;
+    if(st.hist.has(k))continue;
+    st.hist.add(k);st.hist.add(st.level+':'+b+','+a);
+    return [a,b];
+  }
+  return [rnd(lo,hi),rnd(lo,hi)];   // practically unreachable fallback
+}
+
+/* ===== Setup ===== */
+function mkPanel(side,name){
+  $('p'+side).innerHTML=`<div class="lbl">${name}: build this number</div><div class="big" id="t${side}"></div><div class="ws" id="w${side}"></div><div class="built" id="b${side}"></div><div class="ctrl" id="c${side}"></div>`;
+}
+function mkCtrl(side){
+  $('c'+side).innerHTML=places().map(p=>`<div class="pc c-${p.k}"><button class="mn" data-s="${side}" data-k="${p.k}" data-d="-1" aria-label="Remove one ${p.n.toLowerCase()}">−</button><button class="pl" data-s="${side}" data-k="${p.k}" data-d="1" aria-label="Add one ${p.n.toLowerCase()}">+ ${p.n}</button></div>`).join('');
+}
+function newQ(){
+  const [a,b]=genPair(nextType());
+  S.L={t:a,c:{t:0,h:0,n:0,o:0},p:{t:0,h:0,n:0,o:0}};
+  S.R={t:b,c:{t:0,h:0,n:0,o:0},p:{t:0,h:0,n:0,o:0}};
+  st.busy=false;st.tmsg=false;st.hint=null;st.wrong=false;
+  $('box').className='';$('box').innerHTML='?';
+  render();
+}
+function setLevel(l){
+  st.level=l;
+  document.querySelectorAll('.lv').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.l===l));
+  mkCtrl('L');mkCtrl('R');newQ();
+}
+function resetGame(){st.q=1;st.score=0;st.first=0;st.bag=[];$('end').hidden=true;newQ()}
+
+/* ===== Rendering ===== */
+function drawSide(side){
+  const s=S[side],c=s.c,v=val(c);
+  $('t'+side).textContent=fmt(s.t);
+  $('b'+side).innerHTML=`Built Number: <b>${fmt(v)}</b>`;
+  $('b'+side).classList.toggle('done',v===s.t);
+  $('w'+side).innerHTML=places().map(p=>{
+    const n=c[p.k],[w,h,d]=BD[p.k],bw=(w+d)*st.s,glow=st.hint==='all'||st.hint===p.k?' glow':'';
+    const gap=n>1?Math.max(-bw*.55,Math.min(5,(st.W-n*bw)/(n-1))):0;   // overlap only if a row would overflow
+    const inner=n?Array.from({length:n},(_,i)=>blk(p.k,i>=s.p[p.k]?'pop':'')).join(''):blk(p.k,'ph');
+    return `<div class="row${glow}" style="--lane:${COL[p.k][1]}14;--g:${gap.toFixed(1)}px;height:${((h+d)*st.s+8).toFixed(1)}px">${inner}</div>`;
+  }).join('');
+  s.p={...c};
+  document.querySelectorAll(`#c${side} button`).forEach(b=>{
+    const k=b.dataset.k,d=+b.dataset.d;
+    b.disabled=st.busy||(d>0?(c[k]>=9||v+PM[k].v>s.t):!c[k]);
+  });
+}
+function ready(){return val(S.L.c)===S.L.t&&val(S.R.c)===S.R.t}
+function msg(t,cls=''){const m=$('msg');m.textContent=t;m.className=cls}
+function render(){
+  fit();
+  $('score').textContent='⭐ Score: '+st.score;
+  $('qn').textContent=`Question ${st.q} / 10`;
+  drawSide('L');drawSide('R');
+  const r=ready();
+  document.querySelectorAll('.sign').forEach(b=>b.classList.toggle('dim',!r||st.busy));
+  if(!st.busy&&!st.tmsg)msg(r?'Both numbers built! Which sign goes between them?':'Build both numbers first.');
+}
+function fit(){   // pick one true-to-scale size for every block so all rows fit the workspace
+  const ws=$('wL');if(!ws)return;
+  const pl=places(),n=pl.length,sum=pl.reduce((t,p)=>t+BD[p.k][1]+BD[p.k][2],0);
+  const H=ws.clientHeight-12-n*8-(n-1)*6,W=ws.clientWidth-28;
+  st.W=W;st.s=Math.max(.15,Math.min(H/sum,1.1,W/(pl[0].k==='n'?300:520)));
+}
+
+/* ===== Building ===== */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('.ctrl button');if(!b||b.disabled||st.busy)return;
+  const s=S[b.dataset.s],k=b.dataset.k,d=+b.dataset.d;
+  if(d>0){if(s.c[k]>=9||val(s.c)+PM[k].v>s.t)return;s.c[k]++}
+  else{if(!s.c[k])return;s.c[k]--}
+  st.tmsg=false;st.hint=null;render();
+});
+
+/* ===== Comparison: drag & drop (mouse + touch), tap, keyboard ===== */
+$('signs').innerHTML=['<','=','>'].map(s=>`<button class="sign" data-s="${s}" aria-label="${SN[s]}">${sign(s)}</button>`).join('');
+const overBox=ev=>{const r=$('box').getBoundingClientRect(),m=30;return ev.clientX>r.left-m&&ev.clientX<r.right+m&&ev.clientY>r.top-m&&ev.clientY<r.bottom+m};
+document.querySelectorAll('.sign').forEach(c=>{
+  c.addEventListener('pointerdown',e=>{
+    if(st.busy)return;
+    if(!ready()){st.tmsg=true;msg('Build both numbers first!','warn');return}
+    e.preventDefault();c.setPointerCapture(e.pointerId);
+    const sx=e.clientX,sy=e.clientY;let ghost=null,moved=false;
+    const mv=ev=>{
+      if(!moved&&Math.hypot(ev.clientX-sx,ev.clientY-sy)>8){
+        moved=true;ghost=c.cloneNode(true);ghost.classList.add('ghost');ghost.style.width=c.offsetWidth+'px';
+        document.body.appendChild(ghost);c.classList.add('lift');
+      }
+      if(ghost){ghost.style.left=ev.clientX+'px';ghost.style.top=ev.clientY+'px';$('box').classList.toggle('hot',overBox(ev))}
+    };
+    const end=ev=>{
+      c.removeEventListener('pointermove',mv);c.removeEventListener('pointerup',end);c.removeEventListener('pointercancel',end);
+      if(ghost)ghost.remove();c.classList.remove('lift');$('box').classList.remove('hot');
+      if(ev.type==='pointerup'&&(!moved||overBox(ev)))submit(c.dataset.s);
+    };
+    c.addEventListener('pointermove',mv);c.addEventListener('pointerup',end);c.addEventListener('pointercancel',end);
+  });
+  c.addEventListener('keydown',e=>{
+    if(e.key==='Enter'||e.key===' '){e.preventDefault();if(!ready()){st.tmsg=true;msg('Build both numbers first!','warn');return}submit(c.dataset.s)}
+  });
+});
+
+function submit(sg){
+  if(!ready()||st.busy)return;
+  const a=S.L.t,b=S.R.t,ans=a<b?'<':a>b?'>':'=',box=$('box');
+  if(sg===ans){
+    st.busy=true;
+    if(st.wrong)st.score+=5;else{st.score+=10;st.first++}
+    box.className='ok';box.innerHTML=sign(sg);
+    st.tmsg=true;msg(`🎉 Correct! ${fmt(a)} ${sg} ${fmt(b)}`,'good');
+    render();setTimeout(nextQ,2000);
+  }else{
+    st.wrong=true;st.tmsg=true;
+    box.className='';void box.offsetWidth;box.className='bad';
+    // Hint: glow the first place value where the numbers differ (or all places if equal)
+    const da=String(a).padStart(4,'0'),db=String(b).padStart(4,'0');
+    let h='all';for(let i=4-places().length;i<4;i++)if(da[i]!==db[i]){h=PL[i].k;break}
+    st.hint=h;
+    msg(h==='all'?'Try Again! Look at every place.':'Try Again! Look at the glowing blocks.','warn');
+    render();
+    setTimeout(()=>{if(st.hint===h){st.hint=null;render()}},2400);
+  }
+}
+function nextQ(){
+  if(st.q>=10){
+    $('rs').textContent=`Score: ${st.score} / 100`;
+    $('rl').innerHTML=`<li>Questions attempted: 10</li><li>Correct on first try: ${st.first}</li><li>Accuracy: ${st.first*10}%</li>`;
+    $('end').hidden=false;$('again').focus();return;
+  }
+  st.q++;newQ();
+}
+
+/* ===== Controls ===== */
+$('levels').addEventListener('click',e=>{const b=e.target.closest('.lv');if(b)setLevel(+b.dataset.l)});
+$('restart').onclick=resetGame;$('again').onclick=resetGame;
+$('chg').onclick=()=>{resetGame();document.querySelectorAll('.lv').forEach(b=>{b.classList.remove('pulse');void b.offsetWidth;b.classList.add('pulse')});document.querySelector('.lv[aria-pressed=true]').focus()};
+mkPanel('L','Left');mkPanel('R','Right');
+new ResizeObserver(()=>{if(S.L.c)render()}).observe($('pL'));
+setLevel(1);
+</script>
+</body>
+</html>

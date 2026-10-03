@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Ascending Order Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#F3F8FF; --grid:#DCE8F9; --panel:#FFFFFF; --ink:#1B2A59; --muted:#5C6B96;
+  --line:#BFCFEE; --soft:#E8F0FF;
+  --th:#8B5CF6; --h:#2F7DF0; --t:#F5A524; --o:#2DB871;
+  --ok:#17A34A; --okbg:#E3F7EA; --bad:#E5484D; --cta:#EF4476; --hint:#FFD23F; --hintbg:#FFF6D1;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1530; --grid:#18224C; --panel:#172044; --ink:#EEF3FF; --muted:#A3B3E2;
+    --line:#33427F; --soft:#202C5F;
+    --th:#A98BFF; --h:#5B9BFF; --t:#F7B23B; --o:#3CCB86;
+    --ok:#3CCB86; --okbg:#143B33; --bad:#FF7075; --hintbg:#3A3413;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1530; --grid:#18224C; --panel:#172044; --ink:#EEF3FF; --muted:#A3B3E2;
+  --line:#33427F; --soft:#202C5F;
+  --th:#A98BFF; --h:#5B9BFF; --t:#F7B23B; --o:#3CCB86;
+  --ok:#3CCB86; --okbg:#143B33; --bad:#FF7075; --hintbg:#3A3413;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);background:var(--bg)}
+*,*::before,*::after{box-sizing:inherit}
+body{
+  margin:0;background-color:var(--bg);color:var(--ink);
+  font-family:'Baloo 2','Trebuchet MS','Segoe UI',system-ui,sans-serif;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px;
+  -webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;
+  line-height:1.25;
+}
+button{font:inherit;color:inherit;touch-action:manipulation;cursor:pointer}
+button:disabled{cursor:not-allowed}
+:focus-visible{outline:4px solid var(--hint);outline-offset:2px}
+main{max-width:1220px;margin:0 auto;padding:12px 14px 0}
+
+/* header */
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 18px;margin-bottom:10px}
+h1{margin:0;font-size:clamp(1.4rem,4vw,2.1rem);font-weight:800;letter-spacing:.04em}
+.challenge{margin:0;color:var(--muted);font-size:clamp(1rem,2.6vw,1.15rem);font-weight:500;flex-basis:100%;order:3}
+.levels{display:flex;gap:8px}
+.lv{min-height:48px;padding:0 18px;border:3px solid var(--ink);border-radius:16px;background:var(--panel);font-weight:800;font-size:1.05rem;box-shadow:0 4px 0 var(--ink);transition:transform .08s}
+.lv:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.lv[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.fs{width:48px;min-height:48px;padding:0;display:grid;place-items:center;border:3px solid var(--ink);border-radius:16px;background:var(--panel);box-shadow:0 4px 0 var(--ink);transition:transform .08s}
+.fs:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.fs svg{width:24px;height:24px;display:block}
+.fs[hidden]{display:none}
+
+/* panels */
+.panels{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+@media (max-width:1040px){.panels{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.panels{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:3px solid var(--ink);border-radius:22px;padding:10px 12px 12px;box-shadow:0 5px 0 var(--ink);display:flex;flex-direction:column;gap:7px;transition:border-color .2s,box-shadow .2s}
+.panel.done{border-color:var(--ok);box-shadow:0 5px 0 var(--ok)}
+.panel.flash{animation:flash .9s}
+@keyframes flash{0%,100%{background:var(--panel)}30%{background:var(--hintbg)}}
+.phead{display:flex;justify-content:space-between;align-items:center;min-height:26px}
+.tag{font-weight:700;color:var(--muted);font-size:.95rem}
+.chip{font-weight:800;font-size:.85rem;padding:1px 10px;border-radius:99px}
+.chip.ok{background:var(--okbg);color:var(--ok)}
+.chip.big{background:var(--hintbg);color:var(--bad)}
+.target{font-size:clamp(2.2rem,5vw,2.9rem);font-weight:800;line-height:1;letter-spacing:.02em;text-align:center}
+.c-th{color:var(--th)}.c-h{color:var(--h)}.c-t{color:var(--t)}.c-o{color:var(--o)}
+.cm{color:var(--muted)}
+
+.ws{container-type:inline-size;display:flex;gap:4px;--n:3}
+.col{
+  --c:min(calc(100cqw / var(--n)),112px);
+  flex:1;min-width:0;display:flex;flex-direction:column;
+  min-height:calc(var(--c)*1.15 + 24px);padding:3px 3px 4px;border-radius:14px;
+  background:color-mix(in srgb,var(--pc) 12%,var(--panel));
+  border:2px dashed color-mix(in srgb,var(--pc) 55%,transparent);
+}
+.col.th{--pc:var(--th)}.col.h{--pc:var(--h)}.col.t{--pc:var(--t)}.col.o{--pc:var(--o)}
+.lab{text-align:center;font-weight:700;color:var(--pc);font-size:clamp(10px,calc(var(--c)*.16),13px);line-height:1.3;filter:brightness(.9)}
+.pile{flex:1;display:flex;flex-wrap:wrap;gap:calc(var(--c)*.025);align-content:flex-start;justify-content:center;padding-top:3px}
+.bw{padding:0;margin:0;border:0;background:none;line-height:0;color:var(--pc)}
+.bw.pop{animation:pop .28s ease-out}
+@keyframes pop{0%{transform:scale(.3);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+.blk{display:block;height:auto}
+.blk *{vector-effect:non-scaling-stroke}
+.col.th .blk{width:calc(var(--c)*.29);aspect-ratio:1}
+.col.h .blk{width:calc(var(--c)*.27);aspect-ratio:1}
+.col.t .blk{width:calc(var(--c)*.1);aspect-ratio:18/104}
+.col.o .blk{width:calc(var(--c)*.2);aspect-ratio:1}
+
+.built{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:34px}
+.eq{font-size:.95rem;font-weight:600;color:var(--muted);min-width:0}
+.val{font-size:1.35rem;font-weight:800;white-space:nowrap;padding:0 4px;border-radius:10px}
+.val.ok{color:var(--ok)}.val.bad{color:var(--bad)}
+
+.adds{display:grid;grid-template-columns:repeat(var(--n),1fr);gap:6px}
+.add{min-height:48px;border:3px solid var(--ink);border-radius:14px;background:var(--pc);color:#fff;font-weight:800;font-size:1.1rem;box-shadow:0 4px 0 var(--ink);transition:transform .08s}
+.add.th{--pc:var(--th)}.add.h{--pc:var(--h)}.add.t{--pc:var(--t);color:#2C1D00}.add.o{--pc:var(--o);color:#06301A}
+.add:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.add:disabled{opacity:.35;box-shadow:none}
+.subs{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.sub{min-height:40px;border:2.5px solid var(--line);border-radius:12px;background:var(--soft);font-weight:700;color:var(--ink)}
+.sub:disabled{opacity:.4}
+
+/* arrange */
+.arrange{margin-top:16px;background:var(--panel);border:3px solid var(--ink);border-radius:22px;padding:12px 14px 14px;box-shadow:0 5px 0 var(--ink)}
+h2{margin:0 0 8px;font-size:clamp(1.15rem,3vw,1.5rem);font-weight:800}
+.sub-h{margin:0 0 8px;color:var(--muted);font-weight:500;font-size:.95rem}
+.tray{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:10px}
+.card{
+  touch-action:none;display:flex;align-items:center;justify-content:center;width:100%;height:66px;
+  background:var(--panel);border:3px solid var(--ink);border-radius:16px;box-shadow:0 4px 0 var(--ink);
+  font-size:clamp(1.3rem,5.8vw,2.2rem);font-weight:800;cursor:grab;white-space:nowrap
+}
+.lv4 .card{font-size:clamp(1.05rem,4.6vw,2rem)}
+.card.locked{border-style:dashed;border-color:var(--line);box-shadow:none;cursor:default;color:var(--muted);font-size:.95rem;font-weight:700;gap:6px;touch-action:auto}
+.card.ghosted{border-style:dashed;border-color:var(--line);box-shadow:none;background:transparent;cursor:default;touch-action:auto}
+.card.sel{outline:4px solid var(--hint);outline-offset:2px}
+.card.dragging{opacity:.25}
+.ghost{position:fixed;left:0;top:0;z-index:100;pointer-events:none;box-shadow:0 12px 0 rgba(0,0,0,.18);opacity:.97}
+.slots{display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto 1fr;align-items:center;gap:4px}
+.arr{font-size:1.6rem;font-weight:800;color:var(--muted);text-align:center}
+.slot{height:82px;border:3px dashed var(--ink);border-radius:18px;display:flex;align-items:center;justify-content:center;background:var(--soft);transition:background .12s,transform .12s}
+.slot.filled{border-color:transparent;background:transparent}
+.slot.over{background:var(--hintbg);transform:scale(1.04);border-color:var(--hint)}
+.slot .card{height:100%}
+.ord{font-weight:800;font-size:1.15rem;color:var(--muted)}
+.ends{display:flex;justify-content:space-between;color:var(--muted);font-weight:600;font-size:.9rem;margin:4px 4px 0}
+.slots.shake{animation:shake .45s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.actions{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+.btn{min-height:52px;padding:0 22px;border:3px solid var(--ink);border-radius:16px;font-weight:800;font-size:1.15rem;box-shadow:0 4px 0 var(--ink);transition:transform .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.btn.check{background:var(--cta);color:#fff;flex:1 1 200px}
+.btn.ghosty{background:var(--soft);color:var(--ink)}
+.btn.nr{background:var(--ink);color:var(--bg)}
+.btn.nr.pulse{animation:pulse 1s ease-in-out 3}
+.btn.hint{background:var(--hint);color:#3A2E00}
+@keyframes pulse{50%{transform:scale(1.07)}}
+
+/* coach */
+.coach{margin-top:12px;border:3px solid var(--line);border-radius:18px;background:var(--panel);padding:10px 14px;min-height:64px;display:flex;align-items:center}
+.coach.ok{border-color:var(--ok);background:var(--okbg)}
+.coach.hint{border-color:var(--hint);background:var(--hintbg)}
+.msg{margin:0;font-size:1.1rem;font-weight:600}
+.coach.ok .msg{font-weight:800;font-size:1.2rem}
+.cmp{display:grid;grid-template-columns:minmax(240px,320px) 1fr;gap:8px 20px;align-items:center;width:100%}
+@media (max-width:640px){.cmp{grid-template-columns:1fr}}
+.rows{display:flex;flex-direction:column;gap:4px}
+.r{display:grid;grid-template-columns:minmax(4.6rem,6rem) 1fr 2rem 1fr;align-items:center;gap:6px;padding:2px 6px;border-radius:10px;border:2px solid transparent}
+.r.hd{padding-top:0;padding-bottom:0}
+.r .big{text-align:center;font-weight:800;font-size:1.35rem}
+.pn{font-weight:700;font-size:.9rem;color:var(--muted)}
+.dg{justify-self:center;min-width:2.3rem;height:30px;border-radius:9px;display:grid;place-items:center;font-weight:800;color:#fff;background:var(--pc)}
+.op{text-align:center;font-weight:800;font-size:1.3rem}
+.p-th{--pc:var(--th)}.p-h{--pc:var(--h)}.p-t{--pc:var(--t)}.p-t .dg{color:#2C1D00}.p-o{--pc:var(--o)}.p-o .dg{color:#06301A}
+.r.dim{opacity:.35}
+.r.dec{background:var(--hintbg);border-color:var(--hint)}
+.r.dec .op{color:var(--bad)}
+.says{margin:0;font-size:1.05rem;font-weight:600}
+.pre{margin:0 0 4px;font-weight:800;color:var(--muted)}
+
+/* bottom bar */
+.bottom{position:sticky;bottom:0;margin-top:14px;padding:10px 0 calc(10px + env(safe-area-inset-bottom,0px));display:flex;gap:12px;justify-content:center;background:linear-gradient(transparent,var(--bg) 35%)}
+.bottom .btn{flex:1 1 0;max-width:260px}
+
+.confetti{position:fixed;top:-20px;z-index:200;width:10px;height:14px;border-radius:2px;pointer-events:none;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+@media (prefers-reduced-motion: reduce){
+  *{animation:none !important;transition:none !important}
+}
+</style>
+</head>
+<body>
+<main id="app" class="lv3">
+  <div class="top">
+    <h1>ASCENDING ORDER LAB</h1>
+    <div class="levels" id="levels" role="group" aria-label="Level">
+      <button class="lv" data-lv="2" aria-pressed="false">2 Digit</button>
+      <button class="lv" data-lv="3" aria-pressed="true">3 Digit</button>
+      <button class="lv" data-lv="4" aria-pressed="false">4 Digit</button>
+    </div>
+    <button class="fs" id="fs" type="button" aria-label="Enter full screen" title="Full screen" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path id="fsIcon" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+    </button>
+    <p class="challenge">Build each number using Base-10 blocks.</p>
+  </div>
+
+  <div class="panels" id="panels"></div>
+
+  <section class="arrange" aria-label="Arrange from smallest to largest">
+    <h2>Arrange from Smallest → Largest</h2>
+    <p class="sub-h">Drag each built number into a box, or tap a card and then a box.</p>
+    <div class="tray" id="tray"></div>
+    <div class="slots" id="slots"></div>
+    <div class="ends"><span>smallest</span><span>largest</span></div>
+    <div class="actions">
+      <button class="btn check" id="check">Check Answer</button>
+      <button class="btn ghosty" id="clearOrder">Clear</button>
+    </div>
+  </section>
+
+  <div class="bottom">
+    <button class="btn nr" id="newRound">New Round</button>
+    <button class="btn hint" id="hint">Hint</button>
+  </div>
+</main>
+
+<script>
+(() => {
+  const PLACES = {2:['t','o'], 3:['h','t','o'], 4:['th','h','t','o']};
+  const VAL = {th:1000, h:100, t:10, o:1};
+  const NAME = {th:['thousand','thousands'], h:['hundred','hundreds'], t:['ten','tens'], o:['one','ones']};
+  const LABEL = {th:'Thousands', h:'Hundreds', t:'Tens', o:'Ones'};
+  const MAXPER = 9;
+  const $ = s => document.querySelector(s);
+
+  const S = {level:3, nums:[], builds:[], slots:[null,null,null,null], selected:null, coach:null, solved:false, lastKey:''};
+
+  /* ---------- SVG Base-10 blocks ---------- */
+  const ln = (x1,y1,x2,y2) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+  function boxSVG(W,H,off,gx,gy){
+    const top = `0,${off} ${off},0 ${W+off},0 ${W},${off}`;
+    const side = `${W},${off} ${W+off},0 ${W+off},${H} ${W},${H+off}`;
+    let g = '';
+    for(let i=1;i<gx;i++){ const x=W*i/gx; g += ln(x,off,x,off+H)+ln(x,off,x+off,0); }
+    for(let j=1;j<gy;j++){ const y=H*j/gy; g += ln(0,off+y,W,off+y)+ln(W,off+y,W+off,y); }
+    return `<svg class="blk" viewBox="0 0 ${W+off} ${H+off}" aria-hidden="true">`+
+      `<g stroke="#000" stroke-opacity=".4" stroke-width="1" stroke-linejoin="round">`+
+      `<rect x="0" y="${off}" width="${W}" height="${H}" rx="1" fill="currentColor"/>`+
+      `<polygon points="${top}" fill="currentColor"/><polygon points="${top}" fill="#fff" fill-opacity=".45"/>`+
+      `<polygon points="${side}" fill="currentColor"/><polygon points="${side}" fill="#000" fill-opacity=".26"/></g>`+
+      `<g stroke="#fff" stroke-opacity=".62" stroke-width=".8" fill="none">${g}</g></svg>`;
+  }
+  const SVG = {
+    o:  boxSVG(14,14,4,1,1),
+    t:  boxSVG(14,100,4,1,10),
+    h:  boxSVG(100,100,8,10,10),
+    th: boxSVG(100,100,30,10,10)
+  };
+
+  /* ---------- helpers ---------- */
+  const digits = n => ({th:Math.floor(n/1000)%10, h:Math.floor(n/100)%10, t:Math.floor(n/10)%10, o:n%10});
+  const fmt = n => n >= 1000 ? n.toLocaleString('en-US') : String(n);
+  function colorNum(n){
+    const s = String(n), pl = ['th','h','t','o'].slice(4 - s.length);
+    let out = '';
+    [...s].forEach((ch,k) => { out += `<span class="c-${pl[k]}">${ch}</span>`; if(s.length===4 && k===0) out += '<span class="cm">,</span>'; });
+    return out;
+  }
+  const nm = (p,n) => NAME[p][n===1?0:1];
+  const joinAnd = a => a.length<2 ? a.join('') : a.slice(0,-1).join(', ')+' and '+a[a.length-1];
+  const shuffle = a => { for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+  const rnd = (a,b) => a + Math.floor(Math.random()*(b-a+1));
+
+  function genSet(level){
+    const lo = {2:10,3:100,4:1000}[level], hi = {2:99,3:999,4:9999}[level];
+    const unit = {2:10,3:100,4:1000}[level];
+    for(let tries=0; tries<300; tries++){
+      const set = new Set();
+      const first = rnd(lo,hi); set.add(first);
+      const lead = Math.floor(first/unit);
+      const want = 1 + rnd(1,2);              // 2-3 numbers share the leading digit
+      let guard = 0;
+      while(set.size < want && guard++ < 60) set.add(lead*unit + rnd(0,unit-1));
+      while(set.size < 4) set.add(rnd(lo,hi));
+      const arr = shuffle([...set]);
+      const key = [...arr].sort((a,b)=>a-b).join(',');
+      if(key !== S.lastKey){ S.lastKey = key; return arr; }
+    }
+  }
+
+  const val = i => Object.keys(S.builds[i].c).reduce((s,p)=>s+S.builds[i].c[p]*VAL[p],0);
+  const done = i => val(i) === S.nums[i];
+  const allBuilt = () => S.nums.every((_,i)=>done(i));
+  const slotsFull = () => S.slots.every(x=>x!=null);
+
+  /* ---------- panels ---------- */
+  function panelInner(i){
+    const places = PLACES[S.level], b = S.builds[i], v = val(i), ok = v === S.nums[i];
+    const parts = places.filter(p=>b.c[p]>0).map(p=>fmt(b.c[p]*VAL[p]));
+    const eq = parts.length ? parts.join(' + ') : 'Add blocks below';
+    const cols = places.map(p => {
+      const blocks = Array.from({length:b.c[p]}, (_,k) =>
+        `<button class="bw${b.pop===p && k===b.c[p]-1 ? ' pop':''}" data-act="rm" data-p="${p}" aria-label="Take away one ${NAME[p][0]}">${SVG[p]}</button>`).join('');
+      return `<div class="col ${p}"><div class="lab">${LABEL[p]}</div><div class="pile">${blocks}</div></div>`;
+    }).join('');
+    const adds = places.map(p =>
+      `<button class="add ${p}" data-act="add" data-p="${p}" ${(ok||b.c[p]>=MAXPER)?'disabled':''} aria-label="Add one ${NAME[p][0]} block">+${VAL[p]}</button>`).join('');
+    const chip = ok ? '<span class="chip ok">✓ Built!</span>' : (v > S.nums[i] ? '<span class="chip big">Too big</span>' : '');
+    return `<div class="phead"><span class="tag">Number ${i+1}</span>${chip}</div>`+
+      `<div class="target" aria-label="Build ${S.nums[i]}">${colorNum(S.nums[i])}</div>`+
+      `<div class="ws" style="--n:${places.length}">${cols}</div>`+
+      `<div class="built"><span class="eq">${eq}</span><span class="val ${ok?'ok':(v>S.nums[i]?'bad':'')}">= ${fmt(v)}</span></div>`+
+      `<div class="adds" style="--n:${places.length}">${adds}</div>`+
+      `<div class="subs"><button class="sub" data-act="undo" ${b.hist.length?'':'disabled'}>↶ Undo</button><button class="sub" data-act="clear" ${b.hist.length?'':'disabled'}>Clear</button></div>`;
+  }
+  function renderPanel(i){
+    const el = $(`#panels .panel[data-i="${i}"]`);
+    el.innerHTML = panelInner(i);
+    el.classList.toggle('done', done(i));
+  }
+  function renderPanels(){
+    $('#panels').innerHTML = S.nums.map((_,i)=>`<section class="panel${done(i)?' done':''}" data-i="${i}" aria-label="Number ${i+1}">${panelInner(i)}</section>`).join('');
+  }
+
+  $('#panels').addEventListener('click', e => {
+    const btn = e.target.closest('button'); if(!btn || btn.disabled) return;
+    const i = +btn.closest('.panel').dataset.i, b = S.builds[i], act = btn.dataset.act, p = btn.dataset.p;
+    b.pop = null;
+    if(act==='add'){ if(b.c[p]>=MAXPER || done(i)) return; b.c[p]++; b.hist.push(p); b.pop = p; }
+    else if(act==='rm'){ if(b.c[p]>0){ b.c[p]--; const k=b.hist.lastIndexOf(p); if(k>=0) b.hist.splice(k,1); } }
+    else if(act==='undo'){ const q=b.hist.pop(); if(q) b.c[q]--; }
+    else if(act==='clear'){ Object.keys(b.c).forEach(k=>b.c[k]=0); b.hist=[]; }
+    afterBuild(i);
+  });
+
+  function afterBuild(i){
+    if(!done(i)){
+      const k = S.slots.indexOf(i);
+      if(k>=0){ S.slots[k] = null; S.solved = false; }
+      if(S.selected===i) S.selected = null;
+      if(S.coach && S.coach.type==='cmp') S.coach = null;
+    }
+    renderPanel(i); renderArrange(); renderCoach();
+  }
+
+  /* ---------- arrange ---------- */
+  function renderArrange(){
+    $('#app').className = 'lv' + S.level;
+    $('#tray').innerHTML = S.nums.map((n,i) => {
+      if(!done(i)) return `<div class="cell"><div class="card locked">🔒 Number ${i+1}</div></div>`;
+      if(S.slots.includes(i)) return `<div class="cell"><div class="card ghosted"></div></div>`;
+      return `<div class="cell"><div class="card${S.selected===i?' sel':''}" data-i="${i}" role="button" tabindex="0" aria-label="Card ${n}">${colorNum(n)}</div></div>`;
+    }).join('');
+    const ord = ['1st','2nd','3rd','4th'];
+    $('#slots').innerHTML = S.slots.map((idx,s) =>
+      `<div class="slot${idx==null?'':' filled'}" data-s="${s}" tabindex="0" aria-label="${ord[s]} place">`+
+      (idx==null ? `<span class="ord">${ord[s]}</span>` :
+        `<div class="card${S.selected===idx?' sel':''}" data-i="${idx}" role="button" tabindex="0">${colorNum(S.nums[idx])}</div>`)+
+      `</div>`).join('<span class="arr" aria-hidden="true">→</span>');
+  }
+
+  function place(i,s){
+    const from = S.slots.indexOf(i), occ = S.slots[s];
+    if(from === s){ S.selected=null; renderArrange(); return; }
+    if(from >= 0) S.slots[from] = occ;
+    S.slots[s] = i; S.selected = null; S.solved = false;
+    renderArrange(); compareAround(s);
+  }
+  function toTray(i){
+    const k = S.slots.indexOf(i);
+    if(k>=0){ S.slots[k] = null; S.solved = false; }
+    S.selected = null; S.coach = null; renderArrange(); renderCoach();
+  }
+  function compareAround(s){
+    const pairs = [];
+    if(s>0 && S.slots[s-1]!=null) pairs.push([s-1,s]);
+    if(s<3 && S.slots[s+1]!=null) pairs.push([s,s+1]);
+    if(!pairs.length){ S.coach = null; renderCoach(); return; }
+    const bad = pairs.find(([a,b]) => S.nums[S.slots[a]] > S.nums[S.slots[b]]);
+    const [a,b] = bad || pairs[0];
+    S.coach = {type:'cmp', a:S.slots[a], b:S.slots[b]};
+    renderCoach();
+  }
+
+  /* drag & drop (pointer events: mouse, touch, pen) */
+  let drag = null;
+  document.addEventListener('pointerdown', e => {
+    const card = e.target.closest('.card[data-i]');
+    if(!card || (e.pointerType==='mouse' && e.button!==0)) return;
+    const r = card.getBoundingClientRect();
+    drag = {i:+card.dataset.i, el:card, sx:e.clientX, sy:e.clientY, dx:e.clientX-r.left, dy:e.clientY-r.top, w:r.width, h:r.height, moved:false, ghost:null};
+    try{ card.setPointerCapture(e.pointerId); }catch(_){}
+  });
+  document.addEventListener('pointermove', e => {
+    if(!drag) return;
+    if(!drag.moved && Math.hypot(e.clientX-drag.sx, e.clientY-drag.sy) > 6){
+      drag.moved = true;
+      const g = drag.el.cloneNode(true);
+      g.classList.add('ghost'); g.classList.remove('sel');
+      g.style.width = drag.w+'px'; g.style.height = drag.h+'px';
+      document.body.appendChild(g); drag.ghost = g;
+      drag.el.classList.add('dragging');
+    }
+    if(drag.moved){
+      drag.ghost.style.transform = `translate(${e.clientX-drag.dx}px,${e.clientY-drag.dy}px) rotate(-3deg)`;
+      document.querySelectorAll('.slot.over').forEach(x=>x.classList.remove('over'));
+      const t = document.elementFromPoint(e.clientX,e.clientY);
+      const sl = t && t.closest('.slot'); if(sl) sl.classList.add('over');
+    }
+  });
+  function endDrag(e,cancel){
+    if(!drag) return;
+    const d = drag; drag = null;
+    if(d.ghost) d.ghost.remove();
+    d.el.classList.remove('dragging');
+    document.querySelectorAll('.slot.over').forEach(x=>x.classList.remove('over'));
+    if(cancel) return;
+    if(!d.moved){
+      const inSlot = d.el.closest('.slot');
+      if(S.selected!=null && S.selected!==d.i && inSlot){ place(S.selected, +inSlot.dataset.s); return; }
+      S.selected = S.selected===d.i ? null : d.i; renderArrange(); return;
+    }
+    const t = document.elementFromPoint(e.clientX,e.clientY);
+    const slot = t && t.closest('.slot');
+    if(slot) place(d.i, +slot.dataset.s);
+    else if(t && t.closest('#tray')) toTray(d.i);
+    else renderArrange();
+  }
+  document.addEventListener('pointerup', e => endDrag(e,false));
+  document.addEventListener('pointercancel', e => endDrag(e,true));
+
+  $('#slots').addEventListener('click', e => {
+    if(e.target.closest('.card')) return;
+    const slot = e.target.closest('.slot'); if(!slot) return;
+    if(S.selected!=null) place(S.selected, +slot.dataset.s);
+  });
+  $('#tray').addEventListener('click', e => {
+    if(e.target.closest('.card[data-i]')) return;
+    if(S.selected!=null && S.slots.includes(S.selected)) toTray(S.selected);
+  });
+  document.addEventListener('keydown', e => {
+    if(e.key!=='Enter' && e.key!==' ') return;
+    const card = e.target.closest && e.target.closest('.card[data-i]');
+    if(card){ e.preventDefault(); const i=+card.dataset.i; S.selected = S.selected===i?null:i; renderArrange(); return; }
+    const slot = e.target.closest && e.target.closest('.slot');
+    if(slot && S.selected!=null){ e.preventDefault(); place(S.selected, +slot.dataset.s); }
+  });
+
+  /* ---------- coach: messages and place-value comparison ---------- */
+  function levelHint(){
+    return {2:'Look at the tens first. If they are equal, compare the ones.',
+            3:'Look at the hundreds first. If they are equal, compare the tens.',
+            4:'Look at the thousands first. If they are equal, compare the hundreds next.'}[S.level];
+  }
+  function defaultText(){
+    if(!allBuilt()) return 'Tap the coloured buttons to add blocks. Tap a block to take it away.';
+    if(!slotsFull()) return 'All built! Drag the cards into the boxes. Smallest goes first.';
+    return 'Happy with your order? Press Check Answer.';
+  }
+  const msg = (kind,text) => { S.coach = {type:'msg',kind,text}; renderCoach(); };
+
+  function cmpHTML(ia,ib,prefix){
+    const A = S.nums[ia], B = S.nums[ib], da = digits(A), db = digits(B), places = PLACES[S.level];
+    let dec = -1; places.forEach((p,k)=>{ if(dec<0 && da[p]!==db[p]) dec=k; });
+    const rows = places.map((p,k) => {
+      const x=da[p], y=db[p], op = x===y?'=':(x>y?'>':'<');
+      const cls = k<dec?'eq':(k===dec?'dec':'dim');
+      return `<div class="r ${cls} p-${p}"><span class="pn">${LABEL[p]}</span><span class="dg">${x}</span><span class="op">${op}</span><span class="dg">${y}</span></div>`;
+    }).join('');
+    const eqp = places.slice(0,dec), pd = places[dec];
+    const rel = da[pd] > db[pd] ? 'greater than' : 'less than';
+    let t = '';
+    if(eqp.length) t += `Both numbers have ${joinAnd(eqp.map(p=>`${da[p]} ${nm(p,da[p])}`))}. `;
+    t += `Compare the ${NAME[pd][1]}. ${da[pd]} ${nm(pd,da[pd])} is ${rel} ${db[pd]} ${nm(pd,db[pd])}, so ${fmt(A)} is ${rel} ${fmt(B)}.`;
+    return `<div class="cmp"><div class="rows"><div class="r hd"><span></span><span class="big">${colorNum(A)}</span><span></span><span class="big">${colorNum(B)}</span></div>${rows}</div>`+
+           `<div>${prefix?`<p class="pre">${prefix}</p>`:''}<p class="says">${t}</p></div></div>`;
+  }
+  function renderCoach(){
+    const el = $('#coach'); if(!el) return; el.className = 'coach';
+    const c = S.coach;
+    if(!c){ el.innerHTML = `<p class="msg">${defaultText()}</p>`; return; }
+    if(c.type==='msg'){ el.classList.add(c.kind); el.innerHTML = `<p class="msg">${c.text}</p>`; }
+    else { el.innerHTML = cmpHTML(c.a, c.b, c.prefix); }
+  }
+
+  /* ---------- actions ---------- */
+  function flashPanel(i){
+    const el = $(`#panels .panel[data-i="${i}"]`); if(!el) return;
+    el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+    el.scrollIntoView({block:'nearest',behavior:'smooth'});
+  }
+  function confetti(){
+    if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const cols = ['--th','--h','--t','--o','--cta'];
+    for(let k=0;k<36;k++){
+      const s = document.createElement('span'); s.className = 'confetti';
+      s.style.left = Math.random()*100+'vw';
+      s.style.background = k%5===4 ? 'var(--cta)' : `var(${cols[k%4]})`;
+      s.style.animationDuration = (1.6+Math.random()*1.4)+'s';
+      s.style.animationDelay = Math.random()*.4+'s';
+      document.body.appendChild(s); setTimeout(()=>s.remove(), 3600);
+    }
+  }
+  function check(){
+    if(!allBuilt()){
+      const i = S.nums.findIndex((_,k)=>!done(k));
+      msg('info','Build all four numbers first.'); flashPanel(i); return;
+    }
+    if(!slotsFull()){ msg('info','Drag all four cards into the boxes first.'); return; }
+    const ok = S.slots.every((idx,k) => k===0 || S.nums[S.slots[k-1]] < S.nums[idx]);
+    if(ok){
+      S.solved = true;
+      msg('ok','🎉 Excellent! You arranged all the numbers from smallest to largest.');
+      confetti();
+      const nr = $('#newRound'); nr.classList.remove('pulse'); void nr.offsetWidth; nr.classList.add('pulse');
+    } else {
+      const sl = $('#slots'); sl.classList.remove('shake'); void sl.offsetWidth; sl.classList.add('shake');
+      msg('hint','💡 ' + levelHint() + ' Try again!');
+    }
+  }
+  function hint(){
+    if(!allBuilt()){
+      const i = S.nums.findIndex((_,k)=>!done(k));
+      const places = PLACES[S.level].map(p=>`+${VAL[p]} adds ${nm(p,2)}`).join(', ');
+      msg('hint',`💡 Build the number shown on top. ${places}.`); flashPanel(i); return;
+    }
+    for(let k=0;k<3;k++){
+      const a=S.slots[k], b=S.slots[k+1];
+      if(a!=null && b!=null && S.nums[a] > S.nums[b]){
+        S.coach = {type:'cmp', a, b, prefix:'💡 Hint: these two are next to each other. Compare them.'};
+        renderCoach(); return;
+      }
+    }
+    msg('hint','💡 ' + levelHint());
+  }
+  function clearOrder(){ S.slots=[null,null,null,null]; S.selected=null; S.solved=false; S.coach=null; renderArrange(); renderCoach(); }
+
+  function setLevelButtons(){
+    document.querySelectorAll('.lv').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.lv===S.level)));
+  }
+  function newRound(){
+    S.nums = genSet(S.level);
+    S.builds = S.nums.map(()=>({c:{th:0,h:0,t:0,o:0}, hist:[], pop:null}));
+    S.slots = [null,null,null,null]; S.selected = null; S.coach = null; S.solved = false;
+    $('#newRound').classList.remove('pulse');
+    setLevelButtons(); renderPanels(); renderArrange(); renderCoach();
+  }
+
+  $('#levels').addEventListener('click', e => {
+    const b = e.target.closest('.lv'); if(!b) return;
+    S.level = +b.dataset.lv; newRound();
+  });
+  $('#newRound').addEventListener('click', newRound);
+  $('#check').addEventListener('click', check);
+  $('#hint').addEventListener('click', hint);
+  $('#clearOrder').addEventListener('click', clearOrder);
+
+  /* ---------- full screen ---------- */
+  (function(){
+    const btn = $('#fs'), icon = $('#fsIcon'), root = document.documentElement;
+    const req = root.requestFullscreen || root.webkitRequestFullscreen;
+    if(!req) return;
+    const isFs = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+    const sync = () => {
+      const on = isFs();
+      icon.setAttribute('d', on ? 'M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5' : 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5');
+      btn.setAttribute('aria-label', on ? 'Exit full screen' : 'Enter full screen');
+      btn.title = on ? 'Exit full screen' : 'Full screen';
+    };
+    btn.hidden = false;
+    btn.addEventListener('click', () => {
+      try{
+        if(isFs()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+        else req.call(root);
+      }catch(_){}
+    });
+    document.addEventListener('fullscreenchange', sync);
+    document.addEventListener('webkitfullscreenchange', sync);
+  })();
+
+  newRound();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rounding to the Nearest 1000</title>
+<style>
+  :root{
+    --ink:#1F2A5A; --mute:#6C77A3; --bg:#EEF2FB; --card:#FFFFFF; --line:#DCE3F5;
+    --lo:#2F8CFF;   /* lower thousand  */
+    --hi:#FF8A1F;   /* upper thousand  */
+    --tg:#E0348C;   /* target number */
+    --ok:#1FB36B;   /* correct */
+    --hint:#FFE08A; /* hint */
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--ink);
+    font-family:"Arial Rounded MT Bold","Trebuchet MS","Segoe UI",system-ui,-apple-system,sans-serif;
+    -webkit-user-select:none;user-select:none;touch-action:manipulation}
+  button{font-family:inherit;cursor:pointer;touch-action:manipulation}
+  button:focus-visible{outline:4px solid var(--ink);outline-offset:3px}
+
+  .app{height:100vh;height:100dvh;display:flex;flex-direction:column;gap:12px;
+    padding:max(14px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));
+    max-width:1400px;margin:0 auto}
+
+  /* ---------- header ---------- */
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  h1{margin:0;font-size:clamp(22px,4.4vw,44px);font-weight:900;letter-spacing:-.01em;line-height:1.1}
+  .hright{display:flex;align-items:center;gap:12px}
+  .streak{display:flex;align-items:center;gap:6px;background:var(--card);border-radius:999px;padding:8px 14px;font-weight:900;font-size:20px;box-shadow:0 2px 0 var(--line)}
+  .streak svg{width:20px;height:20px}
+  .toggle{display:flex;background:var(--card);border-radius:999px;padding:5px;box-shadow:0 2px 0 var(--line)}
+  .toggle button{border:0;background:transparent;color:var(--mute);font-size:clamp(15px,2.2vw,20px);font-weight:900;padding:10px clamp(14px,2.4vw,26px);border-radius:999px;transition:background .2s,color .2s}
+  .toggle button[aria-selected="true"]{background:var(--ink);color:#fff}
+  .fs{width:44px;height:44px;border:0;border-radius:50%;background:var(--card);color:var(--ink);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 0 var(--line);padding:0;transition:background .2s,color .2s}
+  .fs:hover{background:var(--ink);color:#fff}
+  .fs svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+  .fs .i-exit{display:none}
+  .fs[aria-pressed="true"] .i-enter{display:none}
+  .fs[aria-pressed="true"] .i-exit{display:block}
+  .fs[hidden]{display:none}
+
+  /* ---------- stage ---------- */
+  .stage{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--card);border-radius:32px;
+    box-shadow:0 10px 30px rgba(31,42,90,.10);padding:clamp(12px,2vw,24px) clamp(12px,2.4vw,28px) 4px}
+  .prompt{display:flex;align-items:center;flex-wrap:wrap;gap:10px 18px}
+  .q{display:flex;align-items:center;gap:14px;font-weight:900;white-space:nowrap}
+  .num{font-size:clamp(30px,5.4vw,58px);line-height:1;color:var(--tg);letter-spacing:.02em}
+  .num .d{padding:0 .04em;border-radius:12px;transition:background .25s,box-shadow .25s}
+  .num .d.hl{background:#FFE9F4;box-shadow:0 0 0 4px #FFE9F4}
+  .rt{font-size:clamp(20px,3.4vw,34px);color:var(--ink)}
+  .ansbox{min-width:1.9em;height:1.35em;display:inline-flex;align-items:center;justify-content:center;
+    font-size:clamp(28px,5vw,52px);border-radius:16px;border:4px dashed var(--line);color:var(--mute);padding:0 .25em;transition:all .25s}
+  .ansbox[data-c="lo"]{border:4px solid var(--lo);color:var(--lo)}
+  .ansbox[data-c="hi"]{border:4px solid var(--hi);color:var(--hi)}
+  .ansbox[data-c="ok"]{border:4px solid var(--ok);background:var(--ok);color:#fff}
+  .ansbox.shake,.big.shake{animation:shake .4s}
+  @keyframes shake{20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+
+  .msg{flex:1 1 260px;min-height:52px;display:flex;align-items:center;border-radius:18px;padding:10px 16px;
+    font-size:clamp(16px,2.3vw,24px);font-weight:800;line-height:1.2;transition:background .25s,color .25s}
+  .msg.info{background:var(--bg);color:var(--ink)}
+  .msg.hint{background:var(--hint);color:var(--ink)}
+  .msg.good{background:#D7F5E5;color:#0B7343}
+  .msg.soft{background:#E4ECFF;color:var(--ink)}
+  .msg.pop{animation:msgpop .35s}
+  @keyframes msgpop{from{transform:scale(.96);opacity:.4}}
+
+  .svgwrap{flex:1;min-height:0;position:relative}
+  .svgwrap svg{position:absolute;inset:0;width:100%;height:100%;display:block;overflow:visible}
+
+  /* ---------- svg parts ---------- */
+  #pin{transition:transform .85s cubic-bezier(.5,0,.2,1);--pc:var(--tg)}
+  #pin.win{--pc:var(--ok)}
+  #pin .bub,#pin .tail{fill:var(--pc);transition:fill .3s}
+  #pin .stem{stroke:var(--tg)}
+  #pin .dot{fill:var(--tg)}
+  #pin .stem,#pin .dot{transition:opacity .25s}
+  #pin.moved .stem,#pin.moved .dot{opacity:0}
+  #pin .in{transform-box:fill-box;transform-origin:50% 100%}
+  #pin .in.drop{animation:drop .5s cubic-bezier(.2,.9,.3,1.25) both}
+  #pin .in.pop{animation:bpop .45s cubic-bezier(.2,.9,.3,1.4)}
+  @keyframes drop{from{transform:translateY(-40px);opacity:0}}
+  @keyframes bpop{0%{transform:scale(.8)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
+  #reveal{opacity:0;transition:opacity .4s}
+  #reveal.on{opacity:1}
+  .ten{transform-box:fill-box;transform-origin:center}
+  .ten.pulse{animation:pulse .7s ease-in-out 3}
+  .ten.win{animation:bpop .5s}
+  @keyframes pulse{50%{transform:scale(1.16)}}
+
+  /* ---------- footer / controls ---------- */
+  footer{display:flex;gap:12px;align-items:stretch;flex-wrap:wrap}
+  .choices,.actions{display:flex;gap:12px}
+  .choices{flex:1.5 1 340px}
+  .actions{flex:1 1 280px}
+  .big{flex:1;border:0;border-radius:24px;color:#fff;min-height:68px;padding:8px 12px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    font-size:clamp(28px,4.6vw,42px);font-weight:900;line-height:1;box-shadow:0 5px 0 rgba(0,0,0,.18);
+    transition:transform .12s,box-shadow .12s,opacity .25s}
+  .big small{font-size:clamp(12px,1.6vw,14px);font-weight:800;opacity:.92;letter-spacing:.01em}
+  .big.lo{background:var(--lo)} .big.hi{background:var(--hi)}
+  .big:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.18)}
+  .big[aria-pressed="true"]{outline:5px solid var(--ink);outline-offset:3px;transform:translateY(-3px)}
+  .big.dim{opacity:.35}
+  .big:disabled{cursor:default}
+
+  .act{flex:1;border:0;border-radius:24px;min-height:68px;padding:8px 14px;font-size:clamp(17px,2.6vw,24px);font-weight:900;
+    background:var(--ink);color:#fff;box-shadow:0 5px 0 rgba(0,0,0,.25);transition:transform .12s,box-shadow .12s,opacity .25s}
+  .act.sec{background:#fff;color:var(--ink);box-shadow:0 5px 0 var(--line);border:3px solid var(--line)}
+  .act:active:not(:disabled){transform:translateY(3px);box-shadow:none}
+  .act:disabled{opacity:.35;cursor:default}
+  .act.go{background:var(--ok)}
+
+  .steps{flex:3 1 380px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .chip{background:var(--card);border:3px solid var(--line);border-radius:18px;padding:6px 8px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;min-height:68px;color:var(--mute);transition:all .25s}
+  .chip span{font-size:clamp(11px,1.5vw,14px);font-weight:800}
+  .chip b{font-size:clamp(16px,2.5vw,25px);font-weight:900;line-height:1.1}
+  .chip.reached{color:var(--ink);border-color:#C8D3F2;background:#F7F9FF}
+  .chip.now{border-color:var(--tg);background:#FFF2F9}
+  #learnBtn{flex:1 1 200px}
+
+  body[data-mode="learn"] .p-only{display:none!important}
+  body[data-mode="practice"] .l-only{display:none!important}
+
+  .conf{position:fixed;width:10px;height:10px;border-radius:3px;pointer-events:none;z-index:50}
+
+  /* ---------- small screens ---------- */
+  @media (max-width:560px){
+    .app{gap:8px}
+    header{justify-content:center}
+    h1{text-align:center;width:100%}
+    .q{gap:10px}
+  }
+  @media (max-height:560px){
+    .app{gap:8px;padding-top:8px;padding-bottom:8px}
+    h1{font-size:clamp(18px,3.4vw,28px)}
+    .toggle button{padding:6px 16px}
+    .fs{width:38px;height:38px}
+    .stage{border-radius:24px;padding:8px 16px 0}
+    .num{font-size:34px}.ansbox{font-size:32px}.rt{font-size:20px}
+    .msg{min-height:40px;padding:6px 12px;font-size:16px}
+    .big,.act,.chip{min-height:52px}
+    .big{font-size:28px}
+    footer{flex-wrap:nowrap}
+    .choices{flex:1.5 1 0}.actions{flex:1 1 0}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  }
+</style>
+</head>
+<body data-mode="practice">
+<div class="app">
+  <header>
+    <h1>Rounding to the Nearest 1000</h1>
+    <div class="hright">
+      <div class="streak p-only" title="Correct in a row">
+        <svg viewBox="-10 -10 20 20" aria-hidden="true"><polygon fill="#FFC21A" points="0,-9 2.6,-3 9,-2.8 4,1.4 5.6,8 0,4.4 -5.6,8 -4,1.4 -9,-2.8 -2.6,-3"/></svg>
+        <span id="streak">0</span>
+      </div>
+      <div class="toggle" role="tablist" aria-label="Mode">
+        <button id="mLearn" role="tab" aria-selected="false">Learn</button>
+        <button id="mPractice" role="tab" aria-selected="true">Practice</button>
+      </div>
+      <button id="fsBtn" class="fs" aria-pressed="false" aria-label="Full screen" title="Full screen">
+        <svg class="i-enter" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+        <svg class="i-exit" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <section class="stage">
+    <div class="prompt">
+      <div class="q" aria-live="polite">
+        <span class="num"><span id="nA" class="d"></span><span id="nB" class="d"></span><span id="nC" class="d"></span><span id="nD" class="d"></span></span>
+        <span class="rt">rounds to</span>
+        <span id="ans" class="ansbox">?</span>
+      </div>
+      <div id="msg" class="msg info" role="status" aria-live="polite"></div>
+    </div>
+    <div class="svgwrap" id="wrap">
+      <svg id="svg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Number line between two thousands"></svg>
+    </div>
+  </section>
+
+  <footer>
+    <div class="choices p-only">
+      <button id="bLo" class="big lo" aria-pressed="false"><span id="lo">3000</span><small>lower thousand</small></button>
+      <button id="bHi" class="big hi" aria-pressed="false"><span id="hi">4000</span><small>upper thousand</small></button>
+    </div>
+    <div class="actions p-only">
+      <button id="bCheck" class="act" disabled>Check Answer</button>
+      <button id="bNext" class="act sec" disabled>Next Question</button>
+    </div>
+
+    <div class="steps l-only" id="steps">
+      <div class="chip" id="chip1"><span>Between</span><b></b></div>
+      <div class="chip" id="chip2"><span>Hundreds digit</span><b></b></div>
+      <div class="chip" id="chip3"><span>Closer to</span><b></b></div>
+      <div class="chip" id="chip4"><span>Answer</span><b></b></div>
+    </div>
+    <button id="learnBtn" class="act go l-only">Next step</button>
+  </footer>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var $ = function(s){ return document.querySelector(s); };
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var st = {
+    mode:'practice', n:0, lo:0, hi:0, ans:'hi', sel:null, tries:0,
+    solved:false, showDist:false, learn:0, streak:0, recent:[],
+    busy:false, moved:false, win:false, enter:false, msg:null, geo:null, dw:0, dh:0
+  };
+
+  var wrap = $('#wrap'), svg = $('#svg');
+
+  /* ---------- number generation ---------- */
+  function pick(){
+    var n, guard = 0;
+    do {
+      var r;
+      if (Math.random() < 0.25) r = 500;           // exactly halfway
+      else {
+        do { r = 1 + Math.floor(Math.random()*999); } while (r === 500);
+      }
+      var h = 1 + Math.floor(Math.random()*9);    // 1000 ... 9000
+      n = h*1000 + r; guard++;
+    } while (st.recent.indexOf(n) !== -1 && guard < 300);
+    st.recent.push(n);
+    if (st.recent.length > 12) st.recent.shift();
+    return n;
+  }
+
+  function newQ(){
+    st.n = pick();
+    st.lo = Math.floor(st.n/1000)*1000;
+    st.hi = st.lo + 1000;
+    st.ans = (st.n - st.lo >= 500) ? 'hi' : 'lo';
+    st.sel = null; st.tries = 0; st.solved = false; st.showDist = false;
+    st.learn = 0; st.moved = false; st.win = false; st.busy = false; st.enter = true;
+    st.msg = {cls:'info', text:'Which thousand is closer? Pick one, then press Check Answer.'};
+    draw();
+  }
+
+  function rounded(){ return st.ans === 'hi' ? st.hi : st.lo; }
+  function hundredsDigit(){ return Math.floor((st.n % 1000)/100); }
+
+  /* ---------- drawing the number line ---------- */
+  function draw(){
+    var W = wrap.clientWidth, H = wrap.clientHeight;
+    if (W < 50 || H < 50) return;
+    st.dw = W; st.dh = H;
+
+    var k = Math.min(H/330, W/340, 1.35);
+    var Wd = W/k, offY = (H - 330*k)/2;
+    var m = Math.max(50, Wd*0.07);
+    var x0 = m, x10 = Wd - m, step = (x10 - x0)/10;
+    var X = function(v){ return x0 + (v/1000)*(x10-x0); };   // v = 0..1000 above the lower thousand
+    var r = st.n - st.lo, tx = X(r), LY = 185;
+    st.geo = {X:X};
+
+    var fs = Math.max(10, Math.min(17, step*0.34));
+    var showAll = step >= 46;
+    var px = st.moved ? (st.ans === 'hi' ? X(1000) : X(0)) : tx;
+    var label = st.win ? rounded() : st.n;
+    var bigFont = String(label).length > 4 ? 22 : 28;
+    var tenFont = function(v){ return String(v).length > 4 ? 17 : 21; };
+    var x5 = X(500);
+
+    var t1 = r + ' from ' + st.lo, t2 = (1000-r) + ' from ' + st.hi;
+    var avail = ((x10 - x0) + 28)/2 - 10;
+    var dfs = Math.min(21, avail/(Math.max(t1.length, t2.length)*0.6));
+
+    var s = '<g transform="translate(0 '+offY+') scale('+k+')">';
+
+    /* halfway marker */
+    s += '<line x1="'+x5+'" y1="46" x2="'+x5+'" y2="200" stroke="#B7C1E6" stroke-width="3" stroke-dasharray="1 9" stroke-linecap="round"/>';
+    s += '<g transform="translate('+x5+' 20)"><rect x="-58" y="-15" width="116" height="30" rx="15" fill="#EEF2FB"/>' +
+         '<polygon transform="translate(-36 0)" fill="#FFC21A" points="0,-8 2.4,-2.5 8,-2.4 3.6,1.2 5,7 0,3.6 -5,7 -3.6,1.2 -8,-2.4 -2.4,-2.5"/>' +
+         '<text x="9" y="1" text-anchor="middle" dominant-baseline="central" font-size="16" font-weight="800" fill="#6C77A3">halfway</text></g>';
+
+    /* track */
+    s += '<line x1="'+x0+'" y1="'+LY+'" x2="'+x10+'" y2="'+LY+'" stroke="#DCE3F5" stroke-width="12" stroke-linecap="round"/>';
+
+    /* reveal group: coloured distances */
+    s += '<g id="reveal">';
+    s += '<line x1="'+x0+'" y1="'+LY+'" x2="'+tx+'" y2="'+LY+'" stroke="var(--lo)" stroke-width="12" stroke-linecap="round"/>';
+    s += '<line x1="'+tx+'" y1="'+LY+'" x2="'+x10+'" y2="'+LY+'" stroke="var(--hi)" stroke-width="12" stroke-linecap="round"/>';
+    s += '<rect x="'+x0+'" y="254" width="'+Math.max(0,(tx-x0)-2)+'" height="16" rx="8" fill="var(--lo)"/>';
+    s += '<rect x="'+(tx+2)+'" y="254" width="'+Math.max(0,(x10-tx)-2)+'" height="16" rx="8" fill="var(--hi)"/>';
+    for (var i=1;i<=9;i++){
+      var gx = X(i*100);
+      if (Math.abs(gx-tx) < 7) continue;
+      s += '<line x1="'+gx+'" y1="256" x2="'+gx+'" y2="268" stroke="#fff" stroke-width="2" opacity=".75"/>';
+    }
+    s += '<text x="'+(x0-14)+'" y="298" text-anchor="start" font-size="'+dfs+'" font-weight="900" fill="var(--lo)">'+t1+'</text>';
+    s += '<text x="'+(x10+14)+'" y="298" text-anchor="end" font-size="'+dfs+'" font-weight="900" fill="var(--hi)">'+t2+'</text>';
+    if (r === 500){
+      s += '<g transform="translate('+tx+' 262)"><circle r="14" fill="var(--tg)" stroke="#fff" stroke-width="3"/>' +
+           '<text y="1" text-anchor="middle" dominant-baseline="central" font-size="20" font-weight="900" fill="#fff">=</text></g>';
+    }
+    s += '</g>';
+
+    /* ticks every 100 and labels */
+    for (var j=1;j<=9;j++){
+      var jx = X(j*100), major = (j === 5);
+      s += '<line x1="'+jx+'" y1="'+(LY+10)+'" x2="'+jx+'" y2="'+(LY+(major?28:22))+'" stroke="'+(major?'#6C77A3':'#9AA6CE')+'" stroke-width="'+(major?4:3)+'" stroke-linecap="round"/>';
+      if (showAll || j%2===0 || major){
+        s += '<text x="'+jx+'" y="'+(LY+(major?50:46))+'" text-anchor="middle" dominant-baseline="central" font-size="'+(major?fs*1.12:fs)+'" font-weight="'+(major?900:700)+'" fill="'+(major?'#1F2A5A':'#6C77A3')+'">'+(st.lo+j*100)+'</text>';
+      }
+    }
+
+    /* the two thousands */
+    s += '<g id="tenL" class="ten"><circle cx="'+x0+'" cy="'+LY+'" r="38" fill="var(--lo)"/><text x="'+x0+'" y="'+(LY+1)+'" text-anchor="middle" dominant-baseline="central" font-size="'+tenFont(st.lo)+'" font-weight="900" fill="#fff">'+st.lo+'</text></g>';
+    s += '<g id="tenU" class="ten"><circle cx="'+x10+'" cy="'+LY+'" r="38" fill="var(--hi)"/><text x="'+x10+'" y="'+(LY+1)+'" text-anchor="middle" dominant-baseline="central" font-size="'+tenFont(st.hi)+'" font-weight="900" fill="#fff">'+st.hi+'</text></g>';
+
+    /* the target pin */
+    s += '<g id="pin" class="'+(st.moved?'moved ':'')+(st.win?'win':'')+'" style="transform:translateX('+px+'px)">' +
+           '<g class="in'+(st.enter?' drop':'')+'">' +
+             '<line class="stem" x1="0" y1="150" x2="0" y2="'+LY+'" stroke-width="4" stroke-linecap="round"/>' +
+             '<circle class="dot" cx="0" cy="'+LY+'" r="9" stroke="#fff" stroke-width="3"/>' +
+             '<path class="tail" d="M-12 142 L12 142 L0 158 Z"/>' +
+             '<circle class="bub" cx="0" cy="112" r="40"/>' +
+             '<text class="pt" x="0" y="113" text-anchor="middle" dominant-baseline="central" font-size="'+bigFont+'" font-weight="900" fill="#fff">'+label+'</text>' +
+           '</g></g>';
+
+    s += '</g>';
+    svg.setAttribute('viewBox', '0 0 '+W+' '+H);
+    svg.innerHTML = s;
+    st.enter = false;
+    ui();
+  }
+
+  /* ---------- UI state ---------- */
+  function learnMsg(){
+    var n=st.n, r=n-st.lo, t=hundredsDigit(), lo=st.lo, hi=st.hi, near=rounded();
+    switch(st.learn){
+      case 0: return {cls:'info', text:'Let\u2019s round '+n+'. Press Next step.'};
+      case 1: return {cls:'soft', text:n+' is between '+lo+' and '+hi+'.'};
+      case 2: return {cls:'soft', text:'The hundreds digit is '+t+'.'};
+      case 3:
+        if (r === 500) return {cls:'hint', text:'500 each way. 500 is halfway, so round up.'};
+        if (r > 500) return {cls:'soft', text:'Hundreds digit '+t+' is 5 or more, so round up. '+(1000-r)+' from '+hi+'.'};
+        return {cls:'soft', text:'Hundreds digit '+t+' is less than 5, so round down. '+r+' from '+lo+'.'};
+      default: return {cls:'good', text:n+' rounds to '+near+'.'};
+    }
+  }
+
+  function ui(){
+    var n=st.n, learn = st.mode==='learn';
+    var digits = String(n);
+    document.body.setAttribute('data-mode', st.mode);
+    $('#mLearn').setAttribute('aria-selected', learn);
+    $('#mPractice').setAttribute('aria-selected', !learn);
+
+    $('#nA').textContent = digits.charAt(0);
+    $('#nB').textContent = digits.charAt(1);
+    $('#nC').textContent = digits.charAt(2);
+    $('#nD').textContent = digits.charAt(3);
+    $('#nB').classList.toggle('hl', learn ? st.learn>=2 : st.tries>=1);
+
+    var ans = $('#ans');
+    if (learn){
+      if (st.learn>=4){ ans.textContent = rounded(); ans.setAttribute('data-c','ok'); }
+      else { ans.textContent='?'; ans.removeAttribute('data-c'); }
+    } else if (st.solved && st.win){ ans.textContent = rounded(); ans.setAttribute('data-c','ok'); }
+    else if (st.sel){ ans.textContent = st.sel==='lo'?st.lo:st.hi; ans.setAttribute('data-c', st.sel); }
+    else { ans.textContent='?'; ans.removeAttribute('data-c'); }
+
+    $('#lo').textContent = st.lo; $('#hi').textContent = st.hi;
+    var bLo=$('#bLo'), bHi=$('#bHi');
+    bLo.setAttribute('aria-pressed', st.sel==='lo'); bHi.setAttribute('aria-pressed', st.sel==='hi');
+    bLo.classList.toggle('dim', st.solved && st.ans!=='lo');
+    bHi.classList.toggle('dim', st.solved && st.ans!=='hi');
+    bLo.disabled = bHi.disabled = st.solved || st.busy;
+    $('#bCheck').disabled = !st.sel || st.solved || st.busy;
+    $('#bNext').disabled = !st.solved || st.busy;
+    $('#streak').textContent = st.streak;
+
+    var reveal = learn ? st.learn>=3 : (st.solved || st.showDist);
+    var rv = $('#reveal'); if (rv) rv.classList.toggle('on', reveal);
+    var tl=$('#tenL'), tu=$('#tenU');
+    if (tl && tu){
+      var pulse = learn && st.learn===1;
+      tl.classList.toggle('pulse', pulse); tu.classList.toggle('pulse', pulse);
+    }
+
+    var m = learn ? learnMsg() : st.msg;
+    var msg = $('#msg');
+    if (msg.dataset.last !== m.cls+'|'+m.text){
+      msg.className = 'msg '+m.cls+' pop';
+      msg.textContent = m.text;
+      msg.dataset.last = m.cls+'|'+m.text;
+    }
+
+    if (learn){
+      var vals = [st.lo+' & '+st.hi, hundredsDigit(), rounded(), n+' \u2192 '+rounded()];
+      for (var c=1;c<=4;c++){
+        var chip = $('#chip'+c);
+        chip.classList.toggle('reached', st.learn>=c);
+        chip.classList.toggle('now', st.learn===c);
+        chip.querySelector('b').textContent = st.learn>=c ? vals[c-1] : '\u2013';
+      }
+      var lb = $('#learnBtn');
+      lb.textContent = st.learn<4 ? 'Next step' : 'New number';
+      lb.disabled = st.busy;
+    }
+  }
+
+  /* ---------- animation helpers ---------- */
+  function movePin(done){
+    var pin = $('#pin');
+    if (!pin || !st.geo){ st.moved = true; st.win = true; if (done) done(); return; }
+    st.moved = true; st.busy = true; ui();
+    var dest = st.ans === 'hi' ? st.geo.X(1000) : st.geo.X(0);
+    pin.classList.add('moved');
+    pin.style.transform = 'translateX('+dest+'px)';
+    var fin = function(){
+      st.win = true; st.busy = false;
+      var p = $('#pin'); if (!p) { ui(); if (done) done(); return; }
+      p.classList.add('win');
+      p.querySelector('.pt').textContent = rounded();
+      var inner = p.querySelector('.in'); inner.classList.remove('drop'); void inner.getBoundingClientRect(); inner.classList.add('pop');
+      var ten = $(st.ans==='hi' ? '#tenU' : '#tenL'); if (ten) ten.classList.add('win');
+      ui();
+      if (done) done();
+    };
+    if (reduce) fin(); else setTimeout(fin, 900);
+  }
+
+  function burst(){
+    if (reduce) return;
+    var b = $('#pin .bub'); if (!b) return;
+    var r = b.getBoundingClientRect(), cx = r.left+r.width/2, cy = r.top+r.height/2;
+    var cols = ['#E0348C','#FF8A1F','#2F8CFF','#1FB36B','#FFC21A'];
+    for (var i=0;i<18;i++){
+      var d = document.createElement('i'); d.className='conf';
+      d.style.left = cx+'px'; d.style.top = cy+'px'; d.style.background = cols[i%cols.length];
+      document.body.appendChild(d);
+      var a = Math.PI*2*i/18 + Math.random()*.4, dist = 70 + Math.random()*70;
+      if (d.animate){
+        var an = d.animate([
+          {transform:'translate(-50%,-50%) scale(1)', opacity:1},
+          {transform:'translate(calc(-50% + '+Math.cos(a)*dist+'px), calc(-50% + '+Math.sin(a)*dist+'px)) scale(.3)', opacity:0}
+        ], {duration:650+Math.random()*250, easing:'cubic-bezier(.1,.7,.3,1)'});
+        an.onfinish = (function(el){ return function(){ el.remove(); }; })(d);
+      } else d.remove();
+    }
+  }
+
+  function shake(){
+    [$('#ans'), $('#bLo'), $('#bHi')].forEach(function(el){
+      el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake');
+    });
+  }
+
+  /* ---------- practice actions ---------- */
+  function choose(side){
+    if (st.mode!=='practice' || st.solved || st.busy) return;
+    st.sel = side; ui();
+  }
+
+  function check(){
+    if (st.mode!=='practice' || !st.sel || st.solved || st.busy) return;
+    var n=st.n, r=n-st.lo, t=hundredsDigit();
+    if (st.sel === st.ans){
+      st.solved = true;
+      if (st.tries === 0) st.streak++;
+      st.msg = {cls:'good', text: r===500 ? 'Correct! 500 is halfway, so round up to '+st.hi+'.' : 'Correct! '+n+' is closer to '+rounded()+'.'};
+      movePin(burst);
+    } else {
+      st.tries++; st.streak = 0; st.sel = null;
+      if (st.tries === 1){
+        st.msg = {cls:'hint', text: t===5 ? 'Look at the hundreds digit. A 5 there means halfway or more! Try again.' : 'Look at the hundreds digit. Try again.'};
+      } else if (st.tries === 2){
+        st.showDist = true;
+        st.msg = {cls:'hint', text:'See how far it is from each thousand. Try again.'};
+      } else {
+        st.solved = true; st.showDist = true;
+        st.msg = {cls:'soft', text: r===500 ? 'Here it is: 500 is halfway, so round up to '+st.hi+'.' : n+' is closer to '+rounded()+'. Compare the distances.'};
+        shake(); ui(); movePin(null); return;
+      }
+      ui(); shake();
+    }
+  }
+
+  function next(){
+    if (st.mode==='practice' && st.solved && !st.busy) newQ();
+  }
+
+  /* ---------- learn action ---------- */
+  function learnNext(){
+    if (st.mode!=='learn' || st.busy) return;
+    if (st.learn < 4){
+      st.learn++;
+      if (st.learn === 4){ st.solved = true; ui(); movePin(null); }
+      else ui();
+    } else newQ();
+  }
+
+  function setMode(m){
+    if (st.mode === m) return;
+    st.mode = m;
+    newQ();
+  }
+
+  /* ---------- wiring ---------- */
+  $('#bLo').addEventListener('click', function(){ choose('lo'); });
+  $('#bHi').addEventListener('click', function(){ choose('hi'); });
+  $('#bCheck').addEventListener('click', check);
+  $('#bNext').addEventListener('click', next);
+  $('#learnBtn').addEventListener('click', learnNext);
+  $('#mLearn').addEventListener('click', function(){ setMode('learn'); });
+  $('#mPractice').addEventListener('click', function(){ setMode('practice'); });
+
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowLeft') choose('lo');
+    else if (e.key === 'ArrowRight') choose('hi');
+  });
+
+  var rafId = 0;
+  function onResize(){
+    if (wrap.clientWidth === st.dw && wrap.clientHeight === st.dh) return;
+    cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(function(){ draw(); });
+  }
+  if (window.ResizeObserver) new ResizeObserver(onResize).observe(wrap);
+  window.addEventListener('resize', onResize);
+  window.addEventListener('orientationchange', function(){ setTimeout(onResize, 200); });
+
+  /* ---------- full screen ---------- */
+  var fsBtn = $('#fsBtn'), docEl = document.documentElement;
+  var reqFS = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.msRequestFullscreen;
+  var exitFS = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
+  function fsElement(){ return document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement; }
+  function syncFS(){
+    var on = !!fsElement();
+    fsBtn.setAttribute('aria-pressed', on);
+    fsBtn.setAttribute('aria-label', on ? 'Exit full screen' : 'Full screen');
+    fsBtn.title = on ? 'Exit full screen' : 'Full screen';
+    onResize();
+  }
+  if (!reqFS){ fsBtn.hidden = true; }
+  else {
+    fsBtn.addEventListener('click', function(){
+      try {
+        if (fsElement()) exitFS.call(document);
+        else { var p = reqFS.call(docEl); if (p && p.catch) p.catch(function(){}); }
+      } catch (e) {}
+    });
+    document.addEventListener('fullscreenchange', syncFS);
+    document.addEventListener('webkitfullscreenchange', syncFS);
+    document.addEventListener('MSFullscreenChange', syncFS);
+  }
+
+  newQ();
+  window.addEventListener('load', function(){ if (!st.geo) draw(); });
+})();
+</script>
+</body>
+</html>

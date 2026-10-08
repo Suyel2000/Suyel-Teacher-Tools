@@ -5,9 +5,13 @@
 *{box-sizing:border-box}
 body{margin:0;font-family:'Noto Sans Devanagari','Mukta','Nirmala UI',sans-serif;background:linear-gradient(#bde7ff,#fff4c9);color:#2b2d5b;min-height:100vh;text-align:center}
 .wrap{max-width:900px;margin:auto;padding:10px}
-.top{display:flex;justify-content:space-between;font-size:clamp(16px,3vw,22px);font-weight:700}
-.pic{background:radial-gradient(#fff,#e6f6ff);border-radius:28px;box-shadow:0 8px 20px #0002;padding:12px;margin:8px 0;height:clamp(200px,42vh,380px);display:flex;align-items:center;justify-content:center}
-.pic img{max-width:100%;max-height:100%;object-fit:contain;border-radius:18px}
+.top{display:flex;justify-content:space-between;align-items:center;font-size:clamp(16px,3vw,22px);font-weight:700}
+.top h2{margin:0;display:flex;gap:6px;flex-wrap:wrap}
+.lt{font:inherit;font-size:clamp(14px,3vw,18px);font-weight:800;border:3px solid;border-radius:20px;padding:4px 12px;min-height:38px;cursor:pointer;background:#fff;box-shadow:0 3px 0 #0002}
+.lt.on{color:#fff!important;box-shadow:0 3px 0 #0004;transform:translateY(1px)}
+.pic{background:radial-gradient(#fff,#e6f6ff);border-radius:28px;box-shadow:0 8px 20px #0002;padding:10px;margin:8px auto;aspect-ratio:3/2;width:min(100%,640px,calc(44vh*1.5));display:flex;align-items:center;justify-content:center}
+.pic img{width:100%;height:100%;object-fit:cover;border-radius:18px;display:block}
+.ph{aspect-ratio:auto}
 .ph{font-size:clamp(80px,20vw,150px)}
 .zone{min-height:84px;border:4px dashed #6c8cff;border-radius:22px;background:#ffffffb0;padding:8px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center}
 .zone.ok{border-color:#2fbf5b;background:#e5ffe9}.zone.no{animation:sh .4s}
@@ -26,10 +30,11 @@ body{margin:0;font-family:'Noto Sans Devanagari','Mukta','Nirmala UI',sans-serif
 .lv small{display:block;font-size:.5em;font-weight:600}
 .wrap{padding-top:54px}
 .tools{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:10px;display:flex;gap:8px;z-index:10}
-.ico{font:inherit;font-size:22px;width:44px;height:44px;border-radius:50%;border:0;background:#ffffffd9;box-shadow:0 3px 8px #0003;cursor:pointer;color:#2b2d5b}
+.ico{font:inherit;font-size:18px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;padding:0;border-radius:50%;border:0;background:#ffffffd9;box-shadow:0 3px 8px #0003;cursor:pointer;color:#2b2d5b}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#2b2d5bee;color:#fff;padding:10px 18px;border-radius:20px;font-size:16px;z-index:20;max-width:90vw}
 .conf{position:fixed;top:-40px;font-size:30px;animation:fall 2s linear forwards;pointer-events:none}
 @keyframes fall{to{transform:translateY(110vh) rotate(360deg)}}
-</style></head><body><div class="tools"><button class="ico" id="fs" title="Full screen" aria-label="Full screen">⛶</button><button class="ico" id="mt" title="Mute" aria-label="Mute">🔊</button></div>
+</style></head><body><div class="tools"><button class="ico" id="fs" title="Full screen" aria-label="Full screen"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button><button class="ico" id="mt" title="Mute" aria-label="Mute">🔊</button></div>
 <div class="wrap" id="app"></div>
 <script>
 /* =====================================================================
@@ -126,23 +131,21 @@ const questions=[[EASY,1],[MEDIUM,2],[HARD,3]].flatMap(([rows,level])=>rows.map(
  const answer=s.split(' ');return{level,image:IMAGE_FOLDER+f,sentence:answer.concat(d?d.split(','):[]),answer}}));
 /* ===================== END OF QUESTION DATA ===================== */
 
-const LV=[{n:'🌱 आसान',c:'#2fbf5b'},{n:'🌿 मध्यम',c:'#ff9f1c'},{n:'🌳 कठिन',c:'#9b5de5'}];
+const LV=[{n:'🌱 Level 1',c:'#2fbf5b'},{n:'🌿 Level 2',c:'#ff9f1c'},{n:'🌳 Level 3',c:'#9b5de5'}];
 const C=['#ff6b6b','#ff9f1c','#2ec4b6','#4d8cff','#9b5de5','#f15bb5','#43aa8b','#e76f51'];
 const $=id=>document.getElementById(id),A=$('app'),sh=a=>{for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
 let lv=0,qi=0,score=0,placed=[],bank=[],done=false,hs=0,cur;
 
-function menu(){A.innerHTML=`<div class="end"><h1>✏️ चित्र देखकर वाक्य बनाओ</h1>${LV.map((l,i)=>`<button class="lv" data-l="${i}" style="background:${l.c}">${l.n}<small>25 प्रश्न</small></button>`).join('')}</div>`;
- A.querySelectorAll('.lv').forEach(b=>b.onclick=()=>{lv=+b.dataset.l;qi=0;score=0;load()})}
 function load(){cur=questions[lv*25+qi];done=false;hs=0;placed=[];
  let b;do{b=sh(cur.sentence.map((w,i)=>({id:i,w})))}while(b.map(x=>x.w).join(' ')==cur.answer.join(' ')&&b.length>2);
  bank=b;draw()}
 function card(c,src){return`<button class="card" draggable="true" data-id="${c.id}" data-src="${src}" style="background:${C[c.id%8]}">${c.w}</button>`}
 function draw(msg=''){
- A.innerHTML=`<div class="top"><span>${LV[lv].n}</span><span>प्रश्न ${qi+1} / 25</span><span>सही: ${score}</span></div>
- <div class="pic"><img id="im" alt="" src="${cur.image}"></div><div class="msg">${msg}</div>
+ A.innerHTML=`<div class="top"><h2>${LV.map((l,i)=>`<button class="lt${i==lv?' on':''}" data-l="${i}" style="color:${l.c};border-color:${l.c};${i==lv?'background:'+l.c:''}" aria-pressed="${i==lv}">${l.n}</button>`).join('')}</h2><span>प्रश्न ${qi+1} / 25</span><span>सही: ${score}</span></div>
+ <div class="pic"><img id="im" alt="" width="1536" height="1024" src="${cur.image}"></div><div class="msg">${msg}</div>
  <div class="zone" id="zone">${placed.map(c=>card(c,'z')).join('')}</div>
  <div class="bank" id="bank">${bank.map(c=>card(c,'b')).join('')}</div>
- <div class="btns"><button class="btn" id="bh" style="background:#f4a100">💡 संकेत</button><button class="btn" id="bs" style="background:#4d8cff">🔊 सुनो</button><button class="btn" id="br" style="background:#9b5de5">↺ फिर से</button><button class="btn" id="bc" style="background:#2fbf5b">✓ जाँचो</button>${done?'<button class="btn" id="bn" style="background:#ff6b6b">🎯 अगला</button>':''}</div>`;
+ <div class="btns"><button class="btn" id="bh" style="background:#f4a100">💡 संकेत</button><button class="btn" id="bs" style="background:#4d8cff">🔊 सुनो</button><button class="btn" id="br" style="background:#9b5de5">↺ फिर से</button><button class="btn" id="bc" style="background:#2fbf5b">✓ जाँचो</button>${done?'<button class="btn" id="bn" style="background:#ff6b6b">🎯 अगला</button>':'<button class="btn" id="bk" style="background:#6b7280">⏭ छोड़ो</button>'}</div>`;
  $('im').onerror=function(){this.parentNode.innerHTML='<div class="ph">🖼️🌈</div>'};
  if(hs>=2&&!done)[...A.querySelectorAll('#bank .card')].find(e=>bank.find(c=>c.id==e.dataset.id).w==cur.answer[0])?.classList.add('hint');
  A.querySelectorAll('.card').forEach(e=>{
@@ -158,7 +161,8 @@ function draw(msg=''){
  $('bh').onclick=()=>{hs++;draw(hs==1?'पहले बताओ—कौन काम कर रहा है?':'पीले घेरे वाला शब्द पहले आएगा।')};
  $('bs').onclick=()=>say(done?cur.answer.join(' '):(placed.length?placed:bank).map(c=>c.w).join(' '));
  $('br').onclick=()=>{if(done)return;bank=bank.concat(placed);placed=[];draw()};
- $('bc').onclick=check;if($('bn'))$('bn').onclick=next}
+ $('bc').onclick=check;if($('bn'))$('bn').onclick=next;A.querySelectorAll('.lt').forEach(b=>b.onclick=()=>{if(+b.dataset.l==lv)return;try{speechSynthesis.cancel()}catch(e){}lv=+b.dataset.l;qi=0;score=0;load()});
+ if($('bk'))$('bk').onclick=()=>{try{speechSynthesis.cancel()}catch(e){}next()}}
 const msgKeep='';
 function drop(ev,before){ev.preventDefault();ev.stopPropagation();if(done)return;
  const[id,s]=ev.dataTransfer.getData('t').split(',');let c;
@@ -167,9 +171,13 @@ function drop(ev,before){ev.preventDefault();ev.stopPropagation();if(done)return
 let muted=false;
 $('mt').onclick=()=>{muted=!muted;$('mt').textContent=muted?'🔇':'🔊';$('mt').title=muted?'Unmute':'Mute';if(muted)try{speechSynthesis.cancel()}catch(e){}};
 const de=document.documentElement,inFS=()=>document.fullscreenElement||document.webkitFullscreenElement;
-if(!(document.fullscreenEnabled||document.webkitFullscreenEnabled))$('fs').style.display='none';
-$('fs').onclick=()=>{try{inFS()?(document.exitFullscreen||document.webkitExitFullscreen).call(document):(de.requestFullscreen||de.webkitRequestFullscreen).call(de)}catch(e){}};
-['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>{$('fs').textContent=inFS()?'✕':'⛶'}));
+const EXP='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',COL='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
+const toast=t=>{const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),3500)};
+$('fs').onclick=()=>{
+ if(document.fullscreenEnabled||document.webkitFullscreenEnabled){try{inFS()?(document.exitFullscreen||document.webkitExitFullscreen).call(document):(de.requestFullscreen||de.webkitRequestFullscreen).call(de)}catch(e){}return}
+ if(window.top!==window.self){window.open(location.href,'_blank')}
+ else toast('इस ब्राउज़र में फुल स्क्रीन उपलब्ध नहीं है')};
+['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>{$('fs').innerHTML=inFS()?COL:EXP;$('fs').title=inFS()?'Exit full screen':'Full screen'}));
 function say(t){if(muted)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='hi-IN';u.rate=.8;speechSynthesis.speak(u)}catch(e){}}
 function check(){if(done||!placed.length)return;
  if(placed.map(c=>c.w).join(' ')==cur.answer.join(' ')){done=true;score++;draw('🎉 बहुत बढ़िया!');$('zone').classList.add('ok');
@@ -177,7 +185,7 @@ function check(){if(done||!placed.length)return;
   say(cur.answer.join(' '))}
  else{document.querySelector('.msg').textContent='🤔 वाक्य को फिर से सोचो।';$('zone').classList.add('no');setTimeout(()=>$('zone')&&$('zone').classList.remove('no'),500)}}
 function next(){if(qi<24){qi++;load();return}
- A.innerHTML=`<div class="end"><h1>🎉 स्तर पूरा!</h1>${LV[lv].n}: <b>${score}/25</b><br><br><button class="btn" id="nl" style="background:#2fbf5b">${lv<2?'➡️ अगला स्तर':'🏠 स्तर चुनो'}</button></div>`;
- $('nl').onclick=()=>{if(lv<2){lv++;qi=0;score=0;load()}else menu()}}
-menu();
+ A.innerHTML=`<div class="end"><h1>🎉 स्तर पूरा!</h1>${LV[lv].n}: <b>${score}/25</b><br><br><button class="btn" id="nl" style="background:#2fbf5b">${lv<2?'➡️ अगला स्तर':'🔁 फिर से खेलो'}</button></div>`;
+ $('nl').onclick=()=>{if(lv<2)lv++;else lv=0;qi=0;score=0;load()}}
+load();
 </script></body></html>

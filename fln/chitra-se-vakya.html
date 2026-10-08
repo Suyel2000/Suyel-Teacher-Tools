@@ -1,0 +1,183 @@
+<!DOCTYPE html><html lang="hi"><head><meta charset="utf-8"><title>चित्र देखकर वाक्य बनाओ</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Noto Sans Devanagari','Mukta','Nirmala UI',sans-serif;background:linear-gradient(#bde7ff,#fff4c9);color:#2b2d5b;min-height:100vh;text-align:center}
+.wrap{max-width:900px;margin:auto;padding:10px}
+.top{display:flex;justify-content:space-between;font-size:clamp(16px,3vw,22px);font-weight:700}
+.pic{background:radial-gradient(#fff,#e6f6ff);border-radius:28px;box-shadow:0 8px 20px #0002;padding:12px;margin:8px 0;height:clamp(200px,42vh,380px);display:flex;align-items:center;justify-content:center}
+.pic img{max-width:100%;max-height:100%;object-fit:contain;border-radius:18px}
+.ph{font-size:clamp(80px,20vw,150px)}
+.zone{min-height:84px;border:4px dashed #6c8cff;border-radius:22px;background:#ffffffb0;padding:8px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center}
+.zone.ok{border-color:#2fbf5b;background:#e5ffe9}.zone.no{animation:sh .4s}
+.zone:empty:before{content:'यहाँ शब्द रखो';color:#8a93c9;font-size:20px}
+@keyframes sh{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.bank{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:14px 0;min-height:70px}
+.card{font:inherit;font-size:clamp(22px,5vw,34px);font-weight:700;color:#fff;border:0;border-radius:18px;padding:10px 18px;min-height:56px;cursor:grab;box-shadow:0 5px 0 #0003;animation:pop .25s}
+.card.hint{outline:5px solid #ffd400}
+@keyframes pop{from{transform:scale(.6)}to{transform:scale(1)}}
+.btns{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.btn{font:inherit;font-size:clamp(17px,3.5vw,24px);font-weight:700;border:0;border-radius:30px;padding:12px 20px;min-height:52px;color:#fff;cursor:pointer;box-shadow:0 4px 0 #0003}
+.msg{font-size:clamp(24px,5vw,36px);font-weight:800;min-height:48px;margin:8px 0}
+.end{background:#fff;border-radius:28px;padding:24px;margin-top:30px;font-size:clamp(20px,4vw,28px);line-height:1.8}
+.end h1{font-size:clamp(30px,7vw,52px);margin:0 0 10px}
+.lv{display:block;width:100%;font:inherit;border:0;border-radius:28px;color:#fff;margin:14px 0;padding:22px;font-size:clamp(28px,7vw,48px);font-weight:800;cursor:pointer;box-shadow:0 7px 0 #0003}
+.lv small{display:block;font-size:.5em;font-weight:600}
+.wrap{padding-top:54px}
+.tools{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:10px;display:flex;gap:8px;z-index:10}
+.ico{font:inherit;font-size:22px;width:44px;height:44px;border-radius:50%;border:0;background:#ffffffd9;box-shadow:0 3px 8px #0003;cursor:pointer;color:#2b2d5b}
+.conf{position:fixed;top:-40px;font-size:30px;animation:fall 2s linear forwards;pointer-events:none}
+@keyframes fall{to{transform:translateY(110vh) rotate(360deg)}}
+</style></head><body><div class="tools"><button class="ico" id="fs" title="Full screen" aria-label="Full screen">⛶</button><button class="ico" id="mt" title="Mute" aria-label="Mute">🔊</button></div>
+<div class="wrap" id="app"></div>
+<script>
+/* =====================================================================
+   QUESTION DATA — EDIT HERE
+   Each row: [ image file name (inside images/ folder), correct sentence, extra distractor words ]
+   To change a picture, just change the file name in the first column.
+   Images are loaded from:  images/<file name>
+   ===================================================================== */
+const IMAGE_FOLDER = "images/";
+
+const EASY = [ // 25 questions, 3-5 words
+["boy-playing.png","बच्चा खेल रहा है",""],
+["girl-reading.png","लड़की पढ़ रही है",""],
+["cow-eating-grass.png","गाय घास खा रही है",""],
+["sun-shining.png","सूरज चमक रहा है",""],
+["bird-flying.png","पक्षी उड़ रहा है",""],
+["boy-drinking-water.png","बच्चा पानी पी रहा है",""],
+["boy-running.png","लड़का दौड़ रहा है",""],
+["mother-cooking.png","माँ खाना बना रही है",""],
+["cat-drinking-milk.png","बिल्ली दूध पी रही है",""],
+["father-reading-newspaper.png","पापा अखबार पढ़ रहे हैं",""],
+["dog-eating-bone.png","कुत्ता हड्डी खा रहा है",""],
+["fish-swimming.png","मछली पानी में तैरती है",""],
+["girl-eating-apple.png","लड़की सेब खा रही है",""],
+["elephant-bathing.png","हाथी नहा रहा है",""],
+["frog-jumping.png","मेंढक कूद रहा है",""],
+["boy-riding-cycle.png","लड़का साइकिल चला रहा है",""],
+["rain-falling.png","बारिश हो रही है",""],
+["girl-drawing.png","लड़की चित्र बना रही है",""],
+["rooster-crowing.png","मुर्गा बाँग दे रहा है",""],
+["boy-sleeping.png","बच्चा सो रहा है",""],
+["girl-singing.png","लड़की गाना गा रही है",""],
+["monkey-eating-banana.png","बंदर केला खा रहा है",""],
+["boy-flying-kite.png","लड़का पतंग उड़ा रहा है",""],
+["moon-shining.png","चाँद चमक रहा है",""],
+["girl-dancing.png","लड़की नाच रही है",""]];
+
+const MEDIUM = [ // 25 questions, 5-7 words, with distractors
+["boy-playing-ball-park.png","बच्चा पार्क में गेंद खेल रहा है","किताब"],
+["girl-sitting-under-tree.png","लड़की पेड़ के नीचे बैठी है","ऊपर"],
+["boy-in-school-bus.png","लड़का स्कूल की बस में बैठा है","खड़ा"],
+["mother-cooking-kitchen.png","माँ रसोई में खाना बना रही है","पापा"],
+["children-playing-cricket.png","बच्चे मैदान में क्रिकेट खेल रहे हैं","रहा"],
+["farmer-working.png","किसान खेत में काम कर रहा है","रही"],
+["sparrow-on-tree.png","चिड़िया पेड़ पर बैठी है","नीचे"],
+["grandmother-telling-story.png","दादी बच्चों को कहानी सुना रही हैं","दादा"],
+["boy-reading-table.png","बच्चा मेज पर किताब पढ़ रहा है","कुर्सी"],
+["boy-watering-plant.png","लड़का पौधे में पानी डाल रहा है","रही"],
+["girl-buying-tomatoes.png","लड़की दुकान से टमाटर खरीद रही है","बेच"],
+["cows-in-field.png","गायें खेत में घास चर रही हैं","है"],
+["father-driving-car.png","पापा कार सड़क पर चला रहे हैं","साइकिल"],
+["girl-going-school.png","लड़की बस्ता लेकर स्कूल जा रही है","आ"],
+["boy-eating-icecream.png","लड़का मज़े से आइसक्रीम खा रहा है","पी"],
+["grandmother-sewing.png","दादी बैठकर कपड़े सिल रही हैं","रहे"],
+["man-fishing.png","आदमी नदी में मछली पकड़ रहा है","तालाब"],
+["girl-flying-kite.png","लड़की हवा में पतंग उड़ा रही है","खेल"],
+["bird-in-nest.png","चिड़िया घोंसले में बैठी है","पेड़"],
+["doctor-giving-medicine.png","डॉक्टर मरीज़ को दवा दे रहे हैं","ले"],
+["policeman-at-crossing.png","पुलिसवाला चौराहे पर गाड़ियाँ रोक रहा है","बच्चे"],
+["teacher-writing-board.png","अध्यापिका बोर्ड पर कुछ लिख रही हैं","पढ़"],
+["firefighters-putting-fire.png","दमकल कर्मी पानी से आग बुझा रहे हैं","जला"],
+["children-diwali-diyas.png","बच्चे दिवाली पर दीये जला रहे हैं","होली"],
+["train-on-track.png","रेलगाड़ी पटरी पर तेज़ चल रही है","बस"]];
+
+const HARD = [ // 25 questions, 7-10 words, more distractors
+["children-playing-under-tree.png","बच्चे पार्क में पेड़ के नीचे खेल रहे हैं","ऊपर,रहा"],
+["girl-going-market-with-mother.png","लड़की अपनी माँ के साथ बाजार जा रही है","पापा,आ"],
+["farmer-watering-crop.png","किसान खेत में फसल को पानी दे रहा है","रही,काट"],
+["children-drawing-classroom.png","बच्चे कक्षा में मिलकर चित्र बना रहे हैं","अकेले,रहा"],
+["boy-reading-to-brother.png","लड़का अपने छोटे भाई को किताब पढ़कर सुना रहा है","बहन,रही"],
+["children-playing-after-rain.png","बारिश के बाद बच्चे घर के बाहर खेल रहे हैं","पहले,अंदर"],
+["grandmother-evening-story.png","दादी शाम को बच्चों को कहानी सुना रही हैं","सुबह,दादा"],
+["boys-playing-football.png","लड़के मैदान में मिलकर फुटबॉल खेल रहे हैं","क्रिकेट,रही"],
+["girl-watering-plant-daily.png","बच्ची अपने पौधे में रोज पानी डालती है","कभी,डालता"],
+["children-planting-tree.png","बच्चे स्कूल में पेड़ लगाने की गतिविधि कर रहे हैं","घर,रही"],
+["father-taking-son-school.png","पापा सुबह अपने बेटे को स्कूल छोड़ने जा रहे हैं","शाम,बेटी"],
+["mother-bringing-vegetables.png","माँ बाज़ार से ताज़ी सब्ज़ियाँ घर ला रही हैं","बासी,ले"],
+["children-morning-run.png","बच्चे सुबह मैदान में दौड़ लगा रहे हैं","शाम,खेल"],
+["shopkeeper-weighing-fruits.png","दुकानदार ग्राहक को फल तौलकर दे रहा है","सब्ज़ी,रही"],
+["peacock-dancing-rain.png","मोर बारिश में अपने पंख फैलाकर नाच रहा है","धूप,गा"],
+["children-watching-boat.png","बच्चे नदी किनारे बैठकर नाव देख रहे हैं","बस,खड़े"],
+["family-eating-together.png","परिवार के लोग मेज़ पर साथ खाना खा रहे हैं","अकेले,पी"],
+["teacher-teaching-lesson.png","अध्यापिका बच्चों को बोर्ड पर पाठ पढ़ा रही हैं","अध्यापक,लिख"],
+["children-diwali-night.png","बच्चे दिवाली की रात घर में दीये जला रहे हैं","सुबह,होली"],
+["girl-swinging-friends.png","लड़की अपने दोस्तों के साथ झूला झूल रही है","अकेले,कूद"],
+["gardener-watering-flowers.png","माली बगीचे में फूलों को पानी दे रहा है","पेड़ों,रही"],
+["children-watching-ducks.png","गाँव के बच्चे तालाब के पास बत्तखों को देख रहे हैं","शहर,नदी"],
+["doctor-checking-child.png","डॉक्टर अस्पताल में बीमार बच्चे को देख रहे हैं","स्कूल,रहा"],
+["children-holi-colours.png","बच्चे होली पर एक दूसरे को रंग लगा रहे हैं","दिवाली,मिलकर"],
+["driver-school-bus.png","ड्राइवर बच्चों को बस में स्कूल ले जा रहा है","रेल,रही"]];
+
+/* Builds the 75 question objects: {level, image, sentence (all cards), answer (correct order)} */
+const questions=[[EASY,1],[MEDIUM,2],[HARD,3]].flatMap(([rows,level])=>rows.map(([f,s,d])=>{
+ const answer=s.split(' ');return{level,image:IMAGE_FOLDER+f,sentence:answer.concat(d?d.split(','):[]),answer}}));
+/* ===================== END OF QUESTION DATA ===================== */
+
+const LV=[{n:'🌱 आसान',c:'#2fbf5b'},{n:'🌿 मध्यम',c:'#ff9f1c'},{n:'🌳 कठिन',c:'#9b5de5'}];
+const C=['#ff6b6b','#ff9f1c','#2ec4b6','#4d8cff','#9b5de5','#f15bb5','#43aa8b','#e76f51'];
+const $=id=>document.getElementById(id),A=$('app'),sh=a=>{for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+let lv=0,qi=0,score=0,placed=[],bank=[],done=false,hs=0,cur;
+
+function menu(){A.innerHTML=`<div class="end"><h1>✏️ चित्र देखकर वाक्य बनाओ</h1>${LV.map((l,i)=>`<button class="lv" data-l="${i}" style="background:${l.c}">${l.n}<small>25 प्रश्न</small></button>`).join('')}</div>`;
+ A.querySelectorAll('.lv').forEach(b=>b.onclick=()=>{lv=+b.dataset.l;qi=0;score=0;load()})}
+function load(){cur=questions[lv*25+qi];done=false;hs=0;placed=[];
+ let b;do{b=sh(cur.sentence.map((w,i)=>({id:i,w})))}while(b.map(x=>x.w).join(' ')==cur.answer.join(' ')&&b.length>2);
+ bank=b;draw()}
+function card(c,src){return`<button class="card" draggable="true" data-id="${c.id}" data-src="${src}" style="background:${C[c.id%8]}">${c.w}</button>`}
+function draw(msg=''){
+ A.innerHTML=`<div class="top"><span>${LV[lv].n}</span><span>प्रश्न ${qi+1} / 25</span><span>सही: ${score}</span></div>
+ <div class="pic"><img id="im" alt="" src="${cur.image}"></div><div class="msg">${msg}</div>
+ <div class="zone" id="zone">${placed.map(c=>card(c,'z')).join('')}</div>
+ <div class="bank" id="bank">${bank.map(c=>card(c,'b')).join('')}</div>
+ <div class="btns"><button class="btn" id="bh" style="background:#f4a100">💡 संकेत</button><button class="btn" id="bs" style="background:#4d8cff">🔊 सुनो</button><button class="btn" id="br" style="background:#9b5de5">↺ फिर से</button><button class="btn" id="bc" style="background:#2fbf5b">✓ जाँचो</button>${done?'<button class="btn" id="bn" style="background:#ff6b6b">🎯 अगला</button>':''}</div>`;
+ $('im').onerror=function(){this.parentNode.innerHTML='<div class="ph">🖼️🌈</div>'};
+ if(hs>=2&&!done)[...A.querySelectorAll('#bank .card')].find(e=>bank.find(c=>c.id==e.dataset.id).w==cur.answer[0])?.classList.add('hint');
+ A.querySelectorAll('.card').forEach(e=>{
+  e.onclick=()=>{if(done)return;const id=+e.dataset.id;
+   if(e.dataset.src=='b'){const c=bank.find(x=>x.id==id);bank=bank.filter(x=>x!=c);placed.push(c)}
+   else{const c=placed.find(x=>x.id==id);placed=placed.filter(x=>x!=c);bank.push(c)}draw(msgKeep)};
+  e.ondragstart=ev=>ev.dataTransfer.setData('t',e.dataset.id+','+e.dataset.src);
+  e.ondragover=ev=>ev.preventDefault();
+  e.ondrop=ev=>{if(e.dataset.src=='z')drop(ev,+e.dataset.id)}});
+ $('zone').ondragover=ev=>ev.preventDefault();$('zone').ondrop=ev=>drop(ev,null);
+ $('bank').ondragover=ev=>ev.preventDefault();
+ $('bank').ondrop=ev=>{ev.preventDefault();if(done)return;const[id,s]=ev.dataTransfer.getData('t').split(',');if(s=='z'){const c=placed.find(x=>x.id==id);placed=placed.filter(x=>x!=c);bank.push(c);draw()}};
+ $('bh').onclick=()=>{hs++;draw(hs==1?'पहले बताओ—कौन काम कर रहा है?':'पीले घेरे वाला शब्द पहले आएगा।')};
+ $('bs').onclick=()=>say(done?cur.answer.join(' '):(placed.length?placed:bank).map(c=>c.w).join(' '));
+ $('br').onclick=()=>{if(done)return;bank=bank.concat(placed);placed=[];draw()};
+ $('bc').onclick=check;if($('bn'))$('bn').onclick=next}
+const msgKeep='';
+function drop(ev,before){ev.preventDefault();ev.stopPropagation();if(done)return;
+ const[id,s]=ev.dataTransfer.getData('t').split(',');let c;
+ if(s=='b'){c=bank.find(x=>x.id==id);bank=bank.filter(x=>x!=c)}else{c=placed.find(x=>x.id==id);placed=placed.filter(x=>x!=c)}
+ if(!c)return;const i=before==null?placed.length:placed.findIndex(x=>x.id==before);placed.splice(i<0?placed.length:i,0,c);draw()}
+let muted=false;
+$('mt').onclick=()=>{muted=!muted;$('mt').textContent=muted?'🔇':'🔊';$('mt').title=muted?'Unmute':'Mute';if(muted)try{speechSynthesis.cancel()}catch(e){}};
+const de=document.documentElement,inFS=()=>document.fullscreenElement||document.webkitFullscreenElement;
+if(!(document.fullscreenEnabled||document.webkitFullscreenEnabled))$('fs').style.display='none';
+$('fs').onclick=()=>{try{inFS()?(document.exitFullscreen||document.webkitExitFullscreen).call(document):(de.requestFullscreen||de.webkitRequestFullscreen).call(de)}catch(e){}};
+['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>{$('fs').textContent=inFS()?'✕':'⛶'}));
+function say(t){if(muted)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='hi-IN';u.rate=.8;speechSynthesis.speak(u)}catch(e){}}
+function check(){if(done||!placed.length)return;
+ if(placed.map(c=>c.w).join(' ')==cur.answer.join(' ')){done=true;score++;draw('🎉 बहुत बढ़िया!');$('zone').classList.add('ok');
+  for(let i=0;i<30;i++){const s=document.createElement('span');s.className='conf';s.textContent=['🎉','⭐','✨','🎈'][i%4];s.style.left=Math.random()*100+'vw';s.style.animationDelay=Math.random()*.6+'s';document.body.appendChild(s);setTimeout(()=>s.remove(),3000)}
+  say(cur.answer.join(' '))}
+ else{document.querySelector('.msg').textContent='🤔 वाक्य को फिर से सोचो।';$('zone').classList.add('no');setTimeout(()=>$('zone')&&$('zone').classList.remove('no'),500)}}
+function next(){if(qi<24){qi++;load();return}
+ A.innerHTML=`<div class="end"><h1>🎉 स्तर पूरा!</h1>${LV[lv].n}: <b>${score}/25</b><br><br><button class="btn" id="nl" style="background:#2fbf5b">${lv<2?'➡️ अगला स्तर':'🏠 स्तर चुनो'}</button></div>`;
+ $('nl').onclick=()=>{if(lv<2){lv++;qi=0;score=0;load()}else menu()}}
+menu();
+</script></body></html>

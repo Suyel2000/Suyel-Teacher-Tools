@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>सही चित्र चुनो – शब्द से चित्र</title>
+<style>
+:root{--bg:#fff7e6;--ink:#2b2d42;--card:#fff;--pri:#4361ee;--ok:#2a9d5c;--warn:#f4a261;--pink:#ef476f}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{font-family:"Noto Sans Devanagari","Mukta","Nirmala UI",system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;display:flex;justify-content:center}
+#app{width:100%;max-width:980px;padding:12px 14px 24px}
+h1{margin:6px 0;text-align:center;font-size:clamp(26px,5vw,42px);color:var(--pri)}
+.hidden{display:none!important}
+.sub{text-align:center;font-weight:700;color:#8d99ae;margin:-4px 0 6px;font-size:clamp(14px,2.6vw,20px)}
+.fsb{position:fixed;top:8px;right:8px;z-index:10;width:38px;height:38px;border:0;border-radius:12px;background:#fff;color:var(--pri);font-size:22px;line-height:1;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.levels{display:grid;gap:14px;margin-top:18px}
+.lv{border:0;border-radius:22px;padding:20px;font:inherit;font-size:clamp(22px,4vw,32px);font-weight:700;color:#fff;box-shadow:0 6px 0 rgba(0,0,0,.18);cursor:pointer}
+.lv small{display:block;font-size:.55em;font-weight:500;opacity:.9}
+.top{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;font-weight:700;font-size:clamp(14px,2.6vw,20px)}
+.pill{background:#fff;border-radius:99px;padding:6px 14px;box-shadow:0 2px 6px rgba(0,0,0,.1)}
+.bar{height:14px;background:#e6e6f2;border-radius:99px;overflow:hidden;margin:10px 0}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffb703,#2a9d5c);transition:width .4s}
+.sent{background:#fff;border-radius:24px;padding:clamp(16px,4vw,32px);text-align:center;font-size:clamp(28px,6.5vw,56px);font-weight:700;line-height:1.35;box-shadow:0 6px 16px rgba(67,97,238,.15);border:3px solid #ffd166}
+.pics{display:grid;grid-template-columns:1fr 1fr;gap:clamp(12px,3vw,28px);margin:16px 0}
+.pic{position:relative;aspect-ratio:1/1;background:var(--card);border:5px solid #e0e4ff;border-radius:26px;padding:8px;cursor:pointer;box-shadow:0 6px 14px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center;transition:transform .15s,border-color .15s}
+.pic:active{transform:scale(.97)}
+.pic img{max-width:100%;max-height:100%;object-fit:contain;border-radius:18px}
+.pic.noimg:after{content:"🖼️";font-size:clamp(40px,12vw,90px)}
+.pic.sel{border-color:var(--pri);background:#eef1ff;transform:scale(1.02)}
+.pic.good{border-color:var(--ok);background:#e8f8ee;animation:pop .5s}
+.pic.shake{animation:shake .4s}
+.pic.locked{pointer-events:none}
+@keyframes pop{50%{transform:scale(1.06)}}
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.msg{min-height:40px;text-align:center;font-size:clamp(18px,3.6vw,28px);font-weight:700}
+.msg.ok{color:var(--ok)}.msg.no{color:#e07a1f}
+.ctrl{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.btn{border:0;border-radius:18px;padding:14px 6px;font:inherit;font-size:clamp(15px,3vw,24px);font-weight:700;color:#fff;cursor:pointer;box-shadow:0 5px 0 rgba(0,0,0,.18)}
+.btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+.end{text-align:center;background:#fff;border-radius:28px;padding:28px 16px;margin-top:20px;box-shadow:0 8px 20px rgba(0,0,0,.12)}
+.end h2{font-size:clamp(28px,6vw,46px);margin:6px 0}
+.end p{font-size:clamp(20px,4vw,30px);margin:8px 0}
+.end .btn{margin:8px;padding:14px 22px}
+#chk{margin-top:16px;font-size:14px;background:#fff;padding:10px;border-radius:12px;word-break:break-all}
+@media(max-width:600px){.ctrl{grid-template-columns:repeat(3,1fr)}h1{padding:0 44px}}
+</style>
+</head>
+<body>
+<div id="app">
+<button id="fs" class="fsb hidden" onclick="toggleFS()" aria-label="पूरी स्क्रीन" title="पूरी स्क्रीन">⛶</button>
+<h1>🔍 सही चित्र चुनो!</h1>
+<div class="sub">शब्द से चित्र</div>
+
+<section id="home">
+  <p style="text-align:center;font-size:clamp(18px,3.5vw,26px);margin:4px">अपना स्तर चुनो</p>
+  <div class="levels">
+    <button class="lv" style="background:#2a9d5c" onclick="start(0)">स्तर 1 – आसान<small>⭐</small></button>
+    <button class="lv" style="background:#f4a261" onclick="start(1)">स्तर 2 – मध्यम<small>⭐⭐</small></button>
+    <button class="lv" style="background:#ef476f" onclick="start(2)">स्तर 3 – कठिन<small>⭐⭐⭐</small></button>
+  </div>
+  <div id="chk" class="hidden"></div>
+</section>
+
+<section id="game" class="hidden">
+  <div class="top">
+    <span class="pill" id="lvl"></span><span class="pill" id="qn"></span>
+    <span class="pill">⭐ अंक: <b id="sc">0</b></span><span class="pill">✔ सही: <b id="co">0</b></span>
+  </div>
+  <div class="bar"><i id="pb"></i></div>
+  <div class="sent" id="sent"></div>
+  <div class="pics" id="pics"></div>
+  <div class="msg" id="msg"></div>
+  <div class="ctrl">
+    <button class="btn" style="background:#4361ee" id="bSpeak" onclick="speak()">🔊 सुनो</button>
+    <button class="btn" style="background:#2a9d5c" id="bCheck" onclick="checkAns()" disabled>✓ जाँचो</button>
+    <button class="btn" style="background:#f4a261" id="bNext" onclick="nextQ()" disabled>🎯 अगला</button>
+    <button class="btn" style="background:#b5838d" id="bSkip" onclick="skipQ()">⏭ छोड़ो</button>
+    <button class="btn" style="background:#8d99ae" onclick="start(L)">↺ फिर से</button>
+  </div>
+</section>
+
+<section id="done" class="hidden end">
+  <div style="font-size:64px">🏆</div>
+  <h2>🎉 शाबाश!</h2>
+  <p id="dTxt"></p>
+  <button class="btn" style="background:#4361ee" onclick="start(L)">↺ यही स्तर फिर खेलो</button>
+  <button class="btn" style="background:#2a9d5c" onclick="home()">🏠 स्तर चुनो</button>
+</section>
+</div>
+
+<script>
+/* ====== सेटिंग ====== */
+const IMG_PATH = "../images/";   // चित्रों का स्थान
+const EXT = ".png";
+const POINTS = 10;
+
+/* ====== प्रश्न बैंक ======
+   हर पंक्ति: वाक्य | सही चित्र | ग़लत चित्र   (चित्र का नाम = images/ फ़ोल्डर की फ़ाइल, बिना .png)
+   पहले 25 = स्तर 1, अगले 25 = स्तर 2, अंतिम 25 = स्तर 3 */
+const RAW = `
+लड़का दौड़ रहा है।|boy-running|boy-sleeping
+लड़की किताब पढ़ रही है।|girl-reading|girl-drawing
+बिल्ली दूध पी रही है।|cat-drinking-milk|cat-sleeping
+मोर नाच रहा है।|peacock-dancing|parrot-sitting
+बच्चे क्रिकेट खेल रहे हैं।|children-playing-cricket|children-playing-football
+बच्चा पानी पी रहा है।|child-drinking-water|child-eating
+लड़के फुटबॉल खेल रहे हैं।|boys-playing-football|boys-flying-kite
+लड़कियाँ चित्र बना रही हैं।|girls-drawing|girls-dancing
+कुत्ता भौंक रहा है।|dog-barking|dog-sleeping
+चिड़िया उड़ रही है।|bird-flying|bird-eating-grain
+गाय घास खा रही है।|cow-eating-grass|cow-drinking-water
+लड़की गाना गा रही है।|girl-singing|girl-sleeping
+माँ खाना बना रही हैं।|mother-cooking|mother-sweeping
+बच्चा सो रहा है।|child-sleeping|child-eating
+बंदर पेड़ पर चढ़ रहा है।|monkey-climbing-tree|monkey-eating-banana
+मछली पानी में तैर रही है।|fish-swimming|frog-jumping
+लड़का रोटी खा रहा है।|boy-eating-roti|boy-drinking-water
+बच्ची झूला झूल रही है।|girl-on-swing|girl-sliding
+हाथी पानी पी रहा है।|elephant-drinking-water|elephant-walking
+बच्चे गेंद से खेल रहे हैं।|children-playing-ball|children-reading
+तोता आम खा रहा है।|parrot-eating-mango|parrot-sitting
+लड़की हँस रही है।|girl-laughing|girl-crying
+पिताजी अख़बार पढ़ रहे हैं।|father-reading-newspaper|father-drinking-tea
+बकरी घास चर रही है।|goat-grazing|goat-sleeping
+लड़के पतंग उड़ा रहे हैं।|boys-flying-kite|boys-playing-football
+लड़की अपने हाथ धो रही है।|girl-washing-hands|girl-brushing-teeth
+शिक्षक श्यामपट्ट पर लिख रहे हैं।|teacher-writing-blackboard|teacher-reading-book
+दुकानदार फल तौल रहा है।|shopkeeper-weighing-fruits|vegetable-seller-selling
+बच्चा कूड़ेदान में कचरा डाल रहा है।|child-throwing-garbage|child-watering-plant
+बच्चे मिलकर पौधे लगा रहे हैं।|children-planting-saplings|children-watering-plants
+बच्ची पौधे में पानी डाल रही है।|girl-watering-plant|girl-picking-flowers
+बच्चा दाँत साफ़ कर रहा है।|child-brushing-teeth|child-washing-face
+लड़का साइकिल चला रहा है।|boy-riding-bicycle|boy-running
+माली पौधों को पानी दे रहा है।|gardener-watering-plants|gardener-cutting-grass
+लड़कियाँ रस्सी कूद रही हैं।|girls-skipping-rope|girls-dancing
+डॉक्टर मरीज़ को देख रहे हैं।|doctor-checking-patient|doctor-writing-prescription
+बच्चा स्कूल बैग लेकर जा रहा है।|child-going-school|child-sleeping
+माँ बच्चे को खाना खिला रही हैं।|mother-feeding-child|mother-cooking
+लड़का कुर्सी पर बैठा है।|boy-sitting-chair|boy-standing
+बच्चे कक्षा में पढ़ रहे हैं।|children-studying-classroom|children-playing-ball
+लड़की गुड़िया से खेल रही है।|girl-playing-doll|girl-reading
+सब्ज़ीवाला सब्ज़ी बेच रहा है।|vegetable-seller-selling|shopkeeper-weighing-fruits
+बच्चा गिलास में दूध डाल रहा है।|child-pouring-milk|child-drinking-water
+बच्चे बारिश में भीग रहे हैं।|children-in-rain|children-playing-ball
+लड़की फूल सूँघ रही है।|girl-smelling-flower|girl-picking-flowers
+चिड़िया घोंसले में बैठी है।|bird-in-nest|bird-flying
+बच्चे पंक्ति में खड़े हैं।|children-standing-queue|children-sitting-circle
+लड़का सीढ़ियाँ चढ़ रहा है।|boy-climbing-stairs|boy-sitting-chair
+पिताजी कार चला रहे हैं।|father-driving-car|father-reading-newspaper
+बच्ची नहा रही है।|girl-bathing|girl-washing-hands
+किसान खेत में बीज बो रहा है।|farmer-sowing-seeds|farmer-harvesting-wheat
+कुम्हार मिट्टी का घड़ा बना रहा है।|potter-making-pot|carpenter-sawing-wood
+लड़की ज़ेब्रा क्रॉसिंग पर सड़क पार कर रही है।|girl-crossing-zebra-crossing|girl-walking-footpath
+लड़कियाँ पुस्तकालय में किताबें पढ़ रही हैं।|girls-reading-library|girls-playing-ground
+बच्चे विद्यालय के बगीचे में पौधे लगा रहे हैं।|children-planting-school-garden|children-playing-school-garden
+बढ़ई लकड़ी काट रहा है।|carpenter-sawing-wood|potter-making-pot
+दर्ज़ी कपड़े सिल रहा है।|tailor-stitching|tailor-ironing
+मोची जूते ठीक कर रहा है।|cobbler-repairing-shoes|tailor-stitching
+नर्स मरीज़ को दवा दे रही है।|nurse-giving-medicine|nurse-measuring-temperature
+किसान फ़सल काट रहा है।|farmer-harvesting-wheat|farmer-sowing-seeds
+मछुआरा नदी में जाल फेंक रहा है।|fisherman-casting-net|fisherman-rowing-boat
+महिला कुएँ से पानी निकाल रही है।|woman-drawing-water-well|woman-carrying-pot
+धोबी कपड़े धो रहा है।|washerman-washing-clothes|washerman-ironing
+बच्चे बस में स्कूल जा रहे हैं।|children-going-school-bus|girls-playing-ground
+पायलट हवाई जहाज़ उड़ा रहा है।|pilot-flying-plane|driver-driving-bus
+रेलगाड़ी पुल के ऊपर से जा रही है।|train-on-bridge|train-at-station
+लड़का पुस्तकालय से किताब ले रहा है।|boy-taking-book-library|boy-sitting-chair
+दादी बच्चों को कहानी सुना रही हैं।|grandmother-telling-story|grandmother-knitting
+सफ़ाईकर्मी सड़क साफ़ कर रहा है।|sweeper-cleaning-road|gardener-cutting-grass
+हलवाई मिठाई बना रहा है।|sweetmaker-making-sweets|vegetable-seller-selling
+लड़कियाँ मंच पर नृत्य कर रही हैं।|girls-dancing-stage|girls-singing-stage
+बच्चे मैदान में दौड़ लगा रहे हैं।|children-racing-ground|children-sitting-circle
+अग्निशमन कर्मी आग बुझा रहे हैं।|firefighter-extinguishing-fire|policeman-on-road
+चित्रकार दीवार पर चित्र बना रहा है।|painter-painting-wall|carpenter-sawing-wood
+बच्चे नदी किनारे नाव देख रहे हैं।|children-watching-boat-river|train-at-station
+`;
+const LEVELS = ["स्तर 1 – आसान","स्तर 2 – मध्यम","स्तर 3 – कठिन"];
+const BANK = RAW.trim().split("\n").map((l,n)=>{const [s,c,w]=l.split("|");
+  return {id:n+1, level:Math.floor(n/25), sentence:s, correct:c, wrong:w};});
+
+/* ====== स्थिति ====== */
+let L=0, qs=[], i=0, score=0, right=0, skipped=0, sel=null, solved=false, order=[];
+const $=id=>document.getElementById(id);
+const alt=k=>k.replace(/-/g," ");
+const show=id=>["home","game","done"].forEach(x=>$(x).classList.toggle("hidden",x!==id));
+
+function home(){show("home")}
+function start(l){
+  L=l; qs=BANK.filter(q=>q.level===l); i=0; score=0; right=0; skipped=0;
+  $("sc").textContent=0; $("co").textContent=0; show("game"); load();
+}
+function load(){
+  const q=qs[i]; sel=null; solved=false;
+  $("sent").textContent=q.sentence; $("lvl").textContent=LEVELS[L];
+  $("qn").textContent="प्रश्न "+(i+1)+"/"+qs.length;
+  $("pb").style.width=(i/qs.length*100)+"%";
+  $("msg").textContent=""; $("msg").className="msg";
+  order=Math.random()<.5?[q.correct,q.wrong]:[q.wrong,q.correct];
+  const box=$("pics"); box.innerHTML="";
+  order.forEach((k,n)=>{
+    const d=document.createElement("div"); d.className="pic"; d.dataset.n=n;
+    d.setAttribute("role","button"); d.tabIndex=0;
+    const im=new Image(); im.src=IMG_PATH+k+EXT; im.alt=alt(k);
+    im.onerror=()=>{im.remove(); d.classList.add("noimg"); d.setAttribute("aria-label",alt(k));};
+    d.appendChild(im);
+    d.onclick=()=>pick(n);
+    d.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pick(n)}};
+    box.appendChild(d);
+  });
+  $("bCheck").disabled=true; $("bNext").disabled=true; $("bSkip").disabled=false;
+  $("bNext").textContent = i===qs.length-1 ? "🏁 समाप्त" : "🎯 अगला";
+}
+function pick(n){
+  if(solved) return; sel=n;
+  [...$("pics").children].forEach((c,j)=>c.classList.toggle("sel",j===n));
+  $("bCheck").disabled=false; $("msg").textContent="";
+}
+function checkAns(){
+  if(sel===null||solved) return;
+  const cards=[...$("pics").children], q=qs[i], m=$("msg");
+  if(order[sel]===q.correct){
+    solved=true; score+=POINTS; right++;
+    $("sc").textContent=score; $("co").textContent=right;
+    cards[sel].classList.remove("sel"); cards[sel].classList.add("good");
+    cards.forEach(c=>c.classList.add("locked"));
+    m.textContent="🎉 बहुत बढ़िया! सही चित्र!"; m.className="msg ok";
+    $("bCheck").disabled=true; $("bNext").disabled=false; $("bSkip").disabled=true;
+    $("pb").style.width=((i+1)/qs.length*100)+"%";
+  } else {
+    const c=cards[sel]; c.classList.remove("sel"); c.classList.add("shake");
+    setTimeout(()=>c.classList.remove("shake"),450);
+    sel=null; $("bCheck").disabled=true;
+    m.textContent="🤔 वाक्य फिर से पढ़ो।"; m.className="msg no";
+  }
+}
+function nextQ(){ if(solved) advance(); }
+function skipQ(){ if(solved) return; skipped++; advance(); }
+function advance(){
+  if(i<qs.length-1){i++;load()}
+  else{
+    $("dTxt").innerHTML="कुल प्रश्न: <b>"+qs.length+"</b><br>सही उत्तर: <b>"+right+"</b>"+(skipped?"<br>छोड़े गए: <b>"+skipped+"</b>":"")+"<br>अंक: <b>"+score+"</b><br>"+LEVELS[L]+" पूरा हुआ! 🌟";
+    show("done");
+  }
+}
+/* ====== पूरी स्क्रीन ====== */
+const de=document.documentElement;
+if(de.requestFullscreen||de.webkitRequestFullscreen) $("fs").classList.remove("hidden");
+function toggleFS(){
+  try{
+    const on=document.fullscreenElement||document.webkitFullscreenElement;
+    if(on){(document.exitFullscreen||document.webkitExitFullscreen).call(document)}
+    else{(de.requestFullscreen||de.webkitRequestFullscreen).call(de)}
+  }catch(e){}
+}
+document.addEventListener("fullscreenchange",()=>{$("fs").textContent=document.fullscreenElement?"✕":"⛶"});
+/* ====== आवाज़ ====== */
+function speak(){
+  try{
+    if(!("speechSynthesis" in window)) return;
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(qs[i].sentence); u.lang="hi-IN"; u.rate=.85;
+    const v=speechSynthesis.getVoices().find(v=>/^hi/i.test(v.lang)); if(v) u.voice=v;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+/* ====== चित्र जाँच: पेज के अंत में #check जोड़ें (उदा. index.html#check) ====== */
+if(location.hash==="#check"){
+  const keys=[...new Set(BANK.flatMap(q=>[q.correct,q.wrong]))], miss=[]; let done=0;
+  const box=$("chk"); box.classList.remove("hidden"); box.textContent="जाँच हो रही है…";
+  keys.forEach(k=>{const im=new Image();
+    im.onload=im.onerror=function(e){ if(e.type==="error") miss.push(k+EXT);
+      if(++done===keys.length){ box.innerHTML="<b>कुल चित्र: "+keys.length+" | उपलब्ध: "+(keys.length-miss.length)+" | अनुपलब्ध: "+miss.length+"</b><br>"+(miss.sort().join("<br>")||"सभी चित्र मिल गए ✅"); }};
+    im.src=IMG_PATH+k+EXT;});
+}
+</script>
+</body>
+</html>

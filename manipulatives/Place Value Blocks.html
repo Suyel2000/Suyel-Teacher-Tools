@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Place Value Blocks</title>
+<style>
+:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Segoe UI',system-ui,sans-serif;background:#f4f8ff;color:#1c2b4a}
+.app{max-width:1120px;margin:auto;padding:12px;position:relative}
+h1{margin:4px 52px 0;text-align:center;font-size:clamp(1.6rem,4vw,2.4rem);color:#2b4fc4}
+.sub{text-align:center;margin:2px 0 12px;font-size:1.05rem}
+.card{background:#fff;border-radius:18px;box-shadow:0 3px 12px rgba(40,70,140,.12);padding:10px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+button,select{font:inherit;font-weight:700;min-height:44px;border-radius:12px;border:0;padding:8px 14px;cursor:pointer}
+button{background:#3b6fe0;color:#fff}button:hover{background:#2f5bc4}
+button.alt{background:#e8eefc;color:#2b4fc4}
+select{background:#e8eefc;color:#1c2b4a;border:2px solid #b9c8f0}
+button:focus-visible,select:focus-visible{outline:3px solid #111;outline-offset:2px}
+.main{display:grid;grid-template-columns:170px 1fr;gap:12px}
+.tools{display:flex;flex-direction:column;gap:10px}
+.tool{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:#fff;color:#1c2b4a;border:3px solid;padding:6px;border-radius:16px;cursor:grab;touch-action:none;user-select:none;min-height:96px}
+.tool:hover{background:#f7faff}
+.tool svg{height:60px;width:auto;max-width:100%}
+.tool b{font-size:1.1rem}.tool span{font-size:.95rem}
+.num{font-size:clamp(2.2rem,7vw,3.4rem);font-weight:800;line-height:1.1;color:#2b4fc4}
+.exp{font-size:1.15rem;font-weight:600}
+#goal{margin:8px 0;padding:8px 12px;border-radius:12px;background:#fff6d6;font-weight:700;font-size:1.1rem}
+#goal.ok{background:#d9f7de;color:#1b6b2a}
+#ws{position:relative;height:min(62vh,520px);min-height:380px;overflow:hidden;border:3px dashed #b9c8f0;border-radius:20px;background:#fff;background-image:radial-gradient(#e3ebfb 1.5px,transparent 1.5px);background-size:22px 22px;margin:8px 0}
+.blk{position:absolute;touch-action:none;cursor:grab;filter:drop-shadow(0 3px 3px rgba(0,0,0,.25));transition:transform .3s,opacity .3s;border-radius:6px;line-height:0}
+.blk.sel{outline:4px solid #ff2d75;outline-offset:2px}
+.blk:focus-visible{outline:4px solid #111;outline-offset:2px}
+.blk.merge{transform:scale(.15);opacity:0}
+.blk.pop{animation:pop .35s ease-out}
+@keyframes pop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+#msg{min-height:1.5em;font-weight:600;margin:4px 2px}
+table{width:100%;border-collapse:collapse;text-align:center}
+th{padding:6px;font-size:1rem;border-bottom:5px solid}td{font-size:1.7rem;font-weight:800;padding:6px}
+.ghost{position:fixed;pointer-events:none;z-index:50;opacity:.85}
+@media(max-width:720px){.main{grid-template-columns:1fr}.tools{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.tool{min-height:84px;padding:4px}.tool svg{height:44px}.tool b{font-size:.95rem}.tool span{display:none}}
+@media(prefers-reduced-motion:reduce){.blk{transition:none}.blk.pop{animation:none}}
+</style></head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" id="defs"></svg>
+<div class="app">
+<button id="fs" class="alt" aria-label="Toggle full screen" title="Full screen" style="position:absolute;top:12px;right:12px;min-width:44px;padding:8px"></button>
+<h1>Place Value Blocks</h1>
+<p class="sub">Build numbers. Explore place value. Discover maths!</p>
+<div class="card bar" role="toolbar" aria-label="Controls">
+<select id="mode" aria-label="Mode"><option value="explore">Explore</option><option value="build">Build the Number</option><option value="add">Addition</option><option value="sub">Subtraction</option></select>
+<select id="dig" aria-label="Number of digits" hidden><option value="2">2 digits</option><option value="3" selected>3 digits</option><option value="4">4 digits</option></select>
+<button id="newb" class="alt" hidden>New Number</button>
+<button id="exch">Exchange</button>
+<button id="rem" class="alt">Remove</button>
+<button id="reset" class="alt">↺ Reset</button>
+<button id="pvb" class="alt" aria-pressed="true">Show Place Value</button>
+</div>
+<div class="main">
+<div class="tools card" id="tools" aria-label="Block toolbox"></div>
+<div>
+<div class="card">
+<div class="num" id="num" aria-live="polite">0</div>
+<div class="exp" id="exp">Expanded Form: 0</div>
+<div id="goal" hidden></div>
+<div id="ws" aria-label="Building workspace"></div>
+<div id="msg" aria-live="polite">Tap or drag a block to start. Tap blocks to select them.</div>
+</div>
+<div class="card" id="sum" style="margin-top:10px"><table aria-label="Place value table"><thead><tr id="th"></tr></thead><tbody><tr id="td"></tr></tbody></table></div>
+</div></div></div>
+<script>
+const C={o:{l:'#a6d4ff',b:'#3b8bef',d:'#1f5bb5'},t:{l:'#aeeeb2',b:'#3fb950',d:'#23802f'},h:{l:'#ffd29c',b:'#ff9220',d:'#c4650a'},k:{l:'#d6bdff',b:'#8b5cf6',d:'#5b34b8'}};
+const P={o:{v:1,n:'Ones',nm:'unit cube',w:16,h:16,d:6,x:1,y:1},t:{v:10,n:'Tens',nm:'tens rod',w:14,h:140,d:6,x:1,y:10},h:{v:100,n:'Hundreds',nm:'hundreds flat',w:100,h:100,d:8,x:10,y:10},k:{v:1000,n:'Thousands',nm:'thousands cube',w:100,h:100,d:44,x:10,y:10}};
+const ORD=['o','t','h','k'],NEXT={o:'t',t:'h',h:'k'},PREV={t:'o',h:'t',k:'h'};
+const $=id=>document.getElementById(id),ws=$('ws');
+const fmt=n=>n.toLocaleString('en-US');
+$('defs').innerHTML=ORD.map(t=>`<linearGradient id="gf-${t}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${C[t].l}"/><stop offset="1" stop-color="${C[t].b}"/></linearGradient>`).join('');
+function svg(t,s){const p=P[t],c=C[t],{w,h,d}=p,W=w+d,H=h+d;let g='';
+const L=(a,b,e,f,col)=>`<line x1="${a}" y1="${b}" x2="${e}" y2="${f}" stroke="${col}" stroke-width=".8"/>`,wl='rgba(255,255,255,.65)',dl='rgba(0,0,0,.22)';
+for(let i=1;i<p.x;i++)g+=L(i*w/p.x,d,i*w/p.x,d+h,wl);
+for(let j=1;j<p.y;j++)g+=L(0,d+j*h/p.y,w,d+j*h/p.y,wl);
+if(t=='k')for(let i=1;i<10;i++){const f=i/10;g+=L(f*w,d,f*w+d,0,dl)+L(f*d,d-f*d,w+f*d,d-f*d,dl)+L(w,d+f*h,W,f*h,dl)+L(w+f*d,d-f*d,w+f*d,h+d-f*d,dl)}
+if(t=='h')for(let i=1;i<10;i++)g+=L(i*w/10,d,i*w/10+d,0,dl)+L(w,d+i*h/10,W,i*h/10,dl);
+const lab=t=='h'||t=='k'?`<text x="${w/2}" y="${d+h/2+7}" text-anchor="middle" font-size="22" font-weight="800" fill="#fff" stroke="${c.d}" stroke-width="3.5" paint-order="stroke" font-family="Segoe UI,Arial">${p.v}</text>`:'';
+return `<svg viewBox="0 0 ${W} ${H}" width="${W*s}" height="${H*s}" role="img" aria-label="${p.n} ${p.nm}, value ${p.v}" stroke-linejoin="round">
+<polygon points="${w},${d} ${W},0 ${W},${h} ${w},${H}" fill="${c.d}" stroke="${c.d}" stroke-width="1.2"/>
+<polygon points="0,${d} ${d},0 ${W},0 ${w},${d}" fill="${c.l}" stroke="${c.d}" stroke-width="1.2"/>
+<rect x="0" y="${d}" width="${w}" height="${h}" rx="1.5" fill="url(#gf-${t})" stroke="${c.d}" stroke-width="1.2"/>
+<rect x="1.5" y="${d+1.5}" width="${Math.max(2,w*.12)}" height="${h-3}" rx="1" fill="#fff" opacity=".28"/>${g}${lab}</svg>`}
+const size=(t,s)=>[(P[t].w+P[t].d)*s,(P[t].h+P[t].d)*s];
+const scale=()=>Math.max(.5,Math.min(1.1,ws.clientWidth/640));
+
+let blocks=[],sel=new Set(),nid=1,mode='explore',goal=null,busy=false;
+const cnt=()=>{const c={o:0,t:0,h:0,k:0};blocks.forEach(b=>c[b.t]++);return c};
+const total=()=>blocks.reduce((a,b)=>a+P[b.t].v,0);
+const say=m=>$('msg').textContent=m;
+
+// toolbox
+$('tools').innerHTML=['k','h','t','o'].map(t=>`<button class="tool" data-t="${t}" style="border-color:${C[t].b}" aria-label="Add ${P[t].n} block, value ${P[t].v}">${svg(t,1)}<b>${P[t].n}</b><span>= ${fmt(P[t].v)}</span></button>`).join('');
+$('th').innerHTML=['k','h','t','o'].map(t=>`<th style="border-color:${C[t].b}">${P[t].n}</th>`).join('');
+
+function findSlot(t,s){const [w,h]=size(t,s),W=ws.clientWidth,H=ws.clientHeight;
+for(let y=8;y+h<=H-4;y+=14)for(let x=8;x+w<=W-4;x+=14)
+if(!blocks.some(b=>{const [bw,bh]=size(b.t,s);return x<b.x+bw+4&&x+w+4>b.x&&y<b.y+bh+4&&y+h+4>b.y}))return [x,y];
+return [8+(blocks.length*9)%60,8+(blocks.length*9)%60]}
+function addAt(t,x,y,quiet){if(total()+P[t].v>9999){say('That is the biggest number this tool can show: 9,999.');return null}
+const s=scale();if(x==null)[x,y]=findSlot(t,s);
+const b={id:nid++,t,x,y,fresh:true};blocks.push(b);if(!quiet)render();return b}
+function setBlocks(n){blocks=[];sel.clear();const d=[Math.floor(n/1000),Math.floor(n/100)%10,Math.floor(n/10)%10,n%10];
+['k','h','t','o'].forEach((t,i)=>{for(let j=0;j<d[i];j++)addAt(t,null,null,true)});render()}
+
+function render(){const s=scale(),Wd=ws.clientWidth,Hd=ws.clientHeight;
+ws.innerHTML=blocks.map(b=>{const [w,h]=size(b.t,s);b.x=Math.max(0,Math.min(b.x,Wd-w));b.y=Math.max(0,Math.min(b.y,Hd-h));
+const on=sel.has(b.id);const html=`<div class="blk${on?' sel':''}${b.fresh?' pop':''}" data-id="${b.id}" tabindex="0" role="button" aria-pressed="${on}" aria-label="${P[b.t].n} block, value ${P[b.t].v}${on?', selected':''}" style="left:${b.x}px;top:${b.y}px">${svg(b.t,s)}</div>`;b.fresh=false;return html}).join('');
+const c=cnt(),v=total();
+$('num').textContent=fmt(v);
+const parts=['k','h','t','o'].filter(t=>c[t]).map(t=>fmt(c[t]*P[t].v));
+$('exp').textContent='Expanded Form: '+(parts.join(' + ')||'0');
+$('td').innerHTML=['k','h','t','o'].map(t=>`<td style="color:${C[t].d}">${c[t]}</td>`).join('');
+const canon=c.o<10&&c.t<10&&c.h<10;
+if(goal){const g=$('goal');let ok=false;
+if(v===goal.target){if(canon){ok=true;g.textContent=mode=='build'?'Excellent! You built the number correctly!':`Correct! ${goal.text.split(' = ')[0]} = ${fmt(goal.target)}. Great regrouping!`}
+else g.textContent=`The value is right! Now exchange groups of 10 so each place has 9 or fewer blocks.`}
+else g.textContent=goal.text;
+g.className=ok?'ok':'';}
+}
+
+// selection / removal
+function toggle(id){sel.has(id)?sel.delete(id):sel.add(id);render()}
+function removeSel(){if(!sel.size){say('Tap a block to select it, then press Remove. You can also drag a block back to the toolbox.');return}
+blocks=blocks.filter(b=>!sel.has(b.id));sel.clear();render();say('Block removed.')}
+
+// dragging inside workspace
+let drag=null;
+ws.addEventListener('pointerdown',e=>{if(busy)return;const el=e.target.closest('.blk');if(!el)return;e.preventDefault();
+const b=blocks.find(x=>x.id==el.dataset.id),r=ws.getBoundingClientRect();
+drag={b,el,ox:e.clientX-r.left-b.x,oy:e.clientY-r.top-b.y,sx:e.clientX,sy:e.clientY,moved:false};el.setPointerCapture(e.pointerId)});
+ws.addEventListener('pointermove',e=>{if(!drag)return;
+if(!drag.moved&&Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)>5){drag.moved=true;drag.el.style.zIndex=99}
+if(!drag.moved)return;const r=ws.getBoundingClientRect(),[w,h]=size(drag.b.t,scale());
+drag.b.x=Math.max(0,Math.min(e.clientX-r.left-drag.ox,ws.clientWidth-w));drag.b.y=Math.max(0,Math.min(e.clientY-r.top-drag.oy,ws.clientHeight-h));
+drag.el.style.left=drag.b.x+'px';drag.el.style.top=drag.b.y+'px'});
+const endDrag=e=>{if(!drag)return;const d=drag;drag=null;
+if(!d.moved){toggle(d.b.id);return}
+const tr=$('tools').getBoundingClientRect();
+if(e.clientX>=tr.left&&e.clientX<=tr.right&&e.clientY>=tr.top&&e.clientY<=tr.bottom){blocks=blocks.filter(b=>b!==d.b);sel.delete(d.b.id);say('Block removed.')}
+render()};
+ws.addEventListener('pointerup',endDrag);ws.addEventListener('pointercancel',()=>{drag=null;render()});
+ws.addEventListener('keydown',e=>{const el=e.target.closest('.blk');if(!el)return;const b=blocks.find(x=>x.id==el.dataset.id);
+if(e.key=='Enter'||e.key==' '){e.preventDefault();toggle(b.id)}
+else if(e.key=='Delete'||e.key=='Backspace'){e.preventDefault();sel.add(b.id);removeSel()}
+else if(e.key.startsWith('Arrow')){e.preventDefault();b.x+=e.key=='ArrowRight'?12:e.key=='ArrowLeft'?-12:0;b.y+=e.key=='ArrowDown'?12:e.key=='ArrowUp'?-12:0;render();const n=ws.querySelector(`[data-id="${b.id}"]`);n&&n.focus()}});
+
+// toolbox: tap to add, drag to place
+let td=null;
+document.querySelectorAll('.tool').forEach(btn=>{
+btn.addEventListener('pointerdown',e=>{td={t:btn.dataset.t,sx:e.clientX,sy:e.clientY,moved:false,g:null}});
+btn.addEventListener('click',e=>{if(e.detail===0){addAt(btn.dataset.t);say(`Added 1 ${P[btn.dataset.t].nm}.`)}})});
+addEventListener('pointermove',e=>{if(!td)return;
+if(!td.moved&&Math.hypot(e.clientX-td.sx,e.clientY-td.sy)>8){td.moved=true;const g=document.createElement('div');g.className='ghost';g.innerHTML=svg(td.t,scale());document.body.appendChild(g);td.g=g}
+if(td.g){const [w,h]=size(td.t,scale());td.g.style.left=e.clientX-w/2+'px';td.g.style.top=e.clientY-h/2+'px'}});
+addEventListener('pointerup',e=>{if(!td)return;const d=td;td=null;d.g&&d.g.remove();
+if(!d.moved){addAt(d.t);say(`Added 1 ${P[d.t].nm}.`);return}
+const r=ws.getBoundingClientRect();
+if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){const [w,h]=size(d.t,scale());addAt(d.t,e.clientX-r.left-w/2,e.clientY-r.top-h/2);say(`Added 1 ${P[d.t].nm}.`)}});
+addEventListener('pointercancel',()=>{if(td){td.g&&td.g.remove();td=null}});
+
+// exchange
+$('exch').onclick=()=>{if(busy)return;
+const bs=blocks.filter(b=>sel.has(b.id));
+if(!bs.length){say('Select blocks first. Pick 10 of one kind to trade for 1 bigger block, or pick 1 block to break into 10 smaller ones.');return}
+const t=bs[0].t;
+if(bs.some(b=>b.t!==t)){say('Select blocks of one kind only.');return}
+if(bs.length===10&&t!=='k'){busy=true;ws.querySelectorAll('.blk.sel').forEach(n=>n.classList.add('merge'));
+setTimeout(()=>{const x=bs[0].x,y=bs[0].y;blocks=blocks.filter(b=>!sel.has(b.id));sel.clear();addAt(NEXT[t],x,y,true);busy=false;render();say(`10 ${P[t].n} = 1 ${P[NEXT[t]].nm}. The number stays the same!`)},350);return}
+if(bs.length===1&&t!=='o'){const b=bs[0];blocks=blocks.filter(x=>x!==b);sel.clear();const lt=PREV[t];
+for(let i=0;i<10;i++)addAt(lt,null,null,true);render();say(`1 ${P[t].nm} = 10 ${P[lt].n}. The number stays the same!`);return}
+if(t==='k'&&bs.length>1){say('Thousands are the biggest block here. Select just 1 to break it into 10 hundreds.');return}
+if(t==='o'&&bs.length===1){say('A single one cannot be broken up. Select 10 ones to trade for 1 ten.');return}
+if(bs.length<10)say(`You selected ${bs.length} ${P[t].n.toLowerCase()}. Select exactly 10 to make 1 ${P[NEXT[t]].nm}, or just 1 to break it up.`);
+else say(`Select exactly 10 ${P[t].n.toLowerCase()} (you have ${bs.length} selected).`)};
+
+$('rem').onclick=removeSel;
+$('reset').onclick=()=>{sel.clear();const st=goal&&goal.start!=null;st?setBlocks(goal.start):(blocks=[],render());say(st?'Back to the starting number.':'Workspace cleared.')};
+$('pvb').onclick=()=>{const on=$('sum').hidden;$('sum').hidden=!on;$('pvb').setAttribute('aria-pressed',on);$('pvb').textContent=on?'Show Place Value':'Show Place Value'};
+$('pvb').onclick=()=>{const hide=$('pvb').getAttribute('aria-pressed')==='true';$('sum').hidden=hide;$('pvb').setAttribute('aria-pressed',!hide);$('pvb').classList.toggle('alt',hide)};
+
+const R=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const words=n=>[[Math.floor(n/100)%10,'hundred'],[Math.floor(n/10)%10,'ten'],[n%10,'one']].filter(x=>x[0]).map(x=>x[0]+' '+x[1]+(x[0]>1?'s':'')).join(', ');
+function newProblem(){sel.clear();blocks=[];
+const D=+$('dig').value,lo=10**(D-1),hi=10**D-1;
+if(mode=='build'){const n=R(lo+1,hi);goal={target:n,text:'Build the number: '+fmt(n)};render()}
+else{let a,b,add=mode=='add',k=0;
+do{k++;if(add){a=R(lo,hi-lo);b=R(lo,hi-a)}else{a=R(Math.min(hi,lo*2),hi);b=R(lo,a-1)}var need=false;for(let p=1;p<=hi;p*=10){const x=Math.floor(a/p)%10,y=Math.floor(b/p)%10;if(add?x+y>=10:y>x)need=true}}
+while(k<40&&!need);
+const ans=add?a+b:a-b;goal={target:ans,start:a,text:`${fmt(a)} ${add?'+':'−'} ${fmt(b)} = ?`};
+setBlocks(a);}
+$('goal').hidden=!goal;if(goal)render()}
+$('newb').onclick=newProblem;$('dig').onchange=()=>newProblem();
+$('mode').onchange=e=>{mode=e.target.value;goal=null;$('newb').hidden=$('dig').hidden=mode=='explore';$('newb').textContent=mode=='build'?'New Number':'New Problem';$('goal').hidden=true;blocks=[];sel.clear();
+if(mode!='explore')newProblem();else render();
+say(mode=='explore'?'Explore freely. Tap or drag blocks to build any number.':'Use the blocks to solve it. Exchange when you need to.')};
+addEventListener('resize',()=>{if(!drag)render()});
+const IC={on:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2b4fc4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',off:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2b4fc4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>'};
+const isFS=()=>document.fullscreenElement||document.webkitFullscreenElement;
+const syncFS=()=>{$('fs').innerHTML=isFS()?IC.off:IC.on;$('fs').title=isFS()?'Exit full screen':'Full screen'};syncFS();
+$('fs').onclick=()=>{const d=document,e=d.documentElement;if(isFS()){(d.exitFullscreen||d.webkitExitFullscreen).call(d)}else{const f=e.requestFullscreen||e.webkitRequestFullscreen;f?Promise.resolve(f.call(e)).catch(()=>say('Full screen is not available here.')):say('Full screen is not supported on this device.')}};
+document.addEventListener('fullscreenchange',()=>{syncFS();render()});document.addEventListener('webkitfullscreenchange',()=>{syncFS();render()});
+render();
+</script></body></html>
